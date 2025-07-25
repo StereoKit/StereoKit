@@ -883,40 +883,56 @@ namespace StereoKit
 		Password     = 3,
 	}
 
-	/// <summary>What type of device is the source of the pointer? This is a
-	/// bit-flag that can contain some input source family information.</summary>
-	[Flags]
-	public enum InputSource {
-		/// <summary>Matches with all input sources!</summary>
-		Any          = 0x7FFFFFFF,
-		/// <summary>Matches with any hand input source.</summary>
-		Hand         = 1 << 0,
-		/// <summary>Matches with left hand input sources.</summary>
-		HandLeft     = 1 << 1,
-		/// <summary>Matches with right hand input sources.</summary>
-		HandRight    = 1 << 2,
-		/// <summary>Matches with Gaze category input sources.</summary>
-		Gaze         = 1 << 4,
-		/// <summary>Matches with the head gaze input source.</summary>
-		GazeHead     = 1 << 5,
-		/// <summary>Matches with the eye gaze input source.</summary>
-		GazeEyes     = 1 << 6,
-		/// <summary>Matches with mouse cursor simulated gaze as an input source.</summary>
-		GazeCursor   = 1 << 7,
-		/// <summary>Matches with any input source that has an activation button!</summary>
-		CanPress     = 1 << 8,
+	/// <summary>Should this interactor behave like a single point in space interacting with
+	/// elements? Or should it behave more like an intangible line? Hit detection is
+	/// still capsule shaped, but behavior may change a little to reflect the primary
+	/// position of the point interactor. This can also be thought of as direct
+	/// interaction vs indirect interaction. </summary>
+	public enum InteractorType {
+		/// <summary>The interactor represents a physical point in space, such as a fingertip
+		/// or the point of a pencil. Points do not use directionality for their
+		/// interactions, nor do they take into account the distance of an element
+		/// along the 'ray' of the capsule. </summary>
+		Point,
+		/// <summary>The interactor represents a less tangible line or ray of interaction,
+		/// such as a laser pointer or eye gaze. Lines will occasionally consider the
+		/// directionality of the interactor to discard backpressing certain
+		/// elements,and use distance along the line for occluding elements that are
+		/// behind other elements.</summary>
+		Line,
 	}
 
-	/// <summary>An enum for indicating which hand to use!</summary>
-	public enum Handed {
-		/// <summary>Left hand.</summary>
-		Left         = 0,
-		/// <summary>Right hand.</summary>
-		Right        = 1,
-		/// <summary>The number of hands one generally has, this is much nicer
-		/// than doing a for loop with '2' as the condition! It's much clearer
-		/// when you can loop Hand.Max times instead.</summary>
-		Max          = 2,
+	/// <summary>A bit-flag mask for interaction event types. This allows or informs what type
+	/// of events an interactor can perform, or an element can respond to.</summary>
+	[Flags]
+	public enum InteractorEvent {
+		/// <summary>Poke events represent direct physical interaction with elements via a
+		/// single point. This might be like a fingertip pressing a button, or a
+		/// pencil tip on a page of a paper.</summary>
+		Poke         = 1 << 1,
+		/// <summary>Grip events represent the gripping gesture of the hand. This can also map
+		/// to something like the grip button on a controller. This is generally for
+		/// larger objects where humans have a tendency to make full fisted grasping
+		/// motions, like with door handles or sword hilts.</summary>
+		Grip         = 1 << 2,
+		/// <summary>Pinch events represent the pinching gesture of the hand, where the index
+		/// finger tip and thumb tip come together. This can also map to something
+		/// like the trigger button of a controller. This is generally for smaller
+		/// objects where humans tend to grasp more delicately with just their
+		/// fingertips, like with a pencil or switches.</summary>
+		Pinch        = 1 << 3,
+	}
+
+	/// <summary>TODO: is this redundant with interactor_type_?
+	/// This describes how an interactor activates elements. Does it use the physical
+	/// position of the interactor, or the activation state?</summary>
+	public enum InteractorActivation {
+		/// <summary>This interactor uses its `active` state to determine element
+		/// activation.</summary>
+		State,
+		/// <summary>This interactor uses its motion position to determine the element
+		/// activation.</summary>
+		Position,
 	}
 
 	/// <summary>A bit-flag for the current state of a button input.</summary>
@@ -934,6 +950,57 @@ namespace StereoKit
 		Changed      = JustInactive | JustActive,
 		/// <summary>Matches with all states!</summary>
 		Any          = 0x7FFFFFFF,
+	}
+
+	/// <summary>Options for what type of interactors StereoKit provides by default.</summary>
+	public enum DefaultInteractors {
+		/// <summary>StereoKit's default interactors, this provides an aim ray for a mouse,
+		/// aim rays for controllers, and aim, pinch, and poke interactors for hands.</summary>
+		Default,
+		/// <summary>Don't provide any interactors at all. This means you either don't want
+		/// interaction, or are providing your own custom interactors.</summary>
+		None,
+	}
+
+	/// <summary>What type of device is the source of the pointer? This is a
+	/// bit-flag that can contain some input source family information.</summary>
+	[Flags]
+	public enum InputSource {
+		/// <summary>Matches with all input sources!</summary>
+		Any          = 0x7FFFFFFF,
+		/// <summary>Matches with any hand input source.</summary>
+		Hand         = 1 << 0,
+		/// <summary>Matches with left hand input sources.</summary>
+		HandLeft     = 1 << 1,
+		/// <summary>Matches with right hand input sources.</summary>
+		HandRight    = 1 << 2,
+		/// <summary>Matches with Gaze category input sources.</summary>
+		[Obsolete("Use Input.Eyes")]
+		Gaze         = 1 << 4,
+		/// <summary>Matches with the head gaze input source.</summary>
+		[Obsolete("Use Input.Eyes")]
+		GazeHead     = 1 << 5,
+		/// <summary>Matches with the eye gaze input source.</summary>
+		[Obsolete("Use Input.Eyes")]
+		GazeEyes     = 1 << 6,
+		/// <summary>Matches with mouse cursor simulated gaze as an input source.</summary>
+		[Obsolete("Use Input.Eyes")]
+		GazeCursor   = 1 << 7,
+		/// <summary>Matches with any input source that has an activation button!</summary>
+		[Obsolete]
+		CanPress     = 1 << 8,
+	}
+
+	/// <summary>An enum for indicating which hand to use!</summary>
+	public enum Handed {
+		/// <summary>Left hand.</summary>
+		Left         = 0,
+		/// <summary>Right hand.</summary>
+		Right        = 1,
+		/// <summary>The number of hands one generally has, this is much nicer
+		/// than doing a for loop with '2' as the condition! It's much clearer
+		/// when you can loop Hand.Max times instead.</summary>
+		Max          = 2,
 	}
 
 	/// <summary>This is the tracking state of a sensory input in the world,

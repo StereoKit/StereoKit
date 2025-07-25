@@ -50,15 +50,15 @@ button_state_ ui_volume_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_
 	id_hash_t     id_hash = ui_stack_hash(id);
 	button_state_ result  = button_state_inactive;
 	button_state_ focus   = button_state_inactive;
-	interactor_id interactor = -1;
+	interactor_t interactor = -1;
 
 	vec3 start = bounds.center + bounds.dimensions / 2;
-	interaction_1h_box(id_hash, interact_type == ui_confirm_push ? interactor_event_poke : interactor_event_pinch,
+	interaction_1h_box(id_hash, interact_type == ui_confirm_push ? interactor_event_poke : interactor_event_pinch, -2,
 		start, bounds.dimensions,
 		start, bounds.dimensions,
 		&focus, &interactor);
 
-	interactor_t *actor = interactor_get(interactor);
+	_interactor_t *actor = _interactor_get(interactor);
 	if (actor != nullptr) {
 		result = interactor_set_active(actor, id_hash, actor->activation_type == interactor_activation_position
 			? (bool32_t)((focus              & button_state_active) != 0)
@@ -88,12 +88,12 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 	int32_t       interactor = -1;
 	vec3          interaction_at;
 	button_state_ focus_candidacy = button_state_inactive;
-	interaction_1h_plate(id, interactor_event_poke,
+	interaction_1h_plate(id, interactor_event_poke, 0,
 		{ window_relative_pos.x, window_relative_pos.y, window_relative_pos.z - button_depth }, { size.x, size.y, button_depth },
 		&focus_candidacy, &interactor, &interaction_at);
 
 	// If a hand is interacting, adjust the button surface accordingly
-	interactor_t* actor = interactor_get(interactor);
+	_interactor_t* actor = _interactor_get(interactor);
 	if (actor) {
 		if (focus_candidacy & button_state_active) {
 			bool pressed;
@@ -150,32 +150,18 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 		window_relative_pos.y - (percent.y * (size.y - button_size_visual.y) + button_size_visual.y/2.0f) };
 
 	// Secondary motion check
-	ui_push_idi(id);
+	ui_push_idi((int32_t)id);
 	button_state_ secondary_focus;
 	int32_t       secondary_interactor;
-	interaction_1h_box(ui_stack_hash("secondary"), (interactor_event_)(interactor_event_grip | interactor_event_pinch | interactor_event_poke),
-		window_relative_pos, {size.x, size.y, button_depth*0.5f },
-		window_relative_pos, {size.x, size.y, button_depth*0.5f },
+	id_hash_t     secondary_id = ui_stack_hash("secondary");
+	interaction_1h_box(secondary_id, (interactor_event_)(interactor_event_grip | interactor_event_pinch | interactor_event_poke), -1,
+		window_relative_pos, {size.x, size.y, button_depth*0.4f },
+		window_relative_pos, {size.x, size.y, button_depth*0.4f },
 		& secondary_focus, &secondary_interactor);
 	ui_pop_id();
-	interactor_t* secondary_actor = interactor_get(secondary_interactor);
-	if (secondary_focus & button_state_active) {
-		vec2 secondary_motion = vec2_zero;
-		if (secondary_actor->secondary_motion_dimensions == 1) secondary_motion = vec2{ secondary_actor->secondary_motion.x,  secondary_actor->secondary_motion.x };
-		if (secondary_actor->secondary_motion_dimensions >= 2) secondary_motion = vec2{ secondary_actor->secondary_motion.x, -secondary_actor->secondary_motion.y };
-		vec2 new_percent = {
-			range.x == 0 ? 0.5f : fminf(1, fmaxf(0, percent.x + secondary_motion.x)),
-			range.y == 0 ? 0.5f : fminf(1, fmaxf(0, percent.y + secondary_motion.y)) };
-		vec2 new_val = min + new_percent * range;
-
-		out->button_center = {
-			window_relative_pos.x - (new_percent.x * (size.x - button_size_visual.x) + button_size_visual.x / 2.0f),
-			window_relative_pos.y - (new_percent.y * (size.y - button_size_visual.y) + button_size_visual.y / 2.0f) };
-		*value = new_val;
-	}
 
 	vec2 finger_at = {};
-	interactor_t* actor = nullptr;
+	_interactor_t* actor = nullptr;
 	vec3 activation_size  = vec3{ button_size_interact.x, button_size_interact.y, button_depth };
 	vec3 activation_start = { out->button_center.x+activation_size.x/2.0f, out->button_center.y+activation_size.y/2.0f, window_relative_pos.z };
 	if (button_size_interact.x == 0 && button_size_interact.y == 0) {
@@ -186,22 +172,43 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 	if (confirm_method == ui_confirm_push) {
 		ui_button_behavior_depth(activation_start, { activation_size.x, activation_size.y }, id, button_depth, button_depth / 2, out->finger_offset, out->active_state, out->focus_state, &out->interactor);
 
-		actor = interactor_get(out->interactor);
+		actor = _interactor_get(out->interactor);
 		
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		activation_start.z += skui_settings.depth;
 		activation_size.z  += skui_settings.depth;
-		interaction_1h_box(id, interactor_event_pinch,
+		interaction_1h_box(id, interactor_event_pinch, 0,
 			activation_start, activation_size,
 			activation_start, activation_size,
 			&out->focus_state, &out->interactor);
 
 		// Pinch confirm uses a handle that the user must pinch, in order to
 		// drag it around the slider.
-		actor = interactor_get(out->interactor);
+		actor = _interactor_get(out->interactor);
 		if (actor != nullptr) {
 			out->active_state = interactor_set_active(actor, id, actor->pinch_state & button_state_active);
 		}
+	}
+
+	// Combine focus from both elements for using secondary motion
+	_interactor_t* secondary_actor = _interactor_get(secondary_interactor);
+	if ((secondary_actor && secondary_actor->focused_prev == secondary_id) ||
+		(actor           && actor          ->focused_prev == id)) {
+
+		_interactor_t* motion_actor     = actor ? actor : secondary_actor;
+		vec2           secondary_motion = vec2_zero;
+		if (motion_actor->secondary_motion_dimensions == 1) secondary_motion = vec2{ motion_actor->secondary_motion.x,  motion_actor->secondary_motion.x };
+		if (motion_actor->secondary_motion_dimensions >= 2) secondary_motion = vec2{ motion_actor->secondary_motion.x, -motion_actor->secondary_motion.y };
+
+		vec2 new_percent = {
+			range.x == 0 ? 0.5f : fminf(1, fmaxf(0, percent.x + secondary_motion.x)),
+			range.y == 0 ? 0.5f : fminf(1, fmaxf(0, percent.y + secondary_motion.y)) };
+		vec2 new_val = min + new_percent * range;
+
+		out->button_center = {
+			window_relative_pos.x - (new_percent.x * (size.x - button_size_visual.x) + button_size_visual.x / 2.0f),
+			window_relative_pos.y - (new_percent.y * (size.y - button_size_visual.y) + button_size_visual.y / 2.0f) };
+		*value = new_val;
 	}
 
 	if (actor != nullptr) {
@@ -242,7 +249,7 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 ///////////////////////////////////////////
 
 bool32_t _ui_handle_begin(id_hash_t id, pose_t &handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
-	bool result = interaction_handle(id, &handle_pose, handle_bounds, move_type, allowed_gestures);
+	bool result = interaction_handle(id, -2, &handle_pose, handle_bounds, move_type, allowed_gestures);
 	ui_push_surface(handle_pose);
 
 	float color_blend = 0;

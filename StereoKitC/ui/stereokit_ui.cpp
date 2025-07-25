@@ -911,11 +911,10 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 	vec3 box_start = {}, box_size = {};
 	if (win->type & ui_win_head) {
 		float line = ui_line_height();
-		box_start = vec3{ 0, line/2, skui_settings.depth/2 };
+		box_start = vec3{ 0, line/2, 0 };
 		box_size  = vec3{ win->prev_size.x, line, skui_settings.depth*2 };
 	}
 	if (win->type & ui_win_body || win->type & ui_win_empty) {
-		box_start.z  = skui_settings.depth/2;
 		box_start.y -= win->prev_size.y / 2;
 		box_size.x   = win->prev_size.x;
 		box_size.y  += win->prev_size.y;
@@ -927,8 +926,8 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		box_size .y += skui_aura_radius*2;
 	}
 	// Add a little extra depth to the box, so that it's easier to grab
-	box_start.z += 0.01f;
 	box_size .z += 0.02f;
+	box_start.z = box_size.z/2;
 
 	// Set up window handle and layout area
 	_ui_handle_begin(hash, pose, { box_start, box_size }, false, move_type, ui_gesture_pinch);

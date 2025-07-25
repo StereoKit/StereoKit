@@ -581,6 +581,33 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        interactor_create           (InteractorType shape_type, InteractorEvent events, InteractorActivation activation_type, int input_source_id, float capsule_radius, int secondary_motion_dimensions);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       interactor_destroy          (int interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       interactor_update           (int interactor, Vec3 capsule_start, Vec3 capsule_end, Pose motion, Vec3 motion_anchor, Vec3 secondary_motion, BtnState active, BtnState tracked);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       interactor_set_min_distance (int interactor, float min_distance);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float      interactor_get_min_distance (int interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3       interactor_get_capsule_start(int interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3       interactor_get_capsule_end  (int interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       interactor_set_radius       (int interactor, float radius);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float      interactor_get_radius       (int interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState   interactor_get_tracked      (int interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IdHash     interactor_get_focused      (int interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IdHash     interactor_get_active       (int interactor);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool       interactor_get_focus_bounds (int interactor, out Pose out_pose_world, out Bounds out_bounds_local, out Vec3 out_at_local);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose       interactor_get_motion       (int interactor);
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        interactor_count            ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        interactor_get              (int index);
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               interaction_set_default_interactors(DefaultInteractors default_interactors);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DefaultInteractors interaction_get_default_interactors();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               interaction_set_default_draw       ([MarshalAs(UnmanagedType.Bool)] bool draw_interactors);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool               interaction_get_default_draw       ();
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        input_pointer_count  (InputSource filter = InputSource.Any);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pointer    input_pointer        (int index, InputSource filter = InputSource.Any);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr     input_hand           (Handed hand);

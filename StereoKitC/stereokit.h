@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2025 Nick Klingensmith
+ * Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
  */
 
 #pragma once
@@ -17,7 +17,7 @@
 	#define SK_CONST static const
 #elif defined(_MSC_VER)
 	#define SK_DEPRECATED __declspec(deprecated)
-	#if defined(_DLL) || defined(BUILDING_DLL)
+	#if defined(SK_BUILD_SHARED)
 		#define SK_EXIMPORT __declspec(dllexport)
 	#else
 		#define SK_EXIMPORT
@@ -1857,6 +1857,112 @@ SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, const c
 
 ///////////////////////////////////////////
 
+/*Should this interactor behave like a single point in space interacting with
+  elements? Or should it behave more like an intangible line? Hit detection is
+  still capsule shaped, but behavior may change a little to reflect the primary
+  position of the point interactor. This can also be thought of as direct
+  interaction vs indirect interaction. */
+typedef enum interactor_type_ {
+	/*The interactor represents a physical point in space, such as a fingertip
+	  or the point of a pencil. Points do not use directionality for their
+	  interactions, nor do they take into account the distance of an element
+	  along the 'ray' of the capsule. */
+	interactor_type_point,
+	/*The interactor represents a less tangible line or ray of interaction,
+	  such as a laser pointer or eye gaze. Lines will occasionally consider the
+	  directionality of the interactor to discard backpressing certain
+	  elements,and use distance along the line for occluding elements that are
+	  behind other elements.*/
+	interactor_type_line,
+} interactor_type_;
+
+/*A bit-flag mask for interaction event types. This allows or informs what type
+  of events an interactor can perform, or an element can respond to.*/
+typedef enum interactor_event_ {
+	/*Poke events represent direct physical interaction with elements via a
+	  single point. This might be like a fingertip pressing a button, or a
+	  pencil tip on a page of a paper.*/
+	interactor_event_poke  = 1 << 1,
+	/*Grip events represent the gripping gesture of the hand. This can also map
+	  to something like the grip button on a controller. This is generally for
+	  larger objects where humans have a tendency to make full fisted grasping
+	  motions, like with door handles or sword hilts.*/
+	interactor_event_grip  = 1 << 2,
+	/*Pinch events represent the pinching gesture of the hand, where the index
+	  finger tip and thumb tip come together. This can also map to something
+	  like the trigger button of a controller. This is generally for smaller
+	  objects where humans tend to grasp more delicately with just their
+	  fingertips, like with a pencil or switches.*/
+	interactor_event_pinch = 1 << 3,
+} interactor_event_;
+SK_MakeFlag(interactor_event_);
+
+// TODO: is this redundant with interactor_type_?
+/*This describes how an interactor activates elements. Does it use the physical
+  position of the interactor, or the activation state?*/
+typedef enum interactor_activation_ {
+	/*This interactor uses its `active` state to determine element
+	  activation.*/
+	interactor_activation_state,
+	/*This interactor uses its motion position to determine the element
+	  activation.*/
+	interactor_activation_position,
+} interactor_activation_;
+
+/*A bit-flag for the current state of a button input.*/
+typedef enum button_state_ {
+	/*Is the button currently up, unpressed?*/
+	button_state_inactive      = 0,
+	/*Is the button currently down, pressed?*/
+	button_state_active        = 1 << 0,
+	/*Has the button just been released? Only true for a single frame.*/
+	button_state_just_inactive = 1 << 1,
+	/*Has the button just been pressed? Only true for a single frame.*/
+	button_state_just_active   = 1 << 2,
+	/*Has the button just changed state this frame?*/
+	button_state_changed       = button_state_just_inactive | button_state_just_active,
+	/*Matches with all states!*/
+	button_state_any           = 0x7FFFFFFF,
+} button_state_;
+SK_MakeFlag(button_state_);
+
+/*Options for what type of interactors StereoKit provides by default.*/
+typedef enum default_interactors_ {
+	/*StereoKit's default interactors, this provides an aim ray for a mouse,
+	aim rays for controllers, and aim, pinch, and poke interactors for hands.*/
+	default_interactors_default,
+	/*Don't provide any interactors at all. This means you either don't want
+	interaction, or are providing your own custom interactors.*/
+	default_interactors_none,
+} default_interactors_;
+
+typedef int32_t interactor_t;
+
+SK_API interactor_t          interactor_create                  (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, int32_t input_source_id, float capsule_radius, int32_t secondary_motion_dimensions);
+SK_API void                  interactor_destroy                 (      interactor_t interactor);
+SK_API void                  interactor_update                  (      interactor_t interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
+SK_API void                  interactor_set_min_distance        (      interactor_t interactor, float min_distance);
+SK_API float                 interactor_get_min_distance        (const interactor_t interactor);
+SK_API vec3                  interactor_get_capsule_start       (const interactor_t interactor);
+SK_API vec3                  interactor_get_capsule_end         (const interactor_t interactor);
+SK_API void                  interactor_set_radius              (      interactor_t interactor, float radius);
+SK_API float                 interactor_get_radius              (const interactor_t interactor);
+SK_API button_state_         interactor_get_tracked             (const interactor_t interactor);
+SK_API id_hash_t             interactor_get_focused             (const interactor_t interactor);
+SK_API id_hash_t             interactor_get_active              (const interactor_t interactor);
+SK_API bool32_t              interactor_get_focus_bounds        (const interactor_t interactor, pose_t* out_pose_world, bounds_t* out_bounds_local, vec3* out_at_local);
+SK_API pose_t                interactor_get_motion              (const interactor_t interactor);
+
+SK_API int32_t               interactor_count                   (void);
+SK_API interactor_t          interactor_get                     (int32_t index);
+
+SK_API void                  interaction_set_default_interactors(default_interactors_ default_interactors);
+SK_API default_interactors_  interaction_get_default_interactors();
+SK_API void                  interaction_set_default_draw       (bool32_t draw_interactors);
+SK_API bool32_t              interaction_get_default_draw       (void);
+
+///////////////////////////////////////////
+
 /*What type of device is the source of the pointer? This is a
   bit-flag that can contain some input source family information.*/
 typedef enum input_source_ {
@@ -1892,23 +1998,6 @@ typedef enum handed_ {
 	  when you can loop Hand.Max times instead.*/
 	handed_max                 = 2,
 } handed_;
-
-/*A bit-flag for the current state of a button input.*/
-typedef enum button_state_ {
-	/*Is the button currently up, unpressed?*/
-	button_state_inactive      = 0,
-	/*Is the button currently down, pressed?*/
-	button_state_active        = 1 << 0,
-	/*Has the button just been released? Only true for a single frame.*/
-	button_state_just_inactive = 1 << 1,
-	/*Has the button just been pressed? Only true for a single frame.*/
-	button_state_just_active   = 1 << 2,
-	/*Has the button just changed state this frame?*/
-	button_state_changed       = button_state_just_inactive | button_state_just_active,
-	/*Matches with all states!*/
-	button_state_any           = 0x7FFFFFFF,
-} button_state_;
-SK_MakeFlag(button_state_);
 
 /*This is the tracking state of a sensory input in the world,
   like a controller's position sensor, or a QR code identified by a
@@ -2279,9 +2368,9 @@ SK_API hand_sim_id_t         input_hand_sim_pose_add         (const pose_t* in_a
 SK_API void                  input_hand_sim_pose_remove      (hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear       (void);
 
-SK_API void                  input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API void                  input_unsubscribe               (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API void                  input_fire_event                (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
+SK_API SK_DEPRECATED void    input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API SK_DEPRECATED void    input_unsubscribe               (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API SK_DEPRECATED void    input_fire_event                (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
 
 ///////////////////////////////////////////
 

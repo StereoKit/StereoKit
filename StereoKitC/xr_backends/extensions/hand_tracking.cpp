@@ -16,6 +16,7 @@
 #include "../../systems/input.h"
 #include "../../systems/render.h"
 #include "../../hands/input_hand.h"
+#include "../../libraries/stref.h"
 
 #define XR_EXT_FUNCTIONS( X )  \
 	X(xrCreateHandTrackerEXT)  \
@@ -27,6 +28,7 @@ typedef struct xr_hand_tracking_state_t {
 	bool             has_data_source;
 	bool             available;
 	bool             hand_active;
+	bool             tip_fix;
 	float            hand_joint_scale;
 	XrHandTrackerEXT hand_tracker[2];
 	sk::hand_joint_t hand_joints [2][26];
@@ -158,6 +160,12 @@ xr_system_ xr_ext_hand_tracking_initialize(void*) {
 	local.available        = true;
 	local.hand_joint_scale = 1;
 
+	// The Oculus runtime adds an offset position to the fingertips, so we
+	// apply a fix to put them in the right place.
+	if (string_startswith(device_get_runtime(), "Oculus")) {
+		local.tip_fix = true;
+	}
+
 	device_data.has_hand_tracking = true;
 
 	// Register this extension's functionality with our hand management system.
@@ -284,6 +292,16 @@ void xr_ext_hand_tracking_update_joints() {
 			local.hand_joints[h][j].orientation = local.hand_joints[h][j].orientation * root_q;
 		}
 
+		// Some runtimes provide the finger tip at the very tip of the finger,
+		// rather than the tip minus the radius. This will make the finger too
+		// long when adding the radius, so we add this offset manually here.
+		if (local.tip_fix) {
+			for (int32_t t = 0; t < 5; t++) {
+				int32_t idx = 1 + t * 5 + hand_joint_tip;
+				local.hand_joints[h][idx].position += local.hand_joints[h][idx].orientation * vec3{ 0,0,local.hand_joints[h][idx].radius };
+			}
+		}
+
 		// Copy the pose data into our hand
 		hand_joint_t* pose = input_hand_get_pose_buffer((handed_)h);
 		memcpy(&pose[1], &local.hand_joints[h][XR_HAND_JOINT_THUMB_METACARPAL_EXT], sizeof(hand_joint_t) * 24);
@@ -343,13 +361,6 @@ void xr_ext_hand_tracking_update_states() {
 		bool is_far       = vec2_distance_sq({inp_hand->aim.position.x, inp_hand->aim.position.z}, {head.position.x, head.position.z}) > (near_dist*near_dist);
 		bool was_ready    = (inp_hand->aim_ready & button_state_active) > 0;
 		inp_hand->aim_ready = button_make_state(was_ready, hand_tracked && ((was_ready && is_pinched) || (is_facing && is_far)));
-
-		// Update the hand pointer
-		pointer_t* pointer = input_get_pointer(input_hand_pointer_id[h]);
-		pointer->ray.pos     = inp_hand->aim.position;
-		pointer->ray.dir     = inp_hand->aim.orientation * vec3_forward;
-		pointer->orientation = inp_hand->aim.orientation;
-		pointer->tracked     = inp_hand->aim_ready;
 	}
 }
 

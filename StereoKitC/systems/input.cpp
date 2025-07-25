@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2024 Nick Klingensmith
- * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2025 Nick Klingensmith
+ * Copyright (c) 2024-2025 Qualcomm Technologies, Inc.
  */
 
 #include "../stereokit.h"
@@ -52,8 +52,6 @@ struct evt_xy_t {
 };
 
 struct input_state_t {
-	array_t<input_event_t>listeners;
-	array_t<pointer_t>    pointers;
 	mouse_t               mouse_data;
 	controller_t          controllers[2];
 	bool                  controller_hand[2];
@@ -129,8 +127,6 @@ void input_shutdown() {
 
 	input_render_shutdown();
 	input_keyboard_shutdown();
-	local.pointers .free();
-	local.listeners.free();
 	input_hand_shutdown();
 	local = {};
 }
@@ -342,67 +338,21 @@ void input_step_late() {
 
 ///////////////////////////////////////////
 
-int32_t input_add_pointer(input_source_ source) {
-	return local.pointers.add({ source, button_state_inactive });
-}
-
-///////////////////////////////////////////
-
-pointer_t *input_get_pointer(int32_t id) {
-	return &local.pointers[id];
-}
-
-///////////////////////////////////////////
-
-int32_t input_pointer_count(input_source_ filter) {
-	int32_t result = 0;
-	for (int32_t i = 0; i < local.pointers.count; i++) {
-		if (local.pointers[i].source & filter)
-			result += 1;
-	}
-	return result;
-}
-
-///////////////////////////////////////////
-
-pointer_t input_pointer(int32_t index, input_source_ filter) {
-	int32_t curr = 0;
-	for (int32_t i = 0; i < local.pointers.count; i++) {
-		if (local.pointers[i].source & filter) {
-			if (curr == index)
-				return local.pointers[i];
-			curr += 1;
-		}
-	}
-	return {};
-}
-
-///////////////////////////////////////////
-
 void input_subscribe(input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const pointer_t &in_pointer)) {
-	local.listeners.add({ source, input_event, input_event_callback });
+	log_warnf("Input events are obsolete");
+
 }
 
 ///////////////////////////////////////////
 
 void input_unsubscribe(input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const pointer_t &in_pointer)) {
-	for (int32_t i = local.listeners.count-1; i >= 0; i--) {
-		if (local.listeners[i].source         == source      &&
-			local.listeners[i].event          == input_event &&
-			local.listeners[i].event_callback == input_event_callback) {
-			local.listeners.remove(i);
-		}
-	}
+	log_warnf("Input events are obsolete");
 }
 
 ///////////////////////////////////////////
 
 void input_fire_event(input_source_ source, button_state_ input_event, const pointer_t &pointer) {
-	for (int32_t i = 0; i < local.listeners.count; i++) {
-		if (local.listeners[i].source & source && local.listeners[i].event & input_event) {
-			local.listeners[i].event_callback(source, input_event, pointer);
-		}
-	}
+	log_warnf("Input events are obsolete");
 }
 
 ///////////////////////////////////////////
