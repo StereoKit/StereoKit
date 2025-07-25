@@ -32,8 +32,17 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+typedef struct xr_render_model_source_t {
+	XrRenderModelIdEXT id;
+	XrRenderModelEXT   render_model;
+	model_t            model_asset;
+	model_node_id*     anim_nodes;
+	int32_t            anim_node_count;
+} xr_model_source_t;
+
 typedef struct xr_ext_render_model_state_t {
-	bool available;
+	bool                              available;
+	array_t<xr_render_model_source_t> sources;
 } xr_ext_render_model_state_t;
 static xr_ext_render_model_state_t local = { };
 
@@ -41,10 +50,14 @@ static xr_ext_render_model_state_t local = { };
 
 xr_system_ xr_ext_render_model_initialize(void*);
 void       xr_ext_render_model_shutdown  (void*);
+void       xr_ext_render_model_source_destroy    (xr_render_model_source_t* ref_source);
+bool       xr_ext_render_model_source_instantiate(int32_t model_idx, xr_render_model_t* out_inst);
 
 ///////////////////////////////////////////
 
 void xr_ext_render_model_register() {
+	local = {};
+
 	xr_system_t sys = {};
 	sys.request_exts[sys.request_ext_count++] = XR_EXT_RENDER_MODEL_EXTENSION_NAME;
 	sys.request_exts[sys.request_ext_count++] = XR_EXT_UUID_EXTENSION_NAME;
@@ -69,13 +82,29 @@ xr_system_ xr_ext_render_model_initialize(void*) {
 ///////////////////////////////////////////
 
 void xr_ext_render_model_shutdown(void*) {
+	for (int32_t i = 0; i < local.sources.count; i++) {
+		xr_ext_render_model_source_destroy(&local.sources[i]);
+	}
+	local.sources.free();
+
 	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
+	local = {};
 }
 
 ///////////////////////////////////////////
 
-xr_render_model_t xr_ext_render_model_get(XrRenderModelIdEXT id) {
-	if (!local.available) return {};
+bool xr_ext_render_model_get(XrRenderModelIdEXT id, xr_render_model_t* out_model) {
+	*out_model = {};
+	if (!local.available) return false;
+
+	// Check if we've loaded this render model already! We keep references to
+	// all render models the runtime provides.
+	for (int32_t i = 0; i < local.sources.count; i++) {
+		if (local.sources[i].id == id)
+			return xr_ext_render_model_source_instantiate(i, out_model);
+	}
+
+	// New model, lets go load it and parse it for use!
 
 	const char* gltf_exts[] = {
 		"KHR_texture_basisu",
@@ -84,32 +113,22 @@ xr_render_model_t xr_ext_render_model_get(XrRenderModelIdEXT id) {
 		"EXT_meshopt_compression",
 	};
 
-	xr_render_model_t result = {};
-	result.id = id;
+	xr_render_model_source_t source = {};
+	source.id = id;
 
 	XrRenderModelCreateInfoEXT model_info = { XR_TYPE_RENDER_MODEL_CREATE_INFO_EXT };
 	model_info.renderModelId      = id;
 	model_info.gltfExtensionCount = sizeof(gltf_exts) / sizeof(gltf_exts[0]);
 	model_info.gltfExtensions     = gltf_exts;
-	XrResult r = xrCreateRenderModelEXT(xr_session, &model_info, &result.render_model);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrCreateRenderModelEXT", openxr_string(r));
-
-	XrRenderModelSpaceCreateInfoEXT   space_info       = { XR_TYPE_RENDER_MODEL_SPACE_CREATE_INFO_EXT };
-	space_info.renderModel = result.render_model;
-	r = xrCreateRenderModelSpaceEXT(xr_session, &space_info, &result.space);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrCreateRenderModelSpaceEXT", openxr_string(r));
+	XrResult r = xrCreateRenderModelEXT(xr_session, &model_info, &source.render_model);
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrCreateRenderModelEXT", openxr_string(r)); return false; }
 
 	XrRenderModelPropertiesGetInfoEXT props_info       = { XR_TYPE_RENDER_MODEL_PROPERTIES_GET_INFO_EXT };
 	XrRenderModelPropertiesEXT        props            = { XR_TYPE_RENDER_MODEL_PROPERTIES_EXT          };
-	r = xrGetRenderModelPropertiesEXT(result.render_model, &props_info, &props);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]","xrGetRenderModelPropertiesEXT", openxr_string(r));
+	r = xrGetRenderModelPropertiesEXT(source.render_model, &props_info, &props);
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrGetRenderModelPropertiesEXT", openxr_string(r)); xr_ext_render_model_source_destroy(&source); return false; }
 
-	XrRenderModelAssetEXT            asset;
-	XrRenderModelAssetCreateInfoEXT  asset_info = { XR_TYPE_RENDER_MODEL_ASSET_CREATE_INFO_EXT };
-	asset_info.cacheId = props.cacheId;
-	r = xrCreateRenderModelAssetEXT(xr_session, &asset_info, &asset);
-	if (XR_FAILED(r)) log_warnf("xrCreateRenderModelAssetEXT: [%s]", openxr_string(r));
-
+	// Generate a unique asset name for this model, based on the cache ID.
 	char name[128];
 	XrUuidEXT uuid = props.cacheId;
 	snprintf(name, sizeof(name), "sk/xr_model/%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x.glb",
@@ -117,60 +136,73 @@ xr_render_model_t xr_ext_render_model_get(XrRenderModelIdEXT id) {
 		uuid.data[4 ], uuid.data[5 ], uuid.data[6 ], uuid.data[7 ],
 		uuid.data[8 ], uuid.data[9 ], uuid.data[10], uuid.data[11],
 		uuid.data[12], uuid.data[13], uuid.data[14], uuid.data[15]);
-	result.model = model_find(name);
+	source.model_asset = model_find(name); // Just in case it's loaded for some reason, this shouldn't really happen
 
-	if (result.model == nullptr) {
+	XrRenderModelAssetEXT            asset;
+	XrRenderModelAssetCreateInfoEXT  asset_info = { XR_TYPE_RENDER_MODEL_ASSET_CREATE_INFO_EXT };
+	asset_info.cacheId = props.cacheId;
+	r = xrCreateRenderModelAssetEXT(xr_session, &asset_info, &asset);
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrCreateRenderModelAssetEXT", openxr_string(r)); xr_ext_render_model_source_destroy(&source); return false; }
+
+	// Load the GLTF itself
+	if (source.model_asset == nullptr) {
 		XrRenderModelAssetDataGetInfoEXT data_info = { XR_TYPE_RENDER_MODEL_ASSET_DATA_GET_INFO_EXT };
 		XrRenderModelAssetDataEXT        data      = { XR_TYPE_RENDER_MODEL_ASSET_DATA_EXT };
 		xrGetRenderModelAssetDataEXT(asset, &data_info, &data);
 		data.bufferCapacityInput = data.bufferCountOutput;
 		data.buffer              = sk_malloc_t(uint8_t, data.bufferCountOutput);
 		r = xrGetRenderModelAssetDataEXT(asset, &data_info, &data);
-		if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrGetRenderModelAssetDataEXT", openxr_string(r));
+		if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrGetRenderModelAssetDataEXT", openxr_string(r)); xrDestroyRenderModelAssetEXT(asset); xr_ext_render_model_source_destroy(&source); return false; }
 
-		result.model = model_create_mem(name, data.buffer, data.bufferCountOutput);
-		model_set_id(result.model, name);
+		source.model_asset = model_create_mem(name, data.buffer, data.bufferCountOutput);
+		model_set_id(source.model_asset, name);
 
 		sk_free(data.buffer);
 	}
-	result.model = model_copy(result.model);
 
+	// Find the animatable nodes on this model
 	XrRenderModelAssetPropertiesGetInfoEXT asset_props_info = { XR_TYPE_RENDER_MODEL_ASSET_PROPERTIES_GET_INFO_EXT };
 	XrRenderModelAssetPropertiesEXT        asset_props      = { XR_TYPE_RENDER_MODEL_ASSET_PROPERTIES_EXT };
 	XrRenderModelAssetNodePropertiesEXT*   node_props       = sk_malloc_t(XrRenderModelAssetNodePropertiesEXT, props.animatableNodeCount);
 	asset_props.nodePropertyCount = props.animatableNodeCount;
 	asset_props.nodeProperties    = node_props;
 	r = xrGetRenderModelAssetPropertiesEXT(asset, &asset_props_info, &asset_props);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrGetRenderModelAssetPropertiesEXT", openxr_string(r));
-	result.anim_nodes      = sk_malloc_t(model_node_id, asset_props.nodePropertyCount);
-	result.anim_node_count = asset_props.nodePropertyCount;
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrGetRenderModelAssetPropertiesEXT", openxr_string(r)); sk_free(node_props); xrDestroyRenderModelAssetEXT(asset); xr_ext_render_model_source_destroy(&source); return false; }
+	source.anim_nodes      = sk_malloc_t(model_node_id, asset_props.nodePropertyCount);
+	source.anim_node_count = asset_props.nodePropertyCount;
 	for (uint32_t i = 0; i < asset_props.nodePropertyCount; i++) {
-		result.anim_nodes[i] = model_node_find(result.model, asset_props.nodeProperties[i].uniqueName);
-		matrix m = model_node_get_transform_local(result.model, result.anim_nodes[i]);
-		vec3   p = matrix_extract_translation(m);
+		source.anim_nodes[i] = model_node_find(source.model_asset, asset_props.nodeProperties[i].uniqueName);
 	}
-
-	result.state_query                = { XR_TYPE_RENDER_MODEL_STATE_EXT };
-	result.state_query.nodeStateCount = asset_props.nodePropertyCount;
-	result.state_query.nodeStates     = sk_malloc_t(XrRenderModelNodeStateEXT, asset_props.nodePropertyCount);
 
 	sk_free(node_props);
 
 	xrDestroyRenderModelAssetEXT(asset);
 
-	return result;
+	int32_t source_idx = local.sources.add(source);
+
+	// Now we've loaded the model, instantiate it for the user!
+	return xr_ext_render_model_source_instantiate(source_idx, out_model);
+}
+
+///////////////////////////////////////////
+
+XrRenderModelEXT xr_ext_render_model_get_model(const xr_render_model_t* model) {
+	xr_render_model_source_t* source = &local.sources[model->asset_idx];
+	return source->render_model;
 }
 
 ///////////////////////////////////////////
 
 void xr_ext_render_model_update(xr_render_model_t* ref_model) {
-	XrRenderModelStateGetInfoEXT info  = { XR_TYPE_RENDER_MODEL_STATE_GET_INFO_EXT };
+	xr_render_model_source_t* model = &local.sources[ref_model->asset_idx];
+
+	XrRenderModelStateGetInfoEXT info = { XR_TYPE_RENDER_MODEL_STATE_GET_INFO_EXT };
 	info.displayTime = xr_time;
-	XrResult r = xrGetRenderModelStateEXT(ref_model->render_model, &info, &ref_model->state_query);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrGetRenderModelStateEXT", openxr_string(r));
+	XrResult r = xrGetRenderModelStateEXT(model->render_model, &info, &ref_model->state_query);
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrGetRenderModelStateEXT", openxr_string(r)); return; }
 
 	for (uint32_t i = 0; i < ref_model->state_query.nodeStateCount; i++) {
-		model_node_id node = ref_model->anim_nodes[i];
+		model_node_id node = model->anim_nodes[i];
 
 		XrVector3f    p = ref_model->state_query.nodeStates[i].nodePose.position;
 		XrQuaternionf r = ref_model->state_query.nodeStates[i].nodePose.orientation;
@@ -182,11 +214,41 @@ void xr_ext_render_model_update(xr_render_model_t* ref_model) {
 ///////////////////////////////////////////
 
 void xr_ext_render_model_destroy(xr_render_model_t* ref_model) {
-	model_release (ref_model->model);
-	xrDestroySpace(ref_model->space);
-	sk_free(ref_model->anim_nodes);
+	model_release(ref_model->model);
+	if (ref_model->space != XR_NULL_HANDLE) xrDestroySpace(ref_model->space);
 	sk_free(ref_model->state_query.nodeStates);
 	*ref_model = {};
+}
+
+///////////////////////////////////////////
+
+void xr_ext_render_model_source_destroy(xr_render_model_source_t* ref_model) {
+	model_release(ref_model->model_asset);
+	if (ref_model->render_model != XR_NULL_HANDLE) xrDestroyRenderModelEXT(ref_model->render_model);
+	sk_free(ref_model->anim_nodes);
+	*ref_model = {};
+}
+
+///////////////////////////////////////////
+
+bool xr_ext_render_model_source_instantiate(int32_t model_idx, xr_render_model_t* out_inst) {
+	xr_render_model_source_t* model  = &local.sources[model_idx];
+	xr_render_model_t  result = {};
+
+	result.asset_idx = model_idx;
+	result.model = model_copy(model->model_asset);
+
+	XrRenderModelSpaceCreateInfoEXT space_info = { XR_TYPE_RENDER_MODEL_SPACE_CREATE_INFO_EXT };
+	space_info.renderModel = model->render_model;
+	XrResult r = xrCreateRenderModelSpaceEXT(xr_session, &space_info, &result.space);
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrCreateRenderModelSpaceEXT", openxr_string(r)); xr_ext_render_model_destroy(&result); return false; }
+
+	result.state_query = { XR_TYPE_RENDER_MODEL_STATE_EXT };
+	result.state_query.nodeStateCount = model->anim_node_count;
+	result.state_query.nodeStates     = sk_malloc_t(XrRenderModelNodeStateEXT, model->anim_node_count);
+
+	*out_inst = result;
+	return true;
 }
 
 } // namespace sk
