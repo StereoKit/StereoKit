@@ -105,6 +105,12 @@ const char* device_get_runtime() {
 
 ///////////////////////////////////////////
 
+uint64_t device_get_runtime_version() {
+	return device_data.runtime_version;
+}
+
+///////////////////////////////////////////
+
 const char* device_get_gpu() {
 	return device_data.gpu;
 }

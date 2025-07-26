@@ -253,6 +253,7 @@ bool openxr_create_system() {
 		"xrGetInstanceProperties");
 
 	device_data.runtime = string_copy(inst_properties.runtimeName);
+	device_data.runtime_version = inst_properties.runtimeVersion;
 	log_diagf("Found OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
 		inst_properties.runtimeName,
 		XR_VERSION_MAJOR(inst_properties.runtimeVersion),
