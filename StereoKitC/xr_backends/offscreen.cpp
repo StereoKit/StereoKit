@@ -35,6 +35,7 @@ bool offscreen_init() {
 	device_data.display_type      = display_type_flatscreen;
 	device_data.name              = string_copy("Offscreen");
 	device_data.runtime           = string_copy("None");
+	device_data.runtime_version   = 0;
 
 	local = sk_malloc_zero_t(offscreen_backend_state_t, 1);
 

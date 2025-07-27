@@ -45,6 +45,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DeviceTracking device_get_tracking            ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr         device_get_name                ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr         device_get_runtime             ();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong          device_get_runtime_version     ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr         device_get_gpu                 ();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool           device_has_eye_gaze            ();

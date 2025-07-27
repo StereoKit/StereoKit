@@ -553,6 +553,7 @@ SK_API fov_info_t       device_display_get_fov    (void);
 SK_API device_tracking_ device_get_tracking       (void);
 SK_API const char*      device_get_name           (void);
 SK_API const char*      device_get_runtime        (void);
+SK_API uint64_t         device_get_runtime_version(void);
 SK_API const char*      device_get_gpu            (void);
 SK_API bool32_t         device_has_eye_gaze       (void);
 SK_API bool32_t         device_has_hand_tracking  (void);
