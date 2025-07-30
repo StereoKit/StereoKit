@@ -784,8 +784,7 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 		skg_tex_destroy (&texture->tex);
 
 	skg_tex_type_ skg_type = skg_tex_type_image;
-	if      (type & tex_type_cubemap     ) skg_type = skg_tex_type_cubemap;
-	else if (type & tex_type_zbuffer     ) skg_type = skg_tex_type_zbuffer;
+	if      (type & tex_type_zbuffer     ) skg_type = skg_tex_type_zbuffer;
 	else if (type & tex_type_rendertarget) skg_type = skg_tex_type_rendertarget;
 	else if (type & tex_type_depthtarget ) skg_type = skg_tex_type_depthtarget;
 
@@ -817,8 +816,7 @@ void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, 
 		skg_tex_destroy (&texture->tex);
 
 	skg_tex_type_ skg_type = skg_tex_type_image;
-	if      (type & tex_type_cubemap     ) skg_type = skg_tex_type_cubemap;
-	else if (type & tex_type_zbuffer     ) skg_type = skg_tex_type_zbuffer;
+	if      (type & tex_type_zbuffer     ) skg_type = skg_tex_type_zbuffer;
 	else if (type & tex_type_rendertarget) skg_type = skg_tex_type_rendertarget;
 	else if (type & tex_type_depthtarget ) skg_type = skg_tex_type_depthtarget;
 
@@ -928,8 +926,8 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		skg_use_      use      = texture->type & tex_type_dynamic ? skg_use_dynamic  : skg_use_static;
 		skg_mip_      use_mips = texture->type & tex_type_mips    ? skg_mip_generate : skg_mip_none;
 		skg_tex_type_ type     = skg_tex_type_image;
-		if      (texture->type & tex_type_cubemap)      type = skg_tex_type_cubemap;
-		else if (texture->type & tex_type_zbuffer)      type = skg_tex_type_zbuffer;
+		if (texture->type & tex_type_cubemap) use = (skg_use_)(use | skg_use_cubemap);
+		if      (texture->type & tex_type_zbuffer)      type = skg_tex_type_zbuffer;
 		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
 		else if (texture->type & tex_type_depthtarget)  type = skg_tex_type_depthtarget;
 
