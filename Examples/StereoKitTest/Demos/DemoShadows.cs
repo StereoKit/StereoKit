@@ -122,8 +122,7 @@ public class DynamicShadows : IStepper
 		public float biasFar;
 	}
 
-	Tex[] shadowMap    = new Tex[2];
-	Tex[] shadowMapFar = new Tex[2];
+	Tex[] shadowMap = new Tex[2];
 	MaterialBuffer<ShadowBuffer> shadowBuffer;
 	ShadowBuffer last;
 
@@ -138,7 +137,7 @@ public class DynamicShadows : IStepper
 
 	public float NearClip          = 0.01f;
 	public float FarClip           = 20;
-	public float CascadeMultiplier = 4;
+	public float CascadeMultiplier = 8;
 	public Vec3  LightDirection;
 
 	public bool Enabled => true;
@@ -154,17 +153,12 @@ public class DynamicShadows : IStepper
 	{
 		shadowBuffer = new MaterialBuffer<ShadowBuffer>(12);
 		for (int i = 0; i < shadowMap.Length; i++) {
-			shadowMap   [i] = Tex.RenderTarget(Resolution, Resolution, 1, TexFormat.None, TexFormat.Depth16);
-			shadowMap   [i].SampleMode  = TexSample.Linear;
-			shadowMap   [i].SampleComp  = TexSampleComp.Less;
-			shadowMap   [i].AddressMode = TexAddress.Clamp;
-			shadowMap   [i].Id          = "app/shadow/zbuffer/"+i;
-
-			shadowMapFar[i] = Tex.RenderTarget(Resolution, Resolution, 1, TexFormat.None, TexFormat.Depth16);
-			shadowMapFar[i].SampleMode  = TexSample.Linear;
-			shadowMapFar[i].SampleComp  = TexSampleComp.Less;
-			shadowMapFar[i].AddressMode = TexAddress.Clamp;
-			shadowMapFar[i].Id          = "app/shadow/zbuffer/far_"+i;
+			shadowMap[i] = new Tex(TexType.Depthtarget, TexFormat.Depth16);
+			shadowMap[i].SetSize(Resolution, Resolution, 2);
+			shadowMap[i].SampleMode  = TexSample.Linear;
+			shadowMap[i].SampleComp  = TexSampleComp.Less;
+			shadowMap[i].AddressMode = TexAddress.Clamp;
+			shadowMap[i].Id          = "app/shadow/zbuffer/"+i;
 		}
 		return true;
 	}
@@ -188,7 +182,7 @@ public class DynamicShadows : IStepper
 		Vec2 planeCoords = new Vec2(
 			Vec3.Dot(localP, sunPose.orientation * Vec3.UnitX),
 			Vec3.Dot(localP, sunPose.orientation * Vec3.UnitY) );
-		float texelSize = (Size * CascadeMultiplier) / shadowMapFar[0].Width;
+		float texelSize = (Size * CascadeMultiplier) / Resolution;
 		Vec2  texCoords = planeCoords / texelSize;
 		texCoords = new Vec2((float)Math.Round(texCoords.x), (float)Math.Round(texCoords.y));
 		Vec2 quantizedPlaneCoords = texCoords * texelSize;
@@ -220,10 +214,9 @@ public class DynamicShadows : IStepper
 		shadowBuffer.Set(last);
 		last = curr;
 
-		Renderer.RenderTo(shadowMap   [renderTo], view, proj,    RenderLayer.All &~ RenderLayer.Vfx);
-		Renderer.RenderTo(shadowMapFar[renderTo], view, projFar, RenderLayer.All &~ RenderLayer.Vfx);
-		Renderer.SetGlobalTexture(12, shadowMap   [renderFrom]);
-		Renderer.SetGlobalTexture(13, shadowMapFar[renderFrom]);
+		Renderer.RenderTo(shadowMap[renderTo], 0, view, proj,    RenderLayer.All &~ RenderLayer.Vfx);
+		Renderer.RenderTo(shadowMap[renderTo], 1, view, projFar, RenderLayer.All &~ RenderLayer.Vfx);
+		Renderer.SetGlobalTexture(12, shadowMap[renderFrom]);
 	}
 
 	public void DebugDraw()

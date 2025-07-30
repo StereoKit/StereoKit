@@ -437,7 +437,13 @@ namespace StereoKit
 		/// If the width of this value is zero, then this will render to the
 		/// entire texture.</param>
 		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
-			=> NativeAPI.render_to(toRendertarget._inst, camera, projection, layerFilter, clear, viewport);
+			=> NativeAPI.render_to(toRendertarget._inst, 0, IntPtr.Zero, camera, projection, layerFilter, clear, viewport);
+
+		/// <inheritdoc cref="RenderTo(Tex, Matrix, Matrix, RenderLayer, RenderClear, Rect)"/>
+		/// <param name="toTargetIndex">Index of the render target's array
+		/// texture we want to draw to.</param>
+		public static void RenderTo(Tex toRendertarget, int toTargetIndex, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+			=> NativeAPI.render_to(toRendertarget._inst, toTargetIndex, IntPtr.Zero, camera, projection, layerFilter, clear, viewport);
 
 		/// <summary>This attaches a texture resource globally across all
 		/// shaders. StereoKit uses this to attach the sky cubemap for use in

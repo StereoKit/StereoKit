@@ -20,11 +20,11 @@ cbuffer shadow_buffer : register(b12) {
 	float3 light_color;
 	float bias_far;
 };
-Texture2D              shadow_map   : register(t12);
+Texture2DArray         shadow_map   : register(t12);
 SamplerComparisonState shadow_map_s : register(s12);
 
-Texture2D              shadow_map_far   : register(t13);
-SamplerComparisonState shadow_map_far_s : register(s13);
+//Texture2D              shadow_map_far   : register(t13);
+//SamplerComparisonState shadow_map_far_s : register(s13);
 
 ///////////////////////////////////////////
 
@@ -84,32 +84,32 @@ psIn vs(vsIn input, sk_vs_input_t sk_in) {
 // Fast
 float shadow_factor_fast(float3 uv) {
 	if (any(uv.xy != saturate(uv.xy))) { // Check if this is the far cascade or the near one
-		return shadow_map_far.SampleCmpLevelZero(shadow_map_far_s, (uv.xy - 0.5) / far_scale + 0.5, uv.z);
+		return shadow_map.SampleCmpLevelZero(shadow_map_s, float3((uv.xy - 0.5) / far_scale + 0.5, 1), uv.z);
 	} else {
-		return shadow_map.SampleCmpLevelZero(shadow_map_s, uv.xy, uv.z);
+		return shadow_map.SampleCmpLevelZero(shadow_map_s, float3(uv.xy, 0), uv.z);
 	}
 }
 
 ///////////////////////////////////////////
 
 // 2x2 PCF filter
-float shadow_factor_pcf2(float3 uv, float scale) {
+/*float shadow_factor_pcf2(float3 uv, float scale) {
 	float shadow_factor = 0.0;
 	float radius        = shadowmap_size * scale;
 
-	float2 sample_offsets[4] = {
-		float2(-0.6,  0.9),
-		float2( 0.9,  0.6),
-		float2( 0.6, -0.9),
-		float2(-0.9, -0.6)
-	};
-	
 	//float2 sample_offsets[4] = {
-	//	float2(-1,  1),
-	//	float2( 1,  1),
-	//	float2( 1, -1),
-	//	float2(-1, -1)
+	//	float2(-0.6,  0.9),
+	//	float2( 0.9,  0.6),
+	//	float2( 0.6, -0.9),
+	//	float2(-0.9, -0.6)
 	//};
+	
+	float2 sample_offsets[4] = {
+		float2(-1,  1),
+		float2( 1,  1),
+		float2( 1, -1),
+		float2(-1, -1)
+	};
 	
 	//float2 sample_offsets[4] = {
 	//	float2(-1,  0),
@@ -132,7 +132,8 @@ float shadow_factor_pcf2(float3 uv, float scale) {
 		}
 	}
 	return shadow_factor / 4.0;
-}
+}*/
+
 ///////////////////////////////////////////
 
 // Basic 3x3 PCF filter
@@ -144,7 +145,7 @@ float shadow_factor_pcf3(float3 uv, float scale) {
 	if (any(uv.xy != saturate(uv.xy))) { // Check if this is the far cascade or the near one
 		// Convert this to the far cascade space
 		uv.xy = (uv.xy - 0.5) / far_scale + 0.5;
-		return shadow_map_far.SampleCmpLevelZero(shadow_map_far_s, uv.xy, uv.z);
+		return shadow_map.SampleCmpLevelZero(shadow_map_s, float3(uv.xy, 1), uv.z);
 		//for (int x = -1; x <= 1; x++) {
 		//	for (int y = -1; y <= 1; y++) {
 		//		float2 offset = float2(x, y) * radius;
@@ -156,7 +157,7 @@ float shadow_factor_pcf3(float3 uv, float scale) {
 		for (int x = -1; x <= 1; x++) {
 			for (int y = -1; y <= 1; y++) {
 				float2 offset = float2(x, y) * radius;
-				shadow_factor += shadow_map.SampleCmpLevelZero(shadow_map_s, uv.xy + offset, uv.z);
+				shadow_factor += shadow_map.SampleCmpLevelZero(shadow_map_s, float3(uv.xy + offset, 0), uv.z);
 			}
 		}
 		return shadow_factor / 9.0;
@@ -165,7 +166,7 @@ float shadow_factor_pcf3(float3 uv, float scale) {
 
 ///////////////////////////////////////////
 
-float shadow_factor_pcf5(float3 uv, float scale) {
+/*float shadow_factor_pcf5(float3 uv, float scale) {
 	float shadow_factor = 0.0;
 	float radius        = shadowmap_size * scale;
 
@@ -201,7 +202,7 @@ float shadow_factor_pcf_rotated_world(float3 world, float3 uv, float scale) {
 		shadow_factor += shadow_map.SampleCmpLevelZero(shadow_map_s, sample_pos, uv.z);
 	}
 	return lerp(0.1, 1, shadow_factor / (float)samples);
-}
+}*/
 
 ///////////////////////////////////////////
 
@@ -333,7 +334,7 @@ float shadow_factor_rotated_early_out(float3 world, float3 uv) {
 
 ///////////////////////////////////////////
 
-float shadow_factor_pcss(float3 uv) {
+/*float shadow_factor_pcss(float3 uv) {
 	float biased_z = uv.z - shadowmap_bias;
 	float avg_blocker_depth = 0.0;
 	int   num_blockers = 0;
@@ -442,7 +443,7 @@ float shadow_factor_pcss2(float3 uv) {
 	//}
 	//
 	//return lerp(0.1, 1.0, shadow_factor / float(pcf_samples));
-}
+}*/
 
 ///////////////////////////////////////////
 
