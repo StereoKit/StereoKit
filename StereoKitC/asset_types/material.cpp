@@ -336,6 +336,14 @@ void material_set_depth_write(material_t material, bool32_t write_enabled) {
 
 ///////////////////////////////////////////
 
+void material_set_depth_clip(material_t material, bool32_t clip_enabled) {
+	material->depth_clip = clip_enabled;
+	skg_pipeline_set_depth_clip(&material->pipeline, clip_enabled);
+	material_update_label(material);
+}
+
+///////////////////////////////////////////
+
 void material_set_queue_offset(material_t material, int32_t offset) {
 	material->queue_offset = offset;
 }
@@ -381,6 +389,12 @@ depth_test_ material_get_depth_test(material_t material) {
 
 bool32_t material_get_depth_write(material_t material) {
 	return material->depth_write;
+}
+
+///////////////////////////////////////////
+
+bool32_t material_get_depth_clip(material_t material) {
+	return material->depth_clip;
 }
 
 ///////////////////////////////////////////

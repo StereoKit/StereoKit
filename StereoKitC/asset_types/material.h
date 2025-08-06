@@ -31,6 +31,7 @@ struct _material_t {
 	bool32_t          wireframe;
 	depth_test_       depth_test;
 	bool32_t          depth_write;
+	bool32_t          depth_clip;
 	int32_t           queue_offset;
 	skg_pipeline_t    pipeline;
 	material_t        chain;
