@@ -165,7 +165,7 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 		surface->tex         = tex_create(tex_type_image_nomips | tex_type_rendertarget, surface->color);
 		surface->multisample = multisample;
 		surface->enabled     = true;
-		tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, nullptr, multisample);
+		tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample, nullptr);
 
 		char name[64];
 		snprintf(name, sizeof(name), "sk/render/pipeline_surface_%d", surface_id);
@@ -186,7 +186,7 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 
 	log_diagf("Resizing target surface: <~grn>%d<~clr>x<~grn>%d<~clr>x<~grn>%d<~clr>@<~grn>%d<~clr>msaa", width, height, surface->array_count, multisample);
 	surface->multisample = multisample;
-	tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, nullptr, multisample);
+	tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample, nullptr);
 
 	return true;
 }
@@ -198,6 +198,11 @@ void render_pipeline_surface_to_swapchain(pipeline_surface_id surface_id, skg_sw
 
 	skg_event_begin("Present");
 	{
+		// If this is a zbuffer, then we don't need depth data after this point. We
+		// discard it if we can.
+		if (surface->tex->depth_buffer)
+			skg_tex_target_discard(&surface->tex->depth_buffer->tex);
+
 		// This copies the color data over to the swapchain, and resolves any
 		// multisampling on the primary target texture.
 		skg_tex_copy_to_swapchain(&surface->tex->tex, swapchain);
@@ -215,6 +220,11 @@ void render_pipeline_surface_to_tex(pipeline_surface_id surface_id, tex_t destin
 
 	skg_event_begin("Present to Tex");
 	{
+		// If this is a zbuffer, then we don't need depth data after this point. We
+		// discard it if we can.
+		if (surface->tex->depth_buffer)
+			skg_tex_target_discard(&surface->tex->depth_buffer->tex);
+
 		if (mat) {
 			material_set_texture(mat, "source", surface->tex);
 			render_blit(destination, mat);

@@ -1016,8 +1016,14 @@ typedef enum tex_type_ {
 	  that might be passed in as a target to Renderer.Blit, or other
 	  such situations.*/
 	tex_type_rendertarget  = 1 << 2,
-	/*This texture contains depth data, not color data!*/
+	/*This texture contains depth data, not color data! It is writeable, but
+	  not readable. This makes it great for zbuffers, but not shadowmaps or
+	  other textures that need to be read from later on.*/
 	tex_type_depth         = 1 << 3,
+	/*This texture contains depth data, not color data! It is writeable, but
+	  not readable. This makes it great for zbuffers, but not shadowmaps or
+	  other textures that need to be read from later on.*/
+	tex_type_zbuffer       = 1 << 3,
 	/*This texture will generate mip-maps any time the contents
 	  change. Mip-maps are a list of textures that are each half the
 	  size of the one before them! This is used to prevent textures from
@@ -1027,6 +1033,10 @@ typedef enum tex_type_ {
 	  CPU (not renders)! This ensures the graphics card stores it
 	  someplace where writes are easy to do quickly.*/
 	tex_type_dynamic       = 1 << 5,
+	/*This texture contains depth data, not color data! It is writeable and
+	  readable. This makes it great for shadowmaps or other textures that need to
+	  be read from later on.*/
+	tex_type_depthtarget   = 1 << 6,
 	/*A standard color image that also generates mip-maps
 	  automatically.*/
 	tex_type_image         = tex_type_image_nomips | tex_type_mips,
@@ -1049,6 +1059,18 @@ typedef enum tex_sample_ {
 	  viewed at an extreme angle!*/
 	tex_sample_anisotropic
 } tex_sample_;
+
+typedef enum tex_sample_comp_ {
+	tex_sample_comp_none = 0,
+	tex_sample_comp_less,
+	tex_sample_comp_less_or_eq,
+	tex_sample_comp_greater,
+	tex_sample_comp_greater_or_eq,
+	tex_sample_comp_equal,
+	tex_sample_comp_not_equal,
+	tex_sample_comp_always,
+	tex_sample_comp_never,
+} tex_sample_comp_;
 
 /*What happens when the shader asks for a texture coordinate
   that's outside the texture?? Believe it or not, this happens plenty
@@ -1094,8 +1116,8 @@ SK_API asset_state_ tex_asset_state         (const tex_t texture);
 SK_API void         tex_on_load             (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
 SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context));
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
-SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
@@ -1110,6 +1132,8 @@ SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
 SK_API void         tex_set_sample          (tex_t texture, tex_sample_ sample sk_default(tex_sample_linear));
 SK_API tex_sample_  tex_get_sample          (tex_t texture);
+SK_API void             tex_set_sample_comp (tex_t texture, tex_sample_comp_ compare sk_default(tex_sample_comp_none));
+SK_API tex_sample_comp_ tex_get_sample_comp (tex_t texture);
 SK_API void         tex_set_address         (tex_t texture, tex_address_ address_mode sk_default(tex_address_wrap));
 SK_API tex_address_ tex_get_address         (tex_t texture);
 SK_API void         tex_set_anisotropy      (tex_t texture, int32_t anisotropy_level sk_default(4));
@@ -1277,6 +1301,7 @@ SK_API void              material_set_cull        (material_t material, cull_ mo
 SK_API void              material_set_wireframe   (material_t material, bool32_t wireframe);
 SK_API void              material_set_depth_test  (material_t material, depth_test_ depth_test_mode);
 SK_API void              material_set_depth_write (material_t material, bool32_t write_enabled);
+SK_API void              material_set_depth_clip  (material_t material, bool32_t clip_enabled);
 SK_API void              material_set_queue_offset(material_t material, int32_t offset);
 SK_API void              material_set_chain       (material_t material, material_t chain_material);
 SK_API transparency_     material_get_transparency(material_t material);
@@ -1284,6 +1309,7 @@ SK_API cull_             material_get_cull        (material_t material);
 SK_API bool32_t          material_get_wireframe   (material_t material);
 SK_API depth_test_       material_get_depth_test  (material_t material);
 SK_API bool32_t          material_get_depth_write (material_t material);
+SK_API bool32_t          material_get_depth_clip  (material_t material);
 SK_API int32_t           material_get_queue_offset(material_t material);
 SK_API material_t        material_get_chain       (material_t material);
 SK_API void              material_set_float       (material_t material, const char *name, float    value);
@@ -1323,9 +1349,10 @@ SK_API int32_t           material_get_param_count (material_t material);
 SK_API void              material_set_shader      (material_t material, shader_t shader);
 SK_API shader_t          material_get_shader      (material_t material);
 
-SK_API material_buffer_t material_buffer_create   (int32_t register_slot, int32_t size);
-SK_API void              material_buffer_set_data (material_buffer_t buffer, const void *buffer_data);
+SK_API material_buffer_t material_buffer_create   (int32_t size);
+SK_API void              material_buffer_addref   (material_buffer_t buffer);
 SK_API void              material_buffer_release  (material_buffer_t buffer);
+SK_API void              material_buffer_set_data (material_buffer_t buffer, const void *buffer_data);
 
 ///////////////////////////////////////////
 
@@ -1699,6 +1726,7 @@ SK_API color128              render_get_clear_color(void);
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex (void);
 SK_API void                  render_global_texture (int32_t register_slot, tex_t texture);
+SK_API void                  render_global_buffer  (int32_t register_slot, material_buffer_t buffer);
 SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t material,          const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
@@ -1707,8 +1735,7 @@ SK_API void                  render_screenshot     (const char *file_utf8, int32
 //TODO: for v0.4, reorder parameters, context in particular should be next to callback
 SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
 SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
-SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
-SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
+SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 SK_API render_list_t         render_get_primary_list(void);
 

@@ -31,12 +31,14 @@ struct _material_t {
 	bool32_t          wireframe;
 	depth_test_       depth_test;
 	bool32_t          depth_write;
+	bool32_t          depth_clip;
 	int32_t           queue_offset;
 	skg_pipeline_t    pipeline;
 	material_t        chain;
 };
 
 struct _material_buffer_t {
+	int32_t      refs;
 	int32_t      size;
 	skg_buffer_t buffer;
 };
@@ -45,7 +47,5 @@ void   material_destroy          (material_t material);
 void   material_check_dirty      (material_t material);
 void   material_check_tex_changes(material_t material);
 size_t material_param_size       (material_param_ type);
-
-extern _material_buffer_t material_buffers[14];
 
 } // namespace sk

@@ -3,6 +3,7 @@
 #include "texture.h"
 #include "../libraries/stref.h"
 #include "../libraries/array.h"
+#include "../libraries/atomic_util.h"
 #include "../sk_memory.h"
 #include "../systems/defaults.h"
 
@@ -11,7 +12,6 @@
 
 namespace sk {
 
-_material_buffer_t material_buffers[14] = {};
 
 ///////////////////////////////////////////
 
@@ -336,6 +336,14 @@ void material_set_depth_write(material_t material, bool32_t write_enabled) {
 
 ///////////////////////////////////////////
 
+void material_set_depth_clip(material_t material, bool32_t clip_enabled) {
+	material->depth_clip = clip_enabled;
+	skg_pipeline_set_depth_clip(&material->pipeline, clip_enabled);
+	material_update_label(material);
+}
+
+///////////////////////////////////////////
+
 void material_set_queue_offset(material_t material, int32_t offset) {
 	material->queue_offset = offset;
 }
@@ -381,6 +389,12 @@ depth_test_ material_get_depth_test(material_t material) {
 
 bool32_t material_get_depth_write(material_t material) {
 	return material->depth_write;
+}
+
+///////////////////////////////////////////
+
+bool32_t material_get_depth_clip(material_t material) {
+	return material->depth_clip;
 }
 
 ///////////////////////////////////////////
@@ -831,23 +845,34 @@ int material_get_param_count(material_t material) {
 
 ///////////////////////////////////////////
 
-material_buffer_t material_buffer_create(int32_t register_slot, int32_t size) {
-	if (register_slot < 1 || register_slot == 2 || register_slot >= (sizeof(material_buffers)/sizeof(material_buffers[0]))) {
-		log_errf("material_buffer_create: bad slot id '%d', use 3-%d.", register_slot, (sizeof(material_buffers)/sizeof(material_buffers[0])) - 1);
-		return nullptr;
+material_buffer_t material_buffer_create(int32_t size) {
+	_material_buffer_t* buffer = sk_malloc_t(_material_buffer_t, 1);
+	buffer->size   = size;
+	buffer->refs   = 1;
+	buffer->buffer = skg_buffer_create(nullptr, 1, size, skg_buffer_type_constant, skg_use_dynamic);
+	return buffer;
+}
+
+///////////////////////////////////////////
+
+void material_buffer_addref(material_buffer_t buffer) {
+	atomic_increment(&buffer->refs);
+}
+
+///////////////////////////////////////////
+
+void material_buffer_destroy(material_buffer_t buffer) {
+	skg_buffer_destroy(&buffer->buffer);
+	*buffer = {};
+	sk_free(buffer);
+}
+
+///////////////////////////////////////////
+
+void material_buffer_release(material_buffer_t buffer) {
+	if (buffer && atomic_decrement(&buffer->refs) == 0) {
+		material_buffer_destroy(buffer);
 	}
-	if (material_buffers[register_slot].size != 0) {
-		log_errf("material_buffer_create: slot id '%d' is already in use.", register_slot);
-		return nullptr;
-	}
-	material_buffers[register_slot].buffer = skg_buffer_create(nullptr, 1, size, skg_buffer_type_constant, skg_use_dynamic);
-	material_buffers[register_slot].size   = size;
-#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
-	char name[64];
-	snprintf(name, sizeof(name), "render/material_buffer/register_%d", register_slot);
-	skg_buffer_name(&material_buffers[register_slot].buffer, name);
-#endif
-	return &material_buffers[register_slot];
 }
 
 ///////////////////////////////////////////
@@ -886,13 +911,6 @@ void material_check_dirty(material_t material) {
 
 	skg_buffer_set_contents(&material->args.buffer_gpu, material->args.buffer, (uint32_t)material->args.buffer_size);
 	material->args.buffer_dirty = false;
-}
-
-///////////////////////////////////////////
-
-void material_buffer_release(material_buffer_t buffer) {
-	skg_buffer_destroy(&buffer->buffer);
-	*buffer = {};
 }
 
 } // namespace sk

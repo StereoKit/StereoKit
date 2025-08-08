@@ -201,6 +201,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] byte[] data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] ushort[] data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_colors          (IntPtr texture, int width, int height, [In] float[] data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_color_arr       (IntPtr texture, int width, int height, IntPtr array_data, int array_count, int multisample, IntPtr out_sh_lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_mem             (IntPtr texture, [In] byte[] data, UIntPtr data_size, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, [MarshalAs(UnmanagedType.Bool)] bool blocking, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   tex_set_surface         (IntPtr texture, IntPtr native_surface, TexType type, long native_fmt, int width, int height, int surface_count, int multisample, int framebuffer_multisample, [MarshalAs(UnmanagedType.Bool)] bool owned);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr tex_get_surface         (IntPtr texture);
@@ -218,6 +219,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int        tex_get_height      (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       tex_set_sample      (IntPtr texture, TexSample sample = TexSample.Linear);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexSample  tex_get_sample      (IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void          tex_set_sample_comp (IntPtr texture, TexSampleComp compare = TexSampleComp.None);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexSampleComp tex_get_sample_comp (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       tex_set_address     (IntPtr texture, TexAddress address_mode = TexAddress.Wrap);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexAddress tex_get_address     (IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void       tex_set_anisotropy  (IntPtr texture, int anisotropy_level = 4);
@@ -261,6 +264,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_wireframe   (IntPtr material, [MarshalAs(UnmanagedType.Bool)] bool wireframe);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_depth_test  (IntPtr material, DepthTest    depth_test_mode);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_depth_write (IntPtr material, [MarshalAs(UnmanagedType.Bool)] bool write_enabled);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_depth_clip  (IntPtr material, [MarshalAs(UnmanagedType.Bool)] bool clip_enabled);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_queue_offset(IntPtr material, int          offset);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_chain       (IntPtr material, IntPtr       chain_material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Transparency material_get_transparency(IntPtr material);
@@ -270,6 +274,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DepthTest    material_get_depth_test  (IntPtr material);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         material_get_depth_write (IntPtr material);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         material_get_depth_clip  (IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          material_get_queue_offset(IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       material_get_chain       (IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_float       (IntPtr material, string name, float  value);
@@ -313,9 +319,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_shader      (IntPtr material, IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_get_shader      (IntPtr material);
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_buffer_create  (int slot, int size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_buffer_set_data(IntPtr buffer, IntPtr data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_buffer_create  (int size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_buffer_addref  (IntPtr buffer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_buffer_release (IntPtr buffer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_buffer_set_data(IntPtr buffer, IntPtr data);
 
 		///////////////////////////////////////////
 
@@ -465,6 +472,7 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool               render_enabled_skytex ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_global_texture (int register_slot, IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_global_buffer  (int register_slot, IntPtr buffer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_mesh       (IntPtr mesh, IntPtr material, in Matrix transform, Color color, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_model      (IntPtr model, in Matrix transform, Color color, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_model_mat  (IntPtr model, IntPtr material_override, in Matrix transform, Color color, RenderLayer layer);
@@ -472,7 +480,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot     ([In] byte[] file_utf8, int file_quality_100, Pose viewpoint, int width, int height, float field_of_view_degrees);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_capture  ([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Pose viewpoint, int width, int height, float fov_degrees, TexFormat tex_format, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_viewpoint([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Matrix camera, Matrix projection, int width, int height, RenderLayer layer_filter, RenderClear clear, Rect viewport, TexFormat tex_format, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_to             (IntPtr to_rendertarget, in Matrix camera, in Matrix projection, RenderLayer layer_filter, RenderClear clear, Rect viewport);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_to             (IntPtr to_rendertarget, int to_target_index, IntPtr override_material, in Matrix camera, in Matrix projection, RenderLayer layer_filter, RenderClear clear, Rect viewport);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void render_get_device  (void **device, void **context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr             render_get_primary_list();
 

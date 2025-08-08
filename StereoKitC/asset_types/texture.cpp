@@ -30,7 +30,7 @@ bool   tex_load_image_data(void* data, size_t data_size, bool32_t srgb_data, tex
 bool   tex_load_image_info(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count);
 void   tex_update_label   (tex_t texture);
 size_t tex_format_pitch   (tex_format_ format, int32_t width);
-void  _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level);
+void  _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level);
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
 const char *tex_msg_invalid_fmt           = "Texture invalid format: %s";
@@ -436,12 +436,18 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 ///////////////////////////////////////////
 
 tex_t tex_create_rendertarget(int32_t width, int32_t height, int32_t msaa, tex_format_ color_format, tex_format_ depth_format) {
-	tex_t result = tex_create(tex_type_image_nomips | tex_type_rendertarget, color_format);
+	tex_t result;
+	if (color_format == tex_format_none && depth_format != tex_format_none) {
+		result = tex_create(tex_type_image_nomips | tex_type_depthtarget, depth_format);
 
-	tex_set_color_arr(result, width, height, nullptr, 1, nullptr, msaa);
-	if (depth_format != tex_format_none)
-		tex_add_zbuffer(result, depth_format);
+		tex_set_color_arr(result, width, height, nullptr, 1, msaa, nullptr);
+	} else {
+		result = tex_create(tex_type_image_nomips | tex_type_rendertarget, color_format);
 
+		tex_set_color_arr(result, width, height, nullptr, 1, msaa, nullptr);
+		if (depth_format != tex_format_none)
+			tex_add_zbuffer(result, depth_format);
+	}
 	return result;
 }
 
@@ -735,7 +741,7 @@ void tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	assets_unique_name(asset_type_tex, "sk/tex/zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex_create(tex_type_depth, format);
 	tex_set_id       (texture->depth_buffer, id);
-	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->tex.array_count, nullptr, texture->tex.multisample);
+	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->tex.array_count, texture->tex.multisample, nullptr);
 	skg_tex_attach_depth(&texture->tex, &texture->depth_buffer->tex);
 	texture->depth_buffer->header.state = asset_state_loaded;
 }
@@ -778,9 +784,9 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 		skg_tex_destroy (&texture->tex);
 
 	skg_tex_type_ skg_type = skg_tex_type_image;
-	if      (type & tex_type_cubemap     ) skg_type = skg_tex_type_cubemap;
-	else if (type & tex_type_depth       ) skg_type = skg_tex_type_depth;
+	if      (type & tex_type_zbuffer     ) skg_type = skg_tex_type_zbuffer;
 	else if (type & tex_type_rendertarget) skg_type = skg_tex_type_rendertarget;
+	else if (type & tex_type_depthtarget ) skg_type = skg_tex_type_depthtarget;
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
@@ -810,9 +816,9 @@ void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, 
 		skg_tex_destroy (&texture->tex);
 
 	skg_tex_type_ skg_type = skg_tex_type_image;
-	if      (type & tex_type_cubemap     ) skg_type = skg_tex_type_cubemap;
-	else if (type & tex_type_depth       ) skg_type = skg_tex_type_depth;
+	if      (type & tex_type_zbuffer     ) skg_type = skg_tex_type_zbuffer;
 	else if (type & tex_type_rendertarget) skg_type = skg_tex_type_rendertarget;
+	else if (type & tex_type_depthtarget ) skg_type = skg_tex_type_depthtarget;
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
@@ -920,12 +926,13 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		skg_use_      use      = texture->type & tex_type_dynamic ? skg_use_dynamic  : skg_use_static;
 		skg_mip_      use_mips = texture->type & tex_type_mips    ? skg_mip_generate : skg_mip_none;
 		skg_tex_type_ type     = skg_tex_type_image;
-		if      (texture->type & tex_type_cubemap)      type = skg_tex_type_cubemap;
-		else if (texture->type & tex_type_depth)        type = skg_tex_type_depth;
+		if (texture->type & tex_type_cubemap) use = (skg_use_)(use | skg_use_cubemap);
+		if      (texture->type & tex_type_zbuffer)      type = skg_tex_type_zbuffer;
 		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
+		else if (texture->type & tex_type_depthtarget)  type = skg_tex_type_depthtarget;
 
 		skg_tex_t new_tex = skg_tex_create(type, use, format, use_mips);
-		_tex_set_options(&new_tex, texture->sample_mode, texture->address_mode, texture->anisotropy);
+		_tex_set_options(&new_tex, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 		skg_tex_set_contents_arr(&new_tex, (const void**)array_data, array_count, mip_count, width, height, multisample);
 		skg_tex_t old_tex = texture->tex;
 		texture->tex = new_tex;
@@ -935,7 +942,7 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		tex_set_meta(texture, width, height, texture->format);
 
 		if (texture->depth_buffer != nullptr) {
-			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, nullptr, multisample);
+			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, multisample, nullptr);
 			tex_set_zbuffer  (texture, texture->depth_buffer);
 		}
 		tex_update_label(texture);
@@ -959,13 +966,13 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, spherical_harmonics_t* sh_lighting_info, int32_t multisample) {
-	tex_set_color_arr_mips(texture, width, height, array_data, array_count, 1, multisample, sh_lighting_info);
+void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t multisample, spherical_harmonics_t* out_sh_lighting_info) {
+	tex_set_color_arr_mips(texture, width, height, array_data, array_count, 1, multisample, out_sh_lighting_info);
 }
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample, spherical_harmonics_t *sh_lighting_info) {
+void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample, spherical_harmonics_t * out_sh_lighting_info) {
 	struct tex_upload_job_t {
 		tex_t                  texture;
 		int32_t                width;
@@ -976,7 +983,7 @@ void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void *
 		spherical_harmonics_t *sh_lighting_info;
 		int32_t                multisample;
 	};
-	tex_upload_job_t job_data = {texture, width, height, array_data, array_count, mip_count, sh_lighting_info, multisample};
+	tex_upload_job_t job_data = {texture, width, height, array_data, array_count, mip_count, out_sh_lighting_info, multisample};
 
 	// OpenGL doesn't like multiple threads, but D3D is fine with it.
 	if (backend_graphics_get() == backend_graphics_d3d11) {
@@ -1077,7 +1084,7 @@ void tex_set_colors(tex_t texture, int32_t width, int32_t height, void *data) {
 
 ///////////////////////////////////////////
 
-void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
+void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level) {
 	skg_tex_address_ skg_addr;
 	switch (address_mode) {
 	case tex_address_clamp:  skg_addr = skg_tex_address_clamp;  break;
@@ -1094,17 +1101,32 @@ void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ addre
 	default: skg_sample = skg_tex_sample_linear;
 	}
 
-	skg_tex_settings(texture, skg_addr, skg_sample, anisotropy_level);
+	skg_sample_compare_ skg_compare;
+	switch (compare) {
+	case tex_sample_comp_none:          skg_compare = skg_sample_compare_none;          break;
+	case tex_sample_comp_less:          skg_compare = skg_sample_compare_less;          break;
+	case tex_sample_comp_less_or_eq: 	skg_compare = skg_sample_compare_less_or_eq;    break;
+	case tex_sample_comp_greater:       skg_compare = skg_sample_compare_greater;       break;
+	case tex_sample_comp_greater_or_eq: skg_compare = skg_sample_compare_greater_or_eq; break;
+	case tex_sample_comp_equal:         skg_compare = skg_sample_compare_equal;         break;
+	case tex_sample_comp_not_equal:     skg_compare = skg_sample_compare_not_equal;     break;
+	case tex_sample_comp_always:        skg_compare = skg_sample_compare_always;        break;
+	case tex_sample_comp_never:         skg_compare = skg_sample_compare_never;         break;
+	default:                            skg_compare = skg_sample_compare_none;          break;
+	}
+
+	skg_tex_settings(texture, skg_addr, skg_sample, skg_compare, anisotropy_level);
 }
 
 ///////////////////////////////////////////
 
-void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
+void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level) {
 	texture->address_mode = address_mode;
 	texture->anisotropy   = anisotropy_level;
 	texture->sample_mode  = sample;
+	texture->sample_comp  = compare;
 
-	_tex_set_options(&texture->tex, sample, address_mode, anisotropy_level);
+	_tex_set_options(&texture->tex, sample, address_mode, texture->sample_comp, anisotropy_level);
 	tex_update_label(texture);
 }
 
@@ -1133,7 +1155,7 @@ int32_t tex_get_height(tex_t texture) {
 
 void tex_set_sample(tex_t texture, tex_sample_ sample) {
 	texture->sample_mode = sample;
-	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 }
 
 ///////////////////////////////////////////
@@ -1144,9 +1166,22 @@ tex_sample_ tex_get_sample(tex_t texture) {
 
 ///////////////////////////////////////////
 
+void tex_set_sample_comp(tex_t texture, tex_sample_comp_ compare) {
+	texture->sample_comp = compare;
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
+}
+
+///////////////////////////////////////////
+
+tex_sample_comp_ tex_get_sample_comp(tex_t texture) {
+	return texture->sample_comp;
+}
+
+///////////////////////////////////////////
+
 void tex_set_address(tex_t texture, tex_address_ address_mode) {
 	texture->address_mode = address_mode;
-	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 }
 
 ///////////////////////////////////////////
@@ -1159,7 +1194,7 @@ tex_address_ tex_get_address(tex_t texture) {
 
 void tex_set_anisotropy(tex_t texture, int32_t anisotropy_level) {
 	texture->anisotropy = anisotropy_level;
-	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 }
 
 ///////////////////////////////////////////
