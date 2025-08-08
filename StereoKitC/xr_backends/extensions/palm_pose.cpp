@@ -4,8 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
-// This implements XR_EXT_palm_pose
+// This implements XR_EXT_palm_pose and XR_KHR_maintenance1
 // https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XR_EXT_palm_pose
+// https://registry.khronos.org/OpenXR/specs/1.1/html/xrspec.html#XR_KHR_maintenance1
 
 #include "palm_pose.h"
 #include "ext_management.h"
@@ -15,6 +16,13 @@
 ///////////////////////////////////////////
 
 namespace sk {
+
+///////////////////////////////////////////
+
+typedef struct xr_ext_palm_pose_state_t {
+	bool khr_maintenance1_available;
+} xr_ext_palm_pose_state_t;
+static xr_ext_palm_pose_state_t local = { };
 
 ///////////////////////////////////////////
 
@@ -36,7 +44,8 @@ void xr_ext_palm_pose_register() {
 
 xr_system_ xr_ext_palm_pose_initialize(void*) {
 	// Check if we got at least one of our extensions
-	if (!backend_openxr_ext_enabled(XR_KHR_MAINTENANCE1_EXTENSION_NAME) && !backend_openxr_ext_enabled(XR_EXT_PALM_POSE_EXTENSION_NAME))
+	local.khr_maintenance1_available = backend_openxr_ext_enabled(XR_KHR_MAINTENANCE1_EXTENSION_NAME);
+	if (!local.khr_maintenance1_available && !backend_openxr_ext_enabled(XR_EXT_PALM_POSE_EXTENSION_NAME))
 		return xr_system_fail;
 
 	// Snapdragon Spaces advertises the palm pose extension, but provides bad
@@ -55,7 +64,7 @@ void xr_ext_palm_pose_on_profile(void*, xr_interaction_profile_t* ref_profile) {
 	// This function will only get called if the system was successfully
 	// initialized.
 
-	const char* path = backend_openxr_ext_enabled(XR_KHR_MAINTENANCE1_EXTENSION_NAME) ?  "grip_surface/pose" : "palm_ext/pose";
+	const char* path = local.khr_maintenance1_available ?  "grip_surface/pose" : "palm_ext/pose";
 
 	// KHR_maintenance1 and EXT_palm_pose apply to all interaction profiles that use /user/hand/*
 	// paths, so we need to check if the top level path matches.
