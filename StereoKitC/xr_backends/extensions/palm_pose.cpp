@@ -55,17 +55,12 @@ void xr_ext_palm_pose_on_profile(void*, xr_interaction_profile_t* ref_profile) {
 	// This function will only get called if the system was successfully
 	// initialized.
 
-	if (backend_openxr_ext_enabled(XR_KHR_MAINTENANCE1_EXTENSION_NAME)) {
-		// KHR_maintenance1 applies to all interaction profiles that use /user/hand/*
-		// paths, so we need to check if the top level path matches.
-		if (string_eq("/user/hand/left",  ref_profile->top_level_path)) ref_profile->binding[ref_profile->binding_ct++] = { xra_type_pose, input_pose_l_palm, "grip_surface/pose" };
-		if (string_eq("/user/hand/right", ref_profile->top_level_path)) ref_profile->binding[ref_profile->binding_ct++] = { xra_type_pose, input_pose_r_palm, "grip_surface/pose" };
-	} else if (backend_openxr_ext_enabled(XR_EXT_PALM_POSE_EXTENSION_NAME)) {
-		// EXT_palm_pose applies to all interaction profiles that use /user/hand/*
-		// paths, so we need to check if the top level path matches.
-		if (string_eq("/user/hand/left",  ref_profile->top_level_path)) ref_profile->binding[ref_profile->binding_ct++] = { xra_type_pose, input_pose_l_palm, "palm_ext/pose" };
-		if (string_eq("/user/hand/right", ref_profile->top_level_path)) ref_profile->binding[ref_profile->binding_ct++] = { xra_type_pose, input_pose_r_palm, "palm_ext/pose" };
-	}
+	const char* path = backend_openxr_ext_enabled(XR_KHR_MAINTENANCE1_EXTENSION_NAME) ?  "grip_surface/pose" : "palm_ext/pose";
+
+	// KHR_maintenance1 and EXT_palm_pose apply to all interaction profiles that use /user/hand/*
+	// paths, so we need to check if the top level path matches.
+	if (string_eq("/user/hand/left",  ref_profile->top_level_path)) ref_profile->binding[ref_profile->binding_ct++] = { xra_type_pose, input_pose_l_palm, path };
+	if (string_eq("/user/hand/right", ref_profile->top_level_path)) ref_profile->binding[ref_profile->binding_ct++] = { xra_type_pose, input_pose_r_palm, path };
 
 }
 
