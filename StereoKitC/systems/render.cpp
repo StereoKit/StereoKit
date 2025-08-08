@@ -141,6 +141,7 @@ struct render_state_t {
 	render_layer_           capture_filter;
 	bool                    use_capture_filter;
 	tex_t                   global_textures[16];
+	material_buffer_t       global_buffers [16];
 
 	array_t<render_screenshot_t> screenshot_list;
 	array_t<render_viewpoint_t>  viewpoint_list;
@@ -202,11 +203,13 @@ bool render_init() {
 	local.capture_filter        = render_layer_all_first_person;
 	local.list_active           = nullptr;
 
-	local.shader_globals  = material_buffer_create(1, sizeof(local.global_buffer));
+	local.shader_globals  = material_buffer_create(sizeof(local.global_buffer));
 	local.shader_blit     = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
 #if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
 	skg_buffer_name(&local.shader_blit, "sk/render/blit_buffer");
 #endif
+
+	render_global_buffer_internal(1, local.shader_globals);
 	
 	local.instance_list.resize(render_instance_max);
 
@@ -270,6 +273,10 @@ void render_shutdown() {
 	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
 		tex_release(local.global_textures[i]);
 		local.global_textures[i] = nullptr;
+	}
+	for (int32_t i = 0; i < _countof(local.global_buffers); i++) {
+		material_buffer_release(local.global_buffers[i]);
+		local.global_buffers[i] = {};
 	}
 	tex_release            (local.sky_pending_tex);
 	material_release       (local.sky_mat_default);
@@ -724,6 +731,28 @@ void render_global_texture(int32_t register_slot, tex_t texture) {
 
 ///////////////////////////////////////////
 
+void render_global_buffer_internal(int32_t register_slot, material_buffer_t buffer) {
+	if (register_slot >= 0) {
+		if (buffer)
+			material_buffer_addref(buffer);
+		if (local.global_buffers[register_slot] != nullptr)
+			material_buffer_release(local.global_buffers[register_slot]);
+		local.global_buffers[register_slot] = buffer;
+	}
+}
+
+///////////////////////////////////////////
+
+void render_global_buffer(int32_t register_slot, material_buffer_t buffer) {
+	if ((register_slot >= 0 && register_slot < 3) || register_slot >= (sizeof(local.global_buffers) / sizeof(local.global_buffers[0]))) {
+		log_errf("render_global_buffer: bad slot id '%d', use 3-%d.", register_slot, (sizeof(local.global_buffers) / sizeof(local.global_buffers[0])) - 1);
+		return;
+	}
+	render_global_buffer_internal(register_slot, buffer);
+}
+
+///////////////////////////////////////////
+
 void render_set_clear_color(color128 color) {
 	local.clear_col = color_to_linear(color);
 }
@@ -817,9 +846,9 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	material_buffer_set_data(local.shader_globals, &local.global_buffer);
 
 	// Activate any material buffers we have
-	for (int32_t i = 0; i < _countof(material_buffers); i++) {
-		if (material_buffers[i].size != 0)
-			skg_buffer_bind(&material_buffers[i].buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant });
+	for (int32_t i = 0; i < _countof(local.global_buffers); i++) {
+		if (local.global_buffers[i] != nullptr)
+			skg_buffer_bind(&local.global_buffers[i]->buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant });
 	}
 
 	// Activate any global textures we have

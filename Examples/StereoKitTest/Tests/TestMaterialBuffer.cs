@@ -22,8 +22,9 @@ class TestMaterialBuffer : ITest
 
 		try
 		{ 
-			testBuffer = new MaterialBuffer<MaterialBufferStruct>(13);
+			testBuffer = new MaterialBuffer<MaterialBufferStruct>();
 			testBuffer.Set(data);
+			Renderer.SetGlobalBuffer(13, testBuffer);
 		} 
 		catch (Exception e)
 		{
@@ -38,32 +39,22 @@ class TestMaterialBuffer : ITest
 		Log.Warn("Expected error:");
 		try
 		{
-			// ids for 0-2 should see MaterialBuffer throw an exceptions
-			testBuffer = new MaterialBuffer<MaterialBufferStruct>(2);
+			// ids for 0-2 should see an error message in the log
+			testBuffer = new MaterialBuffer<MaterialBufferStruct>();
+			Renderer.SetGlobalBuffer(2, testBuffer);
 		}
-		catch { return true; }
-		return false;
-	}
-
-	bool MaterialBufferIdOverlap()
-	{
-		Log.Warn("Expected error:");
-		try
-		{
-			// 13 is already used by MaterialBufferTest, so it should throw
-			testBuffer = new MaterialBuffer<MaterialBufferStruct>(13);
-		}
-		catch { return true; }
-		return false;
+		catch { return false; }
+		return true;
 	}
 
 	public void Initialize()
 	{
 		Tests.Test(MaterialBufferTest);
 		Tests.Test(MaterialBufferId);
-		Tests.Test(MaterialBufferIdOverlap);
 	}
 
-	public void Shutdown() { }
+	public void Shutdown() {
+		Renderer.SetGlobalBuffer(13, null);
+	}
 	public void Step() { }
 }

@@ -33,13 +33,12 @@ class DemoShadows : ITest
 
 	public void Initialize()
 	{
-		shadowBuffer = new MaterialBuffer<ShadowBuffer>(12);
+		shadowBuffer = new MaterialBuffer<ShadowBuffer>();
 		shadowMap = new Tex(TexType.Depthtarget, TexFormat.Depth16);
 		shadowMap.SetSize(ShadowMapResolution, ShadowMapResolution);
 		shadowMap.SampleMode  = TexSample.Linear;
 		shadowMap.SampleComp  = TexSampleComp.LessOrEq;
 		shadowMap.AddressMode = TexAddress.Clamp;
-		shadowMap.Id          = "app/shadow/zbuffer";
 
 		Material shadowMat = new Material("Shaders/basic_shadow.hlsl");
 		shadowMat.DepthTest = DepthTest.LessOrEq;
@@ -58,12 +57,14 @@ class DemoShadows : ITest
 
 		Renderer.SkyLight = ambient;
 		Renderer.SkyTex   = Tex.GenCubemap(ambientSky);
+		Renderer.SetGlobalBuffer(12, shadowBuffer);
 	}
 
 	public void Shutdown()
 	{
 		Renderer.SkyLight = oldLighting;
 		Renderer.SkyTex   = oldTex;
+		Renderer.SetGlobalBuffer(12, null);
 	}
 	public void Step()
 	{

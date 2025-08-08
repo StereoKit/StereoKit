@@ -319,9 +319,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_shader      (IntPtr material, IntPtr shader);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_get_shader      (IntPtr material);
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_buffer_create  (int slot, int size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_buffer_set_data(IntPtr buffer, IntPtr data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr material_buffer_create  (int size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_buffer_addref  (IntPtr buffer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_buffer_release (IntPtr buffer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_buffer_set_data(IntPtr buffer, IntPtr data);
 
 		///////////////////////////////////////////
 
@@ -471,6 +472,7 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool               render_enabled_skytex ();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_global_texture (int register_slot, IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_global_buffer  (int register_slot, IntPtr buffer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_mesh       (IntPtr mesh, IntPtr material, in Matrix transform, Color color, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_model      (IntPtr model, in Matrix transform, Color color, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_add_model_mat  (IntPtr model, IntPtr material_override, in Matrix transform, Color color, RenderLayer layer);

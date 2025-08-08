@@ -456,5 +456,33 @@ namespace StereoKit
 		/// <param name="tex">The texture to assign globally. Setting null here
 		/// will clear any texture that is currently bound.</param>
 		public static void SetGlobalTexture(int textureRegister, Tex tex) => NativeAPI.render_global_texture(textureRegister, tex?._inst ?? IntPtr.Zero);
+
+		/// <summary>This attaches a buffer resource globally across all
+		/// shaders. StereoKit uses this to attach the stereokit rendering
+		/// constants. It can be used for things like shadowmaps, wind data,
+		/// etc.</summary>
+		/// <param name="bufferRegister">Valid values are 3-16. This is the 
+		/// register id that this data will be bound to. In HLSL, you'll see
+		/// the slot id for '3' indicated like this `: register(b3)`</param>
+		/// <param name="buffer">The data buffer you would like to bind, or
+		/// null to unbind.</param>
+		public static void SetGlobalBuffer<T>(int bufferRegister, MaterialBuffer<T> buffer) where T:struct
+		{
+			NativeAPI.render_global_buffer(bufferRegister, buffer?._inst ?? IntPtr.Zero);
+		}
+		/// <summary>This attaches a buffer resource globally across all
+		/// shaders. StereoKit uses this to attach the stereokit rendering
+		/// constants. It can be used for things like shadowmaps, wind data,
+		/// etc.</summary>
+		/// <param name="bufferRegister">Valid values are 3-16. This is the 
+		/// register id that this data will be bound to. In HLSL, you'll see
+		/// the slot id for '3' indicated like this `: register(b3)`</param>
+		/// <param name="buffer">The data buffer you would like to bind, or
+		/// null to unbind.</param>
+		public static void SetGlobalBuffer(int bufferRegister, object buffer)
+		{
+			if (buffer != null) throw new ArgumentException("Use a MaterialBuffer type here!");
+			NativeAPI.render_global_buffer(bufferRegister, IntPtr.Zero);
+		}
 	}
 }

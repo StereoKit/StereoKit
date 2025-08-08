@@ -1349,9 +1349,10 @@ SK_API int32_t           material_get_param_count (material_t material);
 SK_API void              material_set_shader      (material_t material, shader_t shader);
 SK_API shader_t          material_get_shader      (material_t material);
 
-SK_API material_buffer_t material_buffer_create   (int32_t register_slot, int32_t size);
-SK_API void              material_buffer_set_data (material_buffer_t buffer, const void *buffer_data);
+SK_API material_buffer_t material_buffer_create   (int32_t size);
+SK_API void              material_buffer_addref   (material_buffer_t buffer);
 SK_API void              material_buffer_release  (material_buffer_t buffer);
+SK_API void              material_buffer_set_data (material_buffer_t buffer, const void *buffer_data);
 
 ///////////////////////////////////////////
 
@@ -1725,6 +1726,7 @@ SK_API color128              render_get_clear_color(void);
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex (void);
 SK_API void                  render_global_texture (int32_t register_slot, tex_t texture);
+SK_API void                  render_global_buffer  (int32_t register_slot, material_buffer_t buffer);
 SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t material,          const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));

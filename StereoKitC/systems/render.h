@@ -41,6 +41,7 @@ void          render_draw_queue           (render_list_t list, const matrix* vie
 void          render_check_screenshots    ();
 void          render_check_viewpoints     ();
 void          render_check_pending_skytex ();
+void          render_global_buffer_internal(int32_t register_slot, material_buffer_t buffer);
 
 void          render_list_destroy         (      render_list_t list);
 void          render_list_execute         (      render_list_t list, render_layer_ filter, uint32_t inst_multiplier, int32_t queue_start, int32_t queue_end);
