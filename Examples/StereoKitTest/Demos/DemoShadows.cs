@@ -17,8 +17,9 @@ class DemoShadows : ITest
 		public float  shadowMapPixelSize;
 	}
 
-	Tex                          shadowMap;
+	Tex[]                        shadowMap;
 	MaterialBuffer<ShadowBuffer> shadowBuffer;
+	ShadowBuffer                 shadowBufferLast;
 
 	const float ShadowMapSize       = 2;
 	const int   ShadowMapResolution = 1024;
@@ -34,11 +35,15 @@ class DemoShadows : ITest
 	public void Initialize()
 	{
 		shadowBuffer = new MaterialBuffer<ShadowBuffer>();
-		shadowMap = new Tex(TexType.Depthtarget, TexFormat.Depth16);
-		shadowMap.SetSize(ShadowMapResolution, ShadowMapResolution);
-		shadowMap.SampleMode  = TexSample.Linear;
-		shadowMap.SampleComp  = TexSampleComp.LessOrEq;
-		shadowMap.AddressMode = TexAddress.Clamp;
+		shadowMap = new Tex[2]; // We're double buffering due to the way SK binds textures globally.
+		for(int i = 0; i < shadowMap.Length; i++)
+		{
+			shadowMap[i] = new Tex(TexType.Depthtarget, TexFormat.Depth16);
+			shadowMap[i].SetSize(ShadowMapResolution, ShadowMapResolution);
+			shadowMap[i].SampleMode  = TexSample.Linear;
+			shadowMap[i].SampleComp  = TexSampleComp.LessOrEq;
+			shadowMap[i].AddressMode = TexAddress.Clamp;
+		}
 
 		Material shadowMat = new Material("Shaders/basic_shadow.hlsl");
 		shadowMat.DepthTest = DepthTest.LessOrEq;
@@ -98,18 +103,21 @@ class DemoShadows : ITest
 
 		// Send information about the shadow map parameters to the renderer,
 		// these are used by the basic_shadow.hlsl shader.
-		shadowBuffer.Set(new ShadowBuffer {
+		shadowBuffer.Set(shadowBufferLast);
+		shadowBufferLast = new ShadowBuffer {
 			shadowMapTransform = (view.Inverse * proj).Transposed,
 			shadowMapBias      = 2 * MathF.Max(((ShadowMapFarClip - ShadowMapNearClip) / ushort.MaxValue), ShadowMapSize / ShadowMapResolution),
 			lightDirection     = -lightDir,
 			lightColor         =  V.XYZ(1,1,1),
 			shadowMapPixelSize = 1.0f / ShadowMapResolution
-		});
+		};
 
 		// Render the shadow map, and bind it globally so it can be used from
 		// any shader.
-		Renderer.RenderTo(shadowMap, view, proj, RenderLayer.All &~ RenderLayer.Vfx);
-		Renderer.SetGlobalTexture(12, shadowMap);
+		int renderTo   = (int) Time.Frame % shadowMap.Length;
+		int renderNext = (int)(Time.Frame+1) % shadowMap.Length;
+		Renderer.RenderTo(shadowMap[renderTo], view, proj, RenderLayer.All &~ RenderLayer.Vfx);
+		Renderer.SetGlobalTexture(12, shadowMap[renderNext]);
 	}
 
 	static Model GenerateModel(Material floorMat, Material material)
