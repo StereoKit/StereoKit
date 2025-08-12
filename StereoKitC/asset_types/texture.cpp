@@ -608,41 +608,72 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		material_t convert_material = material_find(default_id_material_equirect);
 		material_set_texture(convert_material, "source", equirect);
 
-		tex_t    face         = tex_create(tex_type_rendertarget, equirect->format);
-		void    *face_data[6] = {};
-		size_t   size         = tex_format_size(equirect->format, tex->width, tex->height);
-		tex_set_colors(face, tex->width, tex->height, nullptr);
+		tex_t    face           = tex_create(tex_type_rendertarget | tex_type_mips, equirect->format);
+		void    *face_data[6]   = {};
+		size_t   size           = tex_format_size(face->format, tex->width, tex->height);
+		uint32_t mip_count      = skg_mip_count(tex->width, tex->height);
+		uint32_t total_tex_size = 0;
+		for (int32_t mip_level = 0; mip_level < mip_count; mip_level++) {
+			int32_t  width  = 0;
+			int32_t  height = 0;
+			skg_mip_dimensions(tex->width, tex->height, mip_level, &width, &height);
+			total_tex_size += skg_tex_fmt_memory(equirect->tex.format, width, height);
+		}
+		tex_set_color_arr_mips(face, tex->width, tex->height, nullptr, 1, mip_count);
+
 		for (int32_t i = 0; i < 6; i++) {
 			material_set_vector4(convert_material, "up",      { up   [i].x, up   [i].y, up   [i].z, 0 });
 			material_set_vector4(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
 			material_set_vector4(convert_material, "forward", { fwd  [i].x, fwd  [i].y, fwd  [i].z, 0 });
 
-			face_data[i] = sk_malloc(size);
+			face_data[i] = sk_malloc(total_tex_size);
 
 			// Blit conversion _definitely_ needs executed on the GPU thread
 			struct blit_t {
 				tex_t      face;
 				material_t material;
 				void      *face_data;
-				size_t     size;
 			};
-			blit_t blit_data = { face, convert_material, face_data[i], size };
+			blit_t blit_data = { face, convert_material, face_data[i] };
 			assets_execute_gpu([](void *data) {
 				blit_t *blit_data = (blit_t *)data;
 				render_blit (blit_data->face, blit_data->material);
-				tex_get_data(blit_data->face, blit_data->face_data, blit_data->size);
+				tex_gen_mips(blit_data->face);
+
+				uint32_t mip_count = skg_mip_count(blit_data->face->width, blit_data->face->height);
+				uint8_t* mip_data  = (uint8_t*)blit_data->face_data;
+				for(int32_t mip_level = 0; mip_level < mip_count; mip_level++) {
+					int32_t  width  = 0;
+					int32_t  height = 0;
+					skg_mip_dimensions(blit_data->face->width, blit_data->face->height, mip_level, &width, &height);
+					size_t   mem_size = skg_tex_fmt_memory(blit_data->face->tex.format, width, height);
+
+					tex_get_data(blit_data->face, mip_data, mem_size, mip_level);
+
+					mip_data += mem_size;
+				}
 				return (bool32_t)true;
 			}, &blit_data);
 
 #if defined(SKG_OPENGL)
-			size_t line_size = tex_format_pitch(equirect->format, tex->width);
-			void*  tmp       = sk_malloc(line_size);
-			for (int32_t y = 0; y < tex->height/2; y++) {
-				void *top_line = ((uint8_t*)face_data[i]) + line_size * y;
-				void *bot_line = ((uint8_t*)face_data[i]) + line_size * ((tex->height-1) - y);
-				memcpy(tmp,      top_line, line_size);
-				memcpy(top_line, bot_line, line_size);
-				memcpy(bot_line, tmp,      line_size);
+			void*    tmp        = sk_malloc(tex_format_pitch(face->format, tex->width));
+			uint8_t* mip_data   = (uint8_t*)face_data[i];
+			for (int32_t mip_level = 0; mip_level < mip_count; mip_level++) {
+				int32_t  width  = 0;
+				int32_t  height = 0;
+				skg_mip_dimensions(tex->width, tex->height, mip_level, &width, &height);
+				size_t line_size = tex_format_pitch(face->format, width);
+
+				for (int32_t y = 0; y < height/2; y++) {
+					void* top_line = mip_data + line_size * y;
+					void* bot_line = mip_data + line_size * ((height-1) - y);
+					memcpy(tmp,      top_line, line_size);
+					memcpy(top_line, bot_line, line_size);
+					memcpy(bot_line, tmp,      line_size);
+				}
+
+				size_t mem_size = skg_tex_fmt_memory(face->tex.format, width, height);
+				mip_data += mem_size;
 			}
 			sk_free(tmp);
 #endif
@@ -665,7 +696,7 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		set_data.data = (void**)&face_data;
 		assets_execute_gpu([](void* data) {
 			set_tex_t* set_data = (set_tex_t*)data;
-			tex_set_color_arr(set_data->tex, set_data->tex->width, set_data->tex->height, set_data->data, 6);
+			tex_set_color_arr_mips(set_data->tex, set_data->tex->width, set_data->tex->height, set_data->data, 6, skg_mip_count(set_data->tex->width, set_data->tex->height));
 			return (bool32_t)true;
 		}, &set_data);
 		for (int32_t i = 0; i < 6; i++) {
@@ -729,7 +760,7 @@ bool32_t tex_gen_mips(tex_t texture) {
 	if ((texture->type & tex_type_mips        ) == 0 ||
 		(texture->type & tex_type_rendertarget) == 0)
 		return false;
-	return false;
+	return skg_tex_gen_mips(&texture->tex);
 }
 
 ///////////////////////////////////////////
