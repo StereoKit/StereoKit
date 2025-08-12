@@ -8,6 +8,7 @@
 #include "../platforms/platform.h"
 #include "../libraries/qoi.h"
 #include "../libraries/stref.h"
+#include "../libraries/ferr_halffloat.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
@@ -250,7 +251,7 @@ bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_t
 	if (success) {
 		*out_mip_count   = 1;
 		*out_array_count = 1;
-		if (stbi_is_hdr_from_memory((stbi_uc *)data, (int)data_size)) *out_format = tex_format_rgba128;
+		if (stbi_is_hdr_from_memory((stbi_uc *)data, (int)data_size)) *out_format = tex_format_rgba64f;
 		else                                                          *out_format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 		return true;
 	}
@@ -284,11 +285,26 @@ bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_t
 
 	// Check for an stbi HDR image
 	if (stbi_is_hdr_from_memory((stbi_uc*)data, (int)data_size)) {
-		*out_format      = tex_format_rgba128;
+		*out_format      = tex_format_rgba64f;
 		*out_array_count = 1;
 		*out_mip_count   = 1;
-		*out_data_arr    = stbi_loadf_from_memory((stbi_uc *)data, (int)data_size, out_width, out_height, &channels, 4);
-		return *out_data_arr != nullptr;
+		float* full = stbi_loadf_from_memory((stbi_uc*)data, (int)data_size, out_width, out_height, &channels, 4);
+
+		if (full == nullptr) return false;
+		
+		// stb loads HDR as full float, which is pretty intense! We can pretty
+		// safely drop it to half floats and save ourselves 50% memory and a
+		// pile of bandwidth/performance.
+		int32_t   ct   = *out_width * *out_height * 4;
+		uint16_t* half = sk_malloc_t(uint16_t, ct);
+		int32_t   i    = 0;
+		for (; i < ct-8; i += 8) fhf_f32_to_f16_x8(&full[i], &half[i]);
+		for (; i < ct;   i += 1) half[i] = fhf_f32_to_f16_x1(full[i]);
+
+		*out_data_arr = half;
+		free(full);
+
+		return true;
 	}
 
 	// Check through stbi's list of image formats
@@ -1052,8 +1068,8 @@ spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 	if (tex->width != tex->height || tex->array_count != 6) {
 		log_warn("Invalid texture size for calculating spherical harmonics. Must be an equirect image, or have 6 images all same width and height.");
 		return {};
-	} else if (!(tex->format == skg_tex_fmt_rgba32 || tex->format == skg_tex_fmt_rgba32_linear || tex->format == skg_tex_fmt_rgba128)) {
-		log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32 or rgba128.");
+	} else if (!(tex->format == skg_tex_fmt_rgba32 || tex->format == skg_tex_fmt_rgba32_linear || tex->format == skg_tex_fmt_rgba64f || tex->format == skg_tex_fmt_rgba128)) {
+		log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32, rgba64f or rgba128.");
 		return {};
 	} else {
 		int32_t  mip_level = maxi((int32_t)0, (int32_t)skg_mip_count(tex->width, tex->height) - 6);
