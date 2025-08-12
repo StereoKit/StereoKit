@@ -3,8 +3,6 @@
 #include "asset_types/texture_.h"
 #include "libraries/ferr_halffloat.h"
 
-#include <immintrin.h>
-
 namespace sk {
 
 void sh_add      (spherical_harmonics_t &to, vec3 light_dir, vec3 light_color);

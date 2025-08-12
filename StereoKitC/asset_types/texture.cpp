@@ -1415,7 +1415,7 @@ tex_t tex_gen_particle(int32_t width, int32_t height, float roundness, gradient_
 ///////////////////////////////////////////
 
 tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info) {
-	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
+	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba64f);
 	if (result == nullptr) {
 		return nullptr;
 	}
@@ -1430,9 +1430,9 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 
 	float    half_px = 0.5f / size;
 	int32_t  size2 = size * size;
-	color128*data[6];
+	uint16_t*data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = sk_malloc_t(color128, size2);
+		data[i] = sk_malloc_t(uint16_t, size2*4);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);
@@ -1445,6 +1445,9 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 			if (i == 2) {
 				py = 1 - py;
 			}
+			vec3    pl    = vec3_lerp(p1, p4, py);
+			vec3    pr    = vec3_lerp(p2, p3, py);
+			int32_t ysize = y * size;
 		for (int32_t x = 0; x < size; x++) {
 			float px = x / (float)size + half_px;
 
@@ -1453,13 +1456,10 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 				px = 1 - px;
 			}
 
-			vec3 pl = vec3_lerp(p1, p4, py);
-			vec3 pr = vec3_lerp(p2, p3, py);
-			vec3 pt = vec3_lerp(pl, pr, px);
-			pt = vec3_normalize(pt);
-
-			float pct = (vec3_dot(pt, gradient_dir)+1)*0.5f;
-			data[i][x + y * size] = gradient_get(gradient_bot_to_top, pct);
+			vec3     pt  = vec3_normalize(vec3_lerp(pl, pr, px));
+			float    pct = (vec3_dot(pt, gradient_dir)+1)*0.5f;
+			color128 c   = gradient_get(gradient_bot_to_top, pct);
+			fhf_f32_to_f16_x4(&c.r, &data[i][(x + ysize)*4]);
 		}
 		}
 	}
@@ -1479,7 +1479,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 ///////////////////////////////////////////
 
 tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size, float light_spot_size_pct, float light_spot_intensity) {
-	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
+	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba64f);
 	if (result == nullptr) {
 		return nullptr;
 	}
@@ -1507,9 +1507,9 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 
 	float     half_px = 0.5f / size;
 	int32_t   size2 = size * size;
-	color128 *data[6];
+	uint16_t *data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = sk_malloc_t(color128, size2);
+		data[i] = sk_malloc_t(uint16_t, size2*4);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);
@@ -1522,6 +1522,9 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 			if (i == 2) {
 				py = 1 - py;
 			}
+			vec3    pl    = vec3_lerp(p1, p4, py);
+			vec3    pr    = vec3_lerp(p2, p3, py);
+			int32_t ysize = y * size;
 			for (int32_t x = 0; x < size; x++) {
 				float px = x / (float)size + half_px;
 
@@ -1530,17 +1533,14 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 					px = 1 - px;
 				}
 
-				vec3 pl = vec3_lerp(p1, p4, py);
-				vec3 pr = vec3_lerp(p2, p3, py);
-				vec3 pt = vec3_lerp(pl, pr, px);
-				float dist = fmaxf(fmaxf(fabsf(pt.x-light_pt.x), fabsf(pt.y-light_pt.y)), fabsf(pt.z-light_pt.z));
-				pt = vec3_normalize(pt);
+				vec3     pt       = vec3_lerp(pl, pr, px);
+				vec3     abs_diff = vec3_abs(pt - light_pt);
+				float    dist     = fmaxf(fmaxf(abs_diff.x, abs_diff.y), abs_diff.z);
+				color128 color    = dist < light_spot_size_pct
+					? light_col
+					: sh_lookup(lookup, vec3_normalize(pt));
 
-				if (dist < light_spot_size_pct) {
-					data[i][x + y * size] = light_col;
-				} else {
-					data[i][x + y * size] = sh_lookup(lookup, pt);
-				}
+				fhf_f32_to_f16_x4(&color.r, &data[i][(x + ysize) * 4]);
 			}
 		}
 	}
