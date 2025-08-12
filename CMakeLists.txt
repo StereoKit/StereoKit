@@ -139,6 +139,7 @@ elseif (UNIX)
   # Add pthreads
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
+  add_compile_options(-mavx -mf16c)
 
 elseif(WIN32)
   if (SK_WINDOWS_GL)

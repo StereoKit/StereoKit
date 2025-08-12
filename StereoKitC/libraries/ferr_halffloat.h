@@ -3,6 +3,9 @@
 // Tools for working with IEEE-754 half precision floating point values, used
 // by GPU color formats like r16b16g16a16
 
+// On some compilers this will require enabling some SIMD features
+// CMake: add_compile_options(-mavx -mf16c)
+
 #include <stdint.h>
 
 #if defined(_M_AMD64) || defined(__x86_64__) || defined(_M_IX86) || defined(__i386__)
