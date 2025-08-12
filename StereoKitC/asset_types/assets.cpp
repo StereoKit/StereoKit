@@ -261,9 +261,10 @@ void assets_destroy(asset_header_t *asset) {
 		return;
 	}
 
-	// destroy functions will often zero out their contents for safety, so we
-	// need to free the id text first
-	sk_free(asset->id_text);
+	// destroy functions will often zero out their contents for safety, but we
+	// still need to free the id text. It's nice for debugging to have the name
+	// around, so we'll cache it here and free it after destruction.
+	char* id_text = asset->id_text;
 
 	// Call asset specific destroy function
 	switch(asset->type) {
@@ -279,6 +280,8 @@ void assets_destroy(asset_header_t *asset) {
 	case asset_type_render_list: render_list_destroy((render_list_t)asset); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
+
+	sk_free(id_text);
 
 	// Remove it from our list of assets
 	ft_mutex_lock(assets_lock);
