@@ -139,6 +139,7 @@ elseif (UNIX)
   # Add pthreads
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
+  add_compile_options(-mavx -mf16c)
 
 elseif(WIN32)
   if (SK_WINDOWS_GL)
@@ -228,8 +229,8 @@ add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
 #### sk_gpu - https://github.com/StereoKit/sk_gpu ####
 if (NOT SK_LOCAL_SK_GPU)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME sk_gpu # 2025.8.7
-    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.8.7/sk_gpu.v2025.8.7.zip
+    NAME sk_gpu # 2025.8.12
+    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.8.12/sk_gpu.v2025.8.12.zip
   )
 else()
   # For building directly with in-progress sk_gpu changes, point this to your
