@@ -14,6 +14,7 @@ vec3 to_color_128(uint8_t *color) { return *(vec3 *)color; }
 vec3 to_color_32 (uint8_t *color) { return vec3{color[0]/255.f,color[1]/255.f,color[2]/255.f}; }
 vec3 to_color_32_linear(uint8_t* color) { return vec3{ powf(color[0] / 255.f,2.2f),powf(color[1] / 255.f,2.2f),powf(color[2] / 255.f,2.2f) }; }
 vec3 to_color_64(uint8_t* color) { const uint16_t* c = (uint16_t*)color; vec4 r; fhf_f16_to_f32_x4(c, &r.x); return vec3{ r.x, r.y, r.z }; }
+vec3 to_color_11_11_10f(uint8_t* color) { vec3 r; fhf_r11g11b10f_to_f32_x3(*(uint32_t*)color, &r.x); return vec3{ r.x, r.y, r.z }; }
 
 ///////////////////////////////////////////
 
@@ -96,6 +97,7 @@ spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int3
 	switch (format) {
 	case tex_format_rgba128:       convert = to_color_128;       col_size = sizeof(float) * 4; break;
 	case tex_format_rgba64f:       convert = to_color_64;        col_size = sizeof(uint16_t) * 4; break;
+	case tex_format_rg11b10:       convert = to_color_11_11_10f; col_size = sizeof(uint32_t); break;
 	case tex_format_rgba32:        convert = to_color_32_linear; col_size = sizeof(color32); break;
 	case tex_format_rgba32_linear: convert = to_color_32;        col_size = sizeof(color32); break;
 	default: return {};

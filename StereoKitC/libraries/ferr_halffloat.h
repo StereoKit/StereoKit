@@ -195,3 +195,67 @@ inline void fhf_f32_to_f16_x8(const float* f_x8, uint16_t* out_f_x8) {
 ///////////////////////////////////////////////////////////////////////////////
 
 #endif // Architecture selection
+
+inline uint32_t fhf_f32_to_rgb10a2(const float* f_x4) {
+	return 
+		((f_x4[0] > 1 ? 0b1111111111 : (uint32_t)(f_x4[0] * 0b1111111111))      ) |
+		((f_x4[1] > 1 ? 0b1111111111 : (uint32_t)(f_x4[1] * 0b1111111111)) << 10) |
+		((f_x4[2] > 1 ? 0b1111111111 : (uint32_t)(f_x4[2] * 0b1111111111)) << 20) |
+		((f_x4[3] > 1 ? 0b11         : (uint32_t)(f_x4[3] * 0b11        )) << 30);
+}
+
+inline void fhf_rgb10a2_to_f32_x4(uint32_t rgb10a2, float* out_f_x4) {
+	out_f_x4[0] = ((rgb10a2)       & 0b1111111111) / (float)0b1111111111;
+	out_f_x4[1] = ((rgb10a2 >> 10) & 0b1111111111) / (float)0b1111111111;
+	out_f_x4[2] = ((rgb10a2 >> 20) & 0b1111111111) / (float)0b1111111111;
+	out_f_x4[3] = ((rgb10a2 >> 30) & 0b11        ) / (float)0b11;
+}
+
+inline uint32_t fhf_f32_to_r11g11ba10f(const float* f_x3) {
+	uint32_t* f_bits_x3 = (uint32_t*)f_x3;
+	uint32_t  results[3];
+
+	for (int32_t i = 0; i < 3; i++) {
+		uint32_t exponent = (f_bits_x3[i] >> 23U) & 0xffU;
+		uint32_t mantissa =  f_bits_x3[i]         & 0x7fffffU;
+
+		uint32_t float_exponent = exponent - 127 + 15;
+		uint32_t float_mantissa = mantissa >> (i == 2 ? 18 : 17); // B channel is 10 bit
+		if (exponent < 112) {
+			float_exponent = 0;
+			float_mantissa = 0;
+		}
+		results[i] = (float_exponent << (i == 2 ? 5 : 6)) | float_mantissa; // B channel is 10 bit
+	}
+	return results[0] | (results[1] << 11) | (results[2] << 22);
+}
+
+inline void fhf_r11g11b10f_to_f32_x3(uint32_t r11g11b10f, float* out_f_x3) {
+	// Extract the three components
+	uint32_t components[3] = {
+		 r11g11b10f        & 0x7FF,
+		(r11g11b10f >> 11) & 0x7FF,
+		(r11g11b10f >> 22) & 0x3FF };
+	uint32_t* out_bits = (uint32_t*)out_f_x3;
+
+	for (int32_t i = 0; i < 3; i++) {
+		uint32_t comp          = components[i];
+		uint32_t mantissa_bits = (i == 2 ? 5 : 6);  // B has 5 mantissa bits, R/G have 6
+		uint32_t mantissa_mask = (1U << mantissa_bits) - 1;
+
+		uint32_t float_exponent = comp >> mantissa_bits;
+		uint32_t float_mantissa = comp &  mantissa_mask;
+
+		if (float_exponent == 0) { // Zero or denormalized (we'll treat as zero)
+			out_bits[i] = 0;
+		} else if (float_exponent == 0x1F) { // Infinity or NaN
+			uint32_t ieee_exponent = 0xFF;  // Max exponent for float32
+			uint32_t ieee_mantissa = float_mantissa << (i == 2 ? 18 : 17);
+			out_bits[i] = (ieee_exponent << 23) | ieee_mantissa;
+		} else { // Normal number
+			uint32_t ieee_exponent = float_exponent - 15 + 127;  // Convert bias from 15 to 127
+			uint32_t ieee_mantissa = float_mantissa << (i == 2 ? 18 : 17);  // Shift to float32 position
+			out_bits[i] = (ieee_exponent << 23) | ieee_mantissa;
+		}
+	}
+}

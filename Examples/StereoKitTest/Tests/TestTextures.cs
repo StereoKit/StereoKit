@@ -1,12 +1,11 @@
 ﻿// SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2024 Nick Klingensmith
-// Copyright (c) 2024 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2024-2025 Qualcomm Technologies, Inc.
 
 using StereoKit;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 internal class TestTextures : ITest
@@ -28,6 +27,10 @@ internal class TestTextures : ITest
 		ushort off16 = 0x0000;
 		ushort onRG  = 0xFF00;
 		ushort offRG = 0x00FF;
+		uint   onRGB10A2    = 0xC00003FF;
+		uint   offRGB10A2   = 0xC0000000;
+		uint   onRG11B10    = 0x3C0;
+		uint   offRG11B10A2 = 0x0;
 
 		// Test a NPOT size to ensure mips work properly with that
 		int w = 32;
@@ -52,6 +55,10 @@ internal class TestTextures : ITest
 		testTextures.Add(MakeTest(TexFormat.R32,          1.0f, 0, ow, oh));
 		testTextures.Add(MakeTest(TexFormat.R8g8,         onRG, offRG, w,  h ));
 		testTextures.Add(MakeTest(TexFormat.R8g8,         onRG, offRG, ow, oh));
+		testTextures.Add(MakeTest(TexFormat.Rgb10a2,      onRGB10A2, offRGB10A2, w, h));
+		testTextures.Add(MakeTest(TexFormat.Rgb10a2,      onRGB10A2, offRGB10A2, ow, oh));
+		testTextures.Add(MakeTest(TexFormat.Rg11b10,      onRG11B10, offRG11B10A2, w, h));
+		testTextures.Add(MakeTest(TexFormat.Rg11b10,      onRG11B10, offRG11B10A2, ow, oh));
 
 		Tests.Test(CheckTextureFormats);
 		Tests.Test(CheckTextureRead);
