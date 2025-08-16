@@ -31,7 +31,7 @@ namespace StereoKit.Framework
 		List<LogItem> items = new List<LogItem>();
 		static float  logIndex = 0;
 
-		DiagGraph fpsGraph        = new DiagGraph(5f, 32f);
+		DiagGraph fpsGraph        = new DiagGraph(5f, 20f);
 		DiagGraph ramGraph        = new DiagGraph(0,0);
 		DiagGraph managedRamGraph = new DiagGraph(0,0);
 		ulong lastMemPoll = 0;

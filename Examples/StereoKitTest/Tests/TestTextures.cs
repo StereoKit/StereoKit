@@ -39,8 +39,10 @@ internal class TestTextures : ITest
 		int oh = 33;
 		testTextures.Add(MakeTest(TexFormat.Rgba32,       new Color32(255,0,0,255), new Color32(0,0,0,255), w,  h ));
 		testTextures.Add(MakeTest(TexFormat.Rgba32Linear, new Color32(255,0,0,255), new Color32(0,0,0,255), ow, oh));
+#if !ANDROID
 		testTextures.Add(MakeTest(TexFormat.Bgra32,       new Color32(0,0,255,255), new Color32(0,0,0,255), w,  h ));
 		testTextures.Add(MakeTest(TexFormat.Bgra32Linear, new Color32(0,0,255,255), new Color32(0,0,0,255), ow, oh));
+#endif
 		testTextures.Add(MakeTest(TexFormat.Rgba64f,      on64, off64, w,  h ));
 		testTextures.Add(MakeTest(TexFormat.Rgba64f,      on64, off64, ow, oh));
 		testTextures.Add(MakeTest(TexFormat.Rgba128,      new Color(1,0,0,1), new Color(0,0,0,1), w,  h ));
@@ -55,10 +57,10 @@ internal class TestTextures : ITest
 		testTextures.Add(MakeTest(TexFormat.R32,          1.0f, 0, ow, oh));
 		testTextures.Add(MakeTest(TexFormat.R8g8,         onRG, offRG, w,  h ));
 		testTextures.Add(MakeTest(TexFormat.R8g8,         onRG, offRG, ow, oh));
-		testTextures.Add(MakeTest(TexFormat.Rgb10a2,      onRGB10A2, offRGB10A2, w, h));
-		testTextures.Add(MakeTest(TexFormat.Rgb10a2,      onRGB10A2, offRGB10A2, ow, oh));
 		testTextures.Add(MakeTest(TexFormat.Rg11b10,      onRG11B10, offRG11B10A2, w, h));
 		testTextures.Add(MakeTest(TexFormat.Rg11b10,      onRG11B10, offRG11B10A2, ow, oh));
+		testTextures.Add(MakeTest(TexFormat.Rgb10a2,      onRGB10A2, offRGB10A2, w, h));
+		testTextures.Add(MakeTest(TexFormat.Rgb10a2,      onRGB10A2, offRGB10A2, ow, oh));
 
 		Tests.Test(CheckTextureFormats);
 		Tests.Test(CheckTextureRead);

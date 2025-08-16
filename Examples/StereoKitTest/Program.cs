@@ -19,6 +19,7 @@ class Program
 		appName         = "StereoKit C#",
 		blendPreference = DisplayBlend.AnyTransparent,
 		mode            = AppMode.XR,
+		renderScaling   = 1.5f,
 	};
 
 	static Mesh      floorMesh;
@@ -50,9 +51,9 @@ class Program
 
 		// OpenXR extensions need added before SK.Initialize, so does
 		// LogWindow for early log registration!
-		SK.AddStepper<PassthroughFBExt>();
 		SK.AddStepper<Win32PerformanceCounterExt>();
 		SK.AddStepper<XrCompLayers>();
+		SK.AddStepper(new XrRefreshRate(120));
 		WindowLog = SK.AddStepper<LogWindow>();
 		WindowLog.Enabled = false;
 
