@@ -691,8 +691,8 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 		int64_t native_depth = skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt());
 		bool    found        = false;
 		for (uint32_t i = 0; i < count; i++) {
-			if (native_depth == depth_formats[i]) {
-				*out_depth_dx = depth_formats[i];
+			if (native_depth == formats[i]) {
+				*out_depth_dx = formats[i];
 				found         = true;
 				break;
 			}
