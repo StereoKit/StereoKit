@@ -111,6 +111,9 @@ if (ANDROID)
   # Align to 16kb as per Android recommendations
   # https://developer.android.com/guide/practices/page-sizes
   set(SK_LINKER_FLAGS "-Wl,-z,max-page-size=16384")
+  if(CMAKE_ANDROID_ARCH_ABI STREQUAL "x86_64")
+    add_compile_options(-mavx -mf16c)
+  endif()
 elseif(EMSCRIPTEN)
   #set(EMSCRIPTEN_LIBS)
   set(SK_BUILD_OPENXR_LOADER OFF)
@@ -139,6 +142,7 @@ elseif (UNIX)
   # Add pthreads
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
+
   add_compile_options(-mavx -mf16c)
 
 elseif(WIN32)
