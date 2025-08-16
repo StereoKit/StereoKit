@@ -139,7 +139,6 @@ elseif (UNIX)
   # Add pthreads
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
-  add_compile_options(-mavx -mf16c)
 
 elseif(WIN32)
   if (SK_WINDOWS_GL)
@@ -619,6 +618,7 @@ target_link_libraries( StereoKitC
 
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  add_compile_options(-mavx -mf16c)
   if (__MINGW32__)
     set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections )
     set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id )
