@@ -143,7 +143,9 @@ elseif (UNIX)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
 
-  add_compile_options(-mavx -mf16c)
+  if (NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+    add_compile_options(-mavx -mf16c)
+  endif()
 
 elseif(WIN32)
   if (SK_WINDOWS_GL)
