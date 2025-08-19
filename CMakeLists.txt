@@ -41,7 +41,7 @@ set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a 
 set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
 set(SK_WINDOWS_GL                   OFF CACHE BOOL "Build Windows version using OpenGL as the renderer. This is primarily for debugging GL code while developing on Windows.")
 set(SK_LOCAL_SK_GPU                 OFF CACHE BOOL "Build using a local version of sk_gpu, instead of the latest release. This is useful for testing in-progress changes to sk_gpu.")
-set(SK_PROFILE                      ON  CACHE BOOL "Build with Tracy profiler enabled.")
+set(SK_PROFILE                      OFF CACHE BOOL "Build with Tracy profiler enabled.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
 ###########################################
