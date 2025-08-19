@@ -126,8 +126,8 @@ void *sk_calloc_d(size_t bytes, const char* type, const char* filename, int32_t 
 void *sk_realloc_d(void *memory, size_t bytes, const char* type, const char* filename, int32_t line) {
 	if (memory == nullptr) return sk_malloc_d(bytes, type, filename, line);
 
-	profiler_free(memory);
 	mem_info_t* prev_info = (mem_info_t*)(((uint8_t*)memory) - sizeof(mem_info_t));
+	profiler_free(prev_info);
 	void *result = realloc(prev_info, bytes + sizeof(mem_info_t));
 	if (result == nullptr && bytes > 0) {
 		fprintf(stderr, "Memory alloc failed!");
