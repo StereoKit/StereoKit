@@ -414,7 +414,7 @@ void platform_iterate_dir(const char *directory_path, void *callback_data, void 
 				on_item(callback_data, filename_u8, file_attr);
 			}
 		}
-		free(filename_u8);
+		sk_free(filename_u8);
 
 		if (!FindNextFileW(handle, &info)) {
 			FindClose(handle);

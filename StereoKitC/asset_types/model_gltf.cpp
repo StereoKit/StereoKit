@@ -133,7 +133,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 				w->z = w->z * sum;
 			}
 			if (component_num == 4) {
-				free(weights);
+				sk_free(weights);
 				weights = (vec4*)floats;
 				for (int32_t j = 0; j < weight_ct; j++) {
 					vec4 *w   = &weights[j];

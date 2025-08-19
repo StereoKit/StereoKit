@@ -347,7 +347,7 @@ void file_picker_open_folder(const char *folder) {
 	char *new_folder = string_copy(folder);
 	sk_free(fp_path.folder);
 	sk_free(dir_mem);
-	fp_path.fragments.each(free);
+	for (int32_t i = 0; i < fp_path.fragments.count; i++) sk_free(fp_path.fragments[i]);
 	fp_path.fragments.clear();
 
 	fp_path.folder   = new_folder;
@@ -395,7 +395,7 @@ void file_picker_click_item(fp_item_t item) {
 	else {
 		char* path = platform_push_path_new(fp_path.folder, item.name);
 		file_picker_open_folder(path);
-		free(path);
+		sk_free(path);
 	}
 }
 
@@ -613,7 +613,7 @@ void file_picker_update() {
 void file_picker_shutdown() {
 	sk_free(fp_title      );
 	sk_free(fp_path.folder);
-	fp_path.fragments.each(free);
+	for (int32_t i = 0; i < fp_path.fragments.count; i++) sk_free(fp_path.fragments[i]);
 	fp_path.fragments.free();
 	fp_path = {};
 	fp_items.free();

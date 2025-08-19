@@ -82,7 +82,19 @@ void *sk_malloc_d(size_t bytes, const char* type, const char* filename, int32_t 
 		fprintf(stderr, "Memory alloc failed!");
 		abort();
 	}
-	profiler_alloc(result, bytes);
+	mem_info_t* mem = mem_tracker_root;
+	while (mem != nullptr) {
+		if (mem == result) {
+			fprintf(stderr, "Memory allocation is already tracked!");
+			abort();
+		}
+		if ((uint8_t*)mem <= ((uint8_t*)result + bytes + sizeof(mem_info_t)) && (uint8_t*)result <= ((uint8_t*)mem + mem->bytes + sizeof(mem_info_t))) {
+			fprintf(stderr, "Overlapping tracked allocations!");
+			abort();
+		}
+		mem = mem->next;
+	}
+	profiler_alloc(((uint8_t*)result) + sizeof(mem_info_t), bytes);
 
 	// This can be a really handy way to debug a specific allocation!
 	//if (bytes == 13851053 && line == 182) {
@@ -108,7 +120,19 @@ void *sk_calloc_d(size_t bytes, const char* type, const char* filename, int32_t 
 		fprintf(stderr, "Memory alloc failed!");
 		abort();
 	}
-	profiler_alloc(result, bytes);
+	mem_info_t* mem = mem_tracker_root;
+	while (mem != nullptr) {
+		if (mem == result) {
+			fprintf(stderr, "Memory allocation is already tracked!");
+			abort();
+		}
+		if ((uint8_t*)mem <= ((uint8_t*)result + bytes + sizeof(mem_info_t)) && (uint8_t*)result <= ((uint8_t*)mem + mem->bytes + sizeof(mem_info_t))) {
+			fprintf(stderr, "Overlapping tracked allocations!");
+			abort();
+		}
+		mem = mem->next;
+	}
+	profiler_alloc(((uint8_t*)result) + sizeof(mem_info_t), bytes);
 	
 	mem_info_t* info = (mem_info_t*)result;
 	*info = {};
@@ -127,14 +151,26 @@ void *sk_realloc_d(void *memory, size_t bytes, const char* type, const char* fil
 	if (memory == nullptr) return sk_malloc_d(bytes, type, filename, line);
 
 	mem_info_t* prev_info = (mem_info_t*)(((uint8_t*)memory) - sizeof(mem_info_t));
-	profiler_free(prev_info);
+	profiler_free(memory);
 	void *result = realloc(prev_info, bytes + sizeof(mem_info_t));
 	if (result == nullptr && bytes > 0) {
 		fprintf(stderr, "Memory alloc failed!");
 		abort();
 	}
-	profiler_alloc(result, bytes);
-
+	mem_info_t* mem = mem_tracker_root;
+	while (mem != nullptr) {
+		if (mem == result) {
+			fprintf(stderr, "Memory allocation is already tracked!");
+			abort();
+		}
+		if ((uint8_t*)mem <= ((uint8_t*)result + bytes + sizeof(mem_info_t)) && (uint8_t*)result <= ((uint8_t*)mem + mem->bytes + sizeof(mem_info_t))) {
+			fprintf(stderr, "Overlapping tracked allocations!");
+			abort();
+		}
+		mem = mem->next;
+	}
+	profiler_alloc(((uint8_t*)result) + sizeof(mem_info_t), bytes);
+	
 	mem_info_t* info = (mem_info_t*)result;
 	info->bytes    = bytes;
 	info->filename = filename;
@@ -152,9 +188,24 @@ void *sk_realloc_d(void *memory, size_t bytes, const char* type, const char* fil
 void _sk_free_d(void* memory, const char* filename, int32_t line) {
 	if (memory == nullptr) return;
 
+	mem_info_t* info = (mem_info_t*)(((uint8_t*)memory) - sizeof(mem_info_t));
+
+	mem_info_t* mem = mem_tracker_root;
+	bool found = false;
+	while (mem != nullptr) {
+		if (mem == info) {
+			found = true;
+			break;
+		}
+		mem = mem->next;
+	}
+	if (!found) {
+		fprintf(stderr, "Attempted to free memory that wasn't allocated by us!");
+		abort();
+	}
+
 	profiler_free(memory);
 
-	mem_info_t* info = (mem_info_t*)(((uint8_t*)memory) - sizeof(mem_info_t));
 	if (info->prev != nullptr) info->prev->next = info->next;
 	if (info->next != nullptr) info->next->prev = info->prev;
 	if (mem_tracker_tail == info) mem_tracker_tail = info->prev;
