@@ -1,4 +1,5 @@
 #include "sk_memory.h"
+#include "libraries/profiler.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +17,7 @@ void *sk_malloc(size_t bytes) {
 		fprintf(stderr, "Memory alloc failed!");
 		abort();
 	}
+	profiler_alloc(result, bytes);
 	return result;
 }
 
@@ -27,23 +29,30 @@ void *sk_calloc(size_t bytes) {
 		fprintf(stderr, "Memory alloc failed!");
 		abort();
 	}
+	profiler_alloc(result, bytes);
 	return result;
 }
 
 ///////////////////////////////////////////
 
 void *sk_realloc(void *memory, size_t bytes) {
+	if (memory) {
+		profiler_free(memory);
+	}
 	void *result = realloc(memory, bytes);
 	if (result == nullptr && bytes > 0) {
 		fprintf(stderr, "Memory alloc failed!");
 		abort();
 	}
+	profiler_alloc(result, bytes);
 	return result;
 }
 
 ///////////////////////////////////////////
 
 void _sk_free(void* memory) {
+	if (memory)
+		profiler_free(memory);
 	free(memory);
 }
 
@@ -73,6 +82,7 @@ void *sk_malloc_d(size_t bytes, const char* type, const char* filename, int32_t 
 		fprintf(stderr, "Memory alloc failed!");
 		abort();
 	}
+	profiler_alloc(result, bytes);
 
 	// This can be a really handy way to debug a specific allocation!
 	//if (bytes == 13851053 && line == 182) {
@@ -98,6 +108,7 @@ void *sk_calloc_d(size_t bytes, const char* type, const char* filename, int32_t 
 		fprintf(stderr, "Memory alloc failed!");
 		abort();
 	}
+	profiler_alloc(result, bytes);
 	
 	mem_info_t* info = (mem_info_t*)result;
 	*info = {};
@@ -115,12 +126,14 @@ void *sk_calloc_d(size_t bytes, const char* type, const char* filename, int32_t 
 void *sk_realloc_d(void *memory, size_t bytes, const char* type, const char* filename, int32_t line) {
 	if (memory == nullptr) return sk_malloc_d(bytes, type, filename, line);
 
+	profiler_free(memory);
 	mem_info_t* prev_info = (mem_info_t*)(((uint8_t*)memory) - sizeof(mem_info_t));
 	void *result = realloc(prev_info, bytes + sizeof(mem_info_t));
 	if (result == nullptr && bytes > 0) {
 		fprintf(stderr, "Memory alloc failed!");
 		abort();
 	}
+	profiler_alloc(result, bytes);
 
 	mem_info_t* info = (mem_info_t*)result;
 	info->bytes    = bytes;
@@ -138,6 +151,8 @@ void *sk_realloc_d(void *memory, size_t bytes, const char* type, const char* fil
 
 void _sk_free_d(void* memory, const char* filename, int32_t line) {
 	if (memory == nullptr) return;
+
+	profiler_free(memory);
 
 	mem_info_t* info = (mem_info_t*)(((uint8_t*)memory) - sizeof(mem_info_t));
 	if (info->prev != nullptr) info->prev->next = info->next;

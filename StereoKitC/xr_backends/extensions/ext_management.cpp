@@ -282,8 +282,8 @@ void ext_management_cleanup() {
 	}
 
 	// Some of these lists are in charge of allocated memory
-	local.exts_all_m    .each(_sk_free);
-	local.exts_exclude_m.each(_sk_free);
+	for (int32_t i =0; i<local.exts_all_m    .count; i++) sk_free(local.exts_all_m    [i]);
+	for (int32_t i =0; i<local.exts_exclude_m.count; i++) sk_free(local.exts_exclude_m[i]);
 	local.exts_all_m    .free();
 	local.exts_exclude_m.free();
 

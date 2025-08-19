@@ -537,7 +537,7 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 		out_layout->width_cells   += result[i].width;
 		out_layout->width_gutters += 1 + (int32_t)(result[i].width / 2.0f - 0.5f);
 	}
-	free(escape_text);
+	sk_free(escape_text);
 	return true;
 }
 
