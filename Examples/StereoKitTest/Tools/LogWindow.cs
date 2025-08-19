@@ -32,7 +32,6 @@ namespace StereoKit.Framework
 		static float  logIndex = 0;
 
 		DiagGraph fpsGraph        = new DiagGraph(5f, 20f);
-		DiagGraph ramGraph        = new DiagGraph(0,0);
 		DiagGraph managedRamGraph = new DiagGraph(0,0);
 		ulong lastMemPoll = 0;
 
@@ -127,18 +126,13 @@ namespace StereoKit.Framework
 			if (lastMemPoll != memPollIdx)
 			{
 				lastMemPoll = memPollIdx;
-				using (Process process = Process.GetCurrentProcess())
-				{
-					long managedMem = GC.GetTotalMemory(false);
-					long workingMem = process.WorkingSet64;
-					ramGraph       .Add(workingMem / (1024.0f * 1024.0f));
-					managedRamGraph.Add(managedMem / (1024.0f * 1024.0f));
-				}
+				long managedMem = GC.GetTotalMemory(false);
+				managedRamGraph.Add(managedMem / (1024.0f * 1024.0f));
 			}
 			#endif
 
-			float thirdWidth = (UI.LayoutRemaining.x - UI.Settings.gutter*2) / 3.0f;
-			Vec2  graphSize  = V.XY(thirdWidth, UI.LineHeight);
+			float halfWidth = (UI.LayoutRemaining.x - UI.Settings.gutter*2) / 2.0f;
+			Vec2  graphSize  = V.XY(halfWidth, UI.LineHeight);
 
 			fpsGraph.Add(Time.Stepf*1000);
 			fpsGraph.Draw(styleGraph, "Frame (ms)", UI.LayoutAt + V.XYZ(0,0,-0.004f), graphSize);
@@ -148,9 +142,6 @@ namespace StereoKit.Framework
 			managedRamGraph.Draw(styleGraph, "Managed (mb)", UI.LayoutAt + V.XYZ(0,0,-0.004f), graphSize);
 			UI.LayoutReserve(graphSize);
 			UI.SameLine();
-
-			ramGraph.Draw(styleGraph, "Total (mb)", UI.LayoutAt + V.XYZ(0, 0, -0.004f), graphSize);
-			UI.LayoutReserve(graphSize);
 		}
 
 		struct DiagGraph
