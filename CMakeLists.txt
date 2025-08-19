@@ -246,6 +246,7 @@ if (SK_PROFILE)
       "TRACY_ON_DEMAND ON"
   )
   add_definitions("-DTRACY_ENABLE")
+  set_target_properties(TracyClient PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
 #### sk_gpu - https://github.com/StereoKit/sk_gpu ####

@@ -529,7 +529,7 @@ font_t platform_default_font() {
 	FcConfigDestroy(config);
 
 	result = font_create_files((const char**)fonts.data, fonts.count);
-	fonts.each(free);
+	for(int32_t i=0; i<fonts.count; i++) sk_free(fonts[i]);
 	fonts.free();
 	return result;
 }
