@@ -11,6 +11,7 @@
 #include "../hands/input_hand.h"
 #include "../libraries/array.h"
 #include "../libraries/ferr_thread.h"
+#include "../libraries/profiler.h"
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/openxr_input.h"
 #include "../systems/render.h"
@@ -90,6 +91,8 @@ void input_mouse_update();
 ///////////////////////////////////////////
 
 bool input_init() {
+	profiler_zone();
+
 	local = {};
 	input_head_pose_local = pose_identity;
 	local.eyes_pose_local = pose_identity;
@@ -250,6 +253,8 @@ void input_buttons_update() {
 ///////////////////////////////////////////
 
 void input_step() {
+	profiler_zone();
+
 	///////////////////////////////////////////
 	// Update input sources
 	///////////////////////////////////////////
@@ -331,6 +336,8 @@ void input_step() {
 ///////////////////////////////////////////
 
 void input_step_late() {
+	profiler_zone();
+
 	input_update_poses();
 	input_pose_info_update();
 	input_render_step_late();

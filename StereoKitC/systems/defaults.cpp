@@ -6,6 +6,7 @@
 #include "../asset_types/texture_.h"
 #include "../libraries/default_controller_l.h"
 #include "../libraries/default_controller_r.h"
+#include "../libraries/profiler.h"
 
 #include <string.h>
 
@@ -124,6 +125,8 @@ tex_t dev_texture(const char *id, color128 base_color, float contrast_boost) {
 ///////////////////////////////////////////
 
 bool defaults_init() {
+	profiler_zone();
+
 	// Textures
 	sk_default_tex       = defaults_texture(default_id_tex,       {1,1,1,1}         );
 	sk_default_tex_black = defaults_texture(default_id_tex_black, {0,0,0,1}         );

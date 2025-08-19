@@ -11,6 +11,7 @@
 #include "../../_stereokit.h"
 #include "../../libraries/array.h"
 #include "../../libraries/stref.h"
+#include "../../libraries/profiler.h"
 
 typedef struct ext_management_state_t {
 	array_t<const char*>     exts_user;
@@ -198,6 +199,8 @@ bool ext_management_evt_pre_session_create(XrSessionCreateInfo* ref_session_info
 ///////////////////////////////////////////
 
 void ext_management_evt_step_begin() {
+	profiler_zone();
+
 	for (int32_t i = 0; i < local.callbacks_step_begin.count; i++) {
 		context_callback_t* evt = &local.callbacks_step_begin[i];
 		evt->callback(evt->context);
@@ -207,6 +210,8 @@ void ext_management_evt_step_begin() {
 ///////////////////////////////////////////
 
 void ext_management_evt_step_end() {
+	profiler_zone();
+
 	for (int32_t i = 0; i < local.callbacks_step_end.count; i++) {
 		context_callback_t* evt = &local.callbacks_step_end[i];
 		evt->callback(evt->context);

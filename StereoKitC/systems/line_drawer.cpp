@@ -4,6 +4,7 @@
 #include "../sk_memory.h"
 #include "../hierarchy.h"
 #include "../libraries/array.h"
+#include "../libraries/profiler.h"
 
 #include <stdlib.h>
 
@@ -23,6 +24,8 @@ static line_drawer_state_t local = {};
 ///////////////////////////////////////////
 
 bool line_drawer_init() {
+	profiler_zone();
+
 	local = {};
 
 	shader_t line_shader = shader_find(default_id_shader_lines);
@@ -53,6 +56,8 @@ void line_drawer_shutdown() {
 ///////////////////////////////////////////
 
 void line_drawer_step() {
+	profiler_zone();
+
 	if (local.line_inds.count <= 0)
 		return;
 

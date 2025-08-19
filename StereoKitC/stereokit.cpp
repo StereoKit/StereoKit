@@ -82,6 +82,9 @@ bool32_t sk_step_end  ();
 ///////////////////////////////////////////
 
 bool32_t sk_init(sk_settings_t settings) {
+	profiler_thread_name("StereoKit Main", 0);
+	profiler_zone();
+
 	local = {};
 	local.timev_scale = 1;
 	local.quit_reason = quit_reason_none;
@@ -300,6 +303,8 @@ void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_
 ///////////////////////////////////////////
 
 void sk_app_step() {
+	profiler_zone();
+
 	if (local.app_step_func != nullptr)
 		local.app_step_func();
 }

@@ -14,6 +14,7 @@
 #include "../hierarchy.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
+#include "../libraries/profiler.h"
 
 #include <math.h>
 
@@ -42,6 +43,8 @@ bool32_t ui_text_at(const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scrol
 ///////////////////////////////////////////
 
 bool ui_init() {
+	profiler_zone();
+
 	skui_input_target        = 0;
 	skui_input_carat         = 0;
 	skui_input_carat_end     = 0;
@@ -70,6 +73,8 @@ void ui_shutdown() {
 ///////////////////////////////////////////
 
 void ui_step() {
+	profiler_zone();
+
 	ui_core_update();
 	ui_theming_update();
 
@@ -81,6 +86,8 @@ void ui_step() {
 ///////////////////////////////////////////
 
 void ui_step_late() {
+	profiler_zone();
+
 	ui_pop_surface();
 
 	// If the active input target was not confirmed to exist, we should drop

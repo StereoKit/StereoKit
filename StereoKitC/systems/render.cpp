@@ -11,6 +11,7 @@
 #include "../_stereokit.h"
 #include "../device.h"
 #include "../libraries/stref.h"
+#include "../libraries/profiler.h"
 #include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
@@ -185,6 +186,8 @@ void          radix_sort_init         ();
 ///////////////////////////////////////////
 
 bool render_init() {
+	profiler_zone();
+
 	local = {};
 	local.initialized           = true;
 	local.sim_origin            = matrix_identity;
@@ -304,6 +307,8 @@ void render_shutdown() {
 ///////////////////////////////////////////
 
 void render_step() {
+	profiler_zone();
+
 	render_reset_buffer_pool();
 
 	hierarchy_step();
