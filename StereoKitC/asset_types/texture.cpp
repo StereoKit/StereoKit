@@ -9,6 +9,7 @@
 #include "../libraries/qoi.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_halffloat.h"
+#include "../libraries/profiler.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
@@ -85,6 +86,8 @@ void tex_load_free(asset_header_t *, void *job_data) {
 ///////////////////////////////////////////
 
 bool32_t tex_load_arr_files_shared(asset_task_t* task, asset_header_t* asset, void* job_data) {
+	profiler_zone();
+
 	tex_load_t* data = (tex_load_t*)job_data;
 	tex_t       tex  = (tex_t)asset;
 
@@ -170,6 +173,8 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 ///////////////////////////////////////////
 
 bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_data) {
+	profiler_zone();
+
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
@@ -537,6 +542,8 @@ tex_t tex_create_file_arr(const char **files, int32_t file_count, bool32_t srgb_
 ///////////////////////////////////////////
 
 tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int32_t priority) {
+	profiler_zone();
+
 	char cubemap_id[64];
 	snprintf(cubemap_id, sizeof(cubemap_id), "sk/tex/cubemap/%" PRIu64, hash_string(cubemap_file));
 
@@ -588,6 +595,8 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 	///////////////////////////////////////////
 
 	bool32_t(*upload)(asset_task_t*, asset_header_t*, void*) = [](asset_task_t* task, asset_header_t * asset, void* job_data) {
+		profiler_zone();
+
 		tex_load_t *data = (tex_load_t *)job_data;
 		tex_t       tex  = (tex_t)asset;
 
@@ -728,6 +737,8 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 ///////////////////////////////////////////
 
 tex_t tex_copy(const tex_t texture, tex_type_ type, tex_format_ format) {
+	profiler_zone();
+
 	tex_t result = tex_create(type, format == tex_format_none ? texture->format : format);
 	tex_set_color_arr_mips(result, texture->width, texture->height, nullptr, 1, skg_mip_count(texture->width, texture->height));
 
@@ -961,6 +972,8 @@ void tex_on_load_remove(tex_t texture, void (*on_load)(tex_t texture, void *cont
 ///////////////////////////////////////////
 
 void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
+	profiler_zone();
+
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->width != width || texture->height != height || texture->tex.array_count != array_count;
 	if (!different_size && (array_data == nullptr || *array_data == nullptr))
@@ -1020,6 +1033,8 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** arra
 ///////////////////////////////////////////
 
 void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample, spherical_harmonics_t * out_sh_lighting_info) {
+	profiler_zone();
+
 	struct tex_upload_job_t {
 		tex_t                  texture;
 		int32_t                width;
@@ -1047,6 +1062,8 @@ void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void *
 ///////////////////////////////////////////
 
 void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data, bool32_t blocking, int32_t priority) {
+	profiler_zone();
+
 	tex_load_t* load_data = sk_malloc_zero_t(tex_load_t, 1);
 	load_data->is_srgb       = srgb_data;
 	load_data->file_count    = 1;
@@ -1087,6 +1104,8 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 ///////////////////////////////////////////
 
 spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
+	profiler_zone();
+
 	assets_block_until(&cubemap_texture->header, asset_state_loaded);
 
 	skg_tex_t *tex = &cubemap_texture->tex;

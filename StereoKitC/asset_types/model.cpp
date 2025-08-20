@@ -6,6 +6,7 @@
 #include "model.h"
 #include "mesh.h"
 #include "../libraries/stref.h"
+#include "../libraries/profiler.h"
 #include "../platforms/platform.h"
 
 using namespace DirectX;
@@ -50,6 +51,8 @@ model_t model_find(const char *id) {
 ///////////////////////////////////////////
 
 model_t model_copy(model_t model) {
+	profiler_zone();
+
 	if (model == nullptr) {
 		log_err("model_copy was provided a null model!");
 		return nullptr;
@@ -99,6 +102,8 @@ model_t model_create_mesh(mesh_t mesh, material_t material) {
 ///////////////////////////////////////////
 
 model_t model_create_mem(const char *filename, const void *data, size_t data_size, shader_t shader) {
+	profiler_zone();
+
 	model_t result = model_create();
 	
 	if (string_endswith(filename, ".glb",  false) || 
@@ -125,13 +130,15 @@ model_t model_create_mem(const char *filename, const void *data, size_t data_siz
 ///////////////////////////////////////////
 
 model_t model_create_file(const char *filename, shader_t shader) {
+	profiler_zone();
+
 	model_t result = model_find(filename);
 	if (result != nullptr)
 		return result;
 
 	void*    data;
 	size_t   length;
-	bool32_t loaded         = platform_read_file(filename, &data, &length);
+	bool32_t loaded = platform_read_file(filename, &data, &length);
 	if (!loaded) {
 		log_warnf("Model file failed to load: %s", filename);
 		return nullptr;

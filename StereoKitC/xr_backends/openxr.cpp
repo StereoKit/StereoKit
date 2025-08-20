@@ -213,11 +213,11 @@ bool openxr_create_system() {
 	// Always log the extension table, this may contain information about why
 	// we failed to load.
 	openxr_show_ext_table(exts_request, exts_available, layers_request, layers_available);
-	exts_request  .free();
-	exts_available.each(_sk_free);
+	exts_request.free();
+	for (int32_t i =0; i<exts_available.count; i++) sk_free(exts_available[i]);
 	exts_available.free();
-	layers_request  .free();
-	layers_available.each(_sk_free);
+	layers_request.free();
+	for (int32_t i =0; i<layers_available.count; i++) sk_free(layers_available[i]);
 	layers_available.free();
 
 	// If the instance is null here, the user needs to install an OpenXR

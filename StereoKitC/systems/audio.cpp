@@ -6,6 +6,7 @@
 #include "../platforms/platform.h"
 
 #include "../libraries/stref.h"
+#include "../libraries/profiler.h"
 #include "../libraries/isac_spatial_sound.h"
 
 #include <string.h>
@@ -411,6 +412,8 @@ bool32_t mic_is_recording() {
 ///////////////////////////////////////////
 
 bool audio_init() {
+	profiler_zone();
+
 	au_mix_temp = sk_malloc_t(float, au_mix_temp_size);
 	memset(au_mix_temp, 0, sizeof(float) * au_mix_temp_size);
 
@@ -482,6 +485,8 @@ bool audio_init() {
 ///////////////////////////////////////////
 
 void audio_step() {
+	profiler_zone();
+
 	au_head_transform = pose_matrix_inv(input_head());
 
 	for (size_t i = 0; i < _countof(au_active_sounds); i++) {
