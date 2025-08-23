@@ -119,7 +119,7 @@ void input_render_step_late() {
 		if (input_hand_get_visible((handed_)i) == false) continue;
 
 		hand_source_ source = input_hand_source((handed_)i);
-		if (source == hand_source_articulated) {
+		if (source == hand_source_articulated && input_controller_is_hand((handed_)i)) {
 			const hand_t* hand = input_hand((handed_)i);
 			if ((hand->tracked_state & button_state_active) != 0 && local.hand_material[i] != nullptr) {
 				hand_mesh_t* hand_active_mesh = &local.hand_fallback_mesh[i];
@@ -128,7 +128,7 @@ void input_render_step_late() {
 
 				render_add_mesh(hand_active_mesh->mesh, local.hand_material[i], hand_active_mesh->root_transform, hand->pinch_state & button_state_active ? color128{ 1.5f, 1.5f, 1.5f, 1 } : color128{ 1,1,1,1 });
 			}
-		} else if (source == hand_source_simulated) {
+		} else if (source == hand_source_simulated || source == hand_source_articulated) {
 			const controller_t* control = input_controller((handed_)i);
 			if (!input_controller_is_hand((handed_)i) && (control->tracked & button_state_active) != 0) {
 				if (local.controller_model[i] != nullptr) {
