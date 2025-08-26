@@ -239,6 +239,20 @@ namespace StereoKit
 		public static void SetClip(float nearPlane = 0.08f, float farPlane = 50)
 			=> NativeAPI.render_set_clip(nearPlane, farPlane);
 
+		/// <summary>This retrieves the current near and far clipping planes
+		/// for the perspective matrix of the primary draw surface.</summary>
+		/// <param name="nearPlane">The GPU discards pixels that are too
+		/// close to the camera, this is that distance! It will be larger
+		/// than zero, due to the projection math, which also means that
+		/// numbers too close to zero will produce z-fighting artifacts. This
+		/// has an enforced minimum of 0.001, but will probably be closer to
+		/// 0.1.</param>
+		/// <param name="farPlane">At what distance from the camera does the
+		/// GPU discard pixel? This is not true distance, but rather Z-axis
+		/// distance from zero in View Space coordinates!</param>
+		public static void GetClip(out float nearPlane, out float farPlane)
+			=> NativeAPI.render_get_clip(out nearPlane, out farPlane);
+
 		/// <summary>Only works for flatscreen! This updates the camera's 
 		/// projection matrix with a new field of view.
 		/// 

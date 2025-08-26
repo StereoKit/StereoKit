@@ -1697,6 +1697,7 @@ typedef enum projection_ {
 
 //TODO: for v0.4, rename render_set_clip and render_set_fov to indicate they are only for perspective
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
+SK_API void                  render_get_clip       (float* out_near_plane, float* out_far_plane);
 SK_API void                  render_set_fov        (float field_of_view_degrees sk_default(90.0f));
 SK_API void                  render_set_ortho_clip (float near_plane sk_default(0.0f), float far_plane sk_default(50));
 SK_API void                  render_set_ortho_size (float viewport_height_meters);

@@ -441,6 +441,7 @@ namespace StereoKit
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_clip       (float near_plane, float far_plane);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_get_clip       (out float out_near_plane, out float out_far_plane);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_fov        (float field_of_view_degrees);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_ortho_clip (float near_plane, float far_plane);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_set_ortho_size (float viewport_height_meters);
