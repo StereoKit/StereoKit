@@ -56,6 +56,7 @@ struct input_state_t {
 	mouse_t               mouse_data;
 	controller_t          controllers[2];
 	bool                  controller_hand[2];
+	bool                  controller_detached[2];
 	button_state_         controller_menubtn;
 	pose_t                palm_offset[2];
 
@@ -170,9 +171,9 @@ void input_pose_info_update() {
 		track_state_ grip_pos_tracked, grip_rot_tracked;
 		input_pose_get_state(poses_palm[i], &palm_pos_tracked, &palm_rot_tracked);
 		input_pose_get_state(poses_grip[i], &grip_pos_tracked, &grip_rot_tracked);
-		if (palm_pos_tracked == track_state_lost &&
-			palm_rot_tracked == track_state_lost &&
-			grip_rot_tracked != track_state_lost) {
+		// if (palm_pos_tracked == track_state_lost &&
+		// 	palm_rot_tracked == track_state_lost &&
+		if (	grip_rot_tracked != track_state_lost) {
 
 			// Make sure we have room in our input array for the pose
 			if (poses_palm[i] >= local.curr_poses.count)
@@ -458,6 +459,19 @@ bool input_controller_is_hand(handed_ hand) {
 void input_controller_set_hand(handed_ hand, bool is_hand) {
 	local.controller_hand[hand] = is_hand;
 }
+
+///////////////////////////////////////////
+
+bool input_controller_is_detached(handed_ hand) {
+	return local.controller_detached[hand];
+}
+
+///////////////////////////////////////////
+
+void input_controller_set_detached(handed_ hand, bool is_detached) {
+	local.controller_detached[hand] = is_detached;
+}
+
 
 ///////////////////////////////////////////
 

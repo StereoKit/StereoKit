@@ -100,26 +100,26 @@ void interactor_modes_shutdown() {
 void interactor_modes_update() {
 	// auto-switch between hands and controllers
 	if (local.default_interactors == default_interactors_default) {
-		hand_source_ source = input_hand_source(handed_right);
-		if (source == hand_source_articulated || source == hand_source_overridden) {
-			// Switch to hands mode for both hands
-			for (int32_t h = 0; h < handed_max; h++) {
+		for (int32_t h = 0; h < handed_max; h++) {
+			hand_source_ source = input_hand_source((handed_)h);
+			if (source == hand_source_articulated || source == hand_source_overridden) {
+				// Switch to hands mode for both hands
 				if (input_controller_is_hand((handed_)h)) {
 				    interact_mode_switch(interact_mode_hands, (handed_)h);
 			    } else {
 				    interact_mode_switch(interact_mode_controllers, (handed_)h);
 			    }
 			}
-		}
-		else if (source == hand_source_simulated && device_display_get_type() == display_type_flatscreen) interact_mode_switch(interact_mode_mouse, handed_right);
-		else {
-			// Switch to controllers mode for both hands
-			for (int32_t h = 0; h < handed_max; h++) {
-				if (input_controller_is_hand((handed_)h)) {
-				    interact_mode_switch(interact_mode_hands, (handed_)h);
-			    } else {
-				    interact_mode_switch(interact_mode_controllers, (handed_)h);
-			    }
+			else if (source == hand_source_simulated && device_display_get_type() == display_type_flatscreen) interact_mode_switch(interact_mode_mouse, handed_right);
+			else {
+				// Switch to controllers mode for both hands
+				for (int32_t h = 0; h < handed_max; h++) {
+					if (input_controller_is_hand((handed_)h)) {
+				    	interact_mode_switch(interact_mode_hands, (handed_)h);
+			    	} else {
+				    	interact_mode_switch(interact_mode_controllers, (handed_)h);
+			    	}
+				}
 			}
 		}
 	}
@@ -186,6 +186,18 @@ void interact_mode_switch(interact_mode_ mode, handed_ hand) {
 	else if (local.input_mode[h] == interact_mode_hands      ) interact_mode_hands_stop      (&local.hands, hand);
 	else if (local.input_mode[h] == interact_mode_mouse      ) interact_mode_mouse_stop      (&local.mouse);
 	else if (local.input_mode[h] == interact_mode_eyes       ) interact_mode_eyes_stop       (&local.eyes);
+
+	const char* hand_str = hand == handed_left ? "left" : hand == handed_right ? "right" : "unknown";
+	const char* mode_str = "unknown";
+	switch (mode) {
+		case interact_mode_none:        mode_str = "none"; break;
+		case interact_mode_hands:       mode_str = "hands"; break;
+		case interact_mode_controllers: mode_str = "controllers"; break;
+		case interact_mode_mouse:       mode_str = "mouse"; break;
+		case interact_mode_eyes:        mode_str = "eyes"; break;
+		default: break;
+	}
+	log_infof("[interactor_modes] Switching %s hand to mode: %s", hand_str, mode_str);
 
 	local.input_mode[h] = mode;
 

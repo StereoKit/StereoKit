@@ -66,6 +66,8 @@ void          input_controller_menu_set(button_state_ state);
 bool          input_controller_key     (handed_ hand, controller_key_ key, float* out_amount);
 bool          input_controller_is_hand (handed_ hand);
 void          input_controller_set_hand(handed_ hand, bool is_hand);
+bool          input_controller_is_detached (handed_ hand);
+void		  input_controller_set_detached(handed_ hand, bool is_detached);
 void          input_eyes_tracked_set   (button_state_ state);
 
 void          input_pose_inject        (input_pose_   pose_type, pose_t pose, track_state_ pos_tracked, track_state_ rot_tracked);
