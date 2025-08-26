@@ -253,15 +253,29 @@ namespace StereoKit
 		public static void GetClip(out float nearPlane, out float farPlane)
 			=> NativeAPI.render_get_clip(out nearPlane, out farPlane);
 
-		/// <summary>Only works for flatscreen! This updates the camera's 
-		/// projection matrix with a new field of view.
+		/// <summary>Only works for 2D windowed modes! This updates the
+		/// camera's projection matrix with a new vertical field of view.
 		/// 
 		/// This value only affects perspective mode projection, which is the
 		/// default projection mode.</summary>
-		/// <param name="fieldOfViewDegrees">Vertical field of view in degrees.
+		/// <param name="verticalFieldOfViewDegrees">Vertical field of view in degrees.
 		/// </param>
-		public static void SetFOV(float fieldOfViewDegrees)
-			=> NativeAPI.render_set_fov(fieldOfViewDegrees);
+		public static void SetFOV(float verticalFieldOfViewDegrees)
+			=> NativeAPI.render_set_fov(verticalFieldOfViewDegrees);
+
+		/// <summary>Only works for 2D windowed modes! This retrieves the
+		/// vertical field of view of the camera's projection matrix when in
+		/// perspective projection mode.</summary>
+		/// <returns>The vertical field of view in degrees.</returns>
+		public static float GetFOV()
+			=> NativeAPI.render_get_fov();
+
+		/// <summary>Only works for 2D windowed modes! This updates the
+		/// camera's projection matrix with a new vertical field of view.
+		/// 
+		/// This value only affects perspective mode projection, which is the
+		/// default projection mode.</summary>
+		public static float FOV { get => NativeAPI.render_get_fov(); set => NativeAPI.render_set_fov(value); }
 
 		/// <summary>Set the near and far clipping planes of the camera!
 		/// These are important to z-buffer quality, especially when using
@@ -271,7 +285,7 @@ namespace StereoKit
 		/// objects that are overlapping, try making the range smaller.
 		/// 
 		/// These values only affect orthographic mode projection, which is 
-		/// only available in flatscreen.</summary>
+		/// only available in 2D window modes.</summary>
 		/// <param name="nearPlane">The GPU discards pixels that are too
 		/// close to the camera, this is that distance!</param>
 		/// <param name="farPlane">At what distance from the camera does the
@@ -284,11 +298,25 @@ namespace StereoKit
 		/// viewport. You can use this feature to zoom in and out of the scene.
 		/// 
 		/// This value only affects orthographic mode projection, which is only
-		/// available in flatscreen.</summary>
+		/// available in 2D window modes.</summary>
 		/// <param name="viewportHeightMeters">The vertical size of the
 		/// projection's viewport, in meters.</param>
 		public static void SetOrthoSize(float viewportHeightMeters)
 			=> NativeAPI.render_set_ortho_size(viewportHeightMeters);
+
+		/// <summary>This sets the size of the orthographic projection's
+		/// viewport. You can use this feature to zoom in and out of the scene.
+		/// 
+		/// This value only affects orthographic mode projection, which is only
+		/// available in 2D window modes.</summary>
+		public static float OrthoSize { get => NativeAPI.render_get_ortho_size(); set => NativeAPI.render_set_ortho_size(value); }
+
+		/// <summary>This retrieves the size the primary render surface's view
+		/// when using orthographic projection mode.</summary>
+		/// <returns>The vertical size of the projection's viewport, in meters.
+		/// </returns>
+		public static float GetOrthoSize()
+			=> NativeAPI.render_get_ortho_size();
 
 		/// <summary>Renders a Material onto a rendertarget texture! StereoKit uses a 4 vert quad stretched
 		/// over the surface of the texture, and renders the material onto it to the texture.</summary>
