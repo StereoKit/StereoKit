@@ -171,9 +171,9 @@ void input_pose_info_update() {
 		track_state_ grip_pos_tracked, grip_rot_tracked;
 		input_pose_get_state(poses_palm[i], &palm_pos_tracked, &palm_rot_tracked);
 		input_pose_get_state(poses_grip[i], &grip_pos_tracked, &grip_rot_tracked);
-		// if (palm_pos_tracked == track_state_lost &&
-		// 	palm_rot_tracked == track_state_lost &&
-		if (	grip_rot_tracked != track_state_lost) {
+		if (palm_pos_tracked == track_state_lost &&
+			palm_rot_tracked == track_state_lost &&
+			grip_rot_tracked != track_state_lost) {
 
 			// Make sure we have room in our input array for the pose
 			if (poses_palm[i] >= local.curr_poses.count)
@@ -473,6 +473,16 @@ bool input_controller_is_detached(handed_ hand) {
 void input_controller_set_detached(handed_ hand, bool is_detached) {
 	local.controller_detached[hand] = is_detached;
 	log_diagf("Controller %s set to %s", hand == handed_left ? "Left" : "Right", is_detached ? "Detached" : "Attached");
+}
+
+///////////////////////////////////////////
+
+pose_t input_controller_detached(handed_ hand) {
+	input_pose_ detached_pose = hand == handed_left ? detached_pose_l : detached_pose_r;
+	if (detached_pose >= 0 && detached_pose < local.curr_poses.count) {
+		return render_cam_final_transform(local.curr_poses[detached_pose].pose);
+	}
+	return pose_identity;
 }
 
 

@@ -81,13 +81,7 @@ hand_source_ input_hand_source(handed_ hand) {
 
 ///////////////////////////////////////////
 
-// hand_system_ input_hand_get_system() {
-// 	return input_hand_get_system_for_hand(handed_left);
-// }
-
-///////////////////////////////////////////
-
-hand_system_ input_hand_get_system_for_hand(handed_ hand) {
+hand_system_ input_hand_get_system(handed_ hand) {
 	return hand_sources[hand_system[hand]].system;
 }
 
@@ -113,7 +107,7 @@ void input_hand_refresh_system() {
 		int available_source = hand_sources.count - 1;
 		for (int32_t i = 0; i < hand_sources.count; i++) {
 			if (hand_sources[i].available()) {
-				// If this is oxr_articulated system, only accept it if input_controller_is_hand is true
+				// Simultaneous hand & controller needs this
 				if (hand_sources[i].system == hand_system_oxr_articulated && !input_controller_is_hand((handed_)hand)) {
 					continue;
 				}
@@ -183,7 +177,6 @@ void input_hand_init() {
 	sys.available       = []() {return true;};
 	sys.init            = []() {};
 	sys.shutdown        = []() {};
-	sys.update_inactive = []() {};
 	sys.update_frame    = [](handed_) {};
 	sys.update_poses    = [](handed_) {};
 	input_hand_system_register(sys);

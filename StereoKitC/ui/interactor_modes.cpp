@@ -103,7 +103,6 @@ void interactor_modes_update() {
 		for (int32_t h = 0; h < handed_max; h++) {
 			hand_source_ source = input_hand_source((handed_)h);
 			if (source == hand_source_articulated || source == hand_source_overridden) {
-				// Switch to hands mode for both hands
 				if (input_controller_is_hand((handed_)h)) {
 				    interact_mode_switch(interact_mode_hands, (handed_)h);
 			    } else {
@@ -112,7 +111,6 @@ void interactor_modes_update() {
 			}
 			else if (source == hand_source_simulated && device_display_get_type() == display_type_flatscreen) interact_mode_switch(interact_mode_mouse, handed_right);
 			else {
-				// Switch to controllers mode for both hands
 				for (int32_t h = 0; h < handed_max; h++) {
 					if (input_controller_is_hand((handed_)h)) {
 				    	interact_mode_switch(interact_mode_hands, (handed_)h);

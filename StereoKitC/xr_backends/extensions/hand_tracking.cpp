@@ -279,31 +279,6 @@ void xr_ext_hand_tracking_update_joints(handed_ hand) {
 	// No valid joints? Hand may not be visible, we can skip getting 
 	// pose information.
 	if (!valid_joints) {
-		// Check if we need to update the overall hand activity status
-		// by checking the other hand too
-		if (!hands_active) {
-			for (int32_t other_h = 0; other_h < handed_max; other_h++) {
-				if (other_h != h) {
-					XrHandJointsLocateInfoEXT other_locate_info = { XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT };
-					other_locate_info.time      = xr_time;
-					other_locate_info.baseSpace = xr_app_space;
-
-					XrHandJointLocationEXT  other_joint_locations[XR_HAND_JOINT_COUNT_EXT];
-					XrHandJointLocationsEXT other_locations = { XR_TYPE_HAND_JOINT_LOCATIONS_EXT };
-					other_locations.isActive       = XR_FALSE;
-					other_locations.jointCount     = XR_HAND_JOINT_COUNT_EXT;
-					other_locations.jointLocations = other_joint_locations;
-					xrLocateHandJointsEXT(local.hand_tracker[other_h], &other_locate_info, &other_locations);
-					
-					hands_active = hands_active || other_locations.isActive;
-				}
-			}
-		}
-		
-		if (!hands_active) {
-			local.hand_active = false;
-			input_hand_refresh_system();
-		}
 		return;
 	}
 
@@ -344,25 +319,6 @@ void xr_ext_hand_tracking_update_joints(handed_ hand) {
 	vec3 right = local.hand_joints[h][XR_HAND_JOINT_LITTLE_PROXIMAL_EXT].position - inp_hand->aim.position;
 	inp_hand->aim.orientation = quat_lookat_up(vec3_zero, dir, vec3_cross(dir, right));
 
-	// Check overall hand activity by also checking the other hand if needed
-	if (!hands_active) {
-		for (int32_t other_h = 0; other_h < handed_max; other_h++) {
-			if (other_h != h) {
-				XrHandJointsLocateInfoEXT other_locate_info = { XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT };
-				other_locate_info.time      = xr_time;
-				other_locate_info.baseSpace = xr_app_space;
-
-				XrHandJointLocationEXT  other_joint_locations[XR_HAND_JOINT_COUNT_EXT];
-				XrHandJointLocationsEXT other_locations = { XR_TYPE_HAND_JOINT_LOCATIONS_EXT };
-				other_locations.isActive       = XR_FALSE;
-				other_locations.jointCount     = XR_HAND_JOINT_COUNT_EXT;
-				other_locations.jointLocations = other_joint_locations;
-				xrLocateHandJointsEXT(local.hand_tracker[other_h], &other_locate_info, &other_locations);
-				
-				hands_active = hands_active || other_locations.isActive;
-			}
-		}
-	}
 
 	if (!hands_active) {
 		local.hand_active = false;
@@ -421,8 +377,6 @@ void xr_ext_hand_tracking_sys_update_inactive() {
 ///////////////////////////////////////////
 
 void xr_ext_hand_tracking_sys_update_frame(handed_ hand) {
-	// For articulated hands, we need to update all joints for both hands
-	// since the system works with both hands simultaneously
 	xr_ext_hand_tracking_update_joints(hand);
 	xr_ext_hand_tracking_update_states(hand);
 }
@@ -430,8 +384,6 @@ void xr_ext_hand_tracking_sys_update_frame(handed_ hand) {
 ///////////////////////////////////////////
 
 void xr_ext_hand_tracking_sys_update_poses(handed_ hand) {
-	// For articulated hands, we need to update all joints for both hands
-	// since the system works with both hands simultaneously
 	xr_ext_hand_tracking_update_joints(hand);
 }
 

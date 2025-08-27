@@ -2376,6 +2376,7 @@ SK_API const controller_t*   input_controller                (handed_ hand);
 SK_API button_state_         input_controller_menu           (void);
 SK_API void                  input_controller_model_set      (handed_ hand, model_t model);
 SK_API model_t               input_controller_model_get      (handed_ hand);
+SK_API pose_t                input_controller_detached       (handed_ hand);
 SK_API pose_t                input_head                      (void);
 SK_API pose_t                input_eyes                      (void);
 SK_API button_state_         input_eyes_tracked              (void);

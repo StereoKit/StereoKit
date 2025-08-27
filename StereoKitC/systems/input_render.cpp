@@ -129,6 +129,19 @@ void input_render_step_late() {
 				render_add_mesh(hand_active_mesh->mesh, local.hand_material[i], hand_active_mesh->root_transform, hand->pinch_state & button_state_active ? color128{ 1.5f, 1.5f, 1.5f, 1 } : color128{ 1,1,1,1 });
 			} 
 			/// Here we could draw the detached controller
+			if (input_controller_is_detached((handed_)i)) {
+				pose_t detached_pose = input_controller_detached((handed_)i);
+				if (local.controller_model[i] != nullptr) {
+					// If the user has explicitly assigned a model
+					render_add_model(local.controller_model[i], matrix_trs(detached_pose.position, detached_pose.orientation));
+				} else if (xr_ext_interaction_render_model_available()) {
+					// If OpenXR has a model for the controller
+					xr_ext_interaction_render_model_draw_controller((handed_)i);
+				} else {
+					// Otherwise, our built-in backup models
+					render_add_model(i == handed_left ? sk_default_controller_l : sk_default_controller_r, matrix_trs(detached_pose.position, detached_pose.orientation));
+				}			
+			}
 		} else if (source == hand_source_simulated || source == hand_source_articulated ) {
 			const controller_t* control = input_controller((handed_)i);
 			if ((control->tracked & button_state_active) != 0) {

@@ -245,30 +245,14 @@ xr_system_ oxri_init(void*) {
 		profile_l.top_level_path = "/user/detached_controller_meta/left";
 		profile_l.palm_offset    = pose_identity;
 		profile_l.is_hand        = true;
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_grip,     "grip/pose"        };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_aim,      "aim/pose"         };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_trigger, "trigger/value"    };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_grip,    "squeeze/value"    };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_xy,    input_xy_l_stick,      "thumbstick"       };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_stick,  "thumbstick/click" };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_menu,   "menu/click"       };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_x1,     "x/click"          };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_x2,     "y/click"          };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  detached_pose_l,     "grip/pose"        };
 		oxri_register_profile(profile_l);
 
 		xr_interaction_profile_t profile_r = { "oculus/touch_controller" };
 		profile_r.top_level_path = "/user/detached_controller_meta/right";
 		profile_r.palm_offset    = pose_identity;
 		profile_r.is_hand        = true;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,     "grip/pose"        };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,      "aim/pose"         };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger, "trigger/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,    "squeeze/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_r_stick,      "thumbstick"       };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_stick,  "thumbstick/click" };
-
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x1,     "a/click"          };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x2,     "b/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  detached_pose_r,     "grip/pose"        };
 		oxri_register_profile(profile_r);
 	}
 
