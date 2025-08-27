@@ -1548,6 +1548,9 @@ void render_list_add_model(render_list_t list, model_t model, matrix transform, 
 ///////////////////////////////////////////
 
 void render_list_add_model_mat(render_list_t list, model_t model, material_t material_override, matrix transform, color128 color_linear, render_layer_ layer) {
+	if (model->fallback) {
+		render_list_add_model_mat(list, model->fallback, material_override, transform, color_linear, layer);
+	}
 	XMMATRIX root;
 	if (hierarchy_use_top()) matrix_mul         (transform, hierarchy_top(), root);
 	else                     math_matrix_to_fast(transform, &root);

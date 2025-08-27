@@ -1550,10 +1550,12 @@ SK_API model_t       model_find                    (const char *id);
 SK_API model_t       model_copy                    (model_t model);
 SK_API model_t       model_create                  (void);
 SK_API model_t       model_create_mesh             (mesh_t mesh, material_t material);
-SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr));
-SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr));
+SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr), int32_t priority sk_default(10));
+SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr), int32_t priority sk_default(10));
 SK_API void          model_set_id                  (model_t model, const char *id);
 SK_API const char*   model_get_id                  (const model_t model);
+SK_API void          model_set_fallback            (model_t model, model_t fallback);
+SK_API asset_state_  model_asset_state             (const model_t model);
 SK_API void          model_addref                  (model_t model);
 SK_API void          model_release                 (model_t model);
 SK_API void          model_draw                    (model_t model,                               matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
@@ -1565,6 +1567,9 @@ SK_API bounds_t      model_get_bounds              (model_t model);
 SK_API bool32_t      model_ray_intersect             (model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt);
 SK_API bool32_t      model_ray_intersect_bvh         (model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt);
 SK_API bool32_t      model_ray_intersect_bvh_detailed(model_t model, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, mesh_t *out_opt_mesh sk_default(nullptr), matrix *out_opt_matrix sk_default(nullptr), uint32_t* out_opt_start_inds sk_default(nullptr));
+
+SK_API void          model_set_loading_fallback    (model_t loading_model);
+SK_API void          model_set_error_fallback      (model_t error_model);
 
 SK_API void          model_step_anim               (model_t model);
 SK_API bool32_t      model_play_anim               (model_t model, const char *animation_name, anim_mode_ mode);

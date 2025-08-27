@@ -352,10 +352,10 @@ namespace StereoKit
 		/// automatically determine the best shader available to use.</param>
 		/// <returns>A Model created from the file, or null if the file 
 		/// failed to load!</returns>
-		public static Model FromFile(string file, Shader shader = null)
+		public static Model FromFile(string file, Shader shader = null, int priority = 10)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_file(NativeHelper.ToUtf8(file), final);
+			IntPtr inst = NativeAPI.model_create_file(NativeHelper.ToUtf8(file), final, priority);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -374,10 +374,10 @@ namespace StereoKit
 		/// available to use.</param>
 		/// <returns>A Model created from the file, or null if the file
 		/// failed to load!</returns>
-		public static Model FromMemory(string filename, in byte[] data, Shader shader = null)
+		public static Model FromMemory(string filename, in byte[] data, Shader shader = null, int priority = 10)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_mem(NativeHelper.ToUtf8(filename), data, (UIntPtr)data.Length, final);
+			IntPtr inst = NativeAPI.model_create_mem(NativeHelper.ToUtf8(filename), data, (UIntPtr)data.Length, final, priority);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 

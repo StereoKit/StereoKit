@@ -297,6 +297,14 @@ bool defaults_init() {
 	material_set_cull        (sk_default_material_ui_box, cull_none);
 	material_set_transparency(sk_default_material_ui_box, transparency_msaa);
 
+
+	material_t err_mat = material_create(sk_default_shader);
+	material_set_texture(err_mat, "diffuse", sk_default_tex_error);
+	model_t err_model = model_create();
+	model_node_add(err_model, "root", matrix_s({ 0.1f,0.1f,0.1f }), sk_default_sphere, err_mat);
+	model_set_error_fallback(err_model);
+	model_set_loading_fallback(err_model);
+
 	// Text!
 	sk_default_font = platform_default_font();
 	if (sk_default_font == nullptr) {

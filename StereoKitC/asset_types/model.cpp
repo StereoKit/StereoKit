@@ -19,8 +19,143 @@ namespace sk {
 
 ///////////////////////////////////////////
 
+const char* model_msg_load_failed = "Model file failed to load: %s";
+const char* model_msg_file_error  = "Issue loading %s file: %s!";
+const char* model_msg_file_ext    = "Issue loading %s! Unrecognized file extension.";
+
+model_t model_error_model   = nullptr;
+model_t model_loading_model = nullptr;
+
+void model_set_loading_fallback(model_t loading_model) {
+	if (loading_model       != nullptr) model_addref (loading_model);
+	if (model_loading_model != nullptr) model_release(model_loading_model);
+	model_loading_model = loading_model;
+}
+
+void model_set_error_fallback (model_t error_model) {
+	if (error_model       != nullptr) model_addref (error_model);
+	if (model_error_model != nullptr) model_release(model_error_model);
+	model_error_model = error_model;
+}
+
+///////////////////////////////////////////
+// Model loading stages                  //
+///////////////////////////////////////////
+
+struct model_load_t {
+	char*  file_name;
+	void*  file_data;
+	size_t file_size;
+
+	shader_t shader_override;
+};
+
+///////////////////////////////////////////
+
+void model_load_free(asset_header_t*, void* job_data) {
+	model_load_t* data = (model_load_t*)job_data;
+
+	shader_release(data->shader_override);
+	sk_free(data->file_name);
+	sk_free(data->file_data);
+	sk_free(data);
+}
+
+///////////////////////////////////////////
+
+void model_load_on_failure(asset_header_t* asset, void*) {
+	model_set_fallback((model_t)asset, model_error_model);
+}
+
+///////////////////////////////////////////
+
+asset_task_t model_make_loading_task(model_t model, void *load_data, const asset_load_action_t *actions, int32_t action_count, int32_t priority, float complexity) {
+	asset_task_t task = {};
+	task.asset        = (asset_header_t*)model;
+	task.free_data    = model_load_free;
+	task.on_failure   = model_load_on_failure;
+	task.load_data    = load_data;
+	task.actions      = (asset_load_action_t *)actions;
+	task.action_count = action_count;
+	task.priority     = priority;
+	task.sort         = asset_sort(priority, complexity);
+	return task;
+}
+///////////////////////////////////////////
+
+bool32_t model_load_file_data(asset_task_t* task, asset_header_t* asset, void* job_data) {
+	profiler_zone();
+
+	model_load_t* data  = (model_load_t*)job_data;
+	model_t       model = (model_t)asset;
+
+	// Read from file
+	bool32_t loaded = platform_read_file(data->file_name, &data->file_data, &data->file_size);
+	if (!loaded) {
+		log_warnf(model_msg_load_failed, data->file_name);
+		model_set_fallback(model, model_error_model);
+		model->header.state = asset_state_error_not_found;
+		return false;
+	}
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool32_t model_parse_file_data(asset_task_t* task, asset_header_t* asset, void* job_data) {
+	profiler_zone();
+
+	model_load_t* data  = (model_load_t*)job_data;
+	model_t       model = (model_t)asset;
+
+	if (string_endswith(data->file_name, ".glb",  false) || 
+		string_endswith(data->file_name, ".gltf", false) ||
+		string_endswith(data->file_name, ".vrm",  false)) {
+		if (!modelfmt_gltf(model, data->file_name, data->file_data, data->file_size, data->shader_override)) {
+			log_errf(model_msg_file_error, "GLTF", data->file_name);
+			model->header.state = asset_state_error_unsupported;
+			model_set_fallback(model, model_error_model);
+			return false;
+		}
+	} else if (string_endswith(data->file_name, ".obj", false)) {
+		if (!modelfmt_obj(model, data->file_name, data->file_data, data->file_size, data->shader_override)) {
+			log_errf(model_msg_file_error, "Wavefront OBJ", data->file_name);
+			model->header.state = asset_state_error_unsupported;
+			model_set_fallback(model, model_error_model);
+			return false;
+		}
+	} else if (string_endswith(data->file_name, ".stl", false)) {
+		if (!modelfmt_stl(model, data->file_name, data->file_data, data->file_size, data->shader_override)) {
+			log_errf(model_msg_file_error, "STL", data->file_name);
+			model->header.state = asset_state_error_unsupported;
+			model_set_fallback(model, model_error_model);
+			return false;
+		}
+	} else if (string_endswith(data->file_name, ".ply", false)) {
+		if (!modelfmt_ply(model, data->file_name, data->file_data, data->file_size, data->shader_override)) {
+			log_errf(model_msg_file_error, "PLY", data->file_name);
+			model->header.state = asset_state_error_unsupported;
+			model_set_fallback(model, model_error_model);
+			return false;
+		}
+	} else {
+		log_errf(model_msg_file_ext, data->file_name);
+		model->header.state = asset_state_error_unsupported;
+		model_set_fallback(model, model_error_model);
+		return false;
+	}
+
+	model->header.state = asset_state_loaded;
+	model_set_fallback(model, nullptr);
+	return true;
+}
+
+///////////////////////////////////////////
+
 model_t model_create() {
 	model_t result = (_model_t*)assets_allocate(asset_type_model);
+	result->header.state      = asset_state_loaded;
 	result->anim_inst.anim_id = -1;
 	return result;
 }
@@ -35,6 +170,23 @@ void model_set_id(model_t model, const char *id) {
 
 const char* model_get_id(const model_t model) {
 	return model->header.id_text;
+}
+
+///////////////////////////////////////////
+
+void model_set_fallback(model_t model, model_t fallback) {
+	if (model->header.state >= asset_state_loaded && fallback != nullptr) return;
+
+	if (fallback        != nullptr) model_addref (fallback);
+	if (model->fallback != nullptr) model_release(model->fallback);
+
+	model->fallback = fallback;
+}
+
+///////////////////////////////////////////
+
+asset_state_ model_asset_state(const model_t model) {
+	return model->header.state;
 }
 
 ///////////////////////////////////////////
@@ -73,6 +225,10 @@ model_t model_copy(model_t model) {
 		result->nodes[i].name = string_copy(result->nodes[i].name);
 	}
 
+	result->fallback = model->fallback;
+	if (result->fallback)
+		model_addref(result->fallback);
+
 	// If the original Model is animating, we want to set this Model up with
 	// the original meshes, not the active, modified meshes.
 	if (model->anim_inst.skinned_meshes != nullptr) {
@@ -101,55 +257,61 @@ model_t model_create_mesh(mesh_t mesh, material_t material) {
 
 ///////////////////////////////////////////
 
-model_t model_create_mem(const char *filename, const void *data, size_t data_size, shader_t shader) {
-	profiler_zone();
-
-	model_t result = model_create();
-	
-	if (string_endswith(filename, ".glb",  false) || 
-		string_endswith(filename, ".gltf", false) ||
-		string_endswith(filename, ".vrm",  false)) {
-		if (!modelfmt_gltf(result, filename, data, data_size, shader))
-			log_errf("Issue loading GLTF file: %s!", filename);
-	} else if (string_endswith(filename, ".obj", false)) {
-		if (!modelfmt_obj (result, filename, data, data_size, shader))
-			log_errf("Issue loading Wavefront OBJ file: %s!", filename);
-	} else if (string_endswith(filename, ".stl", false)) {
-		if (!modelfmt_stl (result, filename, data, data_size, shader))
-			log_errf("Issue loading STL file: %s!", filename);
-	} else if (string_endswith(filename, ".ply", false)) {
-		if (!modelfmt_ply (result, filename, data, data_size, shader))
-			log_errf("Issue loading PLY file: %s!", filename);
-	} else {
-		log_errf("Issue loading %s! Unrecognized file extension.", filename);
-	}
-
-	return result;
-}
-
-///////////////////////////////////////////
-
-model_t model_create_file(const char *filename, shader_t shader) {
+model_t model_create_mem(const char *filename, const void *data, size_t data_size, shader_t shader, int32_t priority) {
 	profiler_zone();
 
 	model_t result = model_find(filename);
 	if (result != nullptr)
 		return result;
 
-	void*    data;
-	size_t   length;
-	bool32_t loaded = platform_read_file(filename, &data, &length);
-	if (!loaded) {
-		log_warnf("Model file failed to load: %s", filename);
-		return nullptr;
-	}
+	result = model_create();
+	result->header.state = asset_state_loading;
+	model_set_id      (result, filename);
+	model_set_fallback(result, model_loading_model);
 
-	result = model_create_mem(filename, data, length, shader);
-	if (result != nullptr) {
-		model_set_id(result, filename);
-	}
+	model_load_t* load_data = sk_malloc_zero_t(model_load_t, 1);
+	load_data->file_name       = string_copy(filename);
+	load_data->file_size       = data_size;
+	load_data->file_data       = sk_malloc_t(uint8_t, data_size);
+	memcpy(load_data->file_data, data, data_size);
+	load_data->shader_override = shader;
+	if (shader != nullptr) shader_addref(shader);
+
+	static const asset_load_action_t actions[] = {
+		asset_load_action_t {model_parse_file_data, asset_thread_asset},
+		//asset_load_action_t {model_load_upload, backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu },
+	};
+	assets_add_task( model_make_loading_task(result, load_data, actions, _countof(actions), priority, 0) );
 	
-	sk_free(data);
+	return result;
+}
+
+///////////////////////////////////////////
+
+model_t model_create_file(const char *filename, shader_t shader, int32_t priority) {
+	profiler_zone();
+
+	model_t result = model_find(filename);
+	if (result != nullptr)
+		return result;
+
+	result = model_create();
+	result->header.state = asset_state_loading;
+	model_set_id      (result, filename);
+	model_set_fallback(result, model_loading_model);
+
+	model_load_t* load_data = sk_malloc_zero_t(model_load_t, 1);
+	load_data->file_name       = string_copy(filename);
+	load_data->shader_override = shader;
+	if (shader != nullptr) shader_addref(shader);
+
+	static const asset_load_action_t actions[] = {
+		asset_load_action_t {model_load_file_data,  asset_thread_asset},
+		asset_load_action_t {model_parse_file_data, asset_thread_asset},
+		//asset_load_action_t {model_load_upload, backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu },
+	};
+	assets_add_task( model_make_loading_task(result, load_data, actions, _countof(actions), priority, 0) );
+
 	return result;
 }
 
@@ -465,6 +627,8 @@ model_node_id model_node_add_child(model_t model, model_node_id parent, const ch
 ///////////////////////////////////////////
 
 model_node_id model_node_find(model_t model, const char *name) {
+	assets_block_until(&model->header, asset_state_loaded_meta);
+
 	for (int32_t i = 0; i < model->nodes.count; i++) {
 		if (string_eq(model->nodes[i].name, name))
 			return (model_node_id)i;
@@ -475,6 +639,7 @@ model_node_id model_node_find(model_t model, const char *name) {
 ///////////////////////////////////////////
 
 model_node_id model_node_sibling(model_t model, model_node_id node) {
+	// In order to pass in a valid node, the metadata must already be loaded.
 	return model->nodes[node].sibling;
 }
 
@@ -495,6 +660,7 @@ model_node_id model_node_child(model_t model, model_node_id node) {
 ///////////////////////////////////////////
 
 int32_t model_node_count(model_t model) {
+	assets_block_until(&model->header, asset_state_loaded_meta);
 	return model->nodes.count;
 }
 
@@ -507,12 +673,14 @@ model_node_id model_node_index(model_t, int32_t index) {
 ///////////////////////////////////////////
 
 int32_t model_node_visual_count(model_t model){
+	assets_block_until(&model->header, asset_state_loaded_meta);
 	return model->visuals.count;
 }
 
 ///////////////////////////////////////////
 
 model_node_id model_node_visual_index(model_t model, int32_t index) {
+	assets_block_until(&model->header, asset_state_loaded_meta);
 	return model->visuals[index].node;
 }
 
@@ -520,6 +688,7 @@ model_node_id model_node_visual_index(model_t model, int32_t index) {
 
 model_node_id model_node_iterate(model_t model, model_node_id node) {
 	if (node == -1) return model_node_get_root(model);
+	assets_block_until(&model->header, asset_state_loaded_meta);
 
 	// walk down
 	if (model->nodes[node].child != -1)
@@ -542,6 +711,7 @@ model_node_id model_node_iterate(model_t model, model_node_id node) {
 ///////////////////////////////////////////
 
 model_node_id model_node_get_root(model_t model) {
+	assets_block_until(&model->header, asset_state_loaded_meta);
 	return model->nodes.count > 0
 		? 0
 		: -1;

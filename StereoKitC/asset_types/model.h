@@ -29,6 +29,7 @@ struct model_node_t {
 
 struct _model_t {
 	asset_header_t          header;
+	model_t                 fallback;
 	array_t<model_visual_t> visuals;
 	array_t<model_node_t>   nodes;
 	int32_t                 nodes_used;
