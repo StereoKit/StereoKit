@@ -458,6 +458,8 @@ bool input_controller_is_hand(handed_ hand) {
 
 void input_controller_set_hand(handed_ hand, bool is_hand) {
 	local.controller_hand[hand] = is_hand;
+	log_diagf("Controller %s set to %s", hand == handed_left ? "Left" : "Right", is_hand ? "Hand" : "Controller");
+	input_hand_refresh_system();
 }
 
 ///////////////////////////////////////////
@@ -470,6 +472,7 @@ bool input_controller_is_detached(handed_ hand) {
 
 void input_controller_set_detached(handed_ hand, bool is_detached) {
 	local.controller_detached[hand] = is_detached;
+	log_diagf("Controller %s set to %s", hand == handed_left ? "Left" : "Right", is_detached ? "Detached" : "Attached");
 }
 
 

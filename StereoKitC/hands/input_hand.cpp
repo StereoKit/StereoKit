@@ -113,6 +113,10 @@ void input_hand_refresh_system() {
 		int available_source = hand_sources.count - 1;
 		for (int32_t i = 0; i < hand_sources.count; i++) {
 			if (hand_sources[i].available()) {
+				// If this is oxr_articulated system, only accept it if input_controller_is_hand is true
+				if (hand_sources[i].system == hand_system_oxr_articulated && !input_controller_is_hand((handed_)hand)) {
+					continue;
+				}
 				available_source = i;
 				break;
 			}
