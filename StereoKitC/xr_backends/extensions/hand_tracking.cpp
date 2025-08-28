@@ -44,13 +44,13 @@ namespace sk {
 xr_system_ xr_ext_hand_tracking_initialize         (void*);
 void       xr_ext_hand_tracking_shutdown           (void*);
 bool       xr_ext_hand_tracking_is_tracked         ();
-void       xr_ext_hand_tracking_update_joints      ();
-void       xr_ext_hand_tracking_update_states      ();
+void       xr_ext_hand_tracking_update_joints      (handed_ hand);
+void       xr_ext_hand_tracking_update_states      (handed_ hand);
 
 bool       xr_ext_hand_tracking_sys_available      ();
 void       xr_ext_hand_tracking_sys_update_inactive();
-void       xr_ext_hand_tracking_sys_update_frame   ();
-void       xr_ext_hand_tracking_sys_update_poses   ();
+void       xr_ext_hand_tracking_sys_update_frame   (handed_ hand);
+void       xr_ext_hand_tracking_sys_update_poses   (handed_ hand);
 
 ///////////////////////////////////////////
 
@@ -230,94 +230,95 @@ bool xr_ext_hand_tracking_is_tracked() {
 
 ///////////////////////////////////////////
 
-void xr_ext_hand_tracking_update_joints() {
+void xr_ext_hand_tracking_update_joints(handed_ hand) {
 
 	vec3 shoulders[2];
 	body_make_shoulders(&shoulders[handed_left], &shoulders[handed_right]);
 
 	bool hands_active = false;
-	for (int32_t h = 0; h < handed_max; h++) {
-		XrHandJointsLocateInfoEXT locate_info = { XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT };
-		locate_info.time      = xr_time;
-		locate_info.baseSpace = xr_app_space;
+	
+	// Process only the specified hand for better performance
+	int32_t h = hand;
+	XrHandJointsLocateInfoEXT locate_info = { XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT };
+	locate_info.time      = xr_time;
+	locate_info.baseSpace = xr_app_space;
 
-		XrHandJointLocationEXT  joint_locations[XR_HAND_JOINT_COUNT_EXT];
-		XrHandJointLocationsEXT locations = { XR_TYPE_HAND_JOINT_LOCATIONS_EXT };
-		locations.isActive       = XR_FALSE;
-		locations.jointCount     = XR_HAND_JOINT_COUNT_EXT;
-		locations.jointLocations = joint_locations;
-		xrLocateHandJointsEXT(local.hand_tracker[h], &locate_info, &locations);
+	XrHandJointLocationEXT  joint_locations[XR_HAND_JOINT_COUNT_EXT];
+	XrHandJointLocationsEXT locations = { XR_TYPE_HAND_JOINT_LOCATIONS_EXT };
+	locations.isActive       = XR_FALSE;
+	locations.jointCount     = XR_HAND_JOINT_COUNT_EXT;
+	locations.jointLocations = joint_locations;
+	xrLocateHandJointsEXT(local.hand_tracker[h], &locate_info, &locations);
 
-		// Update the tracking state of the hand, joint definitions here: https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_conventions_of_hand_joints
-		// We're checking the index finger tip, palm, and wrist here to see if
-		// any of them are tracked, just in case.
-		// Joint 0, 6, 11, 16, 21 don't appear to be tracked on Pico 4
-		bool valid_joints =
-			(locations.jointLocations[10].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
-			(locations.jointLocations[0 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
-			(locations.jointLocations[1] .locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0;
-		// Vive XR Elite will mark joints as valid, but then send invalid joint
-		// data such as 0,0,0,0 quats which will crash math functions.
-		// Unfortunately, it seems impossible to restrict this to specific
-		// joints, so all joints must be checked.
-		for (uint32_t j = 0; j < locations.jointCount; j++) {
-			XrHandJointLocationEXT jt = locations.jointLocations[j];
-			float sum = jt.pose.orientation.x + jt.pose.orientation.y + jt.pose.orientation.z + jt.pose.orientation.w;
-			if (sum == 0) {
-				valid_joints = false;
-				break;
-			}
+	// Update the tracking state of the hand, joint definitions here: https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_conventions_of_hand_joints
+	// We're checking the index finger tip, palm, and wrist here to see if
+	// any of them are tracked, just in case.
+	// Joint 0, 6, 11, 16, 21 don't appear to be tracked on Pico 4
+	bool valid_joints =
+		(locations.jointLocations[10].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
+		(locations.jointLocations[0 ].locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0 ||
+		(locations.jointLocations[1] .locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) > 0;
+	// Vive XR Elite will mark joints as valid, but then send invalid joint
+	// data such as 0,0,0,0 quats which will crash math functions.
+	// Unfortunately, it seems impossible to restrict this to specific
+	// joints, so all joints must be checked.
+	for (uint32_t j = 0; j < locations.jointCount; j++) {
+		XrHandJointLocationEXT jt = locations.jointLocations[j];
+		float sum = jt.pose.orientation.x + jt.pose.orientation.y + jt.pose.orientation.z + jt.pose.orientation.w;
+		if (sum == 0) {
+			valid_joints = false;
+			break;
 		}
-		hand_t *inp_hand = input_hand_ref((handed_)h);
-		inp_hand->tracked_state = button_make_state((inp_hand->tracked_state & button_state_active) > 0, valid_joints);
-
-		// If both hands aren't active at all, we'll want to to switch back
-		// to controllers.
-		hands_active = hands_active || locations.isActive;
-
-		// No valid joints? Hand many not be visible, we can skip getting 
-		// pose information.
-		if (!valid_joints) {
-			continue;
-		}
-
-		// Get joint poses from OpenXR
-		matrix root   = render_get_cam_final();
-		quat   root_q = matrix_extract_rotation(root);
-		for (uint32_t j = 0; j < locations.jointCount; j++) {
-			memcpy(&local.hand_joints[h][j].position,    &locations.jointLocations[j].pose.position,    sizeof(vec3));
-			memcpy(&local.hand_joints[h][j].orientation, &locations.jointLocations[j].pose.orientation, sizeof(quat));
-			local.hand_joints[h][j].radius      = locations.jointLocations[j].radius * local.hand_joint_scale;
-			local.hand_joints[h][j].position    = matrix_transform_pt(root, local.hand_joints[h][j].position);
-			local.hand_joints[h][j].orientation = local.hand_joints[h][j].orientation * root_q;
-		}
-
-		// Some runtimes provide the finger tip at the very tip of the finger,
-		// rather than the tip minus the radius. This will make the finger too
-		// long when adding the radius, so we add this offset manually here.
-		if (local.tip_fix) {
-			for (int32_t t = 0; t < 5; t++) {
-				int32_t idx = 1 + t * 5 + hand_joint_tip;
-				local.hand_joints[h][idx].position += local.hand_joints[h][idx].orientation * vec3{ 0,0,local.hand_joints[h][idx].radius };
-			}
-		}
-
-		// Copy the pose data into our hand
-		hand_joint_t* pose = input_hand_get_pose_buffer((handed_)h);
-		memcpy(&pose[1], &local.hand_joints[h][XR_HAND_JOINT_THUMB_METACARPAL_EXT], sizeof(hand_joint_t) * 24);
-		memcpy(&pose[0], &local.hand_joints[h][XR_HAND_JOINT_THUMB_METACARPAL_EXT], sizeof(hand_joint_t)); // Thumb metacarpal is duplicated at the same location
-
-		static const quat face_forward = quat_from_angles(-90,0,0);
-		inp_hand->palm  = pose_t{ local.hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * local.hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
-		inp_hand->wrist = pose_t{ local.hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                local.hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
-		
-		// Update the aim values
-		inp_hand->aim.position = local.hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
-
-		vec3 dir   = inp_hand->aim.position - shoulders[h];
-		vec3 right = local.hand_joints[h][XR_HAND_JOINT_LITTLE_PROXIMAL_EXT].position - inp_hand->aim.position;
-		inp_hand->aim.orientation = quat_lookat_up(vec3_zero, dir, vec3_cross(dir, right));
 	}
+	hand_t *inp_hand = input_hand_ref((handed_)h);
+	inp_hand->tracked_state = button_make_state((inp_hand->tracked_state & button_state_active) > 0, valid_joints);
+
+	// Check if this hand is active to determine overall activity
+	hands_active = locations.isActive;
+
+	// No valid joints? Hand may not be visible, we can skip getting 
+	// pose information.
+	if (!valid_joints) {
+		return;
+	}
+
+	// Get joint poses from OpenXR
+	matrix root   = render_get_cam_final();
+	quat   root_q = matrix_extract_rotation(root);
+	for (uint32_t j = 0; j < locations.jointCount; j++) {
+		memcpy(&local.hand_joints[h][j].position,    &locations.jointLocations[j].pose.position,    sizeof(vec3));
+		memcpy(&local.hand_joints[h][j].orientation, &locations.jointLocations[j].pose.orientation, sizeof(quat));
+		local.hand_joints[h][j].radius      = locations.jointLocations[j].radius * local.hand_joint_scale;
+		local.hand_joints[h][j].position    = matrix_transform_pt(root, local.hand_joints[h][j].position);
+		local.hand_joints[h][j].orientation = local.hand_joints[h][j].orientation * root_q;
+	}
+
+	// Some runtimes provide the finger tip at the very tip of the finger,
+	// rather than the tip minus the radius. This will make the finger too
+	// long when adding the radius, so we add this offset manually here.
+	if (local.tip_fix) {
+		for (int32_t t = 0; t < 5; t++) {
+			int32_t idx = 1 + t * 5 + hand_joint_tip;
+			local.hand_joints[h][idx].position += local.hand_joints[h][idx].orientation * vec3{ 0,0,local.hand_joints[h][idx].radius };
+		}
+	}
+
+	// Copy the pose data into our hand
+	hand_joint_t* pose = input_hand_get_pose_buffer((handed_)h);
+	memcpy(&pose[1], &local.hand_joints[h][XR_HAND_JOINT_THUMB_METACARPAL_EXT], sizeof(hand_joint_t) * 24);
+	memcpy(&pose[0], &local.hand_joints[h][XR_HAND_JOINT_THUMB_METACARPAL_EXT], sizeof(hand_joint_t)); // Thumb metacarpal is duplicated at the same location
+
+	static const quat face_forward = quat_from_angles(-90,0,0);
+	inp_hand->palm  = pose_t{ local.hand_joints[h][XR_HAND_JOINT_PALM_EXT ].position, face_forward * local.hand_joints[h][XR_HAND_JOINT_PALM_EXT ].orientation };
+	inp_hand->wrist = pose_t{ local.hand_joints[h][XR_HAND_JOINT_WRIST_EXT].position,                local.hand_joints[h][XR_HAND_JOINT_WRIST_EXT].orientation };
+	
+	// Update the aim values
+	inp_hand->aim.position = local.hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
+
+	vec3 dir   = inp_hand->aim.position - shoulders[h];
+	vec3 right = local.hand_joints[h][XR_HAND_JOINT_LITTLE_PROXIMAL_EXT].position - inp_hand->aim.position;
+	inp_hand->aim.orientation = quat_lookat_up(vec3_zero, dir, vec3_cross(dir, right));
+
 
 	if (!hands_active) {
 		local.hand_active = false;
@@ -327,41 +328,41 @@ void xr_ext_hand_tracking_update_joints() {
 
 ///////////////////////////////////////////
 
-void xr_ext_hand_tracking_update_states() {
-	for (int32_t h = 0; h < handed_max; h++) {
-		hand_t* inp_hand = input_hand_ref((handed_)h);
+void xr_ext_hand_tracking_update_states(handed_ hand) {
+	// Process only the specified hand for better performance
+	int32_t h = hand;
+	hand_t* inp_hand = input_hand_ref((handed_)h);
 
-		// Pinch values from the hand interaction profile typically have deep
-		// knowledge about the hands, beyond what can be gleaned from the joint
-		// data. In StereoKit, all interaction profiles are reported as
-		// controllers, so we're checking if this controller's source is from
-		// such a hand profile.
-		if (input_controller_is_hand((handed_)h)) {
-			inp_hand->pinch_activation = input_controller((handed_)h)->trigger;
-			inp_hand->pinch_state      = button_make_state((inp_hand->pinch_state & button_state_active) > 0, inp_hand->pinch_activation >= 1);
-		} else {
-			input_hand_sim_trigger(inp_hand->pinch_state, inp_hand->fingers[hand_finger_index][hand_joint_tip], inp_hand->fingers[hand_finger_thumb][hand_joint_tip],
-				PINCH_ACTIVATION_DIST, PINCH_DEACTIVATION_DIST, PINCH_MAX_DIST,
-				&inp_hand->pinch_state, &inp_hand->pinch_activation);
-		}
-		input_hand_sim_trigger(inp_hand->grip_state, inp_hand->fingers[hand_finger_ring][hand_joint_tip], inp_hand->fingers[hand_finger_ring][hand_joint_root],
-			GRIP_ACTIVATION_DIST, GRIP_DEACTIVATION_DIST, GRIP_MAX_DIST,
-			&inp_hand->grip_state, &inp_hand->grip_activation);
-
-		// The pointer should be tracked when the hand is tracked and in a
-		// "ready pose" (facing the same general direction as the user). It
-		// should remain tracked if it was activated, even if it's no longer in
-		// a ready pose.
-		pose_t head = input_head();
-		const float near_dist  = 0.2f;
-		const float hand_angle = 0.25f; // ~150 degrees
-		bool is_pinched   = (inp_hand->pinch_state   & button_state_active) > 0;
-		bool hand_tracked = (inp_hand->tracked_state & button_state_active) > 0;
-		bool is_facing    = vec3_dot(vec3_normalize(inp_hand->aim.position - head.position), inp_hand->palm.orientation * vec3_forward) > hand_angle;
-		bool is_far       = vec2_distance_sq({inp_hand->aim.position.x, inp_hand->aim.position.z}, {head.position.x, head.position.z}) > (near_dist*near_dist);
-		bool was_ready    = (inp_hand->aim_ready & button_state_active) > 0;
-		inp_hand->aim_ready = button_make_state(was_ready, hand_tracked && ((was_ready && is_pinched) || (is_facing && is_far)));
+	// Pinch values from the hand interaction profile typically have deep
+	// knowledge about the hands, beyond what can be gleaned from the joint
+	// data. In StereoKit, all interaction profiles are reported as
+	// controllers, so we're checking if this controller's source is from
+	// such a hand profile.
+	if (input_controller_is_hand((handed_)h)) {
+		inp_hand->pinch_activation = input_controller((handed_)h)->trigger;
+		inp_hand->pinch_state      = button_make_state((inp_hand->pinch_state & button_state_active) > 0, inp_hand->pinch_activation >= 1);
+	} else {
+		input_hand_sim_trigger(inp_hand->pinch_state, inp_hand->fingers[hand_finger_index][hand_joint_tip], inp_hand->fingers[hand_finger_thumb][hand_joint_tip],
+			PINCH_ACTIVATION_DIST, PINCH_DEACTIVATION_DIST, PINCH_MAX_DIST,
+			&inp_hand->pinch_state, &inp_hand->pinch_activation);
 	}
+	input_hand_sim_trigger(inp_hand->grip_state, inp_hand->fingers[hand_finger_ring][hand_joint_tip], inp_hand->fingers[hand_finger_ring][hand_joint_root],
+		GRIP_ACTIVATION_DIST, GRIP_DEACTIVATION_DIST, GRIP_MAX_DIST,
+		&inp_hand->grip_state, &inp_hand->grip_activation);
+
+	// The pointer should be tracked when the hand is tracked and in a
+	// "ready pose" (facing the same general direction as the user). It
+	// should remain tracked if it was activated, even if it's no longer in
+	// a ready pose.
+	pose_t head = input_head();
+	const float near_dist  = 0.2f;
+	const float hand_angle = 0.25f; // ~150 degrees
+	bool is_pinched   = (inp_hand->pinch_state   & button_state_active) > 0;
+	bool hand_tracked = (inp_hand->tracked_state & button_state_active) > 0;
+	bool is_facing    = vec3_dot(vec3_normalize(inp_hand->aim.position - head.position), inp_hand->palm.orientation * vec3_forward) > hand_angle;
+	bool is_far       = vec2_distance_sq({inp_hand->aim.position.x, inp_hand->aim.position.z}, {head.position.x, head.position.z}) > (near_dist*near_dist);
+	bool was_ready    = (inp_hand->aim_ready & button_state_active) > 0;
+	inp_hand->aim_ready = button_make_state(was_ready, hand_tracked && ((was_ready && is_pinched) || (is_facing && is_far)));
 }
 
 ///////////////////////////////////////////
@@ -375,15 +376,15 @@ void xr_ext_hand_tracking_sys_update_inactive() {
 
 ///////////////////////////////////////////
 
-void xr_ext_hand_tracking_sys_update_frame() {
-	xr_ext_hand_tracking_update_joints();
-	xr_ext_hand_tracking_update_states();
+void xr_ext_hand_tracking_sys_update_frame(handed_ hand) {
+	xr_ext_hand_tracking_update_joints(hand);
+	xr_ext_hand_tracking_update_states(hand);
 }
 
 ///////////////////////////////////////////
 
-void xr_ext_hand_tracking_sys_update_poses() {
-	xr_ext_hand_tracking_update_joints();
+void xr_ext_hand_tracking_sys_update_poses(handed_ hand) {
+	xr_ext_hand_tracking_update_joints(hand);
 }
 
 ///////////////////////////////////////////

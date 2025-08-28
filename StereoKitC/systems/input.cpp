@@ -56,6 +56,7 @@ struct input_state_t {
 	mouse_t               mouse_data;
 	controller_t          controllers[2];
 	bool                  controller_hand[2];
+	bool                  controller_detached[2];
 	button_state_         controller_menubtn;
 	pose_t                palm_offset[2];
 
@@ -457,7 +458,33 @@ bool input_controller_is_hand(handed_ hand) {
 
 void input_controller_set_hand(handed_ hand, bool is_hand) {
 	local.controller_hand[hand] = is_hand;
+	log_diagf("Controller %s set to %s", hand == handed_left ? "Left" : "Right", is_hand ? "Hand" : "Controller");
+	input_hand_refresh_system();
 }
+
+///////////////////////////////////////////
+
+bool input_controller_is_detached(handed_ hand) {
+	return local.controller_detached[hand];
+}
+
+///////////////////////////////////////////
+
+void input_controller_set_detached(handed_ hand, bool is_detached) {
+	local.controller_detached[hand] = is_detached;
+	log_diagf("Controller %s set to %s", hand == handed_left ? "Left" : "Right", is_detached ? "Detached" : "Attached");
+}
+
+///////////////////////////////////////////
+
+pose_t input_controller_detached(handed_ hand) {
+	input_pose_ detached_pose = hand == handed_left ? detached_pose_l : detached_pose_r;
+	if (detached_pose >= 0 && detached_pose < local.curr_poses.count) {
+		return render_cam_final_transform(local.curr_poses[detached_pose].pose);
+	}
+	return pose_identity;
+}
+
 
 ///////////////////////////////////////////
 
