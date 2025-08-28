@@ -299,7 +299,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	cgltf_mesh      *m = mesh;
 	cgltf_primitive *p = &m->primitives[primitive_id];
 
-	if (p->type != cgltf_primitive_type_triangles) {
+	if (p->type != cgltf_primitive_type_triangles && p->type != cgltf_primitive_type_triangle_strip) {
 		log_errf("[%s] Unimplemented GLTF primitive mode: %d", filename, p->type);
 		return nullptr;
 	}
@@ -430,6 +430,32 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 			}
 		} else {
 			gltf_add_warning(warnings, "Unimplemented vertex index format");
+		}
+
+		if (p->type == cgltf_primitive_type_triangle_strip) {
+			size_t  strip_count = ind_count;
+			size_t  list_count  = (strip_count - 2) * 3;
+			vind_t* list_inds   = sk_malloc_t(vind_t, list_count);
+
+			size_t out_idx = 0;
+			for (size_t i = 0; i < strip_count - 2; i++) {
+				if (i % 2 == 0) {
+					// Even triangles: vertices i, i+1, i+2
+					list_inds[out_idx++] = inds[i];
+					list_inds[out_idx++] = inds[i + 1];
+					list_inds[out_idx++] = inds[i + 2];
+				} else {
+					// Odd triangles: vertices i+1, i, i+2 (reversed winding)
+					list_inds[out_idx++] = inds[i + 1];
+					list_inds[out_idx++] = inds[i];
+					list_inds[out_idx++] = inds[i + 2];
+				}
+			}
+
+			// Replace the strip indices with the list indices
+			sk_free(inds);
+			inds      = list_inds;
+			ind_count = list_count;
 		}
 	}
 
