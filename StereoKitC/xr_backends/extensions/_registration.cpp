@@ -21,6 +21,7 @@
 #include "hand_mesh.h"
 #include "input_profiles.h"
 #include "loader_init.h"
+#include "meta_detached_controllers.h"
 #include "palm_pose.h"
 #include "android_create_instance.h"
 #include "android_thread.h"
@@ -75,6 +76,7 @@ bool ext_registration() {
 	xr_profile_msft_hand_interaction_register    ();
 	xr_profile_bd_controller_interaction_register();
 	xr_profile_ext_eye_gaze_register             ();
+	xr_profile_meta_detached_controllers_register();
 	oxri_register();
 
 	anchors_register();

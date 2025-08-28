@@ -238,24 +238,6 @@ xr_system_ oxri_init(void*) {
 		oxri_register_profile(profile_r);
 	}
 
-	// oculus/touch_controller
-	// https://registry.khronos.org/OpenXR/specs/1.1/html/xrspec.html#XR_META_detached_controllers
-	{
-		xr_interaction_profile_t profile_l = { "oculus/touch_controller" };
-		profile_l.top_level_path = "/user/detached_controller_meta/left";
-		profile_l.palm_offset    = pose_identity;
-		profile_l.is_hand        = true;
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  detached_pose_l,     "grip/pose"        };
-		oxri_register_profile(profile_l);
-
-		xr_interaction_profile_t profile_r = { "oculus/touch_controller" };
-		profile_r.top_level_path = "/user/detached_controller_meta/right";
-		profile_r.palm_offset    = pose_identity;
-		profile_r.is_hand        = true;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  detached_pose_r,     "grip/pose"        };
-		oxri_register_profile(profile_r);
-	}
-
 	// khr/simple_controller
 	// https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#_khronos_simple_controller_profile
 	{
