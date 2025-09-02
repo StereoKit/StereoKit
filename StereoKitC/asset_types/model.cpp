@@ -807,7 +807,11 @@ void model_node_set_material(model_t model, model_node_id node, material_t mater
 	if (vis < 0) {
 		if (material == nullptr) return;
 
-		vis = model->visuals.add({});
+		model_visual_t visual = {};
+		visual.visible         = true;
+		visual.node            = node;
+		visual.transform_model = model->nodes[node].transform_model;
+		vis = model->visuals.add(visual);
 		model->nodes[node].visual = vis;
 	}
 	material_t prev_material = model->visuals[vis].material;
@@ -823,8 +827,12 @@ void model_node_set_mesh(model_t model, model_node_id node, mesh_t mesh) {
 	int32_t vis = model->nodes[node].visual;
 	if (vis < 0) {
 		if (mesh == nullptr) return;
-
-		vis = model->visuals.add({});
+		
+		model_visual_t visual = {};
+		visual.visible         = true;
+		visual.node            = node;
+		visual.transform_model = model->nodes[node].transform_model;
+		vis = model->visuals.add(visual);
 		model->nodes[node].visual = vis;
 	}
 	mesh_t prev_mesh = model->visuals[vis].mesh;
