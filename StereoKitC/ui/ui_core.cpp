@@ -119,7 +119,7 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 
 ///////////////////////////////////////////
 
-void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 button_size_visual, vec2 button_size_interact, ui_confirm_ confirm_method, ui_slider_data_t* out) {
+void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2* value, vec2 min, vec2 max, vec2 button_size_visual, vec2 button_size_interact, ui_confirm_ confirm_method, ui_slider_data_t* out_state) {
 	const float snap_scale = 1;
 	const float snap_dist  = 7*cm2m;
 
@@ -141,11 +141,11 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 	float button_depth = skui_settings.depth;
 
 	// Set up for getting the state of the sliders.
-	out->focus_state   = button_state_inactive;
-	out->active_state  = button_state_inactive;
-	out->interactor    = -1;
-	out->finger_offset = button_depth;
-	out->button_center = {
+	out_state->focus_state   = button_state_inactive;
+	out_state->active_state  = button_state_inactive;
+	out_state->interactor    = -1;
+	out_state->finger_offset = button_depth;
+	out_state->button_center = {
 		window_relative_pos.x - (percent.x * (size.x - button_size_visual.x) + button_size_visual.x/2.0f),
 		window_relative_pos.y - (percent.y * (size.y - button_size_visual.y) + button_size_visual.y/2.0f) };
 
@@ -163,16 +163,16 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 	vec2 finger_at = {};
 	_interactor_t* actor = nullptr;
 	vec3 activation_size  = vec3{ button_size_interact.x, button_size_interact.y, button_depth };
-	vec3 activation_start = { out->button_center.x+activation_size.x/2.0f, out->button_center.y+activation_size.y/2.0f, window_relative_pos.z };
+	vec3 activation_start = { out_state->button_center.x+activation_size.x/2.0f, out_state->button_center.y+activation_size.y/2.0f, window_relative_pos.z };
 	if (button_size_interact.x == 0 && button_size_interact.y == 0) {
 		activation_size  = {size.x, size.y, button_depth};
 		activation_start = window_relative_pos;
 	}
 
 	if (confirm_method == ui_confirm_push) {
-		ui_button_behavior_depth(activation_start, { activation_size.x, activation_size.y }, id, button_depth, button_depth / 2, out->finger_offset, out->active_state, out->focus_state, &out->interactor);
+		ui_button_behavior_depth(activation_start, { activation_size.x, activation_size.y }, id, button_depth, button_depth / 2, out_state->finger_offset, out_state->active_state, out_state->focus_state, &out_state->interactor);
 
-		actor = _interactor_get(out->interactor);
+		actor = _interactor_get(out_state->interactor);
 		
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		activation_start.z += skui_settings.depth;
@@ -180,13 +180,13 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 		interaction_1h_box(id, interactor_event_pinch, 0,
 			activation_start, activation_size,
 			activation_start, activation_size,
-			&out->focus_state, &out->interactor);
+			&out_state->focus_state, &out_state->interactor);
 
 		// Pinch confirm uses a handle that the user must pinch, in order to
 		// drag it around the slider.
-		actor = _interactor_get(out->interactor);
+		actor = _interactor_get(out_state->interactor);
 		if (actor != nullptr) {
-			out->active_state = interactor_set_active(actor, id, actor->pinch_state & button_state_active);
+			out_state->active_state = interactor_set_active(actor, id, actor->pinch_state & button_state_active);
 		}
 	}
 
@@ -205,7 +205,7 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 			range.y == 0 ? 0.5f : fminf(1, fmaxf(0, percent.y + secondary_motion.y)) };
 		vec2 new_val = min + new_percent * range;
 
-		out->button_center = {
+		out_state->button_center = {
 			window_relative_pos.x - (new_percent.x * (size.x - button_size_visual.x) + button_size_visual.x / 2.0f),
 			window_relative_pos.y - (new_percent.y * (size.y - button_size_visual.y) + button_size_visual.y / 2.0f) };
 		*value = new_val;
@@ -228,7 +228,7 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 	}
 
 	vec2 new_percent = percent;
-	if (out->active_state & button_state_active) {
+	if (out_state->active_state & button_state_active) {
 		vec2 pos_in_slider = {
 			fminf(1, fmaxf(0, ((window_relative_pos.x-button_size_visual.x/2)-finger_at.x) / (size.x-button_size_visual.x))),
 			fminf(1, fmaxf(0, ((window_relative_pos.y-button_size_visual.y/2)-finger_at.y) / (size.y-button_size_visual.y)))};
@@ -237,7 +237,7 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 		new_percent = {
 			range.x == 0 ? 0.5f : (new_val.x - min.x) / range.x,
 			range.y == 0 ? 0.5f : (new_val.y - min.y) / range.y };
-		out->button_center = {
+		out_state->button_center = {
 			window_relative_pos.x - (new_percent.x * (size.x - button_size_visual.x) + button_size_visual.x/2.0f),
 			window_relative_pos.y - (new_percent.y * (size.y - button_size_visual.y) + button_size_visual.y/2.0f) };
 
