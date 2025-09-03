@@ -250,7 +250,7 @@ void xr_ext_msft_spatial_anchors_destroy(anchor_t anchor) {
 	oxr_msft_world_anchor_t* data = (oxr_msft_world_anchor_t*)anchor->data;
 	xrDestroySpace(data->space);
 	xrDestroySpatialAnchorMSFT(data->anchor);
-	free(data);
+	sk_free(data);
 }
 
 ///////////////////////////////////////////

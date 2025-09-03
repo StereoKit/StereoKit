@@ -8,6 +8,8 @@
 #include "../platforms/platform.h"
 #include "../libraries/qoi.h"
 #include "../libraries/stref.h"
+#include "../libraries/ferr_halffloat.h"
+#include "../libraries/profiler.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
@@ -30,7 +32,7 @@ bool   tex_load_image_data(void* data, size_t data_size, bool32_t srgb_data, tex
 bool   tex_load_image_info(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count);
 void   tex_update_label   (tex_t texture);
 size_t tex_format_pitch   (tex_format_ format, int32_t width);
-void  _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level);
+void  _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level);
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
 const char *tex_msg_invalid_fmt           = "Texture invalid format: %s";
@@ -84,6 +86,8 @@ void tex_load_free(asset_header_t *, void *job_data) {
 ///////////////////////////////////////////
 
 bool32_t tex_load_arr_files_shared(asset_task_t* task, asset_header_t* asset, void* job_data) {
+	profiler_zone();
+
 	tex_load_t* data = (tex_load_t*)job_data;
 	tex_t       tex  = (tex_t)asset;
 
@@ -169,6 +173,8 @@ bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job
 ///////////////////////////////////////////
 
 bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_data) {
+	profiler_zone();
+
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
@@ -250,7 +256,7 @@ bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_t
 	if (success) {
 		*out_mip_count   = 1;
 		*out_array_count = 1;
-		if (stbi_is_hdr_from_memory((stbi_uc *)data, (int)data_size)) *out_format = tex_format_rgba128;
+		if (stbi_is_hdr_from_memory((stbi_uc *)data, (int)data_size)) *out_format = tex_format_rg11b10;
 		else                                                          *out_format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 		return true;
 	}
@@ -284,11 +290,26 @@ bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_t
 
 	// Check for an stbi HDR image
 	if (stbi_is_hdr_from_memory((stbi_uc*)data, (int)data_size)) {
-		*out_format      = tex_format_rgba128;
+		*out_format      = tex_format_rg11b10;
 		*out_array_count = 1;
 		*out_mip_count   = 1;
-		*out_data_arr    = stbi_loadf_from_memory((stbi_uc *)data, (int)data_size, out_width, out_height, &channels, 4);
-		return *out_data_arr != nullptr;
+		float* full = stbi_loadf_from_memory((stbi_uc*)data, (int)data_size, out_width, out_height, &channels, 4);
+
+		if (full == nullptr) return false;
+
+		// stb loads HDR as full float, which is pretty intense! We can pretty
+		// safely drop it to packed floats and save ourselves 75% memory and a
+		// pile of bandwidth/performance.
+		int32_t   ct     = *out_width * *out_height;
+		uint32_t* packed = sk_malloc_t(uint32_t, ct);
+		for (int32_t i=0; i < ct; i += 1) {
+			packed[i] = fhf_f32_to_r11g11ba10f(&full[i * 4]);
+		}
+		*out_data_arr = packed;
+
+		free(full);
+
+		return true;
 	}
 
 	// Check through stbi's list of image formats
@@ -436,12 +457,18 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 ///////////////////////////////////////////
 
 tex_t tex_create_rendertarget(int32_t width, int32_t height, int32_t msaa, tex_format_ color_format, tex_format_ depth_format) {
-	tex_t result = tex_create(tex_type_image_nomips | tex_type_rendertarget, color_format);
+	tex_t result;
+	if (color_format == tex_format_none && depth_format != tex_format_none) {
+		result = tex_create(tex_type_image_nomips | tex_type_depthtarget, depth_format);
 
-	tex_set_color_arr(result, width, height, nullptr, 1, nullptr, msaa);
-	if (depth_format != tex_format_none)
-		tex_add_zbuffer(result, depth_format);
+		tex_set_color_arr(result, width, height, nullptr, 1, msaa, nullptr);
+	} else {
+		result = tex_create(tex_type_image_nomips | tex_type_rendertarget, color_format);
 
+		tex_set_color_arr(result, width, height, nullptr, 1, msaa, nullptr);
+		if (depth_format != tex_format_none)
+			tex_add_zbuffer(result, depth_format);
+	}
 	return result;
 }
 
@@ -515,6 +542,8 @@ tex_t tex_create_file_arr(const char **files, int32_t file_count, bool32_t srgb_
 ///////////////////////////////////////////
 
 tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int32_t priority) {
+	profiler_zone();
+
 	char cubemap_id[64];
 	snprintf(cubemap_id, sizeof(cubemap_id), "sk/tex/cubemap/%" PRIu64, hash_string(cubemap_file));
 
@@ -566,6 +595,8 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 	///////////////////////////////////////////
 
 	bool32_t(*upload)(asset_task_t*, asset_header_t*, void*) = [](asset_task_t* task, asset_header_t * asset, void* job_data) {
+		profiler_zone();
+
 		tex_load_t *data = (tex_load_t *)job_data;
 		tex_t       tex  = (tex_t)asset;
 
@@ -586,41 +617,72 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		material_t convert_material = material_find(default_id_material_equirect);
 		material_set_texture(convert_material, "source", equirect);
 
-		tex_t    face         = tex_create(tex_type_rendertarget, equirect->format);
-		void    *face_data[6] = {};
-		size_t   size         = tex_format_size(equirect->format, tex->width, tex->height);
-		tex_set_colors(face, tex->width, tex->height, nullptr);
+		tex_t    face           = tex_create(tex_type_rendertarget | tex_type_mips, equirect->format);
+		void    *face_data[6]   = {};
+		size_t   size           = tex_format_size(face->format, tex->width, tex->height);
+		uint32_t mip_count      = skg_mip_count(tex->width, tex->height);
+		uint32_t total_tex_size = 0;
+		for (int32_t mip_level = 0; mip_level < mip_count; mip_level++) {
+			int32_t  width  = 0;
+			int32_t  height = 0;
+			skg_mip_dimensions(tex->width, tex->height, mip_level, &width, &height);
+			total_tex_size += skg_tex_fmt_memory(equirect->tex.format, width, height);
+		}
+		tex_set_color_arr_mips(face, tex->width, tex->height, nullptr, 1, mip_count);
+
 		for (int32_t i = 0; i < 6; i++) {
 			material_set_vector4(convert_material, "up",      { up   [i].x, up   [i].y, up   [i].z, 0 });
 			material_set_vector4(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
 			material_set_vector4(convert_material, "forward", { fwd  [i].x, fwd  [i].y, fwd  [i].z, 0 });
 
-			face_data[i] = sk_malloc(size);
+			face_data[i] = sk_malloc(total_tex_size);
 
 			// Blit conversion _definitely_ needs executed on the GPU thread
 			struct blit_t {
 				tex_t      face;
 				material_t material;
 				void      *face_data;
-				size_t     size;
 			};
-			blit_t blit_data = { face, convert_material, face_data[i], size };
+			blit_t blit_data = { face, convert_material, face_data[i] };
 			assets_execute_gpu([](void *data) {
 				blit_t *blit_data = (blit_t *)data;
 				render_blit (blit_data->face, blit_data->material);
-				tex_get_data(blit_data->face, blit_data->face_data, blit_data->size);
+				tex_gen_mips(blit_data->face);
+
+				uint32_t mip_count = skg_mip_count(blit_data->face->width, blit_data->face->height);
+				uint8_t* mip_data  = (uint8_t*)blit_data->face_data;
+				for(int32_t mip_level = 0; mip_level < mip_count; mip_level++) {
+					int32_t  width  = 0;
+					int32_t  height = 0;
+					skg_mip_dimensions(blit_data->face->width, blit_data->face->height, mip_level, &width, &height);
+					size_t   mem_size = skg_tex_fmt_memory(blit_data->face->tex.format, width, height);
+
+					tex_get_data(blit_data->face, mip_data, mem_size, mip_level);
+
+					mip_data += mem_size;
+				}
 				return (bool32_t)true;
 			}, &blit_data);
 
 #if defined(SKG_OPENGL)
-			size_t line_size = tex_format_pitch(equirect->format, tex->width);
-			void*  tmp       = sk_malloc(line_size);
-			for (int32_t y = 0; y < tex->height/2; y++) {
-				void *top_line = ((uint8_t*)face_data[i]) + line_size * y;
-				void *bot_line = ((uint8_t*)face_data[i]) + line_size * ((tex->height-1) - y);
-				memcpy(tmp,      top_line, line_size);
-				memcpy(top_line, bot_line, line_size);
-				memcpy(bot_line, tmp,      line_size);
+			void*    tmp        = sk_malloc(tex_format_pitch(face->format, tex->width));
+			uint8_t* mip_data   = (uint8_t*)face_data[i];
+			for (int32_t mip_level = 0; mip_level < mip_count; mip_level++) {
+				int32_t  width  = 0;
+				int32_t  height = 0;
+				skg_mip_dimensions(tex->width, tex->height, mip_level, &width, &height);
+				size_t line_size = tex_format_pitch(face->format, width);
+
+				for (int32_t y = 0; y < height/2; y++) {
+					void* top_line = mip_data + line_size * y;
+					void* bot_line = mip_data + line_size * ((height-1) - y);
+					memcpy(tmp,      top_line, line_size);
+					memcpy(top_line, bot_line, line_size);
+					memcpy(bot_line, tmp,      line_size);
+				}
+
+				size_t mem_size = skg_tex_fmt_memory(face->tex.format, width, height);
+				mip_data += mem_size;
 			}
 			sk_free(tmp);
 #endif
@@ -643,7 +705,7 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		set_data.data = (void**)&face_data;
 		assets_execute_gpu([](void* data) {
 			set_tex_t* set_data = (set_tex_t*)data;
-			tex_set_color_arr(set_data->tex, set_data->tex->width, set_data->tex->height, set_data->data, 6);
+			tex_set_color_arr_mips(set_data->tex, set_data->tex->width, set_data->tex->height, set_data->data, 6, skg_mip_count(set_data->tex->width, set_data->tex->height));
 			return (bool32_t)true;
 		}, &set_data);
 		for (int32_t i = 0; i < 6; i++) {
@@ -675,6 +737,8 @@ tex_t tex_create_cubemap_files(const char **cube_face_file_xxyyzz, bool32_t srgb
 ///////////////////////////////////////////
 
 tex_t tex_copy(const tex_t texture, tex_type_ type, tex_format_ format) {
+	profiler_zone();
+
 	tex_t result = tex_create(type, format == tex_format_none ? texture->format : format);
 	tex_set_color_arr_mips(result, texture->width, texture->height, nullptr, 1, skg_mip_count(texture->width, texture->height));
 
@@ -707,7 +771,7 @@ bool32_t tex_gen_mips(tex_t texture) {
 	if ((texture->type & tex_type_mips        ) == 0 ||
 		(texture->type & tex_type_rendertarget) == 0)
 		return false;
-	return false;
+	return skg_tex_gen_mips(&texture->tex);
 }
 
 ///////////////////////////////////////////
@@ -735,7 +799,7 @@ void tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	assets_unique_name(asset_type_tex, "sk/tex/zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex_create(tex_type_depth, format);
 	tex_set_id       (texture->depth_buffer, id);
-	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->tex.array_count, nullptr, texture->tex.multisample);
+	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->tex.array_count, texture->tex.multisample, nullptr);
 	skg_tex_attach_depth(&texture->tex, &texture->depth_buffer->tex);
 	texture->depth_buffer->header.state = asset_state_loaded;
 }
@@ -778,9 +842,9 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 		skg_tex_destroy (&texture->tex);
 
 	skg_tex_type_ skg_type = skg_tex_type_image;
-	if      (type & tex_type_cubemap     ) skg_type = skg_tex_type_cubemap;
-	else if (type & tex_type_depth       ) skg_type = skg_tex_type_depth;
+	if      (type & tex_type_zbuffer     ) skg_type = skg_tex_type_zbuffer;
 	else if (type & tex_type_rendertarget) skg_type = skg_tex_type_rendertarget;
+	else if (type & tex_type_depthtarget ) skg_type = skg_tex_type_depthtarget;
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
@@ -810,9 +874,9 @@ void tex_set_surface_layer(tex_t texture, void *native_surface, tex_type_ type, 
 		skg_tex_destroy (&texture->tex);
 
 	skg_tex_type_ skg_type = skg_tex_type_image;
-	if      (type & tex_type_cubemap     ) skg_type = skg_tex_type_cubemap;
-	else if (type & tex_type_depth       ) skg_type = skg_tex_type_depth;
+	if      (type & tex_type_zbuffer     ) skg_type = skg_tex_type_zbuffer;
 	else if (type & tex_type_rendertarget) skg_type = skg_tex_type_rendertarget;
+	else if (type & tex_type_depthtarget ) skg_type = skg_tex_type_depthtarget;
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
@@ -908,6 +972,8 @@ void tex_on_load_remove(tex_t texture, void (*on_load)(tex_t texture, void *cont
 ///////////////////////////////////////////
 
 void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
+	profiler_zone();
+
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->width != width || texture->height != height || texture->tex.array_count != array_count;
 	if (!different_size && (array_data == nullptr || *array_data == nullptr))
@@ -920,12 +986,13 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		skg_use_      use      = texture->type & tex_type_dynamic ? skg_use_dynamic  : skg_use_static;
 		skg_mip_      use_mips = texture->type & tex_type_mips    ? skg_mip_generate : skg_mip_none;
 		skg_tex_type_ type     = skg_tex_type_image;
-		if      (texture->type & tex_type_cubemap)      type = skg_tex_type_cubemap;
-		else if (texture->type & tex_type_depth)        type = skg_tex_type_depth;
+		if (texture->type & tex_type_cubemap) use = (skg_use_)(use | skg_use_cubemap);
+		if      (texture->type & tex_type_zbuffer)      type = skg_tex_type_zbuffer;
 		else if (texture->type & tex_type_rendertarget) type = skg_tex_type_rendertarget;
+		else if (texture->type & tex_type_depthtarget)  type = skg_tex_type_depthtarget;
 
 		skg_tex_t new_tex = skg_tex_create(type, use, format, use_mips);
-		_tex_set_options(&new_tex, texture->sample_mode, texture->address_mode, texture->anisotropy);
+		_tex_set_options(&new_tex, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 		skg_tex_set_contents_arr(&new_tex, (const void**)array_data, array_count, mip_count, width, height, multisample);
 		skg_tex_t old_tex = texture->tex;
 		texture->tex = new_tex;
@@ -935,7 +1002,7 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		tex_set_meta(texture, width, height, texture->format);
 
 		if (texture->depth_buffer != nullptr) {
-			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, nullptr, multisample);
+			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, multisample, nullptr);
 			tex_set_zbuffer  (texture, texture->depth_buffer);
 		}
 		tex_update_label(texture);
@@ -959,13 +1026,15 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, spherical_harmonics_t* sh_lighting_info, int32_t multisample) {
-	tex_set_color_arr_mips(texture, width, height, array_data, array_count, 1, multisample, sh_lighting_info);
+void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t multisample, spherical_harmonics_t* out_sh_lighting_info) {
+	tex_set_color_arr_mips(texture, width, height, array_data, array_count, 1, multisample, out_sh_lighting_info);
 }
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample, spherical_harmonics_t *sh_lighting_info) {
+void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample, spherical_harmonics_t * out_sh_lighting_info) {
+	profiler_zone();
+
 	struct tex_upload_job_t {
 		tex_t                  texture;
 		int32_t                width;
@@ -976,7 +1045,7 @@ void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void *
 		spherical_harmonics_t *sh_lighting_info;
 		int32_t                multisample;
 	};
-	tex_upload_job_t job_data = {texture, width, height, array_data, array_count, mip_count, sh_lighting_info, multisample};
+	tex_upload_job_t job_data = {texture, width, height, array_data, array_count, mip_count, out_sh_lighting_info, multisample};
 
 	// OpenGL doesn't like multiple threads, but D3D is fine with it.
 	if (backend_graphics_get() == backend_graphics_d3d11) {
@@ -993,6 +1062,8 @@ void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void *
 ///////////////////////////////////////////
 
 void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data, bool32_t blocking, int32_t priority) {
+	profiler_zone();
+
 	tex_load_t* load_data = sk_malloc_zero_t(tex_load_t, 1);
 	load_data->is_srgb       = srgb_data;
 	load_data->file_count    = 1;
@@ -1033,6 +1104,8 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 ///////////////////////////////////////////
 
 spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
+	profiler_zone();
+
 	assets_block_until(&cubemap_texture->header, asset_state_loaded);
 
 	skg_tex_t *tex = &cubemap_texture->tex;
@@ -1045,8 +1118,8 @@ spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 	if (tex->width != tex->height || tex->array_count != 6) {
 		log_warn("Invalid texture size for calculating spherical harmonics. Must be an equirect image, or have 6 images all same width and height.");
 		return {};
-	} else if (!(tex->format == skg_tex_fmt_rgba32 || tex->format == skg_tex_fmt_rgba32_linear || tex->format == skg_tex_fmt_rgba128)) {
-		log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32 or rgba128.");
+	} else if (!(tex->format == skg_tex_fmt_rgba32 || tex->format == skg_tex_fmt_rgba32_linear || tex->format == skg_tex_fmt_rgba64f || tex->format == skg_tex_fmt_rgba128 || tex->format == tex_format_rg11b10)) {
+		log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32, rg11b10, rgba64f or rgba128.");
 		return {};
 	} else {
 		int32_t  mip_level = maxi((int32_t)0, (int32_t)skg_mip_count(tex->width, tex->height) - 6);
@@ -1077,7 +1150,7 @@ void tex_set_colors(tex_t texture, int32_t width, int32_t height, void *data) {
 
 ///////////////////////////////////////////
 
-void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
+void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level) {
 	skg_tex_address_ skg_addr;
 	switch (address_mode) {
 	case tex_address_clamp:  skg_addr = skg_tex_address_clamp;  break;
@@ -1094,17 +1167,32 @@ void _tex_set_options(skg_tex_t *texture, tex_sample_ sample, tex_address_ addre
 	default: skg_sample = skg_tex_sample_linear;
 	}
 
-	skg_tex_settings(texture, skg_addr, skg_sample, anisotropy_level);
+	skg_sample_compare_ skg_compare;
+	switch (compare) {
+	case tex_sample_comp_none:          skg_compare = skg_sample_compare_none;          break;
+	case tex_sample_comp_less:          skg_compare = skg_sample_compare_less;          break;
+	case tex_sample_comp_less_or_eq: 	skg_compare = skg_sample_compare_less_or_eq;    break;
+	case tex_sample_comp_greater:       skg_compare = skg_sample_compare_greater;       break;
+	case tex_sample_comp_greater_or_eq: skg_compare = skg_sample_compare_greater_or_eq; break;
+	case tex_sample_comp_equal:         skg_compare = skg_sample_compare_equal;         break;
+	case tex_sample_comp_not_equal:     skg_compare = skg_sample_compare_not_equal;     break;
+	case tex_sample_comp_always:        skg_compare = skg_sample_compare_always;        break;
+	case tex_sample_comp_never:         skg_compare = skg_sample_compare_never;         break;
+	default:                            skg_compare = skg_sample_compare_none;          break;
+	}
+
+	skg_tex_settings(texture, skg_addr, skg_sample, skg_compare, anisotropy_level);
 }
 
 ///////////////////////////////////////////
 
-void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, int32_t anisotropy_level) {
+void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level) {
 	texture->address_mode = address_mode;
 	texture->anisotropy   = anisotropy_level;
 	texture->sample_mode  = sample;
+	texture->sample_comp  = compare;
 
-	_tex_set_options(&texture->tex, sample, address_mode, anisotropy_level);
+	_tex_set_options(&texture->tex, sample, address_mode, texture->sample_comp, anisotropy_level);
 	tex_update_label(texture);
 }
 
@@ -1133,7 +1221,7 @@ int32_t tex_get_height(tex_t texture) {
 
 void tex_set_sample(tex_t texture, tex_sample_ sample) {
 	texture->sample_mode = sample;
-	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 }
 
 ///////////////////////////////////////////
@@ -1144,9 +1232,22 @@ tex_sample_ tex_get_sample(tex_t texture) {
 
 ///////////////////////////////////////////
 
+void tex_set_sample_comp(tex_t texture, tex_sample_comp_ compare) {
+	texture->sample_comp = compare;
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
+}
+
+///////////////////////////////////////////
+
+tex_sample_comp_ tex_get_sample_comp(tex_t texture) {
+	return texture->sample_comp;
+}
+
+///////////////////////////////////////////
+
 void tex_set_address(tex_t texture, tex_address_ address_mode) {
 	texture->address_mode = address_mode;
-	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 }
 
 ///////////////////////////////////////////
@@ -1159,7 +1260,7 @@ tex_address_ tex_get_address(tex_t texture) {
 
 void tex_set_anisotropy(tex_t texture, int32_t anisotropy_level) {
 	texture->anisotropy = anisotropy_level;
-	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->anisotropy);
+	tex_set_options(texture, texture->sample_mode, texture->address_mode, texture->sample_comp, texture->anisotropy);
 }
 
 ///////////////////////////////////////////
@@ -1294,7 +1395,10 @@ tex_t tex_gen_color(color128 color, int32_t width, int32_t height, tex_type_ typ
 	case tex_format_rgba32_linear: { color32  c = color_to_32(color);                             memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
 	case tex_format_bgra32_linear:
 	case tex_format_bgra32:        { color32  c = color_to_32({color.b,color.g,color.r,color.a}); memcpy(data, &c,     sizeof(c)); data_step = sizeof(c);} break;
-	case tex_format_rgba128:       {                                                              memcpy(data, &color, sizeof(color)); data_step = sizeof(color); } break;
+	case tex_format_rgba128:       { memcpy(data, &color, sizeof(color)); data_step = sizeof(color); } break;
+	case tex_format_rgba64f:       { uint16_t c[4]; fhf_f32_to_f16_x4(&color.r, c);               memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
+	case tex_format_rgb10a2:       { uint32_t c = fhf_f32_to_rgb10a2(&color.r);                   memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
+	case tex_format_rg11b10:       { uint32_t c = fhf_f32_to_r11g11ba10f(&color.r);               memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
 	case tex_format_r32:           { float    c = color.r;                                        memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
 	case tex_format_r16:           { uint16_t c = (uint16_t)(color.r*USHRT_MAX);                  memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
 	case tex_format_r8:            { uint8_t  c = (uint8_t )(color.r*255.0f   );                  memcpy(data, &c,     sizeof(c)); data_step = sizeof(c); } break;
@@ -1364,7 +1468,7 @@ tex_t tex_gen_particle(int32_t width, int32_t height, float roundness, gradient_
 ///////////////////////////////////////////
 
 tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info) {
-	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
+	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rg11b10);
 	if (result == nullptr) {
 		return nullptr;
 	}
@@ -1379,9 +1483,9 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 
 	float    half_px = 0.5f / size;
 	int32_t  size2 = size * size;
-	color128*data[6];
+	uint32_t*data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = sk_malloc_t(color128, size2);
+		data[i] = sk_malloc_t(uint32_t, size2);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);
@@ -1394,6 +1498,9 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 			if (i == 2) {
 				py = 1 - py;
 			}
+			vec3    pl    = vec3_lerp(p1, p4, py);
+			vec3    pr    = vec3_lerp(p2, p3, py);
+			int32_t ysize = y * size;
 		for (int32_t x = 0; x < size; x++) {
 			float px = x / (float)size + half_px;
 
@@ -1402,13 +1509,10 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 				px = 1 - px;
 			}
 
-			vec3 pl = vec3_lerp(p1, p4, py);
-			vec3 pr = vec3_lerp(p2, p3, py);
-			vec3 pt = vec3_lerp(pl, pr, px);
-			pt = vec3_normalize(pt);
-
-			float pct = (vec3_dot(pt, gradient_dir)+1)*0.5f;
-			data[i][x + y * size] = gradient_get(gradient_bot_to_top, pct);
+			vec3     pt  = vec3_normalize(vec3_lerp(pl, pr, px));
+			float    pct = (vec3_dot(pt, gradient_dir)+1)*0.5f;
+			color128 c   = gradient_get(gradient_bot_to_top, pct);
+			data[i][x + ysize] = fhf_f32_to_r11g11ba10f(&c.r);
 		}
 		}
 	}
@@ -1428,7 +1532,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 ///////////////////////////////////////////
 
 tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size, float light_spot_size_pct, float light_spot_intensity) {
-	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba128);
+	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rg11b10);
 	if (result == nullptr) {
 		return nullptr;
 	}
@@ -1456,9 +1560,9 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 
 	float     half_px = 0.5f / size;
 	int32_t   size2 = size * size;
-	color128 *data[6];
+	uint32_t *data[6];
 	for (int32_t i = 0; i < 6; i++) {
-		data[i] = sk_malloc_t(color128, size2);
+		data[i] = sk_malloc_t(uint32_t, size2);
 		vec3 p1 = math_cubemap_corner(i * 4);
 		vec3 p2 = math_cubemap_corner(i * 4+1);
 		vec3 p3 = math_cubemap_corner(i * 4+2);
@@ -1471,6 +1575,9 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 			if (i == 2) {
 				py = 1 - py;
 			}
+			vec3    pl    = vec3_lerp(p1, p4, py);
+			vec3    pr    = vec3_lerp(p2, p3, py);
+			int32_t ysize = y * size;
 			for (int32_t x = 0; x < size; x++) {
 				float px = x / (float)size + half_px;
 
@@ -1479,17 +1586,14 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 					px = 1 - px;
 				}
 
-				vec3 pl = vec3_lerp(p1, p4, py);
-				vec3 pr = vec3_lerp(p2, p3, py);
-				vec3 pt = vec3_lerp(pl, pr, px);
-				float dist = fmaxf(fmaxf(fabsf(pt.x-light_pt.x), fabsf(pt.y-light_pt.y)), fabsf(pt.z-light_pt.z));
-				pt = vec3_normalize(pt);
+				vec3     pt       = vec3_lerp(pl, pr, px);
+				vec3     abs_diff = vec3_abs(pt - light_pt);
+				float    dist     = fmaxf(fmaxf(abs_diff.x, abs_diff.y), abs_diff.z);
+				color128 color    = dist < light_spot_size_pct
+					? light_col
+					: sh_lookup(lookup, vec3_normalize(pt));
 
-				if (dist < light_spot_size_pct) {
-					data[i][x + y * size] = light_col;
-				} else {
-					data[i][x + y * size] = sh_lookup(lookup, pt);
-				}
+				data[i][x + ysize] = fhf_f32_to_r11g11ba10f(&color.r);
 			}
 		}
 	}

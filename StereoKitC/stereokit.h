@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2023 Nick Klingensmith
- * Copyright (c) 2023 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2025 Nick Klingensmith
+ * Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
  */
 
 #pragma once
@@ -17,7 +17,7 @@
 	#define SK_CONST static const
 #elif defined(_MSC_VER)
 	#define SK_DEPRECATED __declspec(deprecated)
-	#if defined(_DLL) || defined(BUILDING_DLL)
+	#if defined(SK_BUILD_SHARED)
 		#define SK_EXIMPORT __declspec(dllexport)
 	#else
 		#define SK_EXIMPORT
@@ -1016,8 +1016,14 @@ typedef enum tex_type_ {
 	  that might be passed in as a target to Renderer.Blit, or other
 	  such situations.*/
 	tex_type_rendertarget  = 1 << 2,
-	/*This texture contains depth data, not color data!*/
+	/*This texture contains depth data, not color data! It is writeable, but
+	  not readable. This makes it great for zbuffers, but not shadowmaps or
+	  other textures that need to be read from later on.*/
 	tex_type_depth         = 1 << 3,
+	/*This texture contains depth data, not color data! It is writeable, but
+	  not readable. This makes it great for zbuffers, but not shadowmaps or
+	  other textures that need to be read from later on.*/
+	tex_type_zbuffer       = 1 << 3,
 	/*This texture will generate mip-maps any time the contents
 	  change. Mip-maps are a list of textures that are each half the
 	  size of the one before them! This is used to prevent textures from
@@ -1027,6 +1033,10 @@ typedef enum tex_type_ {
 	  CPU (not renders)! This ensures the graphics card stores it
 	  someplace where writes are easy to do quickly.*/
 	tex_type_dynamic       = 1 << 5,
+	/*This texture contains depth data, not color data! It is writeable and
+	  readable. This makes it great for shadowmaps or other textures that need to
+	  be read from later on.*/
+	tex_type_depthtarget   = 1 << 6,
 	/*A standard color image that also generates mip-maps
 	  automatically.*/
 	tex_type_image         = tex_type_image_nomips | tex_type_mips,
@@ -1049,6 +1059,18 @@ typedef enum tex_sample_ {
 	  viewed at an extreme angle!*/
 	tex_sample_anisotropic
 } tex_sample_;
+
+typedef enum tex_sample_comp_ {
+	tex_sample_comp_none = 0,
+	tex_sample_comp_less,
+	tex_sample_comp_less_or_eq,
+	tex_sample_comp_greater,
+	tex_sample_comp_greater_or_eq,
+	tex_sample_comp_equal,
+	tex_sample_comp_not_equal,
+	tex_sample_comp_always,
+	tex_sample_comp_never,
+} tex_sample_comp_;
 
 /*What happens when the shader asks for a texture coordinate
   that's outside the texture?? Believe it or not, this happens plenty
@@ -1094,8 +1116,8 @@ SK_API asset_state_ tex_asset_state         (const tex_t texture);
 SK_API void         tex_on_load             (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
 SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context));
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr), int32_t multisample sk_default(1));
-SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
@@ -1110,6 +1132,8 @@ SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
 SK_API void         tex_set_sample          (tex_t texture, tex_sample_ sample sk_default(tex_sample_linear));
 SK_API tex_sample_  tex_get_sample          (tex_t texture);
+SK_API void             tex_set_sample_comp (tex_t texture, tex_sample_comp_ compare sk_default(tex_sample_comp_none));
+SK_API tex_sample_comp_ tex_get_sample_comp (tex_t texture);
 SK_API void         tex_set_address         (tex_t texture, tex_address_ address_mode sk_default(tex_address_wrap));
 SK_API tex_address_ tex_get_address         (tex_t texture);
 SK_API void         tex_set_anisotropy      (tex_t texture, int32_t anisotropy_level sk_default(4));
@@ -1277,6 +1301,7 @@ SK_API void              material_set_cull        (material_t material, cull_ mo
 SK_API void              material_set_wireframe   (material_t material, bool32_t wireframe);
 SK_API void              material_set_depth_test  (material_t material, depth_test_ depth_test_mode);
 SK_API void              material_set_depth_write (material_t material, bool32_t write_enabled);
+SK_API void              material_set_depth_clip  (material_t material, bool32_t clip_enabled);
 SK_API void              material_set_queue_offset(material_t material, int32_t offset);
 SK_API void              material_set_chain       (material_t material, material_t chain_material);
 SK_API transparency_     material_get_transparency(material_t material);
@@ -1284,6 +1309,7 @@ SK_API cull_             material_get_cull        (material_t material);
 SK_API bool32_t          material_get_wireframe   (material_t material);
 SK_API depth_test_       material_get_depth_test  (material_t material);
 SK_API bool32_t          material_get_depth_write (material_t material);
+SK_API bool32_t          material_get_depth_clip  (material_t material);
 SK_API int32_t           material_get_queue_offset(material_t material);
 SK_API material_t        material_get_chain       (material_t material);
 SK_API void              material_set_float       (material_t material, const char *name, float    value);
@@ -1323,9 +1349,10 @@ SK_API int32_t           material_get_param_count (material_t material);
 SK_API void              material_set_shader      (material_t material, shader_t shader);
 SK_API shader_t          material_get_shader      (material_t material);
 
-SK_API material_buffer_t material_buffer_create   (int32_t register_slot, int32_t size);
-SK_API void              material_buffer_set_data (material_buffer_t buffer, const void *buffer_data);
+SK_API material_buffer_t material_buffer_create   (int32_t size);
+SK_API void              material_buffer_addref   (material_buffer_t buffer);
 SK_API void              material_buffer_release  (material_buffer_t buffer);
+SK_API void              material_buffer_set_data (material_buffer_t buffer, const void *buffer_data);
 
 ///////////////////////////////////////////
 
@@ -1670,9 +1697,12 @@ typedef enum projection_ {
 
 //TODO: for v0.4, rename render_set_clip and render_set_fov to indicate they are only for perspective
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
-SK_API void                  render_set_fov        (float field_of_view_degrees sk_default(90.0f));
+SK_API void                  render_get_clip       (float* out_near_plane, float* out_far_plane);
+SK_API void                  render_set_fov        (float vertical_field_of_view_degrees sk_default(90.0f));
+SK_API float                 render_get_fov        (void);
 SK_API void                  render_set_ortho_clip (float near_plane sk_default(0.0f), float far_plane sk_default(50));
 SK_API void                  render_set_ortho_size (float viewport_height_meters);
+SK_API float                 render_get_ortho_size (void);
 SK_API void                  render_set_projection (projection_ proj);
 SK_API projection_           render_get_projection (void);
 SK_API matrix                render_get_cam_root   (void);
@@ -1699,6 +1729,7 @@ SK_API color128              render_get_clear_color(void);
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex (void);
 SK_API void                  render_global_texture (int32_t register_slot, tex_t texture);
+SK_API void                  render_global_buffer  (int32_t register_slot, material_buffer_t buffer);
 SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t material,          const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
@@ -1707,8 +1738,7 @@ SK_API void                  render_screenshot     (const char *file_utf8, int32
 //TODO: for v0.4, reorder parameters, context in particular should be next to callback
 SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
 SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
-SK_API void                  render_to             (tex_t to_rendertarget, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
-SK_API void                  render_material_to    (tex_t to_rendertarget, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
+SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 SK_API render_list_t         render_get_primary_list(void);
 
@@ -1857,6 +1887,112 @@ SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, const c
 
 ///////////////////////////////////////////
 
+/*Should this interactor behave like a single point in space interacting with
+  elements? Or should it behave more like an intangible line? Hit detection is
+  still capsule shaped, but behavior may change a little to reflect the primary
+  position of the point interactor. This can also be thought of as direct
+  interaction vs indirect interaction. */
+typedef enum interactor_type_ {
+	/*The interactor represents a physical point in space, such as a fingertip
+	  or the point of a pencil. Points do not use directionality for their
+	  interactions, nor do they take into account the distance of an element
+	  along the 'ray' of the capsule. */
+	interactor_type_point,
+	/*The interactor represents a less tangible line or ray of interaction,
+	  such as a laser pointer or eye gaze. Lines will occasionally consider the
+	  directionality of the interactor to discard backpressing certain
+	  elements,and use distance along the line for occluding elements that are
+	  behind other elements.*/
+	interactor_type_line,
+} interactor_type_;
+
+/*A bit-flag mask for interaction event types. This allows or informs what type
+  of events an interactor can perform, or an element can respond to.*/
+typedef enum interactor_event_ {
+	/*Poke events represent direct physical interaction with elements via a
+	  single point. This might be like a fingertip pressing a button, or a
+	  pencil tip on a page of a paper.*/
+	interactor_event_poke  = 1 << 1,
+	/*Grip events represent the gripping gesture of the hand. This can also map
+	  to something like the grip button on a controller. This is generally for
+	  larger objects where humans have a tendency to make full fisted grasping
+	  motions, like with door handles or sword hilts.*/
+	interactor_event_grip  = 1 << 2,
+	/*Pinch events represent the pinching gesture of the hand, where the index
+	  finger tip and thumb tip come together. This can also map to something
+	  like the trigger button of a controller. This is generally for smaller
+	  objects where humans tend to grasp more delicately with just their
+	  fingertips, like with a pencil or switches.*/
+	interactor_event_pinch = 1 << 3,
+} interactor_event_;
+SK_MakeFlag(interactor_event_);
+
+// TODO: is this redundant with interactor_type_?
+/*This describes how an interactor activates elements. Does it use the physical
+  position of the interactor, or the activation state?*/
+typedef enum interactor_activation_ {
+	/*This interactor uses its `active` state to determine element
+	  activation.*/
+	interactor_activation_state,
+	/*This interactor uses its motion position to determine the element
+	  activation.*/
+	interactor_activation_position,
+} interactor_activation_;
+
+/*A bit-flag for the current state of a button input.*/
+typedef enum button_state_ {
+	/*Is the button currently up, unpressed?*/
+	button_state_inactive      = 0,
+	/*Is the button currently down, pressed?*/
+	button_state_active        = 1 << 0,
+	/*Has the button just been released? Only true for a single frame.*/
+	button_state_just_inactive = 1 << 1,
+	/*Has the button just been pressed? Only true for a single frame.*/
+	button_state_just_active   = 1 << 2,
+	/*Has the button just changed state this frame?*/
+	button_state_changed       = button_state_just_inactive | button_state_just_active,
+	/*Matches with all states!*/
+	button_state_any           = 0x7FFFFFFF,
+} button_state_;
+SK_MakeFlag(button_state_);
+
+/*Options for what type of interactors StereoKit provides by default.*/
+typedef enum default_interactors_ {
+	/*StereoKit's default interactors, this provides an aim ray for a mouse,
+	aim rays for controllers, and aim, pinch, and poke interactors for hands.*/
+	default_interactors_default,
+	/*Don't provide any interactors at all. This means you either don't want
+	interaction, or are providing your own custom interactors.*/
+	default_interactors_none,
+} default_interactors_;
+
+typedef int32_t interactor_t;
+
+SK_API interactor_t          interactor_create                  (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, int32_t input_source_id, float capsule_radius, int32_t secondary_motion_dimensions);
+SK_API void                  interactor_destroy                 (      interactor_t interactor);
+SK_API void                  interactor_update                  (      interactor_t interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
+SK_API void                  interactor_set_min_distance        (      interactor_t interactor, float min_distance);
+SK_API float                 interactor_get_min_distance        (const interactor_t interactor);
+SK_API vec3                  interactor_get_capsule_start       (const interactor_t interactor);
+SK_API vec3                  interactor_get_capsule_end         (const interactor_t interactor);
+SK_API void                  interactor_set_radius              (      interactor_t interactor, float radius);
+SK_API float                 interactor_get_radius              (const interactor_t interactor);
+SK_API button_state_         interactor_get_tracked             (const interactor_t interactor);
+SK_API id_hash_t             interactor_get_focused             (const interactor_t interactor);
+SK_API id_hash_t             interactor_get_active              (const interactor_t interactor);
+SK_API bool32_t              interactor_get_focus_bounds        (const interactor_t interactor, pose_t* out_pose_world, bounds_t* out_bounds_local, vec3* out_at_local);
+SK_API pose_t                interactor_get_motion              (const interactor_t interactor);
+
+SK_API int32_t               interactor_count                   (void);
+SK_API interactor_t          interactor_get                     (int32_t index);
+
+SK_API void                  interaction_set_default_interactors(default_interactors_ default_interactors);
+SK_API default_interactors_  interaction_get_default_interactors();
+SK_API void                  interaction_set_default_draw       (bool32_t draw_interactors);
+SK_API bool32_t              interaction_get_default_draw       (void);
+
+///////////////////////////////////////////
+
 /*What type of device is the source of the pointer? This is a
   bit-flag that can contain some input source family information.*/
 typedef enum input_source_ {
@@ -1892,23 +2028,6 @@ typedef enum handed_ {
 	  when you can loop Hand.Max times instead.*/
 	handed_max                 = 2,
 } handed_;
-
-/*A bit-flag for the current state of a button input.*/
-typedef enum button_state_ {
-	/*Is the button currently up, unpressed?*/
-	button_state_inactive      = 0,
-	/*Is the button currently down, pressed?*/
-	button_state_active        = 1 << 0,
-	/*Has the button just been released? Only true for a single frame.*/
-	button_state_just_inactive = 1 << 1,
-	/*Has the button just been pressed? Only true for a single frame.*/
-	button_state_just_active   = 1 << 2,
-	/*Has the button just changed state this frame?*/
-	button_state_changed       = button_state_just_inactive | button_state_just_active,
-	/*Matches with all states!*/
-	button_state_any           = 0x7FFFFFFF,
-} button_state_;
-SK_MakeFlag(button_state_);
 
 /*This is the tracking state of a sensory input in the world,
   like a controller's position sensor, or a QR code identified by a
@@ -2279,9 +2398,9 @@ SK_API hand_sim_id_t         input_hand_sim_pose_add         (const pose_t* in_a
 SK_API void                  input_hand_sim_pose_remove      (hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear       (void);
 
-SK_API void                  input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API void                  input_unsubscribe               (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API void                  input_fire_event                (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
+SK_API SK_DEPRECATED void    input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API SK_DEPRECATED void    input_unsubscribe               (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
+SK_API SK_DEPRECATED void    input_fire_event                (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
 
 ///////////////////////////////////////////
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2024 Nick Klingensmith
-// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
 
 #include "simulator.h"
 
@@ -26,7 +26,6 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-int32_t        sim_gaze_pointer;
 vec3           sim_head_rot;
 vec3           sim_head_pos;
 pose_t         sim_bounds_pose;
@@ -60,7 +59,6 @@ bool simulator_init() {
 	sim_head_rot     = { -21, 0.0001f, 0 };
 	sim_head_pos     = { 0, 0.2f, 0.0f };
 	sim_mouse_look   = false;
-	sim_gaze_pointer = input_add_pointer(input_source_gaze | input_source_gaze_head);
 	sim_window       = -1;
 	sim_render_sys   = systems_find("FrameRender");
 
@@ -204,12 +202,6 @@ void simulator_step_begin() {
 			quat_lookat(vec3_zero, matrix_transform_dir(render_get_cam_final_inv(), ray.dir)) }, 
 			track_state_known, track_state_known);
 	}
-
-	pose_t     eyes_world   = input_pose_get_world(input_pose_eyes);
-	pointer_t *pointer_head = input_get_pointer(sim_gaze_pointer);
-	pointer_head->tracked = button_state_active;
-	pointer_head->ray.pos = eyes_world.position;
-	pointer_head->ray.dir = eyes_world.orientation * vec3_forward;
 
 	render_set_sim_origin(world_origin_offset);
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });

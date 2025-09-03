@@ -49,16 +49,33 @@ namespace StereoKit
 		/// <param name="registerSlot">Valid values are 3-16. This is the 
 		/// register id that this data will be bound to. In HLSL, you'll see
 		/// the slot id for '3' indicated like this `: register(b3)`</param>
+		[Obsolete("Use empty constructor, and call Renderer.SetGlobalBuffer instead! This will be removed in a future version.")]
 		public MaterialBuffer(int registerSlot) {
 			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))
 				throw new NotSupportedException("MaterialBuffer's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying! Explicit would work too.");
 
 			int size     = Marshal.SizeOf(typeof(T));
 			_localMemory = Marshal.AllocHGlobal(size);
-			_inst        = NativeAPI.material_buffer_create(registerSlot, size);
+			_inst        = NativeAPI.material_buffer_create(size);
 			if (_inst == IntPtr.Zero)
 				throw new ArgumentException("Bad slot id, see log.");
+			else
+				Renderer.SetGlobalBuffer(registerSlot, this);
 		}
+
+		/// <summary>Create a new global MaterialBuffer that can be bound to a
+		/// register slot id via Renderer.SetGlobalBuffer. All shaders will
+		/// have access to the data provided via this instance's `Set`.</summary>
+		public MaterialBuffer()
+		{
+			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))
+				throw new NotSupportedException("MaterialBuffer's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying! Explicit would work too.");
+
+			int size     = Marshal.SizeOf(typeof(T));
+			_localMemory = Marshal.AllocHGlobal(size);
+			_inst        = NativeAPI.material_buffer_create(size);
+		}
+
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~MaterialBuffer()
 		{

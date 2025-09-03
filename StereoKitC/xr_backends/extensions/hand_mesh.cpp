@@ -22,9 +22,9 @@ OPENXR_DEFINE_FN_STATIC(XR_EXT_FUNCTIONS);
 
 typedef struct xr_hand_mesh_state_t {
 	bool           available;
-	XrSpace        hand_space[2];
-	bool           mesh_dirty[2];
-	XrHandMeshMSFT mesh_src  [2] = { { XR_TYPE_HAND_MESH_MSFT }, { XR_TYPE_HAND_MESH_MSFT } };
+	XrSpace        hand_space[sk::handed_::handed_max];
+	bool           mesh_dirty[sk::handed_::handed_max];
+	XrHandMeshMSFT mesh_src  [sk::handed_::handed_max];
 } xr_hand_mesh_state_t;
 static xr_hand_mesh_state_t local = { };
 
@@ -92,6 +92,7 @@ xr_system_ xr_ext_msft_hand_mesh_initialize(void*) {
 	// mesh trackers.
 	for (int32_t h = 0; h < handed_max; h++) {
 		// Allocate memory for OpenXR to store hand mesh data in.
+		local.mesh_src[h]                                  = { XR_TYPE_HAND_MESH_MSFT };
 		local.mesh_src[h].indexBuffer.indexCapacityInput   = properties_mesh.maxHandMeshIndexCount;
 		local.mesh_src[h].indexBuffer.indices              = sk_malloc_t(uint32_t, properties_mesh.maxHandMeshIndexCount);
 		local.mesh_src[h].vertexBuffer.vertexCapacityInput = properties_mesh.maxHandMeshVertexCount;

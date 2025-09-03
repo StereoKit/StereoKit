@@ -13,6 +13,7 @@
 #include "../log.h"
 #include "../libraries/stref.h"
 #include "../libraries/ferr_thread.h"
+#include "../libraries/profiler.h"
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/simulator.h"
 #include "../xr_backends/window.h"
@@ -70,6 +71,8 @@ void        platform_stop_mode();
 ///////////////////////////////////////////
 
 bool platform_init() {
+	profiler_zone();
+
 	device_data_init(&device_data);
 
 	local = sk_malloc_zero_t(platform_state_t, 1);
@@ -150,6 +153,8 @@ bool platform_set_mode(app_mode_ mode) {
 
 
 void platform_step_begin() {
+	profiler_zone();
+
 	platform_impl_step();
 	switch (local->mode) {
 	case app_mode_offscreen: offscreen_step_begin(); break;
@@ -163,6 +168,8 @@ void platform_step_begin() {
 ///////////////////////////////////////////
 
 void platform_step_end() {
+	profiler_zone();
+
 	switch (local->mode) {
 	case app_mode_offscreen: offscreen_step_end(); break;
 	case app_mode_simulator: simulator_step_end(); break;

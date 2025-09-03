@@ -11,18 +11,16 @@
 namespace sk {
 
 typedef struct xr_render_model_t {
-	XrRenderModelIdEXT id;
-	XrRenderModelEXT   render_model;
-	model_t            model;
-	XrSpace            space;
-	model_node_id*     anim_nodes;
-	int32_t            anim_node_count;
+	int32_t               asset_idx;
+	model_t               model;
+	XrSpace               space;
 	XrRenderModelStateEXT state_query;
-};
+} xr_render_model_t;
 
-void              xr_ext_render_model_register();
-xr_render_model_t xr_ext_render_model_get     (XrRenderModelIdEXT id);
-void              xr_ext_render_model_update  (xr_render_model_t* ref_model);
-void              xr_ext_render_model_destroy (xr_render_model_t* ref_model);
+void              xr_ext_render_model_register ();
+bool              xr_ext_render_model_get      (XrRenderModelIdEXT id, xr_render_model_t* out_model);
+void              xr_ext_render_model_update   (xr_render_model_t* ref_model);
+void              xr_ext_render_model_destroy  (xr_render_model_t* ref_model);
+XrRenderModelEXT  xr_ext_render_model_get_model(const xr_render_model_t* model);
 
 }

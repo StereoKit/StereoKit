@@ -68,6 +68,20 @@ namespace StereoKit {
 			}
 			return result;
 		}
+
+		/// <summary>Tries to get the underlying perception spatial anchor as a COM pointer.
+		/// Use this when you need the raw IntPtr for interop or custom marshalling.</summary>
+		/// <param name="spatialAnchor">The raw COM pointer to the spatial anchor.</param>
+		/// <returns>True if the pointer was successfully obtained, false otherwise.</returns>
+		public bool TryGetPerceptionAnchor(out IntPtr spatialAnchor)
+		{
+			bool result = NativeAPI.anchor_get_perception_anchor(_inst, out spatialAnchor);
+			if (!result)
+			{
+				spatialAnchor = IntPtr.Zero;
+			}
+			return result;
+		}
 		
 		internal Anchor(IntPtr anchor)
 		{

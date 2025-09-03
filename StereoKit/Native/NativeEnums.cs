@@ -331,6 +331,20 @@ public enum Cull
 	None,
 }
 
+/// <summary>Options for what type of interactors StereoKit provides by
+/// default.</summary>
+public enum DefaultInteractors
+{
+	/// <summary>StereoKit's default interactors, this provides an aim ray for
+	/// a mouse, aim rays for controllers, and aim, pinch, and poke
+	/// interactors for hands.</summary>
+	Default,
+	/// <summary>Don't provide any interactors at all. This means you either
+	/// don't want interaction, or are providing your own custom
+	/// interactors.</summary>
+	None,
+}
+
 /// <summary>This is used to determine what kind of depth buffer StereoKit
 /// uses!</summary>
 public enum DepthMode
@@ -563,6 +577,65 @@ public enum InputSource
 	/// <summary>Matches with any input source that has an activation
 	/// button!</summary>
 	CanPress = 1 << 8,
+}
+
+/// <summary>TODO: is this redundant with interactor_type_? This describes how
+/// an interactor activates elements. Does it use the physical position of
+/// the interactor, or the activation state?</summary>
+public enum InteractorActivation
+{
+	/// <summary>This interactor uses its `active` state to determine element
+	/// activation.</summary>
+	State,
+	/// <summary>This interactor uses its motion position to determine the
+	/// element activation.</summary>
+	Position,
+}
+
+/// <summary>A bit-flag mask for interaction event types. This allows or
+/// informs what type of events an interactor can perform, or an element can
+/// respond to.</summary>
+[Flags]
+public enum InteractorEvent
+{
+	/// <summary>Poke events represent direct physical interaction with
+	/// elements via a single point. This might be like a fingertip pressing
+	/// a button, or a pencil tip on a page of a paper.</summary>
+	Poke = 1 << 1,
+	/// <summary>Grip events represent the gripping gesture of the hand. This
+	/// can also map to something like the grip button on a controller. This
+	/// is generally for larger objects where humans have a tendency to make
+	/// full fisted grasping motions, like with door handles or sword
+	/// hilts.</summary>
+	Grip = 1 << 2,
+	/// <summary>Pinch events represent the pinching gesture of the hand, where
+	/// the index finger tip and thumb tip come together. This can also map
+	/// to something like the trigger button of a controller. This is
+	/// generally for smaller objects where humans tend to grasp more
+	/// delicately with just their fingertips, like with a pencil or
+	/// switches.</summary>
+	Pinch = 1 << 3,
+}
+
+/// <summary>Should this interactor behave like a single point in space
+/// interacting with elements? Or should it behave more like an intangible
+/// line? Hit detection is still capsule shaped, but behavior may change a
+/// little to reflect the primary position of the point interactor. This can
+/// also be thought of as direct interaction vs indirect
+/// interaction.</summary>
+public enum InteractorType
+{
+	/// <summary>The interactor represents a physical point in space, such as a
+	/// fingertip or the point of a pencil. Points do not use directionality
+	/// for their interactions, nor do they take into account the distance of
+	/// an element along the 'ray' of the capsule.</summary>
+	Point,
+	/// <summary>The interactor represents a less tangible line or ray of
+	/// interaction, such as a laser pointer or eye gaze. Lines will
+	/// occasionally consider the directionality of the interactor to discard
+	/// backpressing certain elements,and use distance along the line for
+	/// occluding elements that are behind other elements.</summary>
+	Line,
 }
 
 /// <summary>A collection of system key codes, representing keyboard characters
@@ -1351,6 +1424,29 @@ public enum TexSample
 	Anisotropic,
 }
 
+/// <summary></summary>
+public enum TexSampleComp
+{
+	/// <summary></summary>
+	None = 0,
+	/// <summary></summary>
+	Less,
+	/// <summary></summary>
+	LessOrEq,
+	/// <summary></summary>
+	Greater,
+	/// <summary></summary>
+	GreaterOrEq,
+	/// <summary></summary>
+	Equal,
+	/// <summary></summary>
+	NotEqual,
+	/// <summary></summary>
+	Always,
+	/// <summary></summary>
+	Never,
+}
+
 /// <summary>Textures come in various types and flavors! These are bit-flags
 /// that tell StereoKit what type of texture we want, and how the application
 /// might use it!</summary>
@@ -1368,8 +1464,16 @@ public enum TexType
 	/// that might be passed in as a target to Renderer.Blit, or other such
 	/// situations.</summary>
 	Rendertarget = 1 << 2,
-	/// <summary>This texture contains depth data, not color data!</summary>
+	/// <summary>This texture contains depth data, not color data! It is
+	/// writeable, but not readable. This makes it great for zbuffers, but
+	/// not shadowmaps or other textures that need to be read from later
+	/// on.</summary>
 	Depth = 1 << 3,
+	/// <summary>This texture contains depth data, not color data! It is
+	/// writeable, but not readable. This makes it great for zbuffers, but
+	/// not shadowmaps or other textures that need to be read from later
+	/// on.</summary>
+	Zbuffer = 1 << 3,
 	/// <summary>This texture will generate mip-maps any time the contents
 	/// change. Mip-maps are a list of textures that are each half the size
 	/// of the one before them! This is used to prevent textures from
@@ -1379,6 +1483,10 @@ public enum TexType
 	/// (not renders)! This ensures the graphics card stores it someplace
 	/// where writes are easy to do quickly.</summary>
 	Dynamic = 1 << 5,
+	/// <summary>This texture contains depth data, not color data! It is
+	/// writeable and readable. This makes it great for shadowmaps or other
+	/// textures that need to be read from later on.</summary>
+	Depthtarget = 1 << 6,
 	/// <summary>A standard color image that also generates mip-maps
 	/// automatically.</summary>
 	Image = ImageNomips | Mips,

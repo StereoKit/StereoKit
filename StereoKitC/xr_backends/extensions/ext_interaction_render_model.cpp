@@ -9,6 +9,7 @@
 #include "ext_interaction_render_model.h"
 #include "ext_render_model.h"
 #include "ext_management.h"
+#include "../../systems/render.h"
 
  ///////////////////////////////////////////
 
@@ -27,7 +28,7 @@ namespace sk {
 typedef struct xr_ext_interaction_render_model_t {
 	bool               available;
 	xr_render_model_t* models;
-	int32_t            model_count;
+	uint32_t           model_count;
 	int32_t            controller_idx[handed_max];
 } xr_ext_interaction_render_model_t;
 static xr_ext_interaction_render_model_t local = { };
@@ -82,14 +83,14 @@ void _xr_ext_interaction_render_model_draw(xr_render_model_t *model) {
 		(loc.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0) {
 		XrVector3f    p = loc.pose.position;
 		XrQuaternionf r = loc.pose.orientation;
-		model_draw(model->model, matrix_trs({ p.x, p.y, p.z }, { r.x, r.y, r.z, r.w }));
+		model_draw(model->model, matrix_trs({ p.x, p.y, p.z }, { r.x, r.y, r.z, r.w }) * render_get_cam_final());
 	}
 }
 
 ///////////////////////////////////////////
 
 void xr_ext_interaction_render_model_draw_others() {
-	for (int32_t i = 0; i < local.model_count; i++) {
+	for (uint32_t i = 0; i < local.model_count; i++) {
 		if (i == local.controller_idx[0] ||
 			i == local.controller_idx[1])
 			continue;
@@ -100,7 +101,7 @@ void xr_ext_interaction_render_model_draw_others() {
 ///////////////////////////////////////////
 
 void xr_ext_interaction_render_model_draw_controller(handed_ hand) {
-	if (local.controller_idx[hand] >= 0)
+	if (local.controller_idx[hand] >= 0 && local.models)
 		_xr_ext_interaction_render_model_draw(&local.models[local.controller_idx[hand]]);
 }
 
@@ -128,22 +129,26 @@ void xr_ext_interaction_render_model_poll(void*, XrEventDataBuffer* event) {
 	// Enumerate the render model IDs
 	uint32_t                                    count    = 0;
 	XrInteractionRenderModelIdsEnumerateInfoEXT get_info = { XR_TYPE_INTERACTION_RENDER_MODEL_IDS_ENUMERATE_INFO_EXT };
-	xrEnumerateInteractionRenderModelIdsEXT(xr_session, &get_info, 0, &count, NULL);
+	XrResult r = xrEnumerateInteractionRenderModelIdsEXT(xr_session, &get_info, 0, &count, NULL);
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrEnumerateInteractionRenderModelIdsEXT", openxr_string(r)); return; }
 	XrRenderModelIdEXT* model_ids = sk_malloc_t(XrRenderModelIdEXT, count);
-	XrResult r = xrEnumerateInteractionRenderModelIdsEXT(xr_session, &get_info, count, &count, model_ids);
-	if (XR_FAILED(r)) log_warnf("%s: [%s]", "xrEnumerateInteractionRenderModelIdsEXT", openxr_string(r));
+	r = xrEnumerateInteractionRenderModelIdsEXT(xr_session, &get_info, count, &count, model_ids);
+	if (XR_FAILED(r)) { log_warnf("%s [%s]", "xrEnumerateInteractionRenderModelIdsEXT", openxr_string(r)); return; }
 
 	// Get the new models
-	int32_t            new_count = count;
+	uint32_t           new_count = count;
 	xr_render_model_t* new_list  = sk_malloc_t(xr_render_model_t, count);
-	for (int32_t i = 0; i < count; i++) {
-		new_list[i] = xr_ext_render_model_get(model_ids[i]);
+	for (uint32_t i = 0; i < count; i++) {
+		if (!xr_ext_render_model_get(model_ids[i], &new_list[i])) {
+			for (uint32_t m = 0; m < i; m++) xr_ext_render_model_destroy(&new_list[m]);
+			sk_free(model_ids);
+			return;
+		}
 	}
-	sk_free(model_ids);
 
 	// Release our previous list of models (this comes second so we don't
 	// release models that are re-used in the new list).
-	for (int32_t i = 0; i < local.model_count; i++) {
+	for (uint32_t i = 0; i < local.model_count; i++) {
 		xr_ext_render_model_destroy(&local.models[i]);
 	}
 	sk_free(local.models);
@@ -158,20 +163,23 @@ void xr_ext_interaction_render_model_poll(void*, XrEventDataBuffer* event) {
 	xrStringToPath(xr_instance, "/user/hand/right", &hand_path[handed_right]);
 	local.controller_idx[0] = -1;
 	local.controller_idx[1] = -1;
-	for (int32_t i = 0; i < local.model_count; i++) {
+	for (uint32_t i = 0; i < local.model_count; i++) {
 		XrInteractionRenderModelSubactionPathInfoEXT info = { XR_TYPE_INTERACTION_RENDER_MODEL_SUBACTION_PATH_INFO_EXT };
-		uint32_t path_count = 0;
-		xrEnumerateRenderModelSubactionPathsEXT(new_list[i].render_model, &info, 0,          &path_count, nullptr);
+		uint32_t         path_count = 0;
+		XrRenderModelEXT xr_model   = xr_ext_render_model_get_model(&local.models[i]);
+		xrEnumerateRenderModelSubactionPathsEXT(xr_model, &info, 0,          &path_count, nullptr);
 		XrPath* paths = sk_malloc_t(XrPath, path_count);
-		xrEnumerateRenderModelSubactionPathsEXT(new_list[i].render_model, &info, path_count, &path_count, paths);
+		xrEnumerateRenderModelSubactionPathsEXT(xr_model, &info, path_count, &path_count, paths);
 
-		for (int32_t p = 0; p < path_count; p++) {
+		for (uint32_t p = 0; p < path_count; p++) {
 			if      (paths[p] == hand_path[handed_left ]) local.controller_idx[handed_left ] = i;
 			else if (paths[p] == hand_path[handed_right]) local.controller_idx[handed_right] = i;
 		}
 
 		sk_free(paths);
 	}
+
+	sk_free(model_ids);
 }
 
 } // namespace sk

@@ -20,9 +20,9 @@ namespace StereoKit.Framework
 		}
 
 		public bool Initialize()
-        {
-            _androidSwapchainAvailable = Backend.OpenXR.ExtEnabled("XR_KHR_android_surface_swapchain");
-            Enabled =
+		{
+			_androidSwapchainAvailable = Backend.OpenXR.ExtEnabled("XR_KHR_android_surface_swapchain");
+			Enabled =
 				Backend.XRType == BackendXRType.OpenXR &&
 				LoadBindings();
 

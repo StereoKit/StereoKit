@@ -2,12 +2,15 @@
 
 #include "../tools/file_picker.h"
 #include "../tools/virtual_keyboard.h"
+#include "../libraries/profiler.h"
 
 namespace sk {
 
 ///////////////////////////////////////////
 
 bool tools_init() {
+	profiler_zone();
+
 	virtualkeyboard_initialize();
 	return true;
 }
@@ -15,6 +18,8 @@ bool tools_init() {
 ///////////////////////////////////////////
 
 void tools_step() {
+	profiler_zone();
+
 	file_picker_update();
 	virtualkeyboard_step();
 }

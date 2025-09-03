@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2024 Nick Klingensmith
- * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2025 Nick Klingensmith
+ * Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
  */
 
 #include "../stereokit.h"
@@ -55,7 +55,6 @@ array_t<hand_system_t> hand_sources;
 int32_t                hand_system = -1;
 hand_state_t           hand_state[2] = {};
 float                  hand_size_update = 0;
-int32_t                input_hand_pointer_id[handed_max] = {-1, -1};
 array_t<hand_sim_t>    hand_sim_poses   = {};
 hand_sim_id_t          hand_sim_next_id = 1;
 bool32_t               hand_finger_glow_visible = true;
@@ -174,8 +173,6 @@ void input_hand_init() {
 	sys.update_poses    = []() {};
 	input_hand_system_register(sys);
 
-	input_hand_pointer_id[handed_left ] = input_add_pointer(input_source_hand | input_source_hand_left  | input_source_can_press);
-	input_hand_pointer_id[handed_right] = input_add_pointer(input_source_hand | input_source_hand_right | input_source_can_press);
 	hand_finger_glow_visible = true;
 
 	float blend = 1;
@@ -328,11 +325,6 @@ void input_hand_state_update(handed_ handedness) {
 			hand.pinch_pt = matrix_transform_pt(from_relative, hand_state[handedness].pinch_pt_relative);
 		}
 	}
-
-	pointer_t* pointer = input_get_pointer(input_hand_pointer_id[handedness]);
-	pointer->state = button_make_state(
-		(pointer->state & button_state_active) != 0,
-		((pointer->tracked & button_state_active) != 0) && ((hand.pinch_state & button_state_active) != 0));
 }
 
 ///////////////////////////////////////////

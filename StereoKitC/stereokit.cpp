@@ -14,6 +14,7 @@
 #include "libraries/sokol_time.h"
 #include "libraries/ferr_thread.h"
 #include "libraries/ferr_hash.h"
+#include "libraries/profiler.h"
 #include "utils/random.h"
 #include "platforms/platform.h"
 
@@ -81,6 +82,9 @@ bool32_t sk_step_end  ();
 ///////////////////////////////////////////
 
 bool32_t sk_init(sk_settings_t settings) {
+	profiler_thread_name("StereoKit Main", 0);
+	profiler_zone();
+
 	local = {};
 	local.timev_scale = 1;
 	local.quit_reason = quit_reason_none;
@@ -208,8 +212,10 @@ bool32_t sk_step(void (*app_step)(void)) {
 	}
 
 	sk_step_begin();
-	if (app_step)
+	if (app_step) {
+		profiler_zone_name("App");
 		app_step();
+	}
 
 	return true;
 }
@@ -243,6 +249,8 @@ bool32_t sk_step_end() {
 	if (device_display_get_type() == display_type_flatscreen && local.focus != app_focus_active && local.settings.standby_mode != standby_mode_none)
 		platform_sleep(100);
 	local.in_step = false;
+	
+	profiler_frame_mark();
 	return local.running;
 }
 
@@ -295,6 +303,8 @@ void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_
 ///////////////////////////////////////////
 
 void sk_app_step() {
+	profiler_zone();
+
 	if (local.app_step_func != nullptr)
 		local.app_step_func();
 }

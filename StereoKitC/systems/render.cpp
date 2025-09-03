@@ -11,6 +11,7 @@
 #include "../_stereokit.h"
 #include "../device.h"
 #include "../libraries/stref.h"
+#include "../libraries/profiler.h"
 #include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
@@ -82,12 +83,13 @@ struct render_screenshot_t {
 };
 struct render_viewpoint_t {
 	tex_t         rendertarget;
+	int32_t       rendertarget_index;
 	matrix        camera;
 	matrix        projection;
 	rect_t        viewport;
-	material_t    override_material;
 	render_layer_ layer_filter;
 	render_clear_ clear;
+	material_t    override_material;
 };
 
 ///////////////////////////////////////////
@@ -140,6 +142,7 @@ struct render_state_t {
 	render_layer_           capture_filter;
 	bool                    use_capture_filter;
 	tex_t                   global_textures[16];
+	material_buffer_t       global_buffers [16];
 
 	array_t<render_screenshot_t> screenshot_list;
 	array_t<render_viewpoint_t>  viewpoint_list;
@@ -183,6 +186,8 @@ void          radix_sort_init         ();
 ///////////////////////////////////////////
 
 bool render_init() {
+	profiler_zone();
+
 	local = {};
 	local.initialized           = true;
 	local.sim_origin            = matrix_identity;
@@ -201,11 +206,13 @@ bool render_init() {
 	local.capture_filter        = render_layer_all_first_person;
 	local.list_active           = nullptr;
 
-	local.shader_globals  = material_buffer_create(1, sizeof(local.global_buffer));
+	local.shader_globals  = material_buffer_create(sizeof(local.global_buffer));
 	local.shader_blit     = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
 #if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
 	skg_buffer_name(&local.shader_blit, "sk/render/blit_buffer");
 #endif
+
+	render_global_buffer_internal(1, local.shader_globals);
 	
 	local.instance_list.resize(render_instance_max);
 
@@ -270,6 +277,10 @@ void render_shutdown() {
 		tex_release(local.global_textures[i]);
 		local.global_textures[i] = nullptr;
 	}
+	for (int32_t i = 0; i < _countof(local.global_buffers); i++) {
+		material_buffer_release(local.global_buffers[i]);
+		local.global_buffers[i] = {};
+	}
 	tex_release            (local.sky_pending_tex);
 	material_release       (local.sky_mat_default);
 	material_release       (local.sky_mat);
@@ -296,6 +307,8 @@ void render_shutdown() {
 ///////////////////////////////////////////
 
 void render_step() {
+	profiler_zone();
+
 	render_reset_buffer_pool();
 
 	hierarchy_step();
@@ -327,9 +340,22 @@ void render_set_clip(float near_plane, float far_plane) {
 
 ///////////////////////////////////////////
 
-void render_set_fov(float field_of_view_degrees) {
-	local.fov = field_of_view_degrees;
+void render_get_clip(float* out_near_plane, float* out_far_plane) {
+	if (out_near_plane) *out_near_plane = local.clip_planes.x;
+	if (out_far_plane ) *out_far_plane  = local.clip_planes.y;
+}
+
+///////////////////////////////////////////
+
+void render_set_fov(float vertical_field_of_view_degrees) {
+	local.fov = vertical_field_of_view_degrees;
 	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+float render_get_fov() {
+	return local.fov;
 }
 
 ///////////////////////////////////////////
@@ -337,6 +363,12 @@ void render_set_fov(float field_of_view_degrees) {
 void render_set_ortho_size(float viewport_height_meters) {
 	local.ortho_viewport_height = viewport_height_meters;
 	render_update_projection();
+}
+
+///////////////////////////////////////////
+
+float render_get_ortho_size() {
+	return local.ortho_viewport_height;
 }
 
 ///////////////////////////////////////////
@@ -723,6 +755,28 @@ void render_global_texture(int32_t register_slot, tex_t texture) {
 
 ///////////////////////////////////////////
 
+void render_global_buffer_internal(int32_t register_slot, material_buffer_t buffer) {
+	if (register_slot >= 0) {
+		if (buffer)
+			material_buffer_addref(buffer);
+		if (local.global_buffers[register_slot] != nullptr)
+			material_buffer_release(local.global_buffers[register_slot]);
+		local.global_buffers[register_slot] = buffer;
+	}
+}
+
+///////////////////////////////////////////
+
+void render_global_buffer(int32_t register_slot, material_buffer_t buffer) {
+	if ((register_slot >= 0 && register_slot < 3) || register_slot >= (sizeof(local.global_buffers) / sizeof(local.global_buffers[0]))) {
+		log_errf("render_global_buffer: bad slot id '%d', use 3-%d.", register_slot, (sizeof(local.global_buffers) / sizeof(local.global_buffers[0])) - 1);
+		return;
+	}
+	render_global_buffer_internal(register_slot, buffer);
+}
+
+///////////////////////////////////////////
+
 void render_set_clear_color(color128 color) {
 	local.clear_col = color_to_linear(color);
 }
@@ -761,6 +815,16 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 
 void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter) {
 	skg_event_begin("Render List Setup");
+
+	// A temporary fix for multiview trying to render to mono rendertargets
+	if (view_count == 1) {
+		memset(&local.global_buffer.view      [1], 0, sizeof(local.global_buffer.view      [1]));
+		memset(&local.global_buffer.proj      [1], 0, sizeof(local.global_buffer.proj      [1]));
+		memset(&local.global_buffer.proj_inv  [1], 0, sizeof(local.global_buffer.proj_inv  [1]));
+		memset(&local.global_buffer.viewproj  [1], 0, sizeof(local.global_buffer.viewproj  [1]));
+		memset(&local.global_buffer.camera_pos[1], 0, sizeof(local.global_buffer.camera_pos[1]));
+		memset(&local.global_buffer.camera_dir[1], 0, sizeof(local.global_buffer.camera_dir[1]));
+	}
 
 	// Copy camera information into the global buffer
 	for (int32_t i = 0; i < view_count; i++) {
@@ -806,9 +870,9 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	material_buffer_set_data(local.shader_globals, &local.global_buffer);
 
 	// Activate any material buffers we have
-	for (int32_t i = 0; i < _countof(material_buffers); i++) {
-		if (material_buffers[i].size != 0)
-			skg_buffer_bind(&material_buffers[i].buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant });
+	for (int32_t i = 0; i < _countof(local.global_buffers); i++) {
+		if (local.global_buffers[i] != nullptr)
+			skg_buffer_bind(&local.global_buffers[i]->buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant });
 	}
 
 	// Activate any global textures we have
@@ -910,33 +974,35 @@ void render_check_viewpoints() {
 
 	skg_tex_t *old_target = skg_tex_target_get();
 	for (int32_t i = 0; i < local.viewpoint_list.count; i++) {
+		render_viewpoint_t* vp = &local.viewpoint_list[i];
+
 		skg_event_begin("Viewpoint");
 		// Setup to render the screenshot
-		skg_tex_target_bind(&local.viewpoint_list[i].rendertarget->tex, -1, 0);
+		skg_tex_target_bind(&vp->rendertarget->tex, vp->rendertarget_index, 0);
 
 		// Clear the viewport
-		if (local.viewpoint_list[i].clear != render_clear_none) {
+		if (vp->clear != render_clear_none) {
 			skg_target_clear(
-				(local.viewpoint_list[i].clear & render_clear_depth),
-				(local.viewpoint_list[i].clear & render_clear_color) ? &local.clear_col.r : (float *)nullptr);
+				(vp->clear & render_clear_depth),
+				(vp->clear & render_clear_color) ? &local.clear_col.r : (float *)nullptr);
 		}
 
 		// Set up the viewport if we've got one!
 		if (local.viewpoint_list[i].viewport.w != 0) {
 			int32_t viewport[4] = {
-				(int32_t)(local.viewpoint_list[i].viewport.x * local.viewpoint_list[i].rendertarget->width ),
-				(int32_t)(local.viewpoint_list[i].viewport.y * local.viewpoint_list[i].rendertarget->height),
-				(int32_t)(local.viewpoint_list[i].viewport.w * local.viewpoint_list[i].rendertarget->width ),
-				(int32_t)(local.viewpoint_list[i].viewport.h * local.viewpoint_list[i].rendertarget->height) };
+				(int32_t)(vp->viewport.x * vp->rendertarget->width ),
+				(int32_t)(vp->viewport.y * vp->rendertarget->height),
+				(int32_t)(vp->viewport.w * vp->rendertarget->width ),
+				(int32_t)(vp->viewport.h * vp->rendertarget->height) };
 			skg_viewport(viewport);
 		}
 
 		// Render!
-		render_draw_queue(local.list_primary, &local.viewpoint_list[i].camera, &local.viewpoint_list[i].projection, 0, 1, 1, local.viewpoint_list[i].layer_filter);
+		render_draw_queue(local.list_primary, &vp->camera, &vp->projection, 0, 1, 1, vp->layer_filter);
 		skg_tex_target_bind(nullptr, -1, 0);
 
 		// Release the reference we added, the user should have their own ref
-		tex_release(local.viewpoint_list[i].rendertarget);
+		tex_release(vp->rendertarget);
 		skg_event_end();
 	}
 	local.viewpoint_list.clear();
@@ -1046,14 +1112,8 @@ void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* 
 
 ///////////////////////////////////////////
 
-void render_to(tex_t to_rendertarget, const matrix &camera, const matrix &projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
-	render_material_to(to_rendertarget, nullptr, camera, projection, layer_filter, clear, viewport);
-}
-
-///////////////////////////////////////////
-
-void render_material_to(tex_t to_rendertarget, material_t override_material, const matrix& camera, const matrix& projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
-	if ((to_rendertarget->type & tex_type_rendertarget) == 0) {
+void render_to(tex_t to_rendertarget, int32_t to_target_index, material_t override_material, const matrix& camera, const matrix& projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
+	if (!(to_rendertarget->type & tex_type_rendertarget || to_rendertarget->type & tex_type_depthtarget || to_rendertarget->type & tex_type_zbuffer)) {
 		log_err("render_to texture must be a render target texture type!");
 		return;
 	}
@@ -1063,6 +1123,7 @@ void render_material_to(tex_t to_rendertarget, material_t override_material, con
 	matrix_inverse(camera, inv_cam);
 	render_viewpoint_t viewpoint = {};
 	viewpoint.rendertarget      = to_rendertarget;
+	viewpoint.rendertarget_index= to_target_index;
 	viewpoint.camera            = inv_cam;
 	viewpoint.projection        = projection;
 	viewpoint.layer_filter      = layer_filter;

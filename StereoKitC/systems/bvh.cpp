@@ -480,7 +480,7 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
 
     // Clean up
 
-    free(triangle_centroids);
+    sk_free(triangle_centroids);
 
     return bvh;
 }
@@ -488,8 +488,8 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
 void
 mesh_bvh_destroy(mesh_bvh_t *bvh)
 {
-    free(bvh->nodes);
-    free(bvh->sorted_triangles);
+    sk_free(bvh->nodes);
+    sk_free(bvh->sorted_triangles);
     *bvh = {};
 }
 

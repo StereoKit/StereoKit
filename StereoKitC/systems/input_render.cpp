@@ -49,8 +49,8 @@ bool input_render_init() {
 
 	gradient_t color_grad = gradient_create();
 	gradient_add(color_grad, color128{ .4f,.4f,.4f,0 }, 0.0f);
-	gradient_add(color_grad, color128{ .6f,.6f,.6f,0 }, 0.4f);
-	gradient_add(color_grad, color128{ .8f,.8f,.8f,1 }, 0.55f);
+	gradient_add(color_grad, color128{ .6f,.6f,.6f,0 }, 0.55f);
+	gradient_add(color_grad, color128{ .8f,.8f,.8f,1 }, 0.7f);
 	gradient_add(color_grad, color128{ 1,  1,  1,  1 }, 1.0f);
 
 	color32 gradient[16 * 16];

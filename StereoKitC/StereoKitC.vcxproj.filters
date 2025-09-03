@@ -681,6 +681,9 @@
     <ClInclude Include="xr_backends\extensions\ext_interaction_render_model.h">
       <Filter>xr_backends\extensions</Filter>
     </ClInclude>
+    <ClInclude Include="libraries\ferr_halffloat.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

@@ -25,6 +25,7 @@
 #include "../systems/input.h"
 #include "../systems/system.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/profiler.h"
 
 #include <sk_gpu.h>
 #include <stdio.h>
@@ -691,8 +692,8 @@ void openxr_preferred_format(int64_t *out_color_dx, int64_t *out_depth_dx) {
 		int64_t native_depth = skg_tex_fmt_to_native((skg_tex_fmt_)render_preferred_depth_fmt());
 		bool    found        = false;
 		for (uint32_t i = 0; i < count; i++) {
-			if (native_depth == depth_formats[i]) {
-				*out_depth_dx = depth_formats[i];
+			if (native_depth == formats[i]) {
+				*out_depth_dx = formats[i];
 				found         = true;
 				break;
 			}
@@ -747,6 +748,8 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, display_blend_ pr
 ///////////////////////////////////////////
 
 bool openxr_render_frame() {
+	profiler_zone();
+
 	// We may have some stuff to render that doesn't require the swapchain to
 	// be available, so we can call 'begin' before then.
 	render_pipeline_begin();
@@ -763,11 +766,16 @@ bool openxr_render_frame() {
 		secondary_states.viewConfigurationStates = xr_display_2nd_states.data;
 		frame_state.next = &secondary_states;
 	}
-	XrResult xrWaitFrameResult = xrWaitFrame(xr_session, &wait_info, &frame_state);
-	if (xrWaitFrameResult == XR_ERROR_SESSION_LOST) {
-		sk_quit(quit_reason_session_lost);
+
+	{
+		profiler_zone_name("xrWaitFrame");
+
+		XrResult xrWaitFrameResult = xrWaitFrame(xr_session, &wait_info, &frame_state);
+		if (xrWaitFrameResult == XR_ERROR_SESSION_LOST) {
+			sk_quit(quit_reason_session_lost);
+		}
+		xr_check(xrWaitFrameResult, "xrWaitFrame");
 	}
-	xr_check(xrWaitFrameResult, "xrWaitFrame");
 
 	// Don't track sync time, start the frame timer after xrWaitFrame
 	xr_render_sys->profile_frame_start = stm_now();
@@ -792,8 +800,12 @@ bool openxr_render_frame() {
 	// interesting flags, like XR_SESSION_VISIBILITY_UNAVAILABLE, which means
 	// we could skip rendering this frame and call xrEndFrame right away.
 	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
-	xr_check(xrBeginFrame(xr_session, &begin_info),
-		"xrBeginFrame");
+	{
+		profiler_zone_name("xrBeginFrame");
+
+		xr_check(xrBeginFrame(xr_session, &begin_info),
+			"xrBeginFrame");
+	}
 
 	// Timing also needs some work, may be best as some sort of anchor system
 	xr_time = frame_state.predictedDisplayTime;
@@ -809,6 +821,7 @@ bool openxr_render_frame() {
 		(xr_session_state == XR_SESSION_STATE_VISIBLE || xr_session_state == XR_SESSION_STATE_FOCUSED) &&
 		(sk_get_settings_ref()->omit_empty_frames == false || render_list_item_count(render_get_primary_list()) != 0);
 	if (render_displays) {
+		profiler_zone_name("Render Setup");
 		// Set up the primary displays
 		for (int32_t i = 0; i < xr_displays.count; i++) {
 			device_display_t* display = &xr_displays[i];
@@ -870,15 +883,26 @@ bool openxr_render_frame() {
 			render_pipeline_surface_set_enabled(xr_displays[i].swapchain_color.render_surface, false);
 	}
 
-	render_pipeline_draw();
+	{
+		profiler_zone_name("Render");
+
+		render_pipeline_draw();
+	}
 
 	// Release the swapchains for all active displays
 	if (render_displays) {
+		profiler_zone_name("Render Finalize");
 		if (xr_draw_to_swapchain == false) {
 			for (int32_t i = 0; i < xr_displays.count; i++) {
 				swapchain_t* swapchain = &xr_displays[i].swapchain_color;
 				if (swapchain->render_surface >= 0 && render_pipeline_surface_get_enabled(swapchain->render_surface))
 					render_pipeline_surface_to_tex(swapchain->render_surface, swapchain->textures[swapchain->render_surface_tex], nullptr);
+			}
+		} else {
+			for (int32_t i = 0; i < xr_displays.count; i++) {
+				swapchain_t* swapchain = &xr_displays[i].swapchain_color;
+				if (swapchain->render_surface >= 0 && render_pipeline_surface_get_enabled(swapchain->render_surface) && swapchain->textures[swapchain->render_surface_tex]->depth_buffer)
+					skg_tex_target_discard(&swapchain->textures[swapchain->render_surface_tex]->depth_buffer->tex);
 			}
 		}
 
@@ -895,9 +919,12 @@ bool openxr_render_frame() {
 	end_info.layers               = composition_layers->data;
 	xr_chain_insert_extensions((XrBaseHeader*)&end_info, xr_end_frame_chain_bytes, xr_end_frame_chain_offset);
 
-	xr_check(xrEndFrame(xr_session, &end_info),
-		"xrEndFrame");
+	{
+		profiler_zone_name("xrEndFrame");
 
+		xr_check(xrEndFrame(xr_session, &end_info),
+			"xrEndFrame");
+	}
 	return true;
 }
 

@@ -407,6 +407,22 @@ namespace StereoKit
 		/// <returns>True if the state just changed this frame, false if not.
 		/// </returns>
 		public static bool IsChanged(this BtnState state) => (state & BtnState.Changed) > 0;
+
+		/// <summary>Creates a Button State using the current and previous
+		/// frame's state! These two states allow us to add the "JustActive"
+		/// and "JustInactive" bitflags when changes happen.</summary>
+		/// <param name="wasActive">Was it active previously?</param>
+		/// <param name="isActive">And is it active currently?</param>
+		/// <returns>A bitflag with "Just" events added in!</returns>
+		public static BtnState Make(bool wasActive, bool isActive)
+		{
+			BtnState result = isActive ? BtnState.Active : BtnState.Inactive;
+			if (wasActive && !isActive)
+				result |= BtnState.JustInactive;
+			if (isActive && !wasActive)
+				result |= BtnState.JustActive;
+			return result;
+		}
 	}
 
 	/// <summary>The callback type for Input events.</summary>
@@ -608,7 +624,7 @@ namespace StereoKit
 	/// hashes to represent UI elements. See `UI.StackHash` for creating a UI
 	/// identifier.</summary>
 	[StructLayout(LayoutKind.Sequential)]
-	public struct IdHash
+	public struct IdHash : IEquatable<IdHash>
 	{
 		ulong hash;
 
@@ -625,6 +641,31 @@ namespace StereoKit
 		/// <returns>A new style IdHash hash.</returns>
 		[Obsolete]
 		public static implicit operator IdHash(ulong h) => new IdHash{ hash = h };
+
+		/// <summary>An empty IdHash that represents the unassigned state.</summary>
+		public static IdHash None => new IdHash { hash = 0 };
+
+		/// <summary>An equality test.</summary>
+		/// <param name="b">Another hash.</param>
+		/// <returns>True if equal, false otherwise.</returns>
+		public override bool Equals(object b) => (b is IdHash h) ? hash == h.hash : false;
+		/// <summary>An equality test.</summary>
+		/// <param name="b">Another hash.</param>
+		/// <returns>True if equal, false otherwise.</returns>
+		public bool Equals(IdHash b) => hash == b.hash;
+		/// <summary>Same as ulong.GetHashCode</summary>
+		/// <returns>Same as ulong.GetHashCode</returns>
+		public override int GetHashCode() => hash.GetHashCode();
+		/// <summary>An equality test.</summary>
+		/// <param name="a">A hashed id.</param>
+		/// <param name="b">A hashed id.</param>
+		/// <returns>True if equal, false otherwise.</returns>
+		public static bool operator ==(IdHash a, IdHash b) => a.hash == b.hash;
+		/// <summary>An inequality test.</summary>
+		/// <param name="a">A hashed id.</param>
+		/// <param name="b">A hashed id.</param>
+		/// <returns>True if unequal, false otherwise.</returns>
+		public static bool operator !=(IdHash a, IdHash b) => a.hash != b.hash;
 	}
 
 	/// <summary>Information about the current state of the UI's

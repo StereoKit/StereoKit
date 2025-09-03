@@ -44,7 +44,7 @@ void  _sk_free_d      (void *memory, const char* filename, int32_t line);
 #define sk_free(memory) { _sk_free_d(memory, __FILE__, __LINE__); memory = nullptr; };
 
 #define sk_malloc_t(T, count) ((T*)sk_malloc_d((count) * sizeof(T), #T, __FILE__, __LINE__))
-#define sk_calloc_t(T, count) ((T*)sk_calloc_d((count) * sizeof(T), #T, __FILE__, __LINE__))
+#define sk_malloc_zero_t(T, count) ((T*)sk_calloc_d((count) * sizeof(T), #T, __FILE__, __LINE__))
 #define sk_realloc_t(T, memory, count) ((T*)sk_realloc_d(memory, (count) * sizeof(T), #T, __FILE__, __LINE__))
 
 #endif

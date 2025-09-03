@@ -41,6 +41,7 @@ set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a 
 set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
 set(SK_WINDOWS_GL                   OFF CACHE BOOL "Build Windows version using OpenGL as the renderer. This is primarily for debugging GL code while developing on Windows.")
 set(SK_LOCAL_SK_GPU                 OFF CACHE BOOL "Build using a local version of sk_gpu, instead of the latest release. This is useful for testing in-progress changes to sk_gpu.")
+set(SK_PROFILE                      OFF CACHE BOOL "Build with Tracy profiler enabled.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
 ###########################################
@@ -111,6 +112,9 @@ if (ANDROID)
   # Align to 16kb as per Android recommendations
   # https://developer.android.com/guide/practices/page-sizes
   set(SK_LINKER_FLAGS "-Wl,-z,max-page-size=16384")
+  if(CMAKE_ANDROID_ARCH_ABI STREQUAL "x86_64")
+    add_compile_options(-mavx -mf16c)
+  endif()
 elseif(EMSCRIPTEN)
   #set(EMSCRIPTEN_LIBS)
   set(SK_BUILD_OPENXR_LOADER OFF)
@@ -139,6 +143,10 @@ elseif (UNIX)
   # Add pthreads
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
+
+  if (NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+    add_compile_options(-mavx -mf16c)
+  endif()
 
 elseif(WIN32)
   if (SK_WINDOWS_GL)
@@ -225,11 +233,27 @@ add_compile_definitions(BASISD_SUPPORT_ETC2_EAC_A8=0)
 add_compile_definitions(BASISD_SUPPORT_BC7=0)
 add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
 
+#### Tracy Profiler - https://github.com/wolfpld/tracy ####
+
+if (SK_PROFILE)
+  CPMAddPackage(
+    NAME tracy
+    GITHUB_REPOSITORY wolfpld/tracy
+    GIT_TAG v0.12.2
+    GIT_SHALLOW 1
+    OPTIONS
+      "TRACY_ENABLE ON"
+      "TRACY_ON_DEMAND ON"
+  )
+  add_definitions("-DTRACY_ENABLE")
+  set_target_properties(TracyClient PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
+
 #### sk_gpu - https://github.com/StereoKit/sk_gpu ####
 if (NOT SK_LOCAL_SK_GPU)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME sk_gpu # 2025.5.30
-    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.5.30/sk_gpu.v2025.5.30.zip
+    NAME sk_gpu # 2025.8.25
+    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.8.25/sk_gpu.v2025.8.25.zip
   )
 else()
   # For building directly with in-progress sk_gpu changes, point this to your
@@ -615,6 +639,10 @@ target_link_libraries( StereoKitC
     ${OPENXR_LIB}
     ${ANDROID_LIBS}
 )
+
+if (SK_PROFILE)
+  target_link_libraries( StereoKitC PRIVATE TracyClient )
+endif()
 
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

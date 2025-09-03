@@ -6,6 +6,7 @@
 #include "../libraries/stref.h"
 #include "../libraries/array.h"
 #include "../libraries/sokol_time.h"
+#include "../libraries/profiler.h"
 #include "../stereokit.h"
 #include "../sk_memory.h"
 
@@ -164,9 +165,10 @@ void system_execute(system_t *sys) {
 
 	// start timing
 	sys->profile_frame_start = stm_now();
-
-	sys->func_step();
-
+	{
+		profiler_zone_text("%s", sys->name);
+		sys->func_step();
+	}
 	// end timing
 	if (sys->profile_frame_duration == 0)
 		sys->profile_frame_duration = stm_since(sys->profile_frame_start);

@@ -14,6 +14,7 @@
 #include "../hierarchy.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
+#include "../libraries/profiler.h"
 
 #include <math.h>
 
@@ -42,6 +43,8 @@ bool32_t ui_text_at(const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ scrol
 ///////////////////////////////////////////
 
 bool ui_init() {
+	profiler_zone();
+
 	skui_input_target        = 0;
 	skui_input_carat         = 0;
 	skui_input_carat_end     = 0;
@@ -70,6 +73,8 @@ void ui_shutdown() {
 ///////////////////////////////////////////
 
 void ui_step() {
+	profiler_zone();
+
 	ui_core_update();
 	ui_theming_update();
 
@@ -81,6 +86,8 @@ void ui_step() {
 ///////////////////////////////////////////
 
 void ui_step_late() {
+	profiler_zone();
+
 	ui_pop_surface();
 
 	// If the active input target was not confirmed to exist, we should drop
@@ -911,11 +918,10 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 	vec3 box_start = {}, box_size = {};
 	if (win->type & ui_win_head) {
 		float line = ui_line_height();
-		box_start = vec3{ 0, line/2, skui_settings.depth/2 };
+		box_start = vec3{ 0, line/2, 0 };
 		box_size  = vec3{ win->prev_size.x, line, skui_settings.depth*2 };
 	}
 	if (win->type & ui_win_body || win->type & ui_win_empty) {
-		box_start.z  = skui_settings.depth/2;
 		box_start.y -= win->prev_size.y / 2;
 		box_size.x   = win->prev_size.x;
 		box_size.y  += win->prev_size.y;
@@ -927,8 +933,8 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 		box_size .y += skui_aura_radius*2;
 	}
 	// Add a little extra depth to the box, so that it's easier to grab
-	box_start.z += 0.01f;
 	box_size .z += 0.02f;
+	box_start.z = box_size.z/2;
 
 	// Set up window handle and layout area
 	_ui_handle_begin(hash, pose, { box_start, box_size }, false, move_type, ui_gesture_pinch);

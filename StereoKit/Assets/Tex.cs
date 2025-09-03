@@ -88,6 +88,11 @@ namespace StereoKit
 			get => NativeAPI.tex_get_sample(_inst);
 			set => NativeAPI.tex_set_sample(_inst, value); }
 
+		public TexSampleComp SampleComp {
+			get => NativeAPI.tex_get_sample_comp(_inst);
+			set => NativeAPI.tex_set_sample_comp(_inst, value);
+		}
+
 		/// <summary>When SampleMode is set to Anisotropic, this is the number
 		/// of samples the GPU takes to figure out the correct color. Default
 		/// is 4, and 16 is pretty high.</summary>
@@ -417,8 +422,15 @@ namespace StereoKit
 		/// are generally best!</param>
 		/// <param name="height">Height in pixels of the texture. Powers of
 		/// two are generally best!</param>
-		public void SetSize(int width, int height)
-			=> NativeAPI.tex_set_colors(_inst, width, height, IntPtr.Zero);
+		/// <param name="arrayCount">How many surfaces are in this texture? A
+		/// normal texture only has 1, but it can be useful to have multiple
+		/// for certain rendering techniques or effects.</param>
+		/// <param name="msaa">Multisample anti-aliasing, this is only
+		/// important for render target type textures! This is the number of
+		/// fragments that are drawn for each pixel to reduce sparkling /
+		/// aliasing artifacts.</param>
+		public void SetSize(int width, int height, int arrayCount = 1, int msaa = 1)
+			=> NativeAPI.tex_set_color_arr(_inst, width, height, IntPtr.Zero, arrayCount, msaa, IntPtr.Zero);
 
 		/// <summary>Only applicable if this texture is a rendertarget!
 		/// This creates and attaches a zbuffer surface to the texture for

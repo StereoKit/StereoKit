@@ -9,6 +9,7 @@
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/simulator.h"
 #include "../xr_backends/extensions/msft_scene_understanding.h"
+#include "../libraries/profiler.h"
 #include "render.h"
 
 #include <float.h>
@@ -23,6 +24,8 @@ material_t   world_occlusion_material = {};
 ///////////////////////////////////////////
 
 bool world_init() {
+	profiler_zone();
+
 	world_occlusion_material = material_copy_id(default_id_material_unlit);
 	material_set_id   (world_occlusion_material, "sk/world/material");
 	material_set_color(world_occlusion_material, "color", { 0,0,0,0 });
@@ -48,6 +51,7 @@ void world_shutdown() {
 ///////////////////////////////////////////
 
 void world_step() {
+	profiler_zone();
 }
 
 ///////////////////////////////////////////

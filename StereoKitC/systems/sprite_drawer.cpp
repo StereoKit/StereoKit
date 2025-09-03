@@ -3,6 +3,7 @@
 #include "../asset_types/sprite.h"
 
 #include "../libraries/array.h"
+#include "../libraries/profiler.h"
 #include "../hierarchy.h"
 #include "../sk_math_dx.h"
 #include "../sk_memory.h"
@@ -113,6 +114,8 @@ void sprite_drawer_add_at(sprite_t sprite, matrix at, pivot_ pivot_position, col
 ///////////////////////////////////////////
 
 bool sprite_drawer_init() {
+	profiler_zone();
+
 	sprite_quad = mesh_find(default_id_mesh_quad);
 
 	// Default rendering quad
@@ -134,6 +137,8 @@ bool sprite_drawer_init() {
 ///////////////////////////////////////////
 
 void sprite_drawer_step() {
+	profiler_zone();
+
 	for (int32_t i = 0; i < sprite_buffers.count; i++) {
 		sprite_buffer_t &buffer = sprite_buffers[i];
 		if (buffer.vert_count <= 0)

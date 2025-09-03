@@ -23,6 +23,7 @@
 #include "../libraries/sokol_time.h"
 #include "../libraries/atomic_util.h"
 #include "../libraries/ferr_thread.h"
+#include "../libraries/profiler.h"
 #include "../systems/render_.h"
 
 #include <stdio.h>
@@ -261,9 +262,10 @@ void assets_destroy(asset_header_t *asset) {
 		return;
 	}
 
-	// destroy functions will often zero out their contents for safety, so we
-	// need to free the id text first
-	sk_free(asset->id_text);
+	// destroy functions will often zero out their contents for safety, but we
+	// still need to free the id text. It's nice for debugging to have the name
+	// around, so we'll cache it here and free it after destruction.
+	char* id_text = asset->id_text;
 
 	// Call asset specific destroy function
 	switch(asset->type) {
@@ -279,6 +281,8 @@ void assets_destroy(asset_header_t *asset) {
 	case asset_type_render_list: render_list_destroy((render_list_t)asset); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
+
+	sk_free(id_text);
 
 	// Remove it from our list of assets
 	ft_mutex_lock(assets_lock);
@@ -394,6 +398,8 @@ char *assets_file(const char *file_name) {
 ///////////////////////////////////////////
 
 bool assets_init() {
+	profiler_zone();
+
 	assets_lock                     = ft_mutex_create();
 	assets_multithread_destroy_lock = ft_mutex_create();
 	assets_job_lock                 = ft_mutex_create();
@@ -421,6 +427,8 @@ bool assets_init() {
 
 array_t<asset_load_callback_t> assets_load_call_list = {};
 void assets_step() {
+	profiler_zone();
+
 	// If we have no asset threads for some reason (like WASM), then we'll need
 	// to make sure assets still get loaded here!
 	if (asset_threads.count <= 0) {
@@ -736,6 +744,8 @@ void asset_step_task() {
 	asset_task_t* task = assets_acquire_task();
 	if (task == nullptr) return;
 
+	profiler_zone();
+
 	asset_load_action_t* action = &task->actions[task->action_curr];
 	if (action->thread_affinity == asset_thread_asset) {
 		// Execute the asset loading action!
@@ -801,6 +811,10 @@ int32_t asset_thread(void *thread_inst_obj) {
 	thread->id      = ft_id_current();
 	thread->running = true;
 
+	char name[64];
+	snprintf(name, sizeof(name), "StereoKit Assets 0x%X", (uint32_t)(uint64_t)&thread->id);
+	profiler_thread_name("StereoKit Assets", 1);
+
 	// Don't start processing assets until initialization is finished
 	while (asset_thread_enabled && !sk_is_initialized())
 		platform_sleep(1);
@@ -828,6 +842,8 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 	if (asset->state >= state || asset->state <= asset_state_none)
 		return;
 
+	profiler_zone();
+
 	ft_id_t curr_id = ft_id_current();
 	for (int32_t i = 0; i < asset_threads.count; i++)
 	{
@@ -847,6 +863,8 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 ///////////////////////////////////////////
 
 void assets_block_for_priority(int32_t priority) {
+	profiler_zone();
+
 	ft_id_t curr_id = ft_id_current();
 	for (int32_t i = 0; i < asset_threads.count; i++)
 	{

@@ -11,8 +11,8 @@ class TestAssetsFromMemory : ITest
 	}
 	bool LoadModel()
 	{
-		byte[] file = File.ReadAllBytes(SK.Settings.assetsFolder + "/clipboard.glb");
-		Model model = Model.FromMemory(SK.Settings.assetsFolder + "/clipboard.glb", file);
+		byte[] file = File.ReadAllBytes(SK.Settings.assetsFolder + "/Clipboard.glb");
+		Model model = Model.FromMemory(SK.Settings.assetsFolder + "/Clipboard.glb", file);
 		return model != null;
 	}
 

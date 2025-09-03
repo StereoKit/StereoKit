@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2024 Nick Klingensmith
- * Copyright (c) 2024 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2025 Nick Klingensmith
+ * Copyright (c) 2024-2025 Qualcomm Technologies, Inc.
  */
 
 #pragma once
@@ -81,9 +81,6 @@ vec2          input_xy_get             (input_xy_     xy_type);
 void          input_reset              ();
 
 void          input_set_palm_offset    (handed_ hand, pose_t offset);
-
-int32_t       input_add_pointer(input_source_ source);
-pointer_t    *input_get_pointer(int32_t id);
 
 void body_make_shoulders(vec3 *out_left, vec3 *out_right);
 
