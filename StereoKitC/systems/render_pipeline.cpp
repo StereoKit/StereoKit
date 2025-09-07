@@ -44,7 +44,7 @@ void render_pipeline_begin() {
 	skg_event_end();
 	skg_event_begin("Offscreen");
 	{
-		render_check_viewpoints();
+		render_action_list_execute();
 		render_check_screenshots();
 	}
 	skg_event_end();
