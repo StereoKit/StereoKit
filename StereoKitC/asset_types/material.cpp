@@ -86,18 +86,19 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 	if (buff_info && buff_info->defaults != nullptr) memcpy(material->args.buffer, buff_info->defaults, buff_size);
 	else                                             memset(material->args.buffer, 0, buff_size);
 	if (buff_size != 0) {
-		material->args.buffer_dirty = true;
-
 		// Construct a material parameters buffer on the GPU, and do it
 		// threadsafe
 		struct material_job_t {
 			material_t material;
 			uint32_t   buff_size;
+			void*      buff_data;
 		};
-		material_job_t job_data = {material, buff_size};
+		material_job_t job_data = {material, buff_size, sk_malloc(buff_size)};
+		memcpy(job_data.buff_data, material->args.buffer, buff_size);
 		assets_execute_gpu([](void *data) {
 			material_job_t *job_data = (material_job_t *)data;
-			job_data->material->args.buffer_gpu = skg_buffer_create(nullptr, 1, job_data->buff_size, skg_buffer_type_constant, skg_use_dynamic);
+			job_data->material->args.buffer_gpu = skg_buffer_create(job_data->buff_data, 1, job_data->buff_size, skg_buffer_type_constant, skg_use_dynamic);
+			sk_free(job_data->buff_data);
 			return (bool32_t)true;
 		}, &job_data);
 	}
@@ -849,7 +850,9 @@ material_buffer_t material_buffer_create(int32_t size) {
 	_material_buffer_t* buffer = sk_malloc_t(_material_buffer_t, 1);
 	buffer->size   = size;
 	buffer->refs   = 1;
-	buffer->buffer = skg_buffer_create(nullptr, 1, size, skg_buffer_type_constant, skg_use_dynamic);
+	void* data = sk_calloc(size); // GLES can sometime interpret nullptr for data as an opportunity to optimize away the buffer, so we give it some empty data.
+	buffer->buffer = skg_buffer_create(data, 1, size, skg_buffer_type_constant, skg_use_dynamic);
+	sk_free(data);
 	return buffer;
 }
 
