@@ -81,6 +81,7 @@ struct render_screenshot_t {
 	render_clear_ clear;
 	tex_format_   tex_format;
 };
+
 struct render_viewpoint_t {
 	tex_t         rendertarget;
 	int32_t       rendertarget_index;
@@ -90,6 +91,43 @@ struct render_viewpoint_t {
 	render_layer_ layer_filter;
 	render_clear_ clear;
 	material_t    override_material;
+};
+
+enum render_action_type_ {
+	render_action_type_none,
+	render_action_type_viewpoint,
+	render_action_type_global_texture,
+	render_action_type_global_buffer,
+};
+
+struct render_action_viewpoint_t {
+	tex_t         rendertarget;
+	int32_t       rendertarget_index;
+	matrix        camera;
+	matrix        projection;
+	rect_t        viewport;
+	render_layer_ layer_filter;
+	render_clear_ clear;
+	material_t    override_material;
+};
+
+struct render_action_global_texture_t {
+	tex_t   texture;
+	int32_t slot;
+};
+
+struct render_action_global_buffer_t {
+	material_buffer_t buffer;
+	int32_t           slot;
+};
+
+struct render_action_t {
+	render_action_type_ type;
+	union {
+		render_action_viewpoint_t      viewpoint;
+		render_action_global_texture_t global_texture;
+		render_action_global_buffer_t  global_buffer;
+	};
 };
 
 ///////////////////////////////////////////
@@ -145,7 +183,7 @@ struct render_state_t {
 	material_buffer_t       global_buffers [16];
 
 	array_t<render_screenshot_t> screenshot_list;
-	array_t<render_viewpoint_t>  viewpoint_list;
+	array_t<render_action_t>     render_action_list;
 
 	mesh_t                  sky_mesh;
 	material_t              sky_mat;
@@ -268,10 +306,10 @@ void render_shutdown() {
 	render_list_pop();
 	render_list_release(local.list_active);
 	render_list_release(local.list_primary);
-	local.list_stack     .free();
-	local.screenshot_list.free();
-	local.viewpoint_list .free();
-	local.instance_list  .free();
+	local.list_stack        .free();
+	local.screenshot_list   .free();
+	local.render_action_list.free();
+	local.instance_list     .free();
 
 	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
 		tex_release(local.global_textures[i]);
@@ -736,12 +774,7 @@ bool32_t render_enabled_skytex() {
 
 ///////////////////////////////////////////
 
-void render_global_texture(int32_t register_slot, tex_t texture) {
-	if (register_slot < 0 || register_slot >= _countof(local.global_textures)) {
-		log_errf("render_global_texture: Register_slot should be 0-16. Received %d.", register_slot);
-		return;
-	}
-
+void render_global_texture_internal(int32_t register_slot, tex_t texture) {
 	if (local.global_textures[register_slot] == texture) return;
 
 	if (local.global_textures[register_slot] != nullptr)
@@ -751,6 +784,23 @@ void render_global_texture(int32_t register_slot, tex_t texture) {
 
 	if (local.global_textures[register_slot] != nullptr)
 		tex_addref(local.global_textures[register_slot]);
+}
+
+///////////////////////////////////////////
+
+void render_global_texture(int32_t register_slot, tex_t texture) {
+	if (register_slot < 0 || register_slot >= _countof(local.global_textures)) {
+		log_errf("render_global_texture: Register_slot should be 0-16. Received %d.", register_slot);
+		return;
+	}
+
+	if (texture != nullptr) tex_addref(texture);
+
+	render_action_t action = {};
+	action.type = render_action_type_global_texture;
+	action.global_texture.texture = texture;
+	action.global_texture.slot    = register_slot;
+	local.render_action_list.add(action);
 }
 
 ///////////////////////////////////////////
@@ -772,7 +822,14 @@ void render_global_buffer(int32_t register_slot, material_buffer_t buffer) {
 		log_errf("render_global_buffer: bad slot id '%d', use 3-%d.", register_slot, (sizeof(local.global_buffers) / sizeof(local.global_buffers[0])) - 1);
 		return;
 	}
-	render_global_buffer_internal(register_slot, buffer);
+
+	if (buffer) material_buffer_addref(buffer);
+
+	render_action_t action = {};
+	action.type = render_action_type_global_buffer;
+	action.global_buffer.buffer = buffer;
+	action.global_buffer.slot   = register_slot;
+	local.render_action_list.add(action);
 }
 
 ///////////////////////////////////////////
@@ -969,44 +1026,51 @@ void render_check_screenshots() {
 
 ///////////////////////////////////////////
 
-void render_check_viewpoints() {
-	if (local.viewpoint_list.count == 0) return;
+void render_draw_viewpoint(render_action_viewpoint_t* vp) {
+	skg_event_begin("Viewpoint");
+	// Setup to render the screenshot
+	skg_tex_target_bind(&vp->rendertarget->tex, vp->rendertarget_index, 0);
 
-	skg_tex_t *old_target = skg_tex_target_get();
-	for (int32_t i = 0; i < local.viewpoint_list.count; i++) {
-		render_viewpoint_t* vp = &local.viewpoint_list[i];
-
-		skg_event_begin("Viewpoint");
-		// Setup to render the screenshot
-		skg_tex_target_bind(&vp->rendertarget->tex, vp->rendertarget_index, 0);
-
-		// Clear the viewport
-		if (vp->clear != render_clear_none) {
-			skg_target_clear(
-				(vp->clear & render_clear_depth),
-				(vp->clear & render_clear_color) ? &local.clear_col.r : (float *)nullptr);
-		}
-
-		// Set up the viewport if we've got one!
-		if (local.viewpoint_list[i].viewport.w != 0) {
-			int32_t viewport[4] = {
-				(int32_t)(vp->viewport.x * vp->rendertarget->width ),
-				(int32_t)(vp->viewport.y * vp->rendertarget->height),
-				(int32_t)(vp->viewport.w * vp->rendertarget->width ),
-				(int32_t)(vp->viewport.h * vp->rendertarget->height) };
-			skg_viewport(viewport);
-		}
-
-		// Render!
-		render_draw_queue(local.list_primary, &vp->camera, &vp->projection, 0, 1, 1, vp->layer_filter);
-		skg_tex_target_bind(nullptr, -1, 0);
-
-		// Release the reference we added, the user should have their own ref
-		tex_release(vp->rendertarget);
-		skg_event_end();
+	// Clear the viewport
+	if (vp->clear != render_clear_none) {
+		skg_target_clear(
+			(vp->clear & render_clear_depth),
+			(vp->clear & render_clear_color) ? &local.clear_col.r : (float *)nullptr);
 	}
-	local.viewpoint_list.clear();
-	skg_tex_target_bind(old_target, -1, 0);
+
+	// Set up the viewport if we've got one!
+	if (vp->viewport.w != 0) {
+		int32_t viewport[4] = {
+			(int32_t)(vp->viewport.x * vp->rendertarget->width ),
+			(int32_t)(vp->viewport.y * vp->rendertarget->height),
+			(int32_t)(vp->viewport.w * vp->rendertarget->width ),
+			(int32_t)(vp->viewport.h * vp->rendertarget->height) };
+		skg_viewport(viewport);
+	}
+
+	// Render!
+	render_draw_queue(local.list_primary, &vp->camera, &vp->projection, 0, 1, 1, vp->layer_filter);
+	skg_tex_target_bind(nullptr, -1, 0);
+
+	// Release the reference we added, the user should have their own ref
+	tex_release(vp->rendertarget);
+	if (vp->override_material) material_release(vp->override_material);
+	skg_event_end();
+}
+
+///////////////////////////////////////////
+
+void render_action_list_execute() {
+	for (int32_t i = 0; i < local.render_action_list.count; i++) {
+		render_action_t* a = &local.render_action_list[i];
+		switch (a->type) {
+		case render_action_type_viewpoint:      render_draw_viewpoint(&a->viewpoint); break;
+		case render_action_type_global_buffer:  render_global_buffer_internal ( a->global_buffer .slot, a->global_buffer .buffer ); material_buffer_release(a->global_buffer .buffer ); break;
+		case render_action_type_global_texture: render_global_texture_internal( a->global_texture.slot, a->global_texture.texture); tex_release            (a->global_texture.texture); break;
+		default: break;
+		}
+	}
+	local.render_action_list.clear();
 }
 
 ///////////////////////////////////////////
@@ -1118,19 +1182,21 @@ void render_to(tex_t to_rendertarget, int32_t to_target_index, material_t overri
 		return;
 	}
 	tex_addref(to_rendertarget);
+	if (override_material) material_addref(override_material);
 
 	matrix inv_cam;
 	matrix_inverse(camera, inv_cam);
-	render_viewpoint_t viewpoint = {};
-	viewpoint.rendertarget      = to_rendertarget;
-	viewpoint.rendertarget_index= to_target_index;
-	viewpoint.camera            = inv_cam;
-	viewpoint.projection        = projection;
-	viewpoint.layer_filter      = layer_filter;
-	viewpoint.viewport          = viewport;
-	viewpoint.clear             = clear;
-	viewpoint.override_material = override_material;
-	local.viewpoint_list.add(viewpoint);
+	render_action_t action = {};
+	action.type = render_action_type_viewpoint;
+	action.viewpoint.rendertarget      = to_rendertarget;
+	action.viewpoint.rendertarget_index= to_target_index;
+	action.viewpoint.camera            = inv_cam;
+	action.viewpoint.projection        = projection;
+	action.viewpoint.layer_filter      = layer_filter;
+	action.viewpoint.viewport          = viewport;
+	action.viewpoint.clear             = clear;
+	action.viewpoint.override_material = override_material;
+	local.render_action_list.add(action);
 }
 
 ///////////////////////////////////////////
