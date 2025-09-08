@@ -14,13 +14,16 @@ class TestAudio : ITest
 	float     rotateTime = 0;
 	float     intensity  = 0;
 
+	float oldNear, oldFar;
 	public void Initialize()
 	{
+		Renderer.GetClip(out oldNear, out oldFar);
 		Renderer.SetClip(0.08f,250);
 	}
 
 	public void Shutdown()
 	{
+		Renderer.SetClip(oldNear, oldFar);
 		inst.Stop();
 		Platform.FilePickerClose();
 	}
