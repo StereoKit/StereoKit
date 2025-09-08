@@ -117,6 +117,8 @@ class TestInteractorPoints : ITest
 			}
 		}
 		UI.WindowEnd();
+
+		frameIdx++;
 	}
 
 	static bool TestUpdate(Interactor ray, Update[] update, Vec3 prevPoint, Vec3 elementCenter, int frame)
