@@ -19,6 +19,7 @@ class DemoShadows : ITest
 
 	Tex                          shadowMap;
 	MaterialBuffer<ShadowBuffer> shadowBuffer;
+	Vec3                         lightDir = new Vec3(1,1,0).Normalized;
 
 	const float ShadowMapSize       = 2;
 	const int   ShadowMapResolution = 1024;
@@ -51,13 +52,9 @@ class DemoShadows : ITest
 		oldLighting = Renderer.SkyLight;
 		oldTex      = Renderer.SkyTex;
 
-		SphericalHarmonics ambient = new SphericalHarmonics();
-		ambient.Add( Vec3.UnitY, Color.HSV(0.55f, 0.3f,  0.6f).ToLinear());
-		ambient.Add(-Vec3.UnitY, Color.HSV(0.0f,  0.01f, 0.2f).ToLinear());
-		SphericalHarmonics ambientSky = ambient;
+		Renderer.SkyTex = Tex.FromCubemap(@"old_depot.hdr");
+		Renderer.SkyTex.OnLoaded += t => { Renderer.SkyLight = t.CubemapLighting; lightDir = t.CubemapLighting.DominantLightDirection; };
 
-		Renderer.SkyLight = ambient;
-		Renderer.SkyTex   = Tex.GenCubemap(ambientSky);
 		Renderer.SetGlobalBuffer(12, shadowBuffer);
 	}
 
@@ -69,14 +66,7 @@ class DemoShadows : ITest
 	}
 	public void Step()
 	{
-		// Make a direction for the light
-		const float angleX = Units.deg2rad * 45;
-		const float angleY = Units.deg2rad * 45;
-		float cosX = (float)Math.Cos(angleX);
-		float sinX = (float)Math.Sin(angleX);
-		float cosY = (float)Math.Cos(angleY);
-		float sinY = (float)Math.Sin(angleY);
-		SetupShadowMap(-V.XYZ(cosX * sinY, sinX, cosX * cosY));
+		SetupShadowMap(lightDir);
 
 		UI.Handle("Model", ref modelPose, model.Bounds);
 		model.Draw(modelPose.ToMatrix());
