@@ -26,7 +26,7 @@ void demo_ui_update() {
 	static pose_t window_pose = //pose_t{ {0,0.5f,0},{0,0,0,1} };
 		pose_t{ {0.25,0.25,-0.25f}, quat_lookat({0.25,0.25,-0.25f}, {0,0.25,0}) };
 	// input_hand(handed_right).root;
-	ui_window_begin("Main", window_pose, vec2{ 24 }*cm2m);
+	ui_window_begin("Main", &window_pose, vec2{ 24 }*cm2m);
 
 	ui_image(ui_sprite, vec2{ 6,0 }*cm2m);
 	

@@ -119,7 +119,7 @@ void demo_lines_draw() {
 ///////////////////////////////////////////
 
 void demo_lines_update() {
-	ui_window_begin("Settings", line_window_pose, vec2{ 20 }*cm2m);
+	ui_window_begin("Settings", &line_window_pose, vec2{ 20 }*cm2m);
 	if (ui_button("Clear")) {
 		line_draw.clear();
 		line_list.clear();

@@ -932,6 +932,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool ui_handle_begin_16 (string text, ref Pose movement, Bounds handle, [MarshalAs(UnmanagedType.Bool)] bool draw, UIMove move_type, UIGesture allowed_gestures);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_handle_end      ();
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_window_begin_16 (string text, ref Pose pose, Vec2 size, UIWin window_type, UIMove move_type);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void ui_window_begin_16 (string text, IntPtr pose, Vec2 size, UIWin window_type, UIMove move_type);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_window_end      ();
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_at        (Vec3 start, Vec2 size, UIPad padding);
 		[DllImport(dll, CharSet = cSet,            CallingConvention = call)] public static extern void ui_panel_begin     (UIPad padding);

@@ -99,12 +99,12 @@ void demo_windows_update() {
 	static pose_t window_pose =
 		pose_t{ {0.25,0.25,-0.25f}, quat_lookat({0.25,0.25,-0.25f}, {0,0.25,0}) };
 
-	ui_window_begin("Main", window_pose);
+	ui_window_begin("Main", &window_pose);
 	
 	ui_window_end();
 
 	for (size_t i = 0; i < mirror_windows.size(); i++) {
-		ui_window_begin(mirror_windows[i].name, mirror_windows[i].pose, vec2_zero, ui_win_head);
+		ui_window_begin(mirror_windows[i].name, &mirror_windows[i].pose, vec2_zero, ui_win_head);
 		
 		vec2 size = vec2 {
 			(float)tex_get_width (mirror_windows[i].texture), 
