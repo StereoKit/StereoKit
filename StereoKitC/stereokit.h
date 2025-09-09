@@ -1304,6 +1304,7 @@ SK_API void              material_set_depth_write (material_t material, bool32_t
 SK_API void              material_set_depth_clip  (material_t material, bool32_t clip_enabled);
 SK_API void              material_set_queue_offset(material_t material, int32_t offset);
 SK_API void              material_set_chain       (material_t material, material_t chain_material);
+SK_API void              material_set_variant     (material_t material, int32_t variant_idx, material_t variant_material);
 SK_API transparency_     material_get_transparency(material_t material);
 SK_API cull_             material_get_cull        (material_t material);
 SK_API bool32_t          material_get_wireframe   (material_t material);
@@ -1312,6 +1313,7 @@ SK_API bool32_t          material_get_depth_write (material_t material);
 SK_API bool32_t          material_get_depth_clip  (material_t material);
 SK_API int32_t           material_get_queue_offset(material_t material);
 SK_API material_t        material_get_chain       (material_t material);
+SK_API material_t        material_get_variant     (material_t material, int32_t variant_idx);
 SK_API void              material_set_float       (material_t material, const char *name, float    value);
 SK_API void              material_set_vector2     (material_t material, const char *name, vec2     value);
 SK_API void              material_set_vector3     (material_t material, const char *name, vec3     value);
@@ -1738,7 +1740,7 @@ SK_API void                  render_screenshot     (const char *file_utf8, int32
 //TODO: for v0.4, reorder parameters, context in particular should be next to callback
 SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
 SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
-SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
+SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 SK_API render_list_t         render_get_primary_list(void);
 
@@ -1757,7 +1759,7 @@ SK_API int32_t               render_list_prev_count   (const render_list_t list)
 SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
 SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
 SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
-SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all));
+SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0));
 
 SK_API void                  render_list_push         (      render_list_t list);
 SK_API void                  render_list_pop          (void);

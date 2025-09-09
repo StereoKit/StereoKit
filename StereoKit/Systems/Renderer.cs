@@ -470,6 +470,12 @@ namespace StereoKit
 		/// change which layers StereoKit renders for this particular render
 		/// viewpoint. To change what layers a visual is on, use a Draw
 		/// method that includes a RenderLayer as a parameter.</param>
+		/// <param name="materialVariant">Specifies which Material variant
+		/// should be used for rendering. 0 will be the normal default
+		/// material, any others will generally be application-defined by
+		/// setting up each Material's Variant with specific shaders. If a
+		/// Material has no corresponding variant, it will not be drawn.
+		/// </param>
 		/// <param name="clear">Describes if and how the rendertarget should
 		/// be cleared before rendering. Note that clearing the target is
 		/// unaffected by the viewport, so this will clean the entire 
@@ -478,14 +484,14 @@ namespace StereoKit
 		/// rendertarget to draw to! This is in normalized coordinates, 0-1.
 		/// If the width of this value is zero, then this will render to the
 		/// entire texture.</param>
-		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
-			=> NativeAPI.render_to(toRendertarget._inst, 0, IntPtr.Zero, camera, projection, layerFilter, clear, viewport);
+		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+			=> NativeAPI.render_to(toRendertarget._inst, 0, camera, projection, layerFilter, materialVariant, clear, viewport);
 
-		/// <inheritdoc cref="RenderTo(Tex, Matrix, Matrix, RenderLayer, RenderClear, Rect)"/>
+		/// <inheritdoc cref="RenderTo(Tex, Matrix, Matrix, RenderLayer, int, RenderClear, Rect)"/>
 		/// <param name="toTargetIndex">Index of the render target's array
 		/// texture we want to draw to.</param>
-		public static void RenderTo(Tex toRendertarget, int toTargetIndex, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
-			=> NativeAPI.render_to(toRendertarget._inst, toTargetIndex, IntPtr.Zero, camera, projection, layerFilter, clear, viewport);
+		public static void RenderTo(Tex toRendertarget, int toTargetIndex, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+			=> NativeAPI.render_to(toRendertarget._inst, toTargetIndex, camera, projection, layerFilter, materialVariant, clear, viewport);
 
 		/// <summary>This attaches a texture resource globally across all
 		/// shaders. StereoKit uses this to attach the sky cubemap for use in

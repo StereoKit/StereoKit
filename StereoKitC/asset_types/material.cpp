@@ -182,6 +182,10 @@ material_t material_copy(material_t material) {
 			tex_addref(result->args.textures[i].tex);
 	}
 	if (result->chain != nullptr) material_addref(result->chain);
+	for (int32_t i = 0; i < _countof(result->variants); i++) {
+		if (result->variants[i] != nullptr)
+			material_addref(result->variants[i]);
+	}
 
 	// Copy over the material's pipeline
 	result->pipeline = skg_pipeline_create(&material->shader->shader);
@@ -226,6 +230,10 @@ void material_release(material_t material) {
 ///////////////////////////////////////////
 
 void material_destroy(material_t material) {
+	for (size_t i = 0; i < _countof(material->variants); i++) {
+		if (material->variants[i])
+			material_release(material->variants[i]);
+	}
 	if (material->chain) material_release(material->chain);
 	for (int32_t i = 0; i < material->args.texture_count; i++) {
 		if (material->args.textures[i].tex != nullptr)
@@ -364,6 +372,23 @@ void material_set_chain(material_t material, material_t chain_material) {
 
 ///////////////////////////////////////////
 
+void material_set_variant(material_t material, int32_t variant_idx, material_t variant_material) {
+	if (variant_idx < 1) {
+		log_err("Variant index must be 1 or greater!");
+		return;
+	} else if (variant_idx > _countof(material->variants)) {
+		log_errf("Variant index must be less than %d!", _countof(material->variants)+1);
+		return;
+	}
+
+	int idx = variant_idx - 1;
+	if (variant_material       ) material_addref (variant_material);
+	if (material->variants[idx]) material_release(material->variants[idx]);
+	material->variants[idx] = variant_material;
+}
+
+///////////////////////////////////////////
+
 transparency_ material_get_transparency(material_t material) { 
 	return material->alpha_mode;
 }
@@ -409,6 +434,21 @@ int32_t material_get_queue_offset(material_t material) {
 material_t material_get_chain(material_t material) {
 	if (material->chain) material_addref(material->chain);
 	return material->chain;
+}
+
+///////////////////////////////////////////
+
+material_t material_get_variant(material_t material, int32_t variant_idx) {
+	if (variant_idx < 1) {
+		log_err("Variant index must be 1 or greater!");
+		return nullptr;
+	} else if (variant_idx > _countof(material->variants)) {
+		log_errf("Variant index must be less than %d!", _countof(material->variants)+1);
+		return nullptr;
+	}
+	int idx = variant_idx - 1;
+	if (material->variants[idx]) material_addref(material->variants[idx]);
+	return material->variants[idx];
 }
 
 ///////////////////////////////////////////

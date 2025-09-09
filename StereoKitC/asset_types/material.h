@@ -35,6 +35,7 @@ struct _material_t {
 	int32_t           queue_offset;
 	skg_pipeline_t    pipeline;
 	material_t        chain;
+	material_t        variants[3];
 };
 
 struct _material_buffer_t {
