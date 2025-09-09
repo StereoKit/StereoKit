@@ -541,6 +541,36 @@ namespace StereoKit
 			Marshal.FreeHGlobal(memory);
 		}
 
+		/// <summary>Variants are used by special effects when a manual render
+		/// pass selects a variant to use for the whole pass! Variants default
+		/// to null, and null variants are not drawn.
+		/// 
+		/// For example, a shadow map render pass might use variant 1, and sets
+		/// it to a simplified Material that skips textures and only does
+		/// positional vertex transforms.</summary>
+		/// <param name="variantIndex">Which variant index should we set? 0 is
+		/// reserved for the primary material, and SK has a max of 4 total
+		/// variants, including the default.</param>
+		/// <param name="variantMaterial">The Material to use for the variant.
+		/// Sub-variants are ignored, and a null variant means nothing will be
+		/// drawn when using the variant.</param>
+		public void SetVariant(int variantIndex, Material variantMaterial)
+			=> NativeAPI.material_set_variant(_inst, variantIndex, variantMaterial?._inst ?? IntPtr.Zero);
+
+		/// <summary>This retreives the variant assigned to the specified
+		/// variant index. Null is the default value for variants, and it's not
+		/// valid to ask for variant 0 (already the current Material).
+		/// </summary>
+		/// <param name="variantIndex">The variant to retreive. 0 is already
+		/// the current material, and an invalid index here. SK has a max of 4
+		/// total variants, including the default.</param>
+		/// <returns>The Material variant, or null.</returns>
+		public Material GetVariant(int variantIndex)
+		{
+			IntPtr mat = NativeAPI.material_get_variant(_inst, variantIndex);
+			return mat == IntPtr.Zero ? null : new Material(mat);
+		}
+
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of '0' will be returned.
 		/// </summary>

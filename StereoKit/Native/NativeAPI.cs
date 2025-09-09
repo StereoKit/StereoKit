@@ -267,6 +267,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_depth_clip  (IntPtr material, [MarshalAs(UnmanagedType.Bool)] bool clip_enabled);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_queue_offset(IntPtr material, int          offset);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_chain       (IntPtr material, IntPtr       chain_material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_variant     (IntPtr material, int variant_index, IntPtr variant_material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Transparency material_get_transparency(IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Cull         material_get_cull        (IntPtr material);
 		[return: MarshalAs(UnmanagedType.Bool)]
@@ -278,6 +279,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         material_get_depth_clip  (IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          material_get_queue_offset(IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       material_get_chain       (IntPtr material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       material_get_variant     (IntPtr material, int variant_index);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_float       (IntPtr material, string name, float  value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_color       (IntPtr material, string name, Color  value);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void   material_set_vector4     (IntPtr material, string name, Vec4   value);
@@ -483,7 +485,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot     ([In] byte[] file_utf8, int file_quality_100, Pose viewpoint, int width, int height, float field_of_view_degrees);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_capture  ([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Pose viewpoint, int width, int height, float fov_degrees, TexFormat tex_format, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_screenshot_viewpoint([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Matrix camera, Matrix projection, int width, int height, RenderLayer layer_filter, RenderClear clear, Rect viewport, TexFormat tex_format, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_to             (IntPtr to_rendertarget, int to_target_index, IntPtr override_material, in Matrix camera, in Matrix projection, RenderLayer layer_filter, RenderClear clear, Rect viewport);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_to             (IntPtr to_rendertarget, int to_target_index, in Matrix camera, in Matrix projection, RenderLayer layer_filter, int material_variant, RenderClear clear, Rect viewport);
 		//[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void render_get_device  (void **device, void **context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr             render_get_primary_list();
 
@@ -501,7 +503,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_add_mesh     (IntPtr list, IntPtr mesh, IntPtr material,           Matrix transform, Color color_linear, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_add_model    (IntPtr list, IntPtr model,                           Matrix transform, Color color_linear, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_add_model_mat(IntPtr list, IntPtr model, IntPtr material_override, Matrix transform, Color color_linear, RenderLayer layer);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_draw_now     (IntPtr list, IntPtr to_rendertarget, Matrix camera, Matrix projection, Color clear_color, RenderClear clear, Rect viewport_pct, RenderLayer layer_filter);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_draw_now     (IntPtr list, IntPtr to_rendertarget, Matrix camera, Matrix projection, Color clear_color, RenderClear clear, Rect viewport_pct, RenderLayer layer_filter, int material_variant);
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_push         (IntPtr list);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void               render_list_pop          ();

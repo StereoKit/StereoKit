@@ -25,6 +25,7 @@ class DemoShadows : ITest
 	const int   ShadowMapResolution = 1024;
 	const float ShadowMapNearClip   = 0.01f;
 	const float ShadowMapFarClip    = 20.0f;
+	const int   ShadowMapVariant    = 1;
 
 	Model model;
 	Pose  modelPose = Matrix.T(0,-0.2f,0) * Demo.contentPose.Pose;
@@ -41,9 +42,15 @@ class DemoShadows : ITest
 		shadowMap.SampleComp  = TexSampleComp.LessOrEq;
 		shadowMap.AddressMode = TexAddress.Clamp;
 		
+		Material casterMat = new Material("Shaders/basic_shadow_caster.hlsl");
+		casterMat.DepthClip = false;
+		casterMat.DepthTest = DepthTest.LessOrEq;
+		// This can help with shadow acne if biasing isn't working out, but can introduce peter-panning.
+		//casterMat.FaceCull  = Cull.Front;
 
 		Material shadowMat = new Material("Shaders/basic_shadow.hlsl");
-		shadowMat.DepthTest = DepthTest.LessOrEq;
+		shadowMat.SetVariant(ShadowMapVariant, casterMat);
+
 		Material floorMat = shadowMat.Copy();
 		floorMat[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
 		floorMat[MatParamName.TexTransform] = new Vec4(0, 0, 2, 2);
@@ -100,7 +107,7 @@ class DemoShadows : ITest
 		// Render the shadow map, and bind it globally so it can be used from
 		// any shader.
 		Renderer.SetGlobalTexture(12, null); // Can't draw to it if it's bound
-		Renderer.RenderTo(shadowMap, view, proj, RenderLayer.All &~ RenderLayer.Vfx);
+		Renderer.RenderTo(shadowMap, view, proj, RenderLayer.All &~ RenderLayer.Vfx, ShadowMapVariant);
 		Renderer.SetGlobalTexture(12, shadowMap);
 	}
 
