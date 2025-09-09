@@ -140,7 +140,7 @@ void on_log(void*, log_ log_level, const char* log_c_str) {
 }
 
 void log_window() {
-	ui_window_begin("Log", log_pose, vec2{40*cm2m, 0*cm2m});
+	ui_window_begin("Log", &log_pose, vec2{40*cm2m, 0*cm2m});
 	for (auto &log_str : log_list) {
 		ui_label(log_str.c_str(), false);
 	}
@@ -235,7 +235,7 @@ void common_update() {
 	if (device_display_get_blend() == display_blend_opaque)
 		render_add_model(floor_model, floor_tr);
 
-	ui_window_begin("Demos", demo_select_pose, vec2{50*cm2m, 0*cm2m});
+	ui_window_begin("Demos", &demo_select_pose, vec2{50*cm2m, 0*cm2m});
 	for (int i = 0; i < sizeof(demos) / sizeof(scene_t); i++) {
 		std::string &name = demos[i].name;
 
