@@ -213,7 +213,7 @@ skg_buffer_t *render_fill_inst_buffer (const array_t<render_transform_buffer_t>*
 void          render_reset_buffer_pool();
 void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
 
-void          render_list_prep        (render_list_t list);
+void          render_list_prep        (render_list_t list, int32_t material_variant);
 void          render_list_add         (const render_item_t *item);
 void          render_list_add_to      (render_list_t list, const render_item_t *item);
 
@@ -1442,7 +1442,7 @@ void render_list_execute(render_list_t list, render_layer_ filter, int32_t mater
 		list->state = render_list_state_rendered;
 		return;
 	}
-	render_list_prep(list);
+	render_list_prep(list, material_variant);
 	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
 	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
@@ -1499,9 +1499,7 @@ void render_list_execute(render_list_t list, render_layer_ filter, int32_t mater
 
 ///////////////////////////////////////////
 
-void render_list_prep(render_list_t list) {
-	if (list->prepped) return;
-
+void render_list_prep(render_list_t list, int32_t material_variant) {
 	// Sort the render queue
 	radix_sort7(&list->queue[0], list->queue.count);
 
@@ -1510,10 +1508,12 @@ void render_list_prep(render_list_t list) {
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		if (curr == list->queue[i].material) continue;
 		curr = list->queue[i].material;
-		material_check_dirty(curr);
-	}
 
-	list->prepped = true;
+		material_t check = material_variant == 0
+			? curr
+			: curr->variants[material_variant - 1];
+		if (check) material_check_dirty(check);
+	}
 }
 
 ///////////////////////////////////////////
@@ -1525,9 +1525,8 @@ void render_list_clear(render_list_t list) {
 		assets_releaseref(&list->queue[i].mesh    ->header);
 	}
 	list->queue.clear();
-	list->stats   = {};
-	list->prepped = false;
-	list->state   = render_list_state_empty;
+	list->stats = {};
+	list->state = render_list_state_empty;
 }
 
 ///////////////////////////////////////////
