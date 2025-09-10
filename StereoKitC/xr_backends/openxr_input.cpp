@@ -585,6 +585,39 @@ void oxri_update_profiles() {
 		if (XR_FAILED(xrGetCurrentInteractionProfile(xr_session, top_level->path, &new_profile)))
 			continue;
 
+
+		if (string_startswith(top_level->name, "/user/detached_controller_meta/")) {
+
+			if (new_profile.interactionProfile == XR_NULL_PATH)
+				continue;
+
+			// Find the profile name for logging
+			const char* profile_name = "unknown";
+			bool is_detached = false;
+			for (int32_t p = 0; p < local.profiles.count; p++) {
+				if (local.profiles[p].profile == new_profile.interactionProfile) {
+					profile_name = local.profiles[p].name;
+					is_detached = true;
+					break;
+				}
+			}
+
+  			log_diagf("-------Sub Switched %s to %s", top_level->name, profile_name);
+
+			if (string_eq(top_level->name, "/user/detached_controller_meta/left" )) { 
+				input_set_palm_offset(handed_left, pose_identity); 
+				input_controller_set_hand(handed_left,  true);
+				input_controller_set_detached(handed_left,  is_detached); 
+			}
+			else if (string_eq(top_level->name, "/user/detached_controller_meta/right")) {
+				input_set_palm_offset(handed_right, pose_identity); 
+				input_controller_set_hand(handed_right, true);
+				input_controller_set_detached(handed_right, is_detached); 
+			}
+			//continue;
+		}
+
+
 		if (top_level->active_profile >= 0 && new_profile.interactionProfile == local.profiles[top_level->active_profile].profile)
 			continue;
 
@@ -597,8 +630,16 @@ void oxri_update_profiles() {
 			reset = true;
 
 			top_level->active_profile = p;
-			if      (string_eq(top_level->name, "/user/hand/left" )) { input_set_palm_offset(handed_left,  profile->offset); input_controller_set_hand(handed_left,  profile->is_hand); }
-			else if (string_eq(top_level->name, "/user/hand/right")) { input_set_palm_offset(handed_right, profile->offset); input_controller_set_hand(handed_right, profile->is_hand); }
+			if      (string_eq(top_level->name, "/user/hand/left" )) { 
+				input_set_palm_offset(handed_left, profile->offset); 
+				input_controller_set_hand(handed_left, profile->is_hand); 
+				input_controller_set_detached(handed_left, false);
+			}
+			else if (string_eq(top_level->name, "/user/hand/right")) { 
+				input_set_palm_offset(handed_right, profile->offset); 
+				input_controller_set_hand(handed_right, profile->is_hand); 
+				input_controller_set_detached(handed_right, false);
+			} 
 			
 			log_diagf("Switched %s to %s", top_level->name, profile->name);
 			break;

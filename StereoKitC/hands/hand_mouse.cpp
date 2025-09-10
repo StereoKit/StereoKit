@@ -51,7 +51,7 @@ bool hand_mouse_pose(float scroll_distance, pose_t *out_pose) {
 
 ///////////////////////////////////////////
 
-void hand_mouse_update_frame() {
+void hand_mouse_update_frame(handed_ hand) {
 	if ((input_key(key_shift) & button_state_just_active) && (input_key(key_ctrl) & button_state_active)) {
 		mouse_active_state = (mouse_active_state + 1) % 4;
 		switch (mouse_active_state) {
@@ -62,14 +62,15 @@ void hand_mouse_update_frame() {
 		}
 	}
 
-	if (mouse_active_hand == handed_max) return;
+	// Only update for the active hand or if this is the currently active hand
+	if (mouse_active_hand == handed_max || hand != mouse_active_hand) return;
 
-	hand_t *hand = input_hand_ref(mouse_active_hand);
+	hand_t *hand_ref = input_hand_ref(hand);
 	bool l_pressed     = false;
 	bool r_pressed     = false;
-	bool was_tracked   = hand->tracked_state & button_state_active;
-	bool was_l_pressed = hand->pinch_state   & button_state_active;
-	bool was_r_pressed = hand->grip_state    & button_state_active;
+	bool was_tracked   = hand_ref->tracked_state & button_state_active;
+	bool was_l_pressed = hand_ref->pinch_state   & button_state_active;
+	bool was_r_pressed = hand_ref->grip_state    & button_state_active;
 
 	mouse_hand_scroll = mouse_hand_scroll + (input_mouse()->scroll - mouse_hand_scroll) * fminf(1, time_stepf_unscaled()*8);
 
@@ -81,29 +82,32 @@ void hand_mouse_update_frame() {
 	}
 	button_state_ tracked = button_make_state(was_tracked, hand_tracked);
 
-	quat hand_rot = (mouse_active_hand == handed_right
+	quat hand_rot = (hand == handed_right
 		? quat_from_angles(40, 30, 90)
 		: quat_from_angles(40,-30,-90)) * hand_pose.orientation;
-	input_hand_sim(mouse_active_hand, true, hand_pose.position, hand_rot, hand_tracked);
+	input_hand_sim(hand, true, hand_pose.position, hand_rot, hand_tracked);
 
-	hand->pinch_state      = input_key(key_mouse_left );
-	hand->grip_state       = input_key(key_mouse_right);
-	hand->pinch_activation = (input_key(key_mouse_left ) & button_state_active) > 0;
-	hand->grip_activation  = (input_key(key_mouse_right) & button_state_active) > 0;
+	hand_ref->pinch_state      = input_key(key_mouse_left );
+	hand_ref->grip_state       = input_key(key_mouse_right);
+	hand_ref->pinch_activation = (input_key(key_mouse_left ) & button_state_active) > 0;
+	hand_ref->grip_activation  = (input_key(key_mouse_right) & button_state_active) > 0;
 
-	hand->aim       = hand_pose;
-	hand->aim_ready = tracked;
+	hand_ref->aim       = hand_pose;
+	hand_ref->aim_ready = tracked;
 }
 
 ///////////////////////////////////////////
 
-void hand_mouse_update_poses() {
+void hand_mouse_update_poses(handed_ hand) {
+	// Only update poses for the active hand
+	if (mouse_active_hand == handed_max || hand != mouse_active_hand) return;
+	
 	pose_t hand_pose = pose_identity;
 	if (hand_mouse_pose(mouse_hand_scroll, &hand_pose)) {
-		quat hand_rot = (mouse_active_hand == handed_right
+		quat hand_rot = (hand == handed_right
 			? quat_from_angles(40,  30,  90)
 			: quat_from_angles(40, -30, -90)) * hand_pose.orientation;
-		input_hand_sim_poses(mouse_active_hand, true, hand_pose.position, hand_rot);
+		input_hand_sim_poses(hand, true, hand_pose.position, hand_rot);
 	}
 }
 

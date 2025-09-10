@@ -52,7 +52,7 @@ typedef struct hand_sim_t {
 } hand_sim_t;
 
 array_t<hand_system_t> hand_sources;
-int32_t                hand_system = -1;
+int32_t                hand_system[2] = {-1, -1};
 hand_state_t           hand_state[2] = {};
 float                  hand_size_update = 0;
 array_t<hand_sim_t>    hand_sim_poses   = {};
@@ -75,14 +75,14 @@ hand_t* input_hand_ref(handed_ hand) {
 
 ///////////////////////////////////////////
 
-hand_source_ input_hand_source(handed_) {
-	return hand_sources[hand_system].source;
+hand_source_ input_hand_source(handed_ hand) {
+	return hand_sources[hand_system[hand]].source;
 }
 
 ///////////////////////////////////////////
 
-hand_system_ input_hand_get_system() {
-	return hand_sources[hand_system].system;
+hand_system_ input_hand_get_system(handed_ hand) {
+	return hand_sources[hand_system[hand]].system;
 }
 
 ///////////////////////////////////////////
@@ -102,18 +102,26 @@ void input_hand_system_register(hand_system_t system) {
 ///////////////////////////////////////////
 
 void input_hand_refresh_system() {
-	int available_source = hand_sources.count - 1;
-	for (int32_t i = 0; i < hand_sources.count; i++) {
-		if (hand_sources[i].available()) {
-			available_source = i;
-			break;
+		
+	for (int32_t hand = 0; hand < 2; hand++) {
+		int available_source = hand_sources.count - 1;
+		for (int32_t i = 0; i < hand_sources.count; i++) {
+			if (hand_sources[i].available()) {
+				// Simultaneous hand & controller needs this
+				if (hand_sources[i].system == hand_system_oxr_articulated && !input_controller_is_hand((handed_)hand)) {
+					continue;
+				}
+				available_source = i;
+				break;
+			}
 		}
-	}
-	if (available_source != hand_system) {
-		hand_system = available_source;
+	
 
-		// Force the hand size to recalculate next update
-		hand_size_update = 0;
+		if (available_source != hand_system[hand]) {
+			hand_system[hand] = available_source;
+			// Force the hand size to recalculate next update
+			hand_size_update = 0;
+		}
 	}
 }
 
@@ -169,8 +177,8 @@ void input_hand_init() {
 	sys.available       = []() {return true;};
 	sys.init            = []() {};
 	sys.shutdown        = []() {};
-	sys.update_frame    = []() {};
-	sys.update_poses    = []() {};
+	sys.update_frame    = [](handed_) {};
+	sys.update_poses    = [](handed_) {};
 	input_hand_system_register(sys);
 
 	hand_finger_glow_visible = true;
@@ -243,7 +251,10 @@ void input_hand_shutdown() {
 ///////////////////////////////////////////
 
 void input_hand_update() {
-	hand_sources[hand_system].update_frame();
+	// Update frame for both hands
+	for (int32_t h = 0; h < 2; h++) {
+		hand_sources[hand_system[h]].update_frame((handed_)h);
+	}
 
 	// Update the hand size every second
 	hand_size_update -= time_stepf_unscaled();
@@ -271,7 +282,14 @@ void input_hand_update() {
 	}
 
 	for (int32_t i = 0; i < hand_sources.count; i++) {
-		if (hand_system != i && hand_sources[i].update_inactive != nullptr)
+		bool system_used = false;
+		for (int32_t h = 0; h < 2; h++) {
+			if (hand_system[h] == i) {
+				system_used = true;
+				break;
+			}
+		}
+		if (!system_used && hand_sources[i].update_inactive != nullptr)
 			hand_sources[i].update_inactive();
 	}
 }
@@ -279,8 +297,11 @@ void input_hand_update() {
 ///////////////////////////////////////////
 
 void input_hand_update_poses() {
-	if (hand_system >= 0 && hand_sources[hand_system].update_poses)
-		hand_sources[hand_system].update_poses();
+	// Update poses for both hands
+	for (int32_t h = 0; h < 2; h++) {
+		if (hand_system[h] >= 0 && hand_sources[hand_system[h]].update_poses)
+			hand_sources[hand_system[h]].update_poses((handed_)h);
+	}
 }
 
 ///////////////////////////////////////////
@@ -311,9 +332,9 @@ void input_hand_state_update(handed_ handedness) {
 	hand.pinch_pt = vec3_lerp(
 		hand.fingers[0][4].position,
 		hand.fingers[1][4].position,
-		hand_sources[hand_system].pinch_blend);
+		hand_sources[hand_system[handedness]].pinch_blend);
 
-	if (hand_sources[hand_system].system == hand_system_oxr_articulated) {
+	if (hand_sources[hand_system[handedness]].system == hand_system_oxr_articulated) {
 		// Preserve the pinch point relative to the root of the index finger
 		// while the pinch is active. This helps prevent traveling of the pinch
 		// point during release on real articulated hands.

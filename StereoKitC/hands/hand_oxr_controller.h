@@ -6,7 +6,7 @@ namespace sk {
 bool hand_oxrc_available   ();
 void hand_oxrc_init        ();
 void hand_oxrc_shutdown    ();
-void hand_oxrc_update_frame();
-void hand_oxrc_update_poses();
+void hand_oxrc_update_frame(handed_ hand);
+void hand_oxrc_update_poses(handed_ hand);
 
 }

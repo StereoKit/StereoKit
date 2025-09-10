@@ -39,49 +39,45 @@ void hand_oxrc_shutdown() {
 
 ///////////////////////////////////////////
 
-void hand_oxrc_update_pose(bool animate) {
-	for (uint32_t hand_id = 0; hand_id < handed_max; hand_id++) {
-		const controller_t *controller = input_controller ((handed_)hand_id);
-		hand_t             *hand       = input_hand_ref   ((handed_)hand_id);
-		// Update the hand point pose
-		if ((controller->tracked & button_state_active) > 0) {
-			hand->aim = controller->aim;
-		}
-
-		// Simulate the hand based on the state of the controller
-		bool   tracked   = controller->tracked & button_state_active;
-		pose_t hand_pose = tracked
-			? controller->palm
-			: hand->palm;
-
-		if (animate) input_hand_sim      ((handed_)hand_id, false, hand_pose.position, hand_pose.orientation, tracked);
-		else         input_hand_sim_poses((handed_)hand_id, false, hand_pose.position, hand_pose.orientation);
+void hand_oxrc_update_pose(handed_ hand, bool animate) {
+	const controller_t *controller = input_controller(hand);
+	hand_t             *hand_ref   = input_hand_ref   (hand);
+	// Update the hand point pose
+	if ((controller->tracked & button_state_active) > 0) {
+		hand_ref->aim = controller->aim;
 	}
+
+	// Simulate the hand based on the state of the controller
+	bool   tracked   = controller->tracked & button_state_active;
+	pose_t hand_pose = tracked
+		? controller->palm
+		: hand_ref->palm;
+
+	if (animate) input_hand_sim      (hand, false, hand_pose.position, hand_pose.orientation, tracked);
+	else         input_hand_sim_poses(hand, false, hand_pose.position, hand_pose.orientation);
 }
 
 ///////////////////////////////////////////
 
-void hand_oxrc_update_frame() {
-	hand_oxrc_update_pose(true);
+void hand_oxrc_update_frame(handed_ hand) {
+	hand_oxrc_update_pose(hand, true);
 
 	// Now we'll get the current states of our actions, and store them for later use
-	for (uint32_t hand_id = 0; hand_id < handed_max; hand_id++) {
-		const controller_t *controller = input_controller((handed_)hand_id);
-		hand_t             *hand       = input_hand_ref  ((handed_)hand_id);
-		bool                tracked    = controller->tracked & button_state_active;
+	const controller_t *controller = input_controller(hand);
+	hand_t             *hand_ref   = input_hand_ref  (hand);
+	bool                tracked    = controller->tracked & button_state_active;
 
-		hand->pinch_state      = button_make_state((hand->pinch_state & button_state_active) > 0, controller->trigger >= 0.5f);
-		hand->grip_state       = button_make_state((hand->grip_state  & button_state_active) > 0, controller->grip    >= 0.5f);
-		hand->pinch_activation = fminf(1,controller->trigger/0.5f);
-		hand->grip_activation  = fminf(1,controller->grip   /0.5f);
-		hand->aim_ready        = controller->tracked;
-	}
+	hand_ref->pinch_state      = button_make_state((hand_ref->pinch_state & button_state_active) > 0, controller->trigger >= 0.5f);
+	hand_ref->grip_state       = button_make_state((hand_ref->grip_state  & button_state_active) > 0, controller->grip    >= 0.5f);
+	hand_ref->pinch_activation = fminf(1,controller->trigger/0.5f);
+	hand_ref->grip_activation  = fminf(1,controller->grip   /0.5f);
+	hand_ref->aim_ready        = controller->tracked;
 }
 
 ///////////////////////////////////////////
 
-void hand_oxrc_update_poses() {
-	hand_oxrc_update_pose(false);
+void hand_oxrc_update_poses(handed_ hand) {
+	hand_oxrc_update_pose(hand, false);
 }
 
 }

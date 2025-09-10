@@ -50,8 +50,8 @@ typedef struct hand_system_t {
 	void       (*init)           ();
 	void       (*shutdown)       ();
 	void       (*update_inactive)();
-	void       (*update_frame)   ();
-	void       (*update_poses)   ();
+	void       (*update_frame)   (handed_ hand);
+	void       (*update_poses)   (handed_ hand);
 } hand_system_t;
 
 void input_hand_init    ();
@@ -59,7 +59,7 @@ void input_hand_shutdown();
 void input_hand_update  ();
 
 void          input_hand_system_register   (hand_system_t system);
-hand_system_  input_hand_get_system        ();
+hand_system_  input_hand_get_system        (handed_ hand);
 hand_t*       input_hand_ref               (handed_ hand);
 void          input_hand_refresh_system    ();
 void          input_hand_update_poses      ();
