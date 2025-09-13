@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 
 namespace StereoKit
@@ -50,6 +51,13 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool           device_has_eye_gaze            ();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool           device_has_hand_tracking       ();
+
+		///////////////////////////////////////////
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern PermissionState permissions_state(Permission permission);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool permissions_is_interactive(Permission permission);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void permissions_request(Permission permission);
 
 		///////////////////////////////////////////
 

@@ -334,6 +334,24 @@ namespace StereoKit
 		Flatscreen,
 	}
 
+	/// <summary>////////////////////////////////////////</summary>
+	public enum Permission {
+		Microphone,
+		EyeTracking,
+		HandTracking,
+		Scene,
+		Max,
+	}
+
+	public enum PermissionState {
+		Unavailable  = -4,
+		Capable      = -3,
+		Pending      = -2,
+		Denied       = -1,
+		Unknown      = 0,
+		Granted      = 1,
+	}
+
 	/// <summary>Culling is discarding an object from the render pipeline!
 	/// This enum describes how mesh faces get discarded on the graphics
 	/// card. With culling set to none, you can double the number of pixels
