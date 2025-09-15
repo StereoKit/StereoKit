@@ -337,10 +337,11 @@ namespace StereoKit
 	/// <summary>////////////////////////////////////////</summary>
 	public enum PermissionType {
 		Microphone,
+		Camera,
 		EyeTracking,
 		HandTracking,
+		FaceTracking,
 		Scene,
-		Anchor,
 		Max,
 	}
 

@@ -49,12 +49,101 @@ void        _permission_check_manifest_permissions(void);
 void        _permission_request_permission        (const char* permission);
 xr_runtime_ _permission_check_runtime             (void);
 bool        _permission_manifest_has              (JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals, const char* permission_str);
+const char* _permission_check_string              (permission_type_ type, xr_runtime_ runtime, JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals);
+
+///////////////////////////////////////////
+
+const char* _permission_check_string(permission_type_ type, xr_runtime_ runtime, JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals) {
+	const char* result = nullptr;
+
+	#define PERMISSION_CHECK(r, s) if (runtime == r && !result && _permission_manifest_has(env, permission_list, list_count, string_equals, s)) { result = s; }
+	#define PERMISSION_SET(r, s) if (runtime == r && !result) { result = s; }
+
+	// Some good sources for finding permission strings
+	// - Android XR
+	//   https://developer.android.com/develop/xr/openxr/extensions
+	//   https://developer.android.com/develop/xr/get-started#understand-permissions
+	// - Android - Standard, non-xr permissions
+	//   https://developer.android.com/reference/android/Manifest.permission
+	// - Meta
+	//   https://github.com/search?q=repo%3Ameta-quest%2FMeta-OpenXR-SDK+com.oculus.permission&type=code
+	// - Pico
+	//   https://github.com/search?q=owner%3Apicoxr%20com.picovr.permission&type=code
+	// - Vive - Doesn't seem to use any permissions (2025.9)?
+	//   https://github.com/search?q=org%3AViveSoftware+uses-permission&type=code
+	// - Monado - Doesn't _exactly_ have its own Android runtime
+	//   https://gitlab.freedesktop.org/search?search=uses-permission&project_id=2685&group_id=5604&search_code=true
+	// - Godot - misc permissions
+	//   https://github.com/search?q=org%3AGodotVR%20uses-permission&type=code
+	
+	// This is an incomplete list of per-runtime permission strings.
+	// If you're adding new permissions to SK's list, this plus the
+	// permission_type_ enum in stereokit.h is where you'll add it!
+	switch (type) {
+
+	// These are standardized permissions for AOSP, so no need to dance around
+	case permission_type_microphone: result = "android.permission.RECORD_AUDIO"; break;
+	case permission_type_camera:     result = "android.permission.CAMERA";       break;
+
+	// These permissions are different on every AOSP OpenXR runtime, some
+	// runtimes like Meta even have multiple official strings. Meta's
+	// "com.oculus" strings are deprecated, and the "horizonos.permission"
+	// strings aren't documented yet. We still should support them both,
+	// since StereoKit doesn't control what's in the AndroidManifest.xml.
+	case permission_type_eye_tracking:
+		PERMISSION_SET  (xr_runtime_android_xr, "android.permission.EYE_TRACKING_FINE");
+		PERMISSION_CHECK(xr_runtime_meta,       "com.oculus.permission.EYE_TRACKING");
+		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.EYE_TRACKING");
+		PERMISSION_SET  (xr_runtime_pico,       "com.picovr.permission.EYE_TRACKING");
+		break;
+	case permission_type_hand_tracking:
+		PERMISSION_SET  (xr_runtime_android_xr, "android.permission.HAND_TRACKING");
+		PERMISSION_CHECK(xr_runtime_meta,       "com.oculus.permission.HAND_TRACKING");
+		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.HAND_TRACKING");
+		PERMISSION_SET  (xr_runtime_pico,       "com.picovr.permission.HAND_TRACKING");
+		break;
+	case permission_type_face_tracking:
+		PERMISSION_SET  (xr_runtime_android_xr, "android.permission.FACE_TRACKING");
+		PERMISSION_CHECK(xr_runtime_meta,       "com.oculus.permission.FACE_TRACKING");
+		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.FACE_TRACKING");
+		PERMISSION_SET  (xr_runtime_pico,       "com.picovr.permission.FACE_TRACKING");
+		break;
+	case permission_type_scene:
+		PERMISSION_SET  (xr_runtime_android_xr, "android.permission.SCENE_UNDERSTANDING_COARSE");
+		PERMISSION_CHECK(xr_runtime_meta,       "com.oculus.permission.USE_SCENE");
+		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.USE_SCENE");
+		PERMISSION_SET  (xr_runtime_pico,       "com.picovr.permission.SPATIAL_DATA");
+		break;
+	default:
+		break;
+	}
+
+	#undef PERMISSION_CHECK
+	#undef PERMISSION_SET
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+xr_runtime_ _permission_check_runtime() {
+	const char* runtime_name = device_get_runtime();
+	xr_runtime_ result       = xr_runtime_unknown;
+
+	// This is an incomplete list of runtimes
+	if      (string_startswith(runtime_name, "Meta"  )) result = xr_runtime_meta;
+	else if (string_startswith(runtime_name, "Oculus")) result = xr_runtime_meta;
+	else if (string_startswith(runtime_name, "Monado")) result = xr_runtime_monado;
+	else if (string_startswith(runtime_name, "Moohan")) result = xr_runtime_android_xr;
+	else if (string_startswith(runtime_name, "Vive"  )) result = xr_runtime_vive;
+
+	return result;
+}
 
 ///////////////////////////////////////////
 
 bool permission_init() {
 	local = {};
-
 
 	// Cache a few JNI objects for faster permission checking, this is used by
 	// android_check_app_permission, which may be used every frame.
@@ -104,10 +193,10 @@ permission_state_ permission_state(permission_type_ permission) {
 ///////////////////////////////////////////
 
 void permission_request(permission_type_ permission) {
-	if (local.permission_str[permission] == NULL)
+	if (local.permission_str[permission] == NULL) {
+		log_warnf("Permission string for 0x%X unknown on current platform", permission);
 		return;
-
-	log_infof("Requesting permission for %s", local.permission_str[permission]);
+	}
 
 	_permission_request_permission(local.permission_str[permission]);
 }
@@ -145,20 +234,6 @@ bool _permission_manifest_has(JNIEnv* env, jobjectArray permission_list, jsize l
 
 ///////////////////////////////////////////
 
-xr_runtime_ _permission_check_runtime() {
-	const char* runtime_name = device_get_runtime();
-	xr_runtime_ result       = xr_runtime_unknown;
-	if      (string_startswith(runtime_name, "Meta"  )) result = xr_runtime_meta;
-	else if (string_startswith(runtime_name, "Oculus")) result = xr_runtime_meta;
-	else if (string_startswith(runtime_name, "Monado")) result = xr_runtime_monado;
-	else if (string_startswith(runtime_name, "Moohan")) result = xr_runtime_android_xr;
-	else if (string_startswith(runtime_name, "Vive"  )) result = xr_runtime_vive;
-
-	return result;
-}
-
-///////////////////////////////////////////
-
 void _permission_check_manifest_permissions() {
 	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env ();
 	jobject activity = (jobject)backend_android_get_activity();
@@ -188,39 +263,8 @@ void _permission_check_manifest_permissions() {
 	jsize       length  = env->GetArrayLength(jobj_requestedPermissions);
 	xr_runtime_ runtime = _permission_check_runtime();
 	for (int32_t p = 0; p < permission_type_max; p++) {
-		#define CHECK_PERMISSION(s) if (!local.permission_str[p] && _permission_manifest_has(env, jobj_requestedPermissions, length, string_equals, s)) {local.permission_str[p] = s;}
-		switch ((permission_type_)p) {
 
-		case permission_type_microphone:
-			CHECK_PERMISSION("android.permission.RECORD_AUDIO"); break;
-
-		case permission_type_eye_tracking: { switch (runtime) {
-			case xr_runtime_android_xr:
-				CHECK_PERMISSION("android.permission.EYE_TRACKING_FINE"); break;
-			case xr_runtime_meta:
-				CHECK_PERMISSION("com.oculus.permission.EYE_TRACKING");
-				CHECK_PERMISSION("horizonos.permission.EYE_TRACKING" ); break;
-			default: break;
-		} } break;
-
-		case permission_type_hand_tracking: { switch (runtime) {
-			case xr_runtime_android_xr:
-				CHECK_PERMISSION("android.permission.HAND_TRACKING"); break;
-			case xr_runtime_meta:
-				CHECK_PERMISSION("com.oculus.permission.HAND_TRACKING");
-				CHECK_PERMISSION("horizonos.permission.HAND_TRACKING" ); break;
-			default: break;
-		} } break;
-
-		case permission_type_scene: { switch (runtime) {
-			case xr_runtime_meta:
-				CHECK_PERMISSION("com.oculus.permission.USE_SCENE");
-				CHECK_PERMISSION("horizonos.permission.USE_SCENE" ); break;
-			default: break;
-		} } break;
-		default: break;
-		}
-		#undef CHECK_PERMISSION
+		local.permission_str[p] = _permission_check_string((permission_type_)p, runtime, env, jobj_requestedPermissions, length, string_equals);
 
 		if (local.permission_str[p] != nullptr) {
 			jstring  jstr_permission = env->NewStringUTF(local.permission_str[p]);

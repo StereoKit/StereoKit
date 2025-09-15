@@ -674,10 +674,11 @@ SK_API bool32_t         device_has_hand_tracking  (void);
 
 typedef enum permission_type_ {
 	permission_type_microphone,
+	permission_type_camera,
 	permission_type_eye_tracking,
 	permission_type_hand_tracking,
+	permission_type_face_tracking,
 	permission_type_scene,
-	permission_type_anchor,
 	permission_type_max,
 } permission_type_;
 

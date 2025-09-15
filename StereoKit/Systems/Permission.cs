@@ -7,10 +7,10 @@ namespace StereoKit
 	public static class Permission
 	{
 		public static PermissionState State(PermissionType permission)
-			=> NativeAPI.permissions_state(permission);
+			=> NativeAPI.permission_state(permission);
 		public static bool IsInteractive(PermissionType permission)
-			=> NativeAPI.permissions_is_interactive(permission);
+			=> NativeAPI.permission_is_interactive(permission);
 		public static void Request(PermissionType permission)
-			=> NativeAPI.permissions_request(permission);
+			=> NativeAPI.permission_request(permission);
 	}
 }
