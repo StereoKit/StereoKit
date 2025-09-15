@@ -90,7 +90,7 @@ const char* _permission_check_string(permission_type_ type, xr_runtime_ runtime,
 	// "com.oculus" strings are deprecated, and the "horizonos.permission"
 	// strings aren't documented yet. We still should support them both,
 	// since StereoKit doesn't control what's in the AndroidManifest.xml.
-	case permission_type_eye_tracking:
+	case permission_type_eye_input:
 		PERMISSION_SET  (xr_runtime_android_xr, "android.permission.EYE_TRACKING_FINE");
 		PERMISSION_CHECK(xr_runtime_meta,       "com.oculus.permission.EYE_TRACKING");
 		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.EYE_TRACKING");
