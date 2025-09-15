@@ -54,10 +54,10 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern PermissionState permissions_state(Permission permission);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern PermissionState permissions_state         (PermissionType permission);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool permissions_is_interactive(Permission permission);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void permissions_request(Permission permission);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool            permissions_is_interactive(PermissionType permission);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void            permissions_request       (PermissionType permission);
 
 		///////////////////////////////////////////
 

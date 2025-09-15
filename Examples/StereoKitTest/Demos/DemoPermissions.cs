@@ -14,18 +14,18 @@ class DemoPermissions : ITest
 	{
 		UI.WindowBegin("Permissions");
 		Vec2 labelSize = new Vec2(0.1f, 0);
-		for (int i = 0; i < (int)Permission.Max; i++)
+		for (int i = 0; i < (int)PermissionType.Max; i++)
 		{
 			UI.PushId(i);
-			Permission      permission = (Permission)i;
-			PermissionState state      = Permissions.State(permission);
+			PermissionType  permission = (PermissionType)i;
+			PermissionState state      = Permission.State(permission);
 
 			UI.Label(permission.ToString(), labelSize);
 			UI.SameLine();
 			UI.Label(state.ToString(), labelSize);
 			UI.SameLine();
-			UI.PushEnabled(state == PermissionState.Capable && Permissions.IsInteractive(permission));
-			if (UI.Button("Request")) Permissions.Request(permission);
+			UI.PushEnabled(state == PermissionState.Capable && Permission.IsInteractive(permission));
+			if (UI.Button("Request")) Permission.Request(permission);
 			UI.PopEnabled();
 			UI.PopId();
 		}

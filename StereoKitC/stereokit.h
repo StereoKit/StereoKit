@@ -672,13 +672,14 @@ SK_API bool32_t         device_has_hand_tracking  (void);
 
 ///////////////////////////////////////////
 
-typedef enum permission_ {
-	permission_microphone,
-	permission_eye_tracking,
-	permission_hand_tracking,
-	permission_scene,
-	permission_max,
-} permission_;
+typedef enum permission_type_ {
+	permission_type_microphone,
+	permission_type_eye_tracking,
+	permission_type_hand_tracking,
+	permission_type_scene,
+	permission_type_anchor,
+	permission_type_max,
+} permission_type_;
 
 typedef enum permission_state_ {
 	permission_state_unavailable = -4,
@@ -689,9 +690,9 @@ typedef enum permission_state_ {
 	permission_state_granted     =  1,
 } permission_state_;
 
-SK_API permission_state_ permissions_state         (permission_ permission);
-SK_API bool32_t          permissions_is_interactive(permission_ permission);
-SK_API void              permissions_request       (permission_ permission);
+SK_API permission_state_ permission_state         (permission_type_ permission);
+SK_API bool32_t          permission_is_interactive(permission_type_ permission);
+SK_API void              permission_request       (permission_type_ permission);
 
 ///////////////////////////////////////////
 

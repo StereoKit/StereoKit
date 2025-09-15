@@ -141,10 +141,10 @@ bool stereokit_systems_register() {
 	sys_anim.func_shutdown = anim_shutdown;
 	systems_add(&sys_anim);
 
-	system_t sys_permission = { "Permissions" };
+	system_t sys_permission = { "Permission" };
 	system_set_initialize_deps(sys_permission, "Platform");
-	sys_permission.func_initialize = permissions_init;
-	sys_permission.func_shutdown   = permissions_shutdown;
+	sys_permission.func_initialize = permission_init;
+	sys_permission.func_shutdown   = permission_shutdown;
 	systems_add(&sys_permission);
 
 	system_t sys_app = { "App" };

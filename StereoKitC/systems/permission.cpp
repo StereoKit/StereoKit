@@ -29,10 +29,9 @@ enum xr_runtime_ {
 };
 
 struct permission_state_t {
-	permission_state_ present             [permission_max];
-	bool              requires_interaction[permission_max];
-	const char*       permission_str      [permission_max];
-	xr_runtime_       runtime;
+	permission_state_ present             [permission_type_max];
+	bool              requires_interaction[permission_type_max];
+	const char*       permission_str      [permission_type_max];
 
 	jclass    class_activity;
 	jmethodID activity_checkSelfPermission;
@@ -45,14 +44,15 @@ const int32_t PERMISSION_PROTECTION_DANGEROUS = 0x1;
 
 ///////////////////////////////////////////
 
-bool        android_check_app_permission      (const char* permission);
-void        android_check_manifest_permissions(void);
-void        android_request_permission        (const char* permission);
-xr_runtime_ _permissions_check_runtime        (void);
+bool        _permission_check_app_permission      (const char* permission);
+void        _permission_check_manifest_permissions(void);
+void        _permission_request_permission        (const char* permission);
+xr_runtime_ _permission_check_runtime             (void);
+bool        _permission_manifest_has              (JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals, const char* permission_str);
 
 ///////////////////////////////////////////
 
-bool permissions_init() {
+bool permission_init() {
 	local = {};
 
 
@@ -71,15 +71,14 @@ bool permissions_init() {
 
 
 	// Check what permissions we've got in the manifest
-	local.runtime = _permissions_check_runtime();
-	android_check_manifest_permissions();
+	_permission_check_manifest_permissions();
 
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void permissions_shutdown() {
+void permission_shutdown() {
 	JNIEnv* env = (JNIEnv*)backend_android_get_jni_env();
 	env->DeleteGlobalRef(local.class_activity);
 
@@ -88,29 +87,15 @@ void permissions_shutdown() {
 
 ///////////////////////////////////////////
 
-xr_runtime_ _permissions_check_runtime() {
-	const char* runtime_name = device_get_runtime();
-	xr_runtime_ result       = xr_runtime_unknown;
-	if      (string_startswith(runtime_name, "Meta"  )) result = xr_runtime_meta;
-	else if (string_startswith(runtime_name, "Oculus")) result = xr_runtime_meta;
-	else if (string_startswith(runtime_name, "Monado")) result = xr_runtime_monado;
-	else if (string_startswith(runtime_name, "Moohan")) result = xr_runtime_android_xr;
-	else if (string_startswith(runtime_name, "Vive"  )) result = xr_runtime_vive;
-
-	return result;
-}
-
-///////////////////////////////////////////
-
-bool32_t permissions_is_interactive(permission_ permission) {
+bool32_t permission_is_interactive(permission_type_ permission) {
 	return local.requires_interaction[permission];
 }
 
 ///////////////////////////////////////////
 
-permission_state_ permissions_state(permission_ permission) {
+permission_state_ permission_state(permission_type_ permission) {
 	if (local.present[permission] == permission_state_capable) {
-		if (android_check_app_permission(local.permission_str[permission]))
+		if (_permission_check_app_permission(local.permission_str[permission]))
 			local.present[permission] = permission_state_granted;
 	}
 	return local.present[permission];
@@ -118,18 +103,18 @@ permission_state_ permissions_state(permission_ permission) {
 
 ///////////////////////////////////////////
 
-void permissions_request(permission_ permission) {
+void permission_request(permission_type_ permission) {
 	if (local.permission_str[permission] == NULL)
 		return;
 
 	log_infof("Requesting permission for %s", local.permission_str[permission]);
 
-	android_request_permission(local.permission_str[permission]);
+	_permission_request_permission(local.permission_str[permission]);
 }
 
 ///////////////////////////////////////////
 
-bool android_check_app_permission(const char* permission) {
+bool _permission_check_app_permission(const char* permission) {
 	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env();
 	jobject activity = (jobject)backend_android_get_activity();
 
@@ -142,7 +127,7 @@ bool android_check_app_permission(const char* permission) {
 
 ///////////////////////////////////////////
 
-bool _jni_manifest_has(JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals, const char* permission_str) {
+bool _permission_manifest_has(JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals, const char* permission_str) {
 	bool result = false;
 	jstring jobj_permission_str = env->NewStringUTF(permission_str);
 	for (jsize i = 0; i < list_count; i++) {
@@ -160,7 +145,21 @@ bool _jni_manifest_has(JNIEnv* env, jobjectArray permission_list, jsize list_cou
 
 ///////////////////////////////////////////
 
-void android_check_manifest_permissions() {
+xr_runtime_ _permission_check_runtime() {
+	const char* runtime_name = device_get_runtime();
+	xr_runtime_ result       = xr_runtime_unknown;
+	if      (string_startswith(runtime_name, "Meta"  )) result = xr_runtime_meta;
+	else if (string_startswith(runtime_name, "Oculus")) result = xr_runtime_meta;
+	else if (string_startswith(runtime_name, "Monado")) result = xr_runtime_monado;
+	else if (string_startswith(runtime_name, "Moohan")) result = xr_runtime_android_xr;
+	else if (string_startswith(runtime_name, "Vive"  )) result = xr_runtime_vive;
+
+	return result;
+}
+
+///////////////////////////////////////////
+
+void _permission_check_manifest_permissions() {
 	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env ();
 	jobject activity = (jobject)backend_android_get_activity();
 
@@ -187,15 +186,15 @@ void android_check_manifest_permissions() {
 	// look through all permissions in the manifest, and match them up to ones
 	// StereoKit knows about.
 	jsize       length  = env->GetArrayLength(jobj_requestedPermissions);
-	xr_runtime_ runtime = _permissions_check_runtime();
-	for (int32_t p = 0; p < permission_max; p++) {
-		#define CHECK_PERMISSION(s) if (!local.permission_str[p] && _jni_manifest_has(env, jobj_requestedPermissions, length, string_equals, s)) {local.permission_str[p] = s;}
-		switch ((permission_)p) {
+	xr_runtime_ runtime = _permission_check_runtime();
+	for (int32_t p = 0; p < permission_type_max; p++) {
+		#define CHECK_PERMISSION(s) if (!local.permission_str[p] && _permission_manifest_has(env, jobj_requestedPermissions, length, string_equals, s)) {local.permission_str[p] = s;}
+		switch ((permission_type_)p) {
 
-		case permission_microphone:
+		case permission_type_microphone:
 			CHECK_PERMISSION("android.permission.RECORD_AUDIO"); break;
 
-		case permission_eye_tracking: { switch (runtime) {
+		case permission_type_eye_tracking: { switch (runtime) {
 			case xr_runtime_android_xr:
 				CHECK_PERMISSION("android.permission.EYE_TRACKING_FINE"); break;
 			case xr_runtime_meta:
@@ -204,7 +203,7 @@ void android_check_manifest_permissions() {
 			default: break;
 		} } break;
 
-		case permission_hand_tracking: { switch (runtime) {
+		case permission_type_hand_tracking: { switch (runtime) {
 			case xr_runtime_android_xr:
 				CHECK_PERMISSION("android.permission.HAND_TRACKING"); break;
 			case xr_runtime_meta:
@@ -213,7 +212,7 @@ void android_check_manifest_permissions() {
 			default: break;
 		} } break;
 
-		case permission_scene: { switch (runtime) {
+		case permission_type_scene: { switch (runtime) {
 			case xr_runtime_meta:
 				CHECK_PERMISSION("com.oculus.permission.USE_SCENE");
 				CHECK_PERMISSION("horizonos.permission.USE_SCENE" ); break;
@@ -250,7 +249,7 @@ void android_check_manifest_permissions() {
 
 ///////////////////////////////////////////
 
-void android_request_permission(const char* permission) {
+void _permission_request_permission(const char* permission) {
 	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env ();
 	jobject activity = (jobject)backend_android_get_activity();
 
@@ -272,30 +271,30 @@ void android_request_permission(const char* permission) {
 
 ///////////////////////////////////////////
 
-bool permissions_init() {
+bool permission_init() {
 	return true;
 }
 
 ///////////////////////////////////////////
 
-void permissions_shutdown() {
+void permission_shutdown() {
 }
 
 ///////////////////////////////////////////
 
-permission_state_ permissions_state(permission_ permission) {
+permission_state_ permission_state(permission_type_ permission) {
 	return permission_state_granted;
 }
 
 ///////////////////////////////////////////
 
-bool32_t permissions_is_interactive(permission_ permission) {
+bool32_t permission_is_interactive(permission_type_ permission) {
 	return false;
 }
 
 ///////////////////////////////////////////
 
-void permissions_request(permission_ permission) {
+void permission_request(permission_type_ permission) {
 }
 
 #endif

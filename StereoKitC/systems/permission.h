@@ -9,7 +9,7 @@
 
 namespace sk {
 
-bool permissions_init    (void);
-void permissions_shutdown(void);
+bool permission_init    (void);
+void permission_shutdown(void);
 
 }
