@@ -330,7 +330,7 @@ bool32_t mic_start(const char *device_name) {
 		if (permissions_state(permission_microphone) != permission_state_granted)
 			return false;
 	} else if (state != permission_state_granted) {
-		log_info("Recording audio failed due to permissions.");
+		log_diag("Recording audio failed due to permissions.");
 		return false;
 	}
 
