@@ -142,12 +142,6 @@ bool android_check_app_permission(const char* permission) {
 
 ///////////////////////////////////////////
 
-bool _jni_str_eq(JNIEnv* env, jmethodID string_equals, jstring jstr, const char* str) {
-	jstring jstr_str = env->NewStringUTF(str);
-	bool match = env->CallBooleanMethod(jstr_str, string_equals, jstr);
-	env->DeleteLocalRef(jstr_str);
-}
-
 bool _jni_manifest_has(JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals, const char* permission_str) {
 	bool result = false;
 	jstring jobj_permission_str = env->NewStringUTF(permission_str);
