@@ -266,21 +266,32 @@ void _permission_check_manifest_permissions() {
 
 		local.permission_str[p] = _permission_check_string((permission_type_)p, runtime, env, jobj_requestedPermissions, length, string_equals);
 
-		if (local.permission_str[p] != nullptr) {
-			jstring  jstr_permission = env->NewStringUTF(local.permission_str[p]);
-			jboolean is_interactive  = env->CallBooleanMethod(activity, activity_shouldShowRationale, jstr_permission);
-			jobject  permission_info = env->CallObjectMethod(jobj_packageManager, packageManager_getPermissionInfo, jstr_permission, 0);
-			env->DeleteLocalRef(jstr_permission);
-
-			jclass   class_permissionInfo           = env->GetObjectClass(permission_info);
-			jfieldID permissionInfo_protectionLevel = env->GetFieldID(class_permissionInfo, "protectionLevel", "I");
-			jint     protection_level               = env->GetIntField(permission_info, permissionInfo_protectionLevel);
-			env->DeleteLocalRef(class_permissionInfo);
-
-			local.requires_interaction[p] = is_interactive || ((protection_level & PERMISSION_PROTECTION_DANGEROUS) != 0) ? true : false;
-			local.present             [p] = permission_state_capable;
-			log_infof("Found manifest permission for %s", local.permission_str[p]);
+		if (local.permission_str[p] == nullptr) {
+			// We didn't find a string we know about for this runtime, we have
+			// no idea about this permission.
+			local.present[p] = permission_state_unknown;
+			continue;
 		}
+		if (!_permission_manifest_has(env, jobj_requestedPermissions, length, string_equals, local.permission_str[p])) {
+			// We know the permission string, but it is not present in the
+			// app's manifest, so we can't use it.
+			local.present[p] = permission_state_unavailable;
+			continue;
+		}
+
+		jstring  jstr_permission = env->NewStringUTF(local.permission_str[p]);
+		jboolean is_interactive  = env->CallBooleanMethod(activity, activity_shouldShowRationale, jstr_permission);
+		jobject  permission_info = env->CallObjectMethod(jobj_packageManager, packageManager_getPermissionInfo, jstr_permission, 0);
+		env->DeleteLocalRef(jstr_permission);
+
+		jclass   class_permissionInfo           = env->GetObjectClass(permission_info);
+		jfieldID permissionInfo_protectionLevel = env->GetFieldID(class_permissionInfo, "protectionLevel", "I");
+		jint     protection_level               = env->GetIntField(permission_info, permissionInfo_protectionLevel);
+		env->DeleteLocalRef(class_permissionInfo);
+
+		local.requires_interaction[p] = is_interactive || ((protection_level & PERMISSION_PROTECTION_DANGEROUS) != 0) ? true : false;
+		local.present             [p] = permission_state_capable;
+		log_infof("Found manifest permission for %s", local.permission_str[p]);
 	}
 
 	env->DeleteLocalRef(class_string);
