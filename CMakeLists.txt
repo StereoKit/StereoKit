@@ -380,6 +380,8 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/input_render.cpp
   StereoKitC/systems/line_drawer.h
   StereoKitC/systems/line_drawer.cpp
+  StereoKitC/systems/permission.cpp
+  StereoKitC/systems/permission.h
   StereoKitC/systems/render.h
   StereoKitC/systems/render_.h
   StereoKitC/systems/render.cpp

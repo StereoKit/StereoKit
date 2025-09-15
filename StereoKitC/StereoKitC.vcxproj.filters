@@ -327,6 +327,9 @@
     <ClCompile Include="xr_backends\extensions\ext_interaction_render_model.cpp">
       <Filter>xr_backends\extensions</Filter>
     </ClCompile>
+    <ClCompile Include="systems\permission.cpp">
+      <Filter>systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stereokit.h" />
@@ -683,6 +686,9 @@
     </ClInclude>
     <ClInclude Include="libraries\ferr_halffloat.h">
       <Filter>libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="systems\permission.h">
+      <Filter>systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

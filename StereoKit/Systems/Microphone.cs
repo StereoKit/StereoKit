@@ -52,7 +52,14 @@ namespace StereoKit
 		/// 
 		/// If null is provided as the device, then they system's default
 		/// input device will be used. Some systems may not provide access
-		/// to devices other than the system's default.</summary>
+		/// to devices other than the system's default.
+		/// 
+		/// On Android, this function requires user approved permissions to
+		/// use. If these permissions are not already granted when Start is
+		/// called, but the permission is available to the app, then this call
+		/// will request permission and fail. You can check Permission.State
+		/// and explicitly manage the permission yourself if you want to avoid
+		/// this function failing the first time.</summary>
 		/// <param name="deviceName">The name of the microphone device to
 		/// use, as seen in the GetDevices list. null will use the system's
 		/// default device preference.</param>

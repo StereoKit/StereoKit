@@ -176,6 +176,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClCompile Include="systems\input_keyboard.cpp" />
     <ClCompile Include="systems\input_render.cpp" />
     <ClCompile Include="systems\line_drawer.cpp" />
+    <ClCompile Include="systems\permission.cpp" />
     <ClCompile Include="systems\render.cpp" />
     <ClCompile Include="systems\render_pipeline.cpp" />
     <ClCompile Include="systems\sprite_drawer.cpp" />
@@ -294,6 +295,7 @@ xcopy "$(ProjectDir)stereokit_ui.h" "$(ProjectDir)..\bin\distribute\include\" /d
     <ClInclude Include="systems\input_keyboard.h" />
     <ClInclude Include="systems\input_render.h" />
     <ClInclude Include="systems\line_drawer.h" />
+    <ClInclude Include="systems\permission.h" />
     <ClInclude Include="systems\render.h" />
     <ClInclude Include="systems\render_.h" />
     <ClInclude Include="systems\render_pipeline.h" />

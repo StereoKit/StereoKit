@@ -672,6 +672,77 @@ SK_API bool32_t         device_has_hand_tracking  (void);
 
 ///////////////////////////////////////////
 
+/*A list of permissions that StereoKit knows about. On some platforms (like
+  Android), these permissions may need to be explicitly requested before using
+  certain features.*/
+typedef enum permission_type_ {
+	/*For access to microphone data, this is typically an interactive
+	  permission that the user will need to explicitly approve.
+	  
+	  This maps to android.permission.RECORD_AUDIO on Android.*/
+	permission_type_microphone,
+	/*For access to camera data, this is typically an interactive permission
+	  that the user will need to explicitly approve. SK doesn't use this
+	  permission internally yet, but is often a useful permission for XR apps.
+	  
+	  This maps to android.permission.CAMERA on Android.*/
+	permission_type_camera,
+	/*For access to input quality eye tracking data, this is typically an
+	  interactive permission that the user will need to explicitly approve.
+	  
+	  This maps to android.permission.EYE_TRACKING_FINE on Android XR, but
+	  varies per-runtime.*/
+	permission_type_eye_input,
+	/*For access to per-joint hand tracking data. Some runtimes may have this
+	  permission interactive, but many do not.
+	  
+	  This maps to android.permission.HAND_TRACKING on Android XR, but
+	  varies per-runtime.*/
+	permission_type_hand_tracking,
+	/*For access to facial expression data, this is typically an
+	  interactive permission that the user will need to explicitly approve.
+	  
+	  This maps to android.permission.FACE_TRACKING on Android XR, but
+	  varies per-runtime.*/
+	permission_type_face_tracking,
+	/*For access to data in the user's space, this can be for things like
+	  spatial anchors, plane detection, hit testing, etc. This is typically an
+	  interactive permission that the user will need to explicitly approve.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
+	  but varies per-runtime.*/
+	permission_type_scene,
+	/*This enum is for tracking the number of value in this enum.*/
+	permission_type_max,
+} permission_type_;
+
+/*Permissions can be in a variety of states, depending on how users interact
+  with them. Sometimes they're automatically granted, user denied, or just
+  unknown for the current runtime!*/
+typedef enum permission_state_ {
+	/*This permission is known to StereoKit, but not available to request.
+	  Typically this means the correct permission string is not listed in the
+	  AndroidManfiest.xml or similar.*/
+	permission_state_unavailable = -2,
+	/*This app is capable of using the permission, but it needs to be
+	  requested first with Permission.Request.*/
+	permission_state_capable     = -1,
+
+	/*StereoKit doesn't know about the permission on the current runtime. This
+	  happens when the runtime has a unique permission string (or not) and
+	  StereoKit doesn't know what it is to look up its current status.*/
+	permission_state_unknown     =  0,
+	/*This permission is entirely approved and you can go ahead and use the
+	  associated features!*/
+	permission_state_granted     =  1,
+} permission_state_;
+
+SK_API permission_state_ permission_state         (permission_type_ permission);
+SK_API bool32_t          permission_is_interactive(permission_type_ permission);
+SK_API void              permission_request       (permission_type_ permission);
+
+///////////////////////////////////////////
+
 SK_API double        time_total_raw        (void);
 SK_API float         time_totalf_unscaled  (void);
 SK_API double        time_total_unscaled   (void);

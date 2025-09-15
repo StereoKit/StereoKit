@@ -17,6 +17,7 @@
 #include "line_drawer.h"
 #include "world.h"
 #include "defaults.h"
+#include "permission.h"
 
 #include "../platforms/_platform.h"
 #include "../_stereokit_ui.h"
@@ -139,6 +140,12 @@ bool stereokit_systems_register() {
 	sys_anim.func_step     = anim_step;
 	sys_anim.func_shutdown = anim_shutdown;
 	systems_add(&sys_anim);
+
+	system_t sys_permission = { "Permission" };
+	system_set_initialize_deps(sys_permission, "Platform");
+	sys_permission.func_initialize = permission_init;
+	sys_permission.func_shutdown   = permission_shutdown;
+	systems_add(&sys_permission);
 
 	system_t sys_app = { "App" };
 	system_set_step_deps(sys_app, "Input", "Defaults", "FrameBegin", "Platform", "Renderer", "UI");
