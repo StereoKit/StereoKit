@@ -35,6 +35,7 @@ struct permission_state_t {
 
 	jclass    class_activity;
 	jmethodID activity_checkSelfPermission;
+	jmethodID activity_requestPermissions;
 };
 static permission_state_t local;
 
@@ -157,6 +158,7 @@ bool permission_init() {
 
 	// A jmethodID is valid for as long as the class is, no global ref needed
 	local.activity_checkSelfPermission = env->GetMethodID(local.class_activity, "checkSelfPermission", "(Ljava/lang/String;)I");
+	local.activity_requestPermissions  = env->GetMethodID(local.class_activity, "requestPermissions", "([Ljava/lang/String;I)V");
 
 
 	// Check what permissions we've got in the manifest
@@ -260,7 +262,7 @@ void _permission_check_manifest_permissions() {
 
 	// look through all permissions in the manifest, and match them up to ones
 	// StereoKit knows about.
-	jsize       length  = env->GetArrayLength(jobj_requestedPermissions);
+	jsize       length  = jobj_requestedPermissions ? env->GetArrayLength(jobj_requestedPermissions) : 0;
 	xr_runtime_ runtime = _permission_check_runtime();
 	for (int32_t p = 0; p < permission_type_max; p++) {
 
@@ -287,6 +289,7 @@ void _permission_check_manifest_permissions() {
 		jclass   class_permissionInfo           = env->GetObjectClass(permission_info);
 		jfieldID permissionInfo_protectionLevel = env->GetFieldID(class_permissionInfo, "protectionLevel", "I");
 		jint     protection_level               = env->GetIntField(permission_info, permissionInfo_protectionLevel);
+		env->DeleteLocalRef(permission_info);
 		env->DeleteLocalRef(class_permissionInfo);
 
 		local.requires_interaction[p] = is_interactive || ((protection_level & PERMISSION_PROTECTION_DANGEROUS) != 0) ? true : false;
@@ -295,11 +298,12 @@ void _permission_check_manifest_permissions() {
 	}
 
 	env->DeleteLocalRef(class_string);
+	env->DeleteLocalRef(class_packageInfo);
 	env->DeleteLocalRef(class_packageManager);
 	env->DeleteLocalRef(jobj_packageManager);
 	env->DeleteLocalRef(jobj_packageName);
 	env->DeleteLocalRef(jobj_packageInfo);
-	env->DeleteLocalRef(jobj_requestedPermissions);
+	if (jobj_requestedPermissions) env->DeleteLocalRef(jobj_requestedPermissions);
 }
 
 ///////////////////////////////////////////
@@ -308,16 +312,16 @@ void _permission_request_permission(const char* permission) {
 	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env ();
 	jobject activity = (jobject)backend_android_get_activity();
 
-	jmethodID activity_requestPermissions = env->GetMethodID(local.class_activity, "requestPermissions",  "([Ljava/lang/String;I)V");
-
+	jclass       class_string         = env->FindClass("java/lang/String");
 	jstring      jobj_permission      = env->NewStringUTF  (permission);
-	jobjectArray jobj_permission_list = env->NewObjectArray(1, env->FindClass("java/lang/String"), NULL);
+	jobjectArray jobj_permission_list = env->NewObjectArray(1, class_string, NULL);
 
 	env->SetObjectArrayElement(jobj_permission_list, 0, jobj_permission);
-	env->CallVoidMethod       (activity, activity_requestPermissions, jobj_permission_list, 0);
+	env->CallVoidMethod       (activity, local.activity_requestPermissions, jobj_permission_list, 0);
 
 	env->DeleteLocalRef(jobj_permission);
 	env->DeleteLocalRef(jobj_permission_list);
+	env->DeleteLocalRef(class_string);
 }
 
 ///////////////////////////////////////////
