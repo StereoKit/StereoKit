@@ -42,6 +42,7 @@ static permission_state_t local;
 const int32_t PERMISSION_DENIED = -1;
 const int32_t PERMISSION_GRANTED = 0;
 const int32_t PERMISSION_PROTECTION_DANGEROUS = 0x1;
+const int32_t PROTECTION_MASK_BASE = 0x0000000f;
 
 ///////////////////////////////////////////
 
@@ -284,17 +285,36 @@ void _permission_check_manifest_permissions() {
 		jstring  jstr_permission = env->NewStringUTF(local.permission_str[p]);
 		jboolean is_interactive  = env->CallBooleanMethod(activity, activity_shouldShowRationale, jstr_permission);
 		jobject  permission_info = env->CallObjectMethod(jobj_packageManager, packageManager_getPermissionInfo, jstr_permission, 0);
+		if (env->ExceptionCheck()) { env->ExceptionClear(); }
 		env->DeleteLocalRef(jstr_permission);
 
-		jclass   class_permissionInfo           = env->GetObjectClass(permission_info);
-		jfieldID permissionInfo_protectionLevel = env->GetFieldID(class_permissionInfo, "protectionLevel", "I");
-		jint     protection_level               = env->GetIntField(permission_info, permissionInfo_protectionLevel);
-		env->DeleteLocalRef(permission_info);
-		env->DeleteLocalRef(class_permissionInfo);
+		// permission_info may be null if the permission string we decided on
+		// isn't known by the device.
+		if (permission_info == nullptr) {
+			local.present[p] = permission_state_unavailable;
+			continue;
+		}
 
-		local.requires_interaction[p] = is_interactive || ((protection_level & PERMISSION_PROTECTION_DANGEROUS) != 0) ? true : false;
+		jclass    class_permissionInfo         = env->GetObjectClass(permission_info);
+		jmethodID permissionInfo_getProtection = env->GetMethodID   (class_permissionInfo, "getProtection", "()I");
+
+		jint protection_level_core;
+		if (permissionInfo_getProtection) {
+			// getProtection may only be available in newer Android versions
+			protection_level_core = env->CallIntMethod(permission_info, permissionInfo_getProtection);
+		} else {
+			// protectionLevel is deprecated
+			jfieldID permissionInfo_protectionLevel = env->GetFieldID (class_permissionInfo, "protectionLevel", "I");
+			jint     protection_level               = env->GetIntField(permission_info, permissionInfo_protectionLevel);
+			protection_level_core = (protection_level & PROTECTION_MASK_BASE);
+		}
+		
+		local.requires_interaction[p] = (is_interactive == JNI_TRUE) || (protection_level_core == PERMISSION_PROTECTION_DANGEROUS);
 		local.present             [p] = permission_state_capable;
 		log_infof("Found manifest permission for %s", local.permission_str[p]);
+
+		env->DeleteLocalRef(permission_info);
+		env->DeleteLocalRef(class_permissionInfo);
 	}
 
 	env->DeleteLocalRef(class_string);
@@ -316,8 +336,10 @@ void _permission_request_permission(const char* permission) {
 	jstring      jobj_permission      = env->NewStringUTF  (permission);
 	jobjectArray jobj_permission_list = env->NewObjectArray(1, class_string, NULL);
 
+	static const jint SK_REQUEST_CODE_PERMS = 0x534B;
+
 	env->SetObjectArrayElement(jobj_permission_list, 0, jobj_permission);
-	env->CallVoidMethod       (activity, local.activity_requestPermissions, jobj_permission_list, 0);
+	env->CallVoidMethod       (activity, local.activity_requestPermissions, jobj_permission_list, SK_REQUEST_CODE_PERMS);
 
 	env->DeleteLocalRef(jobj_permission);
 	env->DeleteLocalRef(jobj_permission_list);
