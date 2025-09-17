@@ -13,7 +13,7 @@ class TestRenderProps : ITest
 		if (newNear != 0.1f || newFar != 1000.0f)
 			result = false;
 
-		Renderer.SetClip(oldFar, oldNear);
+		Renderer.SetClip(oldNear, oldFar);
 		return result;
 	}
 

@@ -334,7 +334,7 @@ void virtualkeyboard_step() {
 	ui_push_preserve_keyboard(true);
 	hierarchy_push(render_get_cam_root());
 	ui_push_idi(local.active_context+local.active_layout);
-	ui_window_begin("SK/Keyboard", local.pose, {window_width,0}, ui_win_body, ui_system_get_move_type());
+	ui_window_begin("SK/Keyboard", &local.pose, {window_width,0}, ui_win_body, ui_system_get_move_type());
 
 	// Draw the keyboard
 	for (int32_t i=0; i< keyboard->key_ct; i+=1) {

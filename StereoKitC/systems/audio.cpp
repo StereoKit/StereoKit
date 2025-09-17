@@ -321,6 +321,19 @@ void mic_callback(ma_device*, void*, const void* input, ma_uint32 frame_count) {
 ///////////////////////////////////////////
 
 bool32_t mic_start(const char *device_name) {
+	permission_state_ state = permission_state(permission_type_microphone);
+	if (state == permission_state_capable) {
+		// We can record, but we need to ask permission first!
+		permission_request(permission_type_microphone);
+		// Chances are good that we'll fail this, mic permission is
+		// interactive, and that takes time.
+		if (permission_state(permission_type_microphone) != permission_state_granted)
+			return false;
+	} else if (state != permission_state_granted) {
+		log_diag("Recording audio failed due to permissions.");
+		return false;
+	}
+
 	// Make sure we're not starting up an already recording mic
 	if (au_recording) {
 		if (device_name == nullptr) {

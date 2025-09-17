@@ -506,7 +506,8 @@ void ui_panel_end() {
 pose_t ui_popup_pose(vec3 shift) {
 	pose_t result;
 	pose_t head = input_head();
-	if (ui_last_element_active() & (button_state_active | button_state_just_inactive) ) {
+	button_state_ last_active = ui_last_element_active();
+	if (last_active & (button_state_active | button_state_just_inactive) ) {
 		// If there was a UI element focused, we'll use that
 		vec3 at  = hierarchy_to_world_point   ( ui_layout_last().center );
 		quat rot = hierarchy_to_world_rotation( quat_identity );
@@ -573,7 +574,7 @@ ui_window_t* ui_window_get(ui_window_id window) {
 
 ///////////////////////////////////////////
 
-ui_window_id ui_window_find_or_add(id_hash_t hash, vec2 size) {
+ui_window_id ui_window_find_or_add(id_hash_t hash, vec2 size, pose_t* opt_initial_pose) {
 	for (int32_t i = 0; i < skui_windows.count; i++) {
 		if (skui_windows[i].hash == hash) {
 			return i;
@@ -584,6 +585,9 @@ ui_window_id ui_window_find_or_add(id_hash_t hash, vec2 size) {
 	window.hash      = hash;
 	window.prev_size = size;
 	window.curr_size = size;
+	window.pose      = opt_initial_pose
+		? *opt_initial_pose
+		: ui_popup_pose(vec3_zero);
 	skui_windows.add(window);
 
 	return skui_windows.count-1;

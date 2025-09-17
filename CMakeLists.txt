@@ -252,8 +252,8 @@ endif()
 #### sk_gpu - https://github.com/StereoKit/sk_gpu ####
 if (NOT SK_LOCAL_SK_GPU)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME sk_gpu # 2025.8.25
-    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.8.25/sk_gpu.v2025.8.25.zip
+    NAME sk_gpu # 2025.9.7
+    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.9.7/sk_gpu.v2025.9.7.zip
   )
 else()
   # For building directly with in-progress sk_gpu changes, point this to your
@@ -380,6 +380,8 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/input_render.cpp
   StereoKitC/systems/line_drawer.h
   StereoKitC/systems/line_drawer.cpp
+  StereoKitC/systems/permission.cpp
+  StereoKitC/systems/permission.h
   StereoKitC/systems/render.h
   StereoKitC/systems/render_.h
   StereoKitC/systems/render.cpp

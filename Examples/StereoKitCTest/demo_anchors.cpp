@@ -23,7 +23,7 @@ void demo_anchors_update() {
 	// Show settings window
 	static pose_t   window_pose     = pose_t{ {0.4f,0.0,-0.4f}, quat_lookat({}, {-1,0,1}) };
 	static bool32_t persist_anchors = (anchor_get_capabilities() & anchor_caps_storable) != 0;
-	ui_window_begin("Anchor Options", window_pose);
+	ui_window_begin("Anchor Options", &window_pose);
 	ui_push_enabled((anchor_get_capabilities() & anchor_caps_storable) != 0);
 	ui_toggle("Persist New Anchors", persist_anchors);
 	ui_pop_enabled();

@@ -19,7 +19,7 @@ void demo_aliasing_update() {
 	static float render_scale       =        render_get_scaling();
 	static float render_multisample = (float)render_get_multisample();
 
-	ui_window_begin("Aliasing settings", window_pose);
+	ui_window_begin("Aliasing settings", &window_pose);
 	ui_label("These settings only work in XR!");
 
 	ui_hseparator();

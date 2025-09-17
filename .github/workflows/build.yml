@@ -108,10 +108,8 @@ jobs:
 
     # UWP ARM32 builds no longer work in Windows SDK 26100 and onwards, so we
     # need to explicitly use 22621, the last version that supported it.
-    - name: Get compatible Windows SDK
-      uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
-      with:
-        sdk-version: 22621
+    - name: Install Windows 10 SDK 10.0.22621.0 (all components)
+      run: choco install windows-sdk-11-version-22h2-all --yes --no-progress
 
     - name: Set Version
       shell: pwsh

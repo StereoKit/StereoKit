@@ -1272,6 +1272,40 @@ namespace StereoKit
 			return result;
 		}
 
+		/// <summary>Begins a new window! This will push an automatically
+		/// determined pose onto the transform stack, and all UI elements will
+		/// be relative to that new pose. The pose is actually the top-center
+		/// of the window. Must be finished with a call to UI.WindowEnd().
+		/// </summary>
+		/// <param name="text">Text to display on the window title and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="windowType">Describes how the window should be drawn,
+		/// use a header, a body, neither, or both?</param>
+		/// <param name="moveType">Describes how the window will move when 
+		/// dragged around.</param>
+		public static void WindowBegin(string text, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
+			=> NativeAPI.ui_window_begin_16(text, IntPtr.Zero, Vec2.Zero, windowType, moveType);
+
+		/// <summary>Begins a new window! This will push an automatically
+		/// determined pose onto the transform stack, and all UI elements will
+		/// be relative to that new pose. The pose is actually the top-center
+		/// of the window. Must be finished with a call to UI.WindowEnd().
+		/// </summary>
+		/// <param name="text">Text to display on the window title and id for
+		/// tracking element state. MUST be unique within current hierarchy.
+		/// </param>
+		/// <param name="size">Physical size of the window! If either 
+		/// dimension is 0, then the size on that axis will be auto-
+		/// calculated based on the content provided during the previous 
+		/// frame.</param>
+		/// <param name="windowType">Describes how the window should be drawn,
+		/// use a header, a body, neither, or both?</param>
+		/// <param name="moveType">Describes how the window will move when 
+		/// dragged around.</param>
+		public static void WindowBegin(string text, Vec2 size, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
+			=> NativeAPI.ui_window_begin_16(text, IntPtr.Zero, size, windowType, moveType);
+
 		/// <summary>Begins a new window! This will push a pose onto the 
 		/// transform stack, and all UI elements will be relative to that new 
 		/// pose. The pose is actually the top-center of the window. Must be 

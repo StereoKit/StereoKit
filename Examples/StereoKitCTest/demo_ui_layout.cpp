@@ -15,7 +15,7 @@ void demo_ui_layout_update() {
 	static pose_t window_pose = //pose_t{ {0,0.5f,0},{0,0,0,1} };
 		pose_t{ {0.25,0.25,-0.25f}, quat_lookat({0.25,0.25,-0.25f}, {0,0.25,0}) };
 
-	ui_window_begin("Main", window_pose);
+	ui_window_begin("Main", &window_pose);
 
 	static ui_pad_ pad_mode = ui_pad_outside;
 	ui_panel_begin(pad_mode);

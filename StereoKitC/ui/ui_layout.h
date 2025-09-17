@@ -13,6 +13,8 @@ struct ui_window_t {
 	ui_move_     move;
 	uint64_t     hash;
 	uint32_t     age;
+	uint8_t      title[256];
+	uint16_t	 title_step;
 };
 
 typedef int32_t ui_layout_id;
@@ -45,6 +47,6 @@ void         ui_layout_window             (ui_window_id window, vec3 start, vec2
 void         ui_override_recent_layout    (vec3 start, vec2 size);
 
 ui_window_t *ui_window_get                (ui_window_id window);
-ui_window_id ui_window_find_or_add        (id_hash_t hash, vec2 size);
+ui_window_id ui_window_find_or_add        (id_hash_t hash, vec2 size, pose_t* opt_initial_pose);
 
 }

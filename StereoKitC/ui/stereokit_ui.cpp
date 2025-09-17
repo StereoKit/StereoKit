@@ -14,6 +14,7 @@
 #include "../hierarchy.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
+#include "../libraries/stref.h"
 #include "../libraries/profiler.h"
 
 #include <math.h>
@@ -906,13 +907,24 @@ bool32_t ui_text_16   (const char16_t* text, vec2* opt_ref_scroll, ui_scroll_ sc
 ///////////////////////////////////////////
 
 template<typename C>
-void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
+void ui_window_begin_g(const C *text, pose_t* opt_pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
 	id_hash_t    hash   = ui_push_id(text);
-	ui_window_id win_id = ui_window_find_or_add(hash, window_size);
+	ui_window_id win_id = ui_window_find_or_add(hash, window_size, opt_pose);
 	ui_window_t* win    = ui_window_get(win_id);
 	win->age  = 0;
 	win->type = window_type;
 	win->move = move_type;
+	pose_t* pose = opt_pose ? opt_pose : &win->pose;
+
+	// do a quick strcpy of the title
+	const C* src = (const C*)text;
+	C*       dst = (C*)win->title;
+	do {
+		*dst = *src;
+		src++;
+		dst++;
+	} while (*src != 0 && (uint8_t*)dst - (uint8_t*)win->title < sizeof(win->title));
+	win->title_step = sizeof(C);
 	
 	// figure out the size of it, based on its window type
 	vec3 box_start = {}, box_size = {};
@@ -940,27 +952,21 @@ void ui_window_begin_g(const C *text, pose_t &pose, vec2 window_size, ui_win_ wi
 	_ui_handle_begin(hash, pose, { box_start, box_size }, false, move_type, ui_gesture_pinch);
 	ui_layout_window(win_id, { win->prev_size.x / 2,0,0 }, window_size, true);
 
-	// draw label
+	// Ensure space for the header text
 	if (win->type & ui_win_head) {
-		ui_layout_t* layout = ui_layout_curr();
-
-		vec2 txt_size = text_size_layout(text, ui_get_text_style());
-		vec2 size     = vec2{ window_size.x == 0 ? txt_size.x : window_size.x-(skui_settings.margin*2), ui_line_height() };
-		vec3 at       = layout->offset - vec3{ skui_settings.padding, -(size.y+skui_settings.margin), 2*mm2m };
-
-		ui_text_in(text, pivot_top_left, align_center_left, text_fit_squeeze, at, size, vec2_zero);
-
-		float header_width = window_size.x == 0 ? size.x + skui_settings.padding * 2 + skui_settings.margin * 2 : size.x;
+		float header_width = window_size.x == 0
+			? text_size_layout(text, ui_get_text_style()).x + (skui_settings.padding + skui_settings.margin) * 2 
+			: window_size.x - (skui_settings.margin * 2);
 		if (win->curr_size.x < header_width)
 			win->curr_size.x = header_width;
 	}
-	win->pose = pose;
+	win->pose = *pose;
 }
-void ui_window_begin(const char *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	ui_window_begin_g<char>(text, pose, window_size, window_type, move_type);
+void ui_window_begin(const char *text, pose_t *opt_pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
+	ui_window_begin_g<char>(text, opt_pose, window_size, window_type, move_type);
 }
-void ui_window_begin_16(const char16_t *text, pose_t &pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
-	ui_window_begin_g<char16_t>(text, pose, window_size, window_type, move_type);
+void ui_window_begin_16(const char16_t *text, pose_t * opt_pose, vec2 window_size, ui_win_ window_type, ui_move_ move_type) {
+	ui_window_begin_g<char16_t>(text, opt_pose, window_size, window_type, move_type);
 }
 
 ///////////////////////////////////////////
@@ -970,8 +976,9 @@ void ui_window_end() {
 	ui_window_t* win         = ui_window_get(win_id);
 	float        line_height = ui_line_height();
 
+	matrix top = hierarchy_top();
 	ui_handle_end();
-	hierarchy_push_pose(win->pose);
+	hierarchy_push(top, hierarchy_parent_ignore);
 
 	win->prev_size.x = win->layout_size.x == 0 ? win->curr_size.x : win->layout_size.x;
 	win->prev_size.y = win->layout_size.y == 0 ? win->curr_size.y : win->layout_size.y;
@@ -988,6 +995,13 @@ void ui_window_end() {
 	}
 
 	if (win->type & ui_win_head) {
+		// draw label
+		vec2 label_size = vec2{ size.x - (skui_settings.margin + skui_settings.padding)* 2, ui_line_height() };
+		vec3 at         = win->layout_start - vec3{ skui_settings.padding + skui_settings.margin, 0, 2 * mm2m };
+
+		if (win->title_step == 1) ui_text_in((const char    *)win->title, pivot_bottom_left, align_center_left, text_fit_none, at, label_size, vec2_zero);
+		else                      ui_text_in((const char16_t*)win->title, pivot_bottom_left, align_center_left, text_fit_none, at, label_size, vec2_zero);
+
 		ui_draw_element(win->type == ui_win_head ? ui_vis_window_head_only : ui_vis_window_head, start + vec3{0,line_height,0}, { size.x, line_height, size.z }, focus);
 	}
 	if (win->type & ui_win_body) {

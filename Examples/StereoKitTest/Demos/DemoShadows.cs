@@ -17,14 +17,15 @@ class DemoShadows : ITest
 		public float  shadowMapPixelSize;
 	}
 
-	Tex[]                        shadowMap;
+	Tex                          shadowMap;
 	MaterialBuffer<ShadowBuffer> shadowBuffer;
-	ShadowBuffer                 shadowBufferLast;
+	Vec3                         lightDir = new Vec3(1,1,0).Normalized;
 
 	const float ShadowMapSize       = 2;
 	const int   ShadowMapResolution = 1024;
 	const float ShadowMapNearClip   = 0.01f;
 	const float ShadowMapFarClip    = 20.0f;
+	const int   ShadowMapVariant    = 1;
 
 	Model model;
 	Pose  modelPose = Matrix.T(0,-0.2f,0) * Demo.contentPose.Pose;
@@ -35,18 +36,21 @@ class DemoShadows : ITest
 	public void Initialize()
 	{
 		shadowBuffer = new MaterialBuffer<ShadowBuffer>();
-		shadowMap = new Tex[2]; // We're double buffering due to the way SK binds textures globally.
-		for(int i = 0; i < shadowMap.Length; i++)
-		{
-			shadowMap[i] = new Tex(TexType.Depthtarget, TexFormat.Depth16);
-			shadowMap[i].SetSize(ShadowMapResolution, ShadowMapResolution);
-			shadowMap[i].SampleMode  = TexSample.Linear;
-			shadowMap[i].SampleComp  = TexSampleComp.LessOrEq;
-			shadowMap[i].AddressMode = TexAddress.Clamp;
-		}
+		shadowMap = new Tex(TexType.Depthtarget, TexFormat.Depth16);
+		shadowMap.SetSize(ShadowMapResolution, ShadowMapResolution);
+		shadowMap.SampleMode  = TexSample.Linear;
+		shadowMap.SampleComp  = TexSampleComp.LessOrEq;
+		shadowMap.AddressMode = TexAddress.Clamp;
+		
+		Material casterMat = new Material("Shaders/basic_shadow_caster.hlsl");
+		casterMat.DepthClip = false;
+		casterMat.DepthTest = DepthTest.LessOrEq;
+		// This can help with shadow acne if biasing isn't working out, but can introduce peter-panning.
+		//casterMat.FaceCull  = Cull.Front;
 
 		Material shadowMat = new Material("Shaders/basic_shadow.hlsl");
-		shadowMat.DepthTest = DepthTest.LessOrEq;
+		shadowMat.SetVariant(ShadowMapVariant, casterMat);
+
 		Material floorMat = shadowMat.Copy();
 		floorMat[MatParamName.DiffuseTex] = Tex.FromFile("floor.png");
 		floorMat[MatParamName.TexTransform] = new Vec4(0, 0, 2, 2);
@@ -55,13 +59,9 @@ class DemoShadows : ITest
 		oldLighting = Renderer.SkyLight;
 		oldTex      = Renderer.SkyTex;
 
-		SphericalHarmonics ambient = new SphericalHarmonics();
-		ambient.Add( Vec3.UnitY, Color.HSV(0.55f, 0.3f,  0.6f).ToLinear());
-		ambient.Add(-Vec3.UnitY, Color.HSV(0.0f,  0.01f, 0.2f).ToLinear());
-		SphericalHarmonics ambientSky = ambient;
+		Renderer.SkyTex = Tex.FromCubemap(@"old_depot.hdr");
+		Renderer.SkyTex.OnLoaded += t => { Renderer.SkyLight = t.CubemapLighting; lightDir = t.CubemapLighting.DominantLightDirection; };
 
-		Renderer.SkyLight = ambient;
-		Renderer.SkyTex   = Tex.GenCubemap(ambientSky);
 		Renderer.SetGlobalBuffer(12, shadowBuffer);
 	}
 
@@ -73,14 +73,7 @@ class DemoShadows : ITest
 	}
 	public void Step()
 	{
-		// Make a direction for the light
-		const float angleX = Units.deg2rad * 45;
-		const float angleY = Units.deg2rad * 45;
-		float cosX = (float)Math.Cos(angleX);
-		float sinX = (float)Math.Sin(angleX);
-		float cosY = (float)Math.Cos(angleY);
-		float sinY = (float)Math.Sin(angleY);
-		SetupShadowMap(-V.XYZ(cosX * sinY, sinX, cosX * cosY));
+		SetupShadowMap(lightDir);
 
 		UI.Handle("Model", ref modelPose, model.Bounds);
 		model.Draw(modelPose.ToMatrix());
@@ -103,21 +96,19 @@ class DemoShadows : ITest
 
 		// Send information about the shadow map parameters to the renderer,
 		// these are used by the basic_shadow.hlsl shader.
-		shadowBuffer.Set(shadowBufferLast);
-		shadowBufferLast = new ShadowBuffer {
+		shadowBuffer.Set(new ShadowBuffer {
 			shadowMapTransform = (view.Inverse * proj).Transposed,
 			shadowMapBias      = 2 * MathF.Max(((ShadowMapFarClip - ShadowMapNearClip) / ushort.MaxValue), ShadowMapSize / ShadowMapResolution),
 			lightDirection     = -lightDir,
 			lightColor         =  V.XYZ(1,1,1),
 			shadowMapPixelSize = 1.0f / ShadowMapResolution
-		};
+		});
 
 		// Render the shadow map, and bind it globally so it can be used from
 		// any shader.
-		int renderTo   = (int) Time.Frame % shadowMap.Length;
-		int renderNext = (int)(Time.Frame+1) % shadowMap.Length;
-		Renderer.RenderTo(shadowMap[renderTo], view, proj, RenderLayer.All &~ RenderLayer.Vfx);
-		Renderer.SetGlobalTexture(12, shadowMap[renderNext]);
+		Renderer.SetGlobalTexture(12, null); // Can't draw to it if it's bound
+		Renderer.RenderTo(shadowMap, view, proj, RenderLayer.All &~ RenderLayer.Vfx, ShadowMapVariant);
+		Renderer.SetGlobalTexture(12, shadowMap);
 	}
 
 	static Model GenerateModel(Material floorMat, Material material)

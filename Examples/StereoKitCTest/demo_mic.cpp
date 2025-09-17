@@ -57,7 +57,7 @@ void switch_mic(string mic) {
 
 void demo_mic_update() {
 	// Let the user pick a microphone from the list of available devices
-	ui_window_begin("Available Microphones:", window_pose);
+	ui_window_begin("Available Microphones:", &window_pose);
 	bool32_t toggle_val = mic_active == "";
 	if (ui_toggle_sz("Default", toggle_val, vec2{0.25f,ui_line_height()}) && toggle_val)
 		switch_mic("");

@@ -408,7 +408,7 @@ void file_picker_update() {
 
 		ui_push_id("_skp");
 		hierarchy_push(render_get_cam_root());
-		ui_window_begin(fp_title, fp_win_pose, { size.x * 3 + ui_get_gutter() * 3 + line_height + ui_get_margin()*2,0 }, ui_win_normal, ui_system_get_move_type());
+		ui_window_begin(fp_title, &fp_win_pose, { size.x * 3 + ui_get_gutter() * 3 + line_height + ui_get_margin()*2,0 }, ui_win_normal, ui_system_get_move_type());
 
 		// Show the current directory address bar!
 		vec3    address_bar_start = ui_layout_at();

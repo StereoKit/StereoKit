@@ -71,7 +71,7 @@ void show_node(model_t model, model_node_id node, int32_t tab) {
 }
 
 void demo_picker_update() {
-	ui_window_begin("File Pickers", picker_win_pose);
+	ui_window_begin("File Pickers", &picker_win_pose);
 	if (ui_button("Open") && !platform_file_picker_visible())
 		platform_file_picker(picker_mode_open, nullptr, demo_picker_on_pick, picker_filter, sizeof(picker_filter) / sizeof(file_filter_t));
 	ui_sameline();

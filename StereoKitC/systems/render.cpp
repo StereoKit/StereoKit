@@ -81,6 +81,7 @@ struct render_screenshot_t {
 	render_clear_ clear;
 	tex_format_   tex_format;
 };
+
 struct render_viewpoint_t {
 	tex_t         rendertarget;
 	int32_t       rendertarget_index;
@@ -90,6 +91,43 @@ struct render_viewpoint_t {
 	render_layer_ layer_filter;
 	render_clear_ clear;
 	material_t    override_material;
+};
+
+enum render_action_type_ {
+	render_action_type_none,
+	render_action_type_viewpoint,
+	render_action_type_global_texture,
+	render_action_type_global_buffer,
+};
+
+struct render_action_viewpoint_t {
+	tex_t         rendertarget;
+	int32_t       rendertarget_index;
+	matrix        camera;
+	matrix        projection;
+	rect_t        viewport;
+	render_layer_ layer_filter;
+	int32_t       material_variant;
+	render_clear_ clear;
+};
+
+struct render_action_global_texture_t {
+	tex_t   texture;
+	int32_t slot;
+};
+
+struct render_action_global_buffer_t {
+	material_buffer_t buffer;
+	int32_t           slot;
+};
+
+struct render_action_t {
+	render_action_type_ type;
+	union {
+		render_action_viewpoint_t      viewpoint;
+		render_action_global_texture_t global_texture;
+		render_action_global_buffer_t  global_buffer;
+	};
 };
 
 ///////////////////////////////////////////
@@ -145,7 +183,7 @@ struct render_state_t {
 	material_buffer_t       global_buffers [16];
 
 	array_t<render_screenshot_t> screenshot_list;
-	array_t<render_viewpoint_t>  viewpoint_list;
+	array_t<render_action_t>     render_action_list;
 
 	mesh_t                  sky_mesh;
 	material_t              sky_mat;
@@ -175,7 +213,7 @@ skg_buffer_t *render_fill_inst_buffer (const array_t<render_transform_buffer_t>*
 void          render_reset_buffer_pool();
 void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
 
-void          render_list_prep        (render_list_t list);
+void          render_list_prep        (render_list_t list, int32_t material_variant);
 void          render_list_add         (const render_item_t *item);
 void          render_list_add_to      (render_list_t list, const render_item_t *item);
 
@@ -268,10 +306,10 @@ void render_shutdown() {
 	render_list_pop();
 	render_list_release(local.list_active);
 	render_list_release(local.list_primary);
-	local.list_stack     .free();
-	local.screenshot_list.free();
-	local.viewpoint_list .free();
-	local.instance_list  .free();
+	local.list_stack        .free();
+	local.screenshot_list   .free();
+	local.render_action_list.free();
+	local.instance_list     .free();
 
 	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
 		tex_release(local.global_textures[i]);
@@ -736,12 +774,7 @@ bool32_t render_enabled_skytex() {
 
 ///////////////////////////////////////////
 
-void render_global_texture(int32_t register_slot, tex_t texture) {
-	if (register_slot < 0 || register_slot >= _countof(local.global_textures)) {
-		log_errf("render_global_texture: Register_slot should be 0-16. Received %d.", register_slot);
-		return;
-	}
-
+void render_global_texture_internal(int32_t register_slot, tex_t texture) {
 	if (local.global_textures[register_slot] == texture) return;
 
 	if (local.global_textures[register_slot] != nullptr)
@@ -751,6 +784,23 @@ void render_global_texture(int32_t register_slot, tex_t texture) {
 
 	if (local.global_textures[register_slot] != nullptr)
 		tex_addref(local.global_textures[register_slot]);
+}
+
+///////////////////////////////////////////
+
+void render_global_texture(int32_t register_slot, tex_t texture) {
+	if (register_slot < 0 || register_slot >= _countof(local.global_textures)) {
+		log_errf("render_global_texture: Register_slot should be 0-16. Received %d.", register_slot);
+		return;
+	}
+
+	if (texture != nullptr) tex_addref(texture);
+
+	render_action_t action = {};
+	action.type = render_action_type_global_texture;
+	action.global_texture.texture = texture;
+	action.global_texture.slot    = register_slot;
+	local.render_action_list.add(action);
 }
 
 ///////////////////////////////////////////
@@ -772,7 +822,14 @@ void render_global_buffer(int32_t register_slot, material_buffer_t buffer) {
 		log_errf("render_global_buffer: bad slot id '%d', use 3-%d.", register_slot, (sizeof(local.global_buffers) / sizeof(local.global_buffers[0])) - 1);
 		return;
 	}
-	render_global_buffer_internal(register_slot, buffer);
+
+	if (buffer) material_buffer_addref(buffer);
+
+	render_action_t action = {};
+	action.type = render_action_type_global_buffer;
+	action.global_buffer.buffer = buffer;
+	action.global_buffer.slot   = register_slot;
+	local.render_action_list.add(action);
 }
 
 ///////////////////////////////////////////
@@ -813,7 +870,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 
 ///////////////////////////////////////////
 
-void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter) {
+void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter, int32_t material_variant) {
 	skg_event_begin("Render List Setup");
 
 	// A temporary fix for multiview trying to render to mono rendertargets
@@ -888,7 +945,7 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	skg_event_end();
 	skg_event_begin("Execute Render List");
 
-	render_list_execute(list, filter, inst_multiplier, 0, INT_MAX);
+	render_list_execute(list, filter, material_variant, inst_multiplier, 0, INT_MAX);
 
 	skg_event_end();
 }
@@ -937,7 +994,7 @@ void render_check_screenshots() {
 		}
 
 		// Render!
-		render_draw_queue(local.list_primary, &local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, 1, local.screenshot_list[i].layer_filter);
+		render_draw_queue(local.list_primary, &local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, 1, local.screenshot_list[i].layer_filter, 0);
 		skg_tex_target_bind(nullptr, -1, 0);
 
 		tex_t resolve_tex = tex_create_rendertarget(w, h, 1, local.screenshot_list[i].tex_format, tex_format_none);
@@ -969,44 +1026,50 @@ void render_check_screenshots() {
 
 ///////////////////////////////////////////
 
-void render_check_viewpoints() {
-	if (local.viewpoint_list.count == 0) return;
+void render_draw_viewpoint(render_action_viewpoint_t* vp) {
+	skg_event_begin("Viewpoint");
+	// Setup to render the screenshot
+	skg_tex_target_bind(&vp->rendertarget->tex, vp->rendertarget_index, 0);
 
-	skg_tex_t *old_target = skg_tex_target_get();
-	for (int32_t i = 0; i < local.viewpoint_list.count; i++) {
-		render_viewpoint_t* vp = &local.viewpoint_list[i];
-
-		skg_event_begin("Viewpoint");
-		// Setup to render the screenshot
-		skg_tex_target_bind(&vp->rendertarget->tex, vp->rendertarget_index, 0);
-
-		// Clear the viewport
-		if (vp->clear != render_clear_none) {
-			skg_target_clear(
-				(vp->clear & render_clear_depth),
-				(vp->clear & render_clear_color) ? &local.clear_col.r : (float *)nullptr);
-		}
-
-		// Set up the viewport if we've got one!
-		if (local.viewpoint_list[i].viewport.w != 0) {
-			int32_t viewport[4] = {
-				(int32_t)(vp->viewport.x * vp->rendertarget->width ),
-				(int32_t)(vp->viewport.y * vp->rendertarget->height),
-				(int32_t)(vp->viewport.w * vp->rendertarget->width ),
-				(int32_t)(vp->viewport.h * vp->rendertarget->height) };
-			skg_viewport(viewport);
-		}
-
-		// Render!
-		render_draw_queue(local.list_primary, &vp->camera, &vp->projection, 0, 1, 1, vp->layer_filter);
-		skg_tex_target_bind(nullptr, -1, 0);
-
-		// Release the reference we added, the user should have their own ref
-		tex_release(vp->rendertarget);
-		skg_event_end();
+	// Clear the viewport
+	if (vp->clear != render_clear_none) {
+		skg_target_clear(
+			(vp->clear & render_clear_depth),
+			(vp->clear & render_clear_color) ? &local.clear_col.r : (float *)nullptr);
 	}
-	local.viewpoint_list.clear();
-	skg_tex_target_bind(old_target, -1, 0);
+
+	// Set up the viewport if we've got one!
+	if (vp->viewport.w != 0) {
+		int32_t viewport[4] = {
+			(int32_t)(vp->viewport.x * vp->rendertarget->width ),
+			(int32_t)(vp->viewport.y * vp->rendertarget->height),
+			(int32_t)(vp->viewport.w * vp->rendertarget->width ),
+			(int32_t)(vp->viewport.h * vp->rendertarget->height) };
+		skg_viewport(viewport);
+	}
+
+	// Render!
+	render_draw_queue(local.list_primary, &vp->camera, &vp->projection, 0, 1, 1, vp->layer_filter, vp->material_variant);
+	skg_tex_target_bind(nullptr, -1, 0);
+
+	// Release the reference we added, the user should have their own ref
+	tex_release(vp->rendertarget);
+	skg_event_end();
+}
+
+///////////////////////////////////////////
+
+void render_action_list_execute() {
+	for (int32_t i = 0; i < local.render_action_list.count; i++) {
+		render_action_t* a = &local.render_action_list[i];
+		switch (a->type) {
+		case render_action_type_viewpoint:      render_draw_viewpoint(&a->viewpoint); break;
+		case render_action_type_global_buffer:  render_global_buffer_internal ( a->global_buffer .slot, a->global_buffer .buffer ); material_buffer_release(a->global_buffer .buffer ); break;
+		case render_action_type_global_texture: render_global_texture_internal( a->global_texture.slot, a->global_texture.texture); tex_release            (a->global_texture.texture); break;
+		default: break;
+		}
+	}
+	local.render_action_list.clear();
 }
 
 ///////////////////////////////////////////
@@ -1112,7 +1175,7 @@ void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* 
 
 ///////////////////////////////////////////
 
-void render_to(tex_t to_rendertarget, int32_t to_target_index, material_t override_material, const matrix& camera, const matrix& projection, render_layer_ layer_filter, render_clear_ clear, rect_t viewport) {
+void render_to(tex_t to_rendertarget, int32_t to_target_index, const matrix& camera, const matrix& projection, render_layer_ layer_filter, int32_t material_variant, render_clear_ clear, rect_t viewport) {
 	if (!(to_rendertarget->type & tex_type_rendertarget || to_rendertarget->type & tex_type_depthtarget || to_rendertarget->type & tex_type_zbuffer)) {
 		log_err("render_to texture must be a render target texture type!");
 		return;
@@ -1121,16 +1184,17 @@ void render_to(tex_t to_rendertarget, int32_t to_target_index, material_t overri
 
 	matrix inv_cam;
 	matrix_inverse(camera, inv_cam);
-	render_viewpoint_t viewpoint = {};
-	viewpoint.rendertarget      = to_rendertarget;
-	viewpoint.rendertarget_index= to_target_index;
-	viewpoint.camera            = inv_cam;
-	viewpoint.projection        = projection;
-	viewpoint.layer_filter      = layer_filter;
-	viewpoint.viewport          = viewport;
-	viewpoint.clear             = clear;
-	viewpoint.override_material = override_material;
-	local.viewpoint_list.add(viewpoint);
+	render_action_t action = {};
+	action.type = render_action_type_viewpoint;
+	action.viewpoint.rendertarget      = to_rendertarget;
+	action.viewpoint.rendertarget_index= to_target_index;
+	action.viewpoint.camera            = inv_cam;
+	action.viewpoint.projection        = projection;
+	action.viewpoint.layer_filter      = layer_filter;
+	action.viewpoint.viewport          = viewport;
+	action.viewpoint.clear             = clear;
+	action.viewpoint.material_variant  = material_variant;
+	local.render_action_list.add(action);
 }
 
 ///////////////////////////////////////////
@@ -1371,18 +1435,19 @@ inline void render_list_execute_run(_render_list_t *list, material_t material, c
 
 ///////////////////////////////////////////
 
-void render_list_execute(render_list_t list, render_layer_ filter, uint32_t inst_multiplier, int32_t queue_start, int32_t queue_end) {
+void render_list_execute(render_list_t list, render_layer_ filter, int32_t material_variant, uint32_t inst_multiplier, int32_t queue_start, int32_t queue_end) {
 	list->state = render_list_state_rendering;
 
 	if (list->queue.count == 0) {
 		list->state = render_list_state_rendered;
 		return;
 	}
-	render_list_prep(list);
+	render_list_prep(list, material_variant);
 	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
 	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
-	render_item_t *run_start = nullptr;
+	render_item_t *run_start    = nullptr;
+	material_t     run_material = nullptr;
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 		
@@ -1391,17 +1456,27 @@ void render_list_execute(render_list_t list, render_layer_ filter, uint32_t inst
 		// End early if we're past the end of the desired queue range
 		if (item->sort_id >= sort_id_end) break;
 
+		// Pick the right material according to the variant
+		material_t item_mat = material_variant == 0
+			? item->material
+			: item->material->variants[material_variant - 1];
+
+		// Skip if the material variant is null
+		if (item_mat == nullptr) continue;
+
 		// If it's the first in the run, record the material/mesh
 		if (run_start == nullptr) {
-			run_start = item;
+			run_start    = item;
+			run_material = item_mat;
 		}
 		// If the material/mesh changed
-		else if (run_start->material != item->material || run_start->mesh != item->mesh) {
+		else if (run_material != item_mat || run_start->mesh != item->mesh) {
 			// Render the run that just ended
-			render_list_execute_run(list, run_start->material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, inst_multiplier);
+			render_list_execute_run(list, run_material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, inst_multiplier);
 			local.instance_list.clear();
 			// Start the next run
-			run_start = item;
+			run_start    = item;
+			run_material = item_mat;
 		}
 
 		// Add the current item to the run of instances
@@ -1411,7 +1486,7 @@ void render_list_execute(render_list_t list, render_layer_ filter, uint32_t inst
 	// Render the last remaining run, which won't be triggered by the loop's
 	// conditions
 	if (local.instance_list.count > 0) {
-		render_list_execute_run(list, run_start->material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, inst_multiplier);
+		render_list_execute_run(list, run_material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, inst_multiplier);
 		local.instance_list.clear();
 	}
 
@@ -1424,61 +1499,7 @@ void render_list_execute(render_list_t list, render_layer_ filter, uint32_t inst
 
 ///////////////////////////////////////////
 
-void render_list_execute_material(render_list_t list, render_layer_ filter, uint32_t view_count, int32_t queue_start, int32_t queue_end, material_t override_material) {
-	list->state = render_list_state_rendering;
-
-	if (list->queue.count == 0) {
-		list->state = render_list_state_rendered;
-		return;
-	}
-	// TODO: this isn't entirely optimal here, this would be best if sorted
-	// solely by the mesh id since we only have one single material.
-	render_list_prep(list);
-	material_check_dirty(override_material);
-	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
-	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
-
-	render_item_t *run_start = nullptr;
-	for (int32_t i = 0; i < list->queue.count; i++) {
-		render_item_t *item = &list->queue[i];
-
-		// Skip this item if it's filtered out
-		if ((item->layer & filter) == 0 || item->sort_id < sort_id_start) continue;
-		// End early if we're past the end of the desired queue range
-		if (item->sort_id >= sort_id_end) break;
-
-		// If it's the first in the run, record the material/mesh
-		if (run_start == nullptr) {
-			run_start = item;
-		}
-		// If the mesh changed
-		else if (run_start->mesh != item->mesh) {
-			// Render the run that just ended
-			render_list_execute_run(list, override_material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
-			local.instance_list.clear();
-			// Start the next run
-			run_start = item;
-		}
-
-		// Add the current item to the run of instances
-		XMMATRIX transpose = XMMatrixTranspose(item->transform);
-		local.instance_list.add(render_transform_buffer_t{ transpose, item->color });
-	}
-	// Render the last remaining run, which won't be triggered by the loop's
-	// conditions
-	if (local.instance_list.count > 0) {
-		render_list_execute_run(list, override_material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, view_count);
-		local.instance_list.clear();
-	}
-
-	list->state = render_list_state_rendered;
-}
-
-///////////////////////////////////////////
-
-void render_list_prep(render_list_t list) {
-	if (list->prepped) return;
-
+void render_list_prep(render_list_t list, int32_t material_variant) {
 	// Sort the render queue
 	radix_sort7(&list->queue[0], list->queue.count);
 
@@ -1487,10 +1508,12 @@ void render_list_prep(render_list_t list) {
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		if (curr == list->queue[i].material) continue;
 		curr = list->queue[i].material;
-		material_check_dirty(curr);
-	}
 
-	list->prepped = true;
+		material_t check = material_variant == 0
+			? curr
+			: curr->variants[material_variant - 1];
+		if (check) material_check_dirty(check);
+	}
 }
 
 ///////////////////////////////////////////
@@ -1502,9 +1525,8 @@ void render_list_clear(render_list_t list) {
 		assets_releaseref(&list->queue[i].mesh    ->header);
 	}
 	list->queue.clear();
-	list->stats   = {};
-	list->prepped = false;
-	list->state   = render_list_state_empty;
+	list->stats = {};
+	list->state = render_list_state_empty;
 }
 
 ///////////////////////////////////////////
@@ -1581,7 +1603,7 @@ void render_list_add_model_mat(render_list_t list, model_t model, material_t mat
 
 ///////////////////////////////////////////
 
-void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color, render_clear_ clear, rect_t viewport_pct, render_layer_ layer_filter) {
+void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color, render_clear_ clear, rect_t viewport_pct, render_layer_ layer_filter, int32_t material_variant) {
 	skg_tex_t* old_target = skg_tex_target_get();
 	skg_tex_target_bind(&to_rendertarget->tex, -1, 0);
 
@@ -1601,7 +1623,7 @@ void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix came
 		(int32_t)(viewport_pct.h * to_rendertarget->height) };
 	skg_viewport(viewport_i);
 
-	render_draw_queue(list, &camera, &projection, 0, 1, 1, layer_filter);
+	render_draw_queue(list, &camera, &projection, 0, 1, 1, layer_filter, material_variant);
 
 	skg_tex_target_bind(old_target, -1, 0);
 }

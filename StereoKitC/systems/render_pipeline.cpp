@@ -44,7 +44,7 @@ void render_pipeline_begin() {
 	skg_event_end();
 	skg_event_begin("Offscreen");
 	{
-		render_check_viewpoints();
+		render_action_list_execute();
 		render_check_screenshots();
 	}
 	skg_event_end();
@@ -79,7 +79,7 @@ void render_pipeline_draw() {
 							skg_viewport(viewport);
 
 							int32_t idx = quilt_x + quilt_y * s->quilt_width + layer * s->quilt_width * s->quilt_height;
-							render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, 1, 1, s->layer);
+							render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, 1, 1, s->layer, 0);
 						}
 					}
 				}
@@ -102,7 +102,7 @@ void render_pipeline_draw() {
 					skg_viewport(viewport);
 
 					int32_t idx = quilt_x + quilt_y * s->quilt_width;
-					render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, s->array_count, inst_multiplier, s->layer);
+					render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, s->array_count, inst_multiplier, s->layer, 0);
 				} }
 			}
 		}

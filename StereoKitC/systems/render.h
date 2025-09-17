@@ -37,14 +37,14 @@ tex_format_   render_preferred_depth_fmt  ();
 void          render_blit_to_bound        (material_t material);
 void          render_set_sim_origin       (pose_t pose);
 void          render_set_sim_head         (pose_t pose);
-void          render_draw_queue           (render_list_t list, const matrix* views, const matrix* projections, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter);
+void          render_draw_queue           (render_list_t list, const matrix* views, const matrix* projections, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter, int32_t material_variant);
 void          render_check_screenshots    ();
-void          render_check_viewpoints     ();
 void          render_check_pending_skytex ();
-void          render_global_buffer_internal(int32_t register_slot, material_buffer_t buffer);
+void          render_global_buffer_internal (int32_t register_slot, material_buffer_t buffer);
+void          render_global_texture_internal(int32_t register_slot, tex_t             texture);
+void          render_action_list_execute  ();
 
 void          render_list_destroy         (      render_list_t list);
-void          render_list_execute         (      render_list_t list, render_layer_ filter, uint32_t inst_multiplier, int32_t queue_start, int32_t queue_end);
-void          render_list_execute_material(      render_list_t list, render_layer_ filter, uint32_t inst_multiplier, int32_t queue_start, int32_t queue_end, material_t override_material);
+void          render_list_execute         (      render_list_t list, render_layer_ filter, int32_t material_variant, uint32_t inst_multiplier, int32_t queue_start, int32_t queue_end);
 
 } // namespace sk

@@ -86,18 +86,19 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 	if (buff_info && buff_info->defaults != nullptr) memcpy(material->args.buffer, buff_info->defaults, buff_size);
 	else                                             memset(material->args.buffer, 0, buff_size);
 	if (buff_size != 0) {
-		material->args.buffer_dirty = true;
-
 		// Construct a material parameters buffer on the GPU, and do it
 		// threadsafe
 		struct material_job_t {
 			material_t material;
 			uint32_t   buff_size;
+			void*      buff_data;
 		};
-		material_job_t job_data = {material, buff_size};
+		material_job_t job_data = {material, buff_size, sk_malloc(buff_size)};
+		memcpy(job_data.buff_data, material->args.buffer, buff_size);
 		assets_execute_gpu([](void *data) {
 			material_job_t *job_data = (material_job_t *)data;
-			job_data->material->args.buffer_gpu = skg_buffer_create(nullptr, 1, job_data->buff_size, skg_buffer_type_constant, skg_use_dynamic);
+			job_data->material->args.buffer_gpu = skg_buffer_create(job_data->buff_data, 1, job_data->buff_size, skg_buffer_type_constant, skg_use_dynamic);
+			sk_free(job_data->buff_data);
 			return (bool32_t)true;
 		}, &job_data);
 	}
@@ -181,6 +182,10 @@ material_t material_copy(material_t material) {
 			tex_addref(result->args.textures[i].tex);
 	}
 	if (result->chain != nullptr) material_addref(result->chain);
+	for (int32_t i = 0; i < _countof(result->variants); i++) {
+		if (result->variants[i] != nullptr)
+			material_addref(result->variants[i]);
+	}
 
 	// Copy over the material's pipeline
 	result->pipeline = skg_pipeline_create(&material->shader->shader);
@@ -225,6 +230,10 @@ void material_release(material_t material) {
 ///////////////////////////////////////////
 
 void material_destroy(material_t material) {
+	for (size_t i = 0; i < _countof(material->variants); i++) {
+		if (material->variants[i])
+			material_release(material->variants[i]);
+	}
 	if (material->chain) material_release(material->chain);
 	for (int32_t i = 0; i < material->args.texture_count; i++) {
 		if (material->args.textures[i].tex != nullptr)
@@ -363,6 +372,23 @@ void material_set_chain(material_t material, material_t chain_material) {
 
 ///////////////////////////////////////////
 
+void material_set_variant(material_t material, int32_t variant_idx, material_t variant_material) {
+	if (variant_idx < 1) {
+		log_err("Variant index must be 1 or greater!");
+		return;
+	} else if (variant_idx > _countof(material->variants)) {
+		log_errf("Variant index must be less than %d!", _countof(material->variants)+1);
+		return;
+	}
+
+	int idx = variant_idx - 1;
+	if (variant_material       ) material_addref (variant_material);
+	if (material->variants[idx]) material_release(material->variants[idx]);
+	material->variants[idx] = variant_material;
+}
+
+///////////////////////////////////////////
+
 transparency_ material_get_transparency(material_t material) { 
 	return material->alpha_mode;
 }
@@ -408,6 +434,21 @@ int32_t material_get_queue_offset(material_t material) {
 material_t material_get_chain(material_t material) {
 	if (material->chain) material_addref(material->chain);
 	return material->chain;
+}
+
+///////////////////////////////////////////
+
+material_t material_get_variant(material_t material, int32_t variant_idx) {
+	if (variant_idx < 1) {
+		log_err("Variant index must be 1 or greater!");
+		return nullptr;
+	} else if (variant_idx > _countof(material->variants)) {
+		log_errf("Variant index must be less than %d!", _countof(material->variants)+1);
+		return nullptr;
+	}
+	int idx = variant_idx - 1;
+	if (material->variants[idx]) material_addref(material->variants[idx]);
+	return material->variants[idx];
 }
 
 ///////////////////////////////////////////
@@ -849,7 +890,9 @@ material_buffer_t material_buffer_create(int32_t size) {
 	_material_buffer_t* buffer = sk_malloc_t(_material_buffer_t, 1);
 	buffer->size   = size;
 	buffer->refs   = 1;
-	buffer->buffer = skg_buffer_create(nullptr, 1, size, skg_buffer_type_constant, skg_use_dynamic);
+	void* data = sk_calloc(size); // GLES can sometime interpret nullptr for data as an opportunity to optimize away the buffer, so we give it some empty data.
+	buffer->buffer = skg_buffer_create(data, 1, size, skg_buffer_type_constant, skg_use_dynamic);
+	sk_free(data);
 	return buffer;
 }
 

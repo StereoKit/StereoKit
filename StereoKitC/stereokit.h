@@ -672,6 +672,77 @@ SK_API bool32_t         device_has_hand_tracking  (void);
 
 ///////////////////////////////////////////
 
+/*A list of permissions that StereoKit knows about. On some platforms (like
+  Android), these permissions may need to be explicitly requested before using
+  certain features.*/
+typedef enum permission_type_ {
+	/*For access to microphone data, this is typically an interactive
+	  permission that the user will need to explicitly approve.
+	  
+	  This maps to android.permission.RECORD_AUDIO on Android.*/
+	permission_type_microphone,
+	/*For access to camera data, this is typically an interactive permission
+	  that the user will need to explicitly approve. SK doesn't use this
+	  permission internally yet, but is often a useful permission for XR apps.
+	  
+	  This maps to android.permission.CAMERA on Android.*/
+	permission_type_camera,
+	/*For access to input quality eye tracking data, this is typically an
+	  interactive permission that the user will need to explicitly approve.
+	  
+	  This maps to android.permission.EYE_TRACKING_FINE on Android XR, but
+	  varies per-runtime.*/
+	permission_type_eye_input,
+	/*For access to per-joint hand tracking data. Some runtimes may have this
+	  permission interactive, but many do not.
+	  
+	  This maps to android.permission.HAND_TRACKING on Android XR, but
+	  varies per-runtime.*/
+	permission_type_hand_tracking,
+	/*For access to facial expression data, this is typically an
+	  interactive permission that the user will need to explicitly approve.
+	  
+	  This maps to android.permission.FACE_TRACKING on Android XR, but
+	  varies per-runtime.*/
+	permission_type_face_tracking,
+	/*For access to data in the user's space, this can be for things like
+	  spatial anchors, plane detection, hit testing, etc. This is typically an
+	  interactive permission that the user will need to explicitly approve.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
+	  but varies per-runtime.*/
+	permission_type_scene,
+	/*This enum is for tracking the number of value in this enum.*/
+	permission_type_max,
+} permission_type_;
+
+/*Permissions can be in a variety of states, depending on how users interact
+  with them. Sometimes they're automatically granted, user denied, or just
+  unknown for the current runtime!*/
+typedef enum permission_state_ {
+	/*This permission is known to StereoKit, but not available to request.
+	  Typically this means the correct permission string is not listed in the
+	  AndroidManfiest.xml or similar.*/
+	permission_state_unavailable = -2,
+	/*This app is capable of using the permission, but it needs to be
+	  requested first with Permission.Request.*/
+	permission_state_capable     = -1,
+
+	/*StereoKit doesn't know about the permission on the current runtime. This
+	  happens when the runtime has a unique permission string (or not) and
+	  StereoKit doesn't know what it is to look up its current status.*/
+	permission_state_unknown     =  0,
+	/*This permission is entirely approved and you can go ahead and use the
+	  associated features!*/
+	permission_state_granted     =  1,
+} permission_state_;
+
+SK_API permission_state_ permission_state         (permission_type_ permission);
+SK_API bool32_t          permission_is_interactive(permission_type_ permission);
+SK_API void              permission_request       (permission_type_ permission);
+
+///////////////////////////////////////////
+
 SK_API double        time_total_raw        (void);
 SK_API float         time_totalf_unscaled  (void);
 SK_API double        time_total_unscaled   (void);
@@ -1304,6 +1375,7 @@ SK_API void              material_set_depth_write (material_t material, bool32_t
 SK_API void              material_set_depth_clip  (material_t material, bool32_t clip_enabled);
 SK_API void              material_set_queue_offset(material_t material, int32_t offset);
 SK_API void              material_set_chain       (material_t material, material_t chain_material);
+SK_API void              material_set_variant     (material_t material, int32_t variant_idx, material_t variant_material);
 SK_API transparency_     material_get_transparency(material_t material);
 SK_API cull_             material_get_cull        (material_t material);
 SK_API bool32_t          material_get_wireframe   (material_t material);
@@ -1312,6 +1384,7 @@ SK_API bool32_t          material_get_depth_write (material_t material);
 SK_API bool32_t          material_get_depth_clip  (material_t material);
 SK_API int32_t           material_get_queue_offset(material_t material);
 SK_API material_t        material_get_chain       (material_t material);
+SK_API material_t        material_get_variant     (material_t material, int32_t variant_idx);
 SK_API void              material_set_float       (material_t material, const char *name, float    value);
 SK_API void              material_set_vector2     (material_t material, const char *name, vec2     value);
 SK_API void              material_set_vector3     (material_t material, const char *name, vec3     value);
@@ -1738,7 +1811,7 @@ SK_API void                  render_screenshot     (const char *file_utf8, int32
 //TODO: for v0.4, reorder parameters, context in particular should be next to callback
 SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
 SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
-SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, material_t override_material, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
+SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 SK_API render_list_t         render_get_primary_list(void);
 
@@ -1757,7 +1830,7 @@ SK_API int32_t               render_list_prev_count   (const render_list_t list)
 SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
 SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
 SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
-SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all));
+SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0));
 
 SK_API void                  render_list_push         (      render_list_t list);
 SK_API void                  render_list_pop          (void);

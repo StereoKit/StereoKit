@@ -79,7 +79,7 @@ void demo_bvh_init() {
 
 void demo_bvh_update() {
 	static pose_t window_pose = pose_t{ {0.6f,0,-0.25f}, quat_lookat({0.25f,0.0f,0.0f}, {0,0,0}) };
-	ui_window_begin("Options", window_pose, vec2{ 24 }*cm2m);
+	ui_window_begin("Options", &window_pose, vec2{ 24 }*cm2m);
 
 	if (ui_button("Load Model")) {
 		file_filter_t picker_filter[] = { {".glb"}, {".gltf"} };

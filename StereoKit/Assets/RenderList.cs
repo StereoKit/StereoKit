@@ -126,8 +126,14 @@ namespace StereoKit
 		/// change which layers StereoKit renders for this particular render
 		/// viewpoint. To change what layers a visual is on, use a Draw
 		/// method that includes a RenderLayer as a parameter.</param>
-		public void DrawNow(Tex toRenderTarget, Matrix camera, Matrix projection, Color clearColor = default, RenderClear clear = RenderClear.All, Rect viewportPct = default, RenderLayer layerFilter = RenderLayer.All)
-			=> NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, camera, projection, clearColor, clear, viewportPct, layerFilter);
+		/// <param name="materialVariant">Specifies which Material variant
+		/// should be used for rendering. 0 will be the normal default
+		/// material, any others will generally be application-defined by
+		/// setting up each Material's Variant with specific shaders. If a
+		/// Material has no corresponding variant, it will not be drawn.
+		/// </param>
+		public void DrawNow(Tex toRenderTarget, Matrix camera, Matrix projection, Color clearColor = default, RenderClear clear = RenderClear.All, Rect viewportPct = default, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0)
+			=> NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, camera, projection, clearColor, clear, viewportPct, layerFilter, materialVariant);
 
 		/// <summary>The default RenderList used by the Renderer for the
 		/// primary display surface.</summary>

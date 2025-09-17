@@ -710,8 +710,8 @@ button_state_ ui_last_element_active() {
 		const _interactor_t* actor = &local.interactors[i];
 		if (gen_is_dead(actor->generation)) continue;
 
-		was_active = was_active || (actor->active_prev == local.last_element);
-		is_active  = is_active  || (actor->active      == local.last_element);
+		was_active = was_active || (actor->active_prev == local.last_element && local.last_element != 0);
+		is_active  = is_active  || (actor->active      == local.last_element && local.last_element != 0);
 	}
 	return button_make_state(was_active, is_active);
 }
@@ -728,8 +728,8 @@ button_state_ ui_last_element_focused() {
 		// Because focus can change at any point during the frame, we'll check
 		// against the last two frame's focus ids, which are set in stone after the
 		// frame ends.
-		was_focused = was_focused || (actor->focused_prev_prev == local.last_element);
-		is_focused  = is_focused  || (actor->focused_prev      == local.last_element);
+		was_focused = was_focused || (actor->focused_prev_prev == local.last_element && local.last_element != 0);
+		is_focused  = is_focused  || (actor->focused_prev      == local.last_element && local.last_element != 0);
 	}
 	return button_make_state(was_focused, is_focused);
 }
