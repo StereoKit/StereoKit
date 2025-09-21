@@ -961,6 +961,7 @@ SK_DeclarePrivateType(gradient_t);
 SK_DeclarePrivateType(mesh_t);
 SK_DeclarePrivateType(tex_t);
 SK_DeclarePrivateType(font_t);
+SK_DeclarePrivateType(compute_shader_t);
 SK_DeclarePrivateType(shader_t);
 SK_DeclarePrivateType(material_t);
 SK_DeclarePrivateType(material_buffer_t);
@@ -1229,14 +1230,24 @@ SK_API font_t       font_create_family      (const char *font_family);
 
 ///////////////////////////////////////////
 
-SK_API shader_t     shader_find             (const char *id);
-SK_API shader_t     shader_create_file      (const char *filename_utf8);
-SK_API shader_t     shader_create_mem       (void *data, size_t data_size);
-SK_API void         shader_set_id           (shader_t shader, const char *id);
-SK_API const char*  shader_get_id           (const shader_t shader);
-SK_API const char*  shader_get_name         (shader_t shader);
-SK_API void         shader_addref           (shader_t shader);
-SK_API void         shader_release          (shader_t shader);
+SK_API shader_t         shader_find            (const char *id);
+SK_API shader_t         shader_create_file     (const char *filename_utf8);
+SK_API shader_t         shader_create_mem      (void *data, size_t data_size);
+SK_API void             shader_set_id          (      shader_t shader, const char *id);
+SK_API const char*      shader_get_id          (const shader_t shader);
+SK_API const char*      shader_get_name        (const shader_t shader);
+SK_API void             shader_addref          (      shader_t shader);
+SK_API void             shader_release         (      shader_t shader);
+
+SK_API compute_shader_t compute_shader_find       (const char *id);
+SK_API compute_shader_t compute_shader_from       (      shader_t         shader);
+SK_API void             compute_shader_set_id     (      compute_shader_t shader, const char *id);
+SK_API const char*      compute_shader_get_id     (const compute_shader_t shader);
+SK_API void             compute_shader_addref     (      compute_shader_t shader);
+SK_API void             compute_shader_release    (      compute_shader_t shader);
+SK_API void             compute_shader_execute    (      compute_shader_t shader);
+SK_API bool32_t         compute_shader_set_texture(      compute_shader_t shader, const char *name, tex_t             value);
+SK_API bool32_t         compute_shader_set_buffer (      compute_shader_t shader, const char *name, material_buffer_t value);
 
 ///////////////////////////////////////////
 
@@ -2692,6 +2703,8 @@ typedef enum asset_type_ {
 	asset_type_tex,
 	/*A Shader.*/
 	asset_type_shader,
+	/*A Compute Shader.*/
+	asset_type_compute_shader,
 	/*A Material.*/
 	asset_type_material,
 	/*A Model.*/

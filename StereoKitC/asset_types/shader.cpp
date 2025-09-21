@@ -48,7 +48,7 @@ void shader_update_label(shader_t shader) {
 
 ///////////////////////////////////////////
 
-const char *shader_get_name(shader_t shader) {
+const char *shader_get_name(const shader_t shader) {
 	return shader->shader.meta->name;
 }
 

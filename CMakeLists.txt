@@ -806,6 +806,7 @@ if (SK_BUILD_TESTS)
     "-O3 -f ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
     Examples/StereoKitCTest/Shaders/blit.hlsl
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
+    Examples/Assets/Shaders/compute_test.hlsl
     Examples/StereoKitCTest/Shaders/skt_light_only.hlsl)
 
   #target_link_options   (StereoKitCTest PRIVATE ${SK_LINKER_FLAGS})

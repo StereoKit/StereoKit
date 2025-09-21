@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2024 Nick Klingensmith
-// Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
 
 #include "assets.h"
 #include "../_stereokit.h"
@@ -144,16 +144,17 @@ asset_header_t* assets_allocate_no_add(asset_type_ type, const char** out_type_s
 	size_t      size      = sizeof(asset_header_t);
 	const char* type_name = "asset";
 	switch(type) {
-	case asset_type_mesh:        size = sizeof(_mesh_t );       type_name = "mesh";        break;
-	case asset_type_tex:         size = sizeof(_tex_t);         type_name = "tex";         break;
-	case asset_type_shader:      size = sizeof(_shader_t);      type_name = "shader";      break;
-	case asset_type_material:    size = sizeof(_material_t);    type_name = "material";    break;
-	case asset_type_model:       size = sizeof(_model_t);       type_name = "model";       break;
-	case asset_type_font:        size = sizeof(_font_t);        type_name = "font";        break;
-	case asset_type_sprite:      size = sizeof(_sprite_t);      type_name = "sprite";      break;
-	case asset_type_sound:       size = sizeof(_sound_t);       type_name = "sound";       break;
-	case asset_type_anchor:      size = sizeof(_anchor_t);      type_name = "anchor";      break;
-	case asset_type_render_list: size = sizeof(_render_list_t); type_name = "render_list"; break;
+	case asset_type_mesh:           size = sizeof(_mesh_t );          type_name = "mesh";           break;
+	case asset_type_tex:            size = sizeof(_tex_t);            type_name = "tex";            break;
+	case asset_type_shader:         size = sizeof(_shader_t);         type_name = "shader";         break;
+	case asset_type_compute_shader: size = sizeof(_compute_shader_t); type_name = "compute_shader"; break;
+	case asset_type_material:       size = sizeof(_material_t);       type_name = "material";       break;
+	case asset_type_model:          size = sizeof(_model_t);          type_name = "model";          break;
+	case asset_type_font:           size = sizeof(_font_t);           type_name = "font";           break;
+	case asset_type_sprite:         size = sizeof(_sprite_t);         type_name = "sprite";         break;
+	case asset_type_sound:          size = sizeof(_sound_t);          type_name = "sound";          break;
+	case asset_type_anchor:         size = sizeof(_anchor_t);         type_name = "anchor";         break;
+	case asset_type_render_list:    size = sizeof(_render_list_t);    type_name = "render_list";    break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -269,16 +270,17 @@ void assets_destroy(asset_header_t *asset) {
 
 	// Call asset specific destroy function
 	switch(asset->type) {
-	case asset_type_mesh:        mesh_destroy       ((mesh_t       )asset); break;
-	case asset_type_tex:         tex_destroy        ((tex_t        )asset); break;
-	case asset_type_shader:      shader_destroy     ((shader_t     )asset); break;
-	case asset_type_material:    material_destroy   ((material_t   )asset); break;
-	case asset_type_model:       model_destroy      ((model_t      )asset); break;
-	case asset_type_font:        font_destroy       ((font_t       )asset); break;
-	case asset_type_sprite:      sprite_destroy     ((sprite_t     )asset); break;
-	case asset_type_sound:       sound_destroy      ((sound_t      )asset); break;
-	case asset_type_anchor:      anchor_destroy     ((anchor_t     )asset); break;
-	case asset_type_render_list: render_list_destroy((render_list_t)asset); break;
+	case asset_type_mesh:           mesh_destroy          ((mesh_t          )asset); break;
+	case asset_type_tex:            tex_destroy           ((tex_t           )asset); break;
+	case asset_type_shader:         shader_destroy        ((shader_t        )asset); break;
+	case asset_type_compute_shader: compute_shader_destroy((compute_shader_t)asset); break;
+	case asset_type_material:       material_destroy      ((material_t      )asset); break;
+	case asset_type_model:          model_destroy         ((model_t         )asset); break;
+	case asset_type_font:           font_destroy          ((font_t          )asset); break;
+	case asset_type_sprite:         sprite_destroy        ((sprite_t        )asset); break;
+	case asset_type_sound:          sound_destroy         ((sound_t         )asset); break;
+	case asset_type_anchor:         anchor_destroy        ((anchor_t        )asset); break;
+	case asset_type_render_list:    render_list_destroy   ((render_list_t   )asset); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 

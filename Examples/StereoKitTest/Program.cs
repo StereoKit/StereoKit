@@ -91,6 +91,8 @@ class Program
 			WindowDemoShow = true;
 			SK.AddStepper<DebugToolWindow>();
 		}
+
+		Shader sh = Shader.FromFile("Shaders/compute_test.hlsl");
 	}
 
 	//////////////////////

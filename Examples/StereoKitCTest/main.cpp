@@ -171,6 +171,9 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 	return 0;
 }
 
+#include "compute_test.hlsl.h"
+shader_t test_shader;
+
 void common_init() {
 	// Create a PBR floor material
 	tex_t tex_color = tex_create_file("test.png");
@@ -215,6 +218,8 @@ void common_init() {
 		device_display_get_fov().bottom);
 	log_infof("Display Hz:    %.1f", device_display_get_refresh_rate());
 	log_infof("Display Size:  %d<~BLK>x<~clr>%d", device_display_get_width(), device_display_get_height());
+
+	test_shader = shader_create_mem((void*)sks_compute_test_hlsl, sizeof(sks_compute_test_hlsl));
 }
 
 void common_update() {
