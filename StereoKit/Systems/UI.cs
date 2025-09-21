@@ -32,14 +32,14 @@ namespace StereoKit
 		/// <summary>Shows or hides the collision volumes of the UI! This is
 		/// for debug purposes, and can help identify visible and invisible
 		/// collision issues.</summary>
-		public static bool ShowVolumes { set { NativeAPI.ui_show_volumes(value); } }
+		public static bool ShowVolumes { set { NativeAPI.ui_show_volumes(NB.Int(value)); } }
 
 		/// <summary>Enables or disables the far ray grab interaction for
 		/// Handle elements like the Windows. It can be enabled and disabled
 		/// for individual UI elements, and if this remains disabled at the
 		/// start of the next frame, then the hand ray indicators will not be
 		/// visible. This is enabled by default. </summary>
-		public static bool EnableFarInteract { get => NativeAPI.ui_far_interact_enabled(); set { NativeAPI.ui_enable_far_interact(value); } }
+		public static bool EnableFarInteract { get => NB.Bool(NativeAPI.ui_far_interact_enabled()); set { NativeAPI.ui_enable_far_interact(NB.Int(value)); } }
 
 		/// <summary>This is the UIMove that is provided to UI windows that
 		/// StereoKit itself manages, such as the fallback filepicker and
@@ -56,7 +56,7 @@ namespace StereoKit
 
 		/// <summary>This returns the current state of the UI's enabled status
 		/// stack, set by `UI.Push/PopEnabled`.</summary>
-		public static bool Enabled => NativeAPI.ui_is_enabled();
+		public static bool Enabled => NB.Bool(NativeAPI.ui_is_enabled());
 
 		/// <summary>How much space is available on the current layout! This is
 		/// based on the current layout position, so X will give you the amount
@@ -97,7 +97,7 @@ namespace StereoKit
 		/// <returns>Returns the Hierarchy local bounds of the space that was
 		/// reserved, with a Z axis dimension of 0.</returns>
 		public static Bounds LayoutReserve(Vec2 size, bool addPadding = false, float depth = 0)
-			=> NativeAPI.ui_layout_reserve(size, addPadding, depth);
+			=> NativeAPI.ui_layout_reserve(size, NB.Int(addPadding), depth);
 
 		/// <summary>Reserves a box of space for an item in the current UI
 		/// layout! If either size axis is zero, it will be auto-sized to fill
@@ -121,7 +121,7 @@ namespace StereoKit
 		/// <returns>Returns the Hierarchy local bounds of the space that was
 		/// reserved, with a Z axis dimension of 0.</returns>
 		public static Bounds LayoutReserve(float width, float height, bool addPadding = false, float depth = 0)
-			=> NativeAPI.ui_layout_reserve(new Vec2(width, height), addPadding, depth);
+			=> NativeAPI.ui_layout_reserve(new Vec2(width, height), NB.Int(addPadding), depth);
 
 		/// <summary>This pushes a layout rect onto the layout stack. All UI
 		/// elements using the layout system will now exist inside this layout
@@ -136,7 +136,7 @@ namespace StereoKit
 		/// <param name="addMargin">Adds a spacing margin to the interior of
 		/// the layout. Most of the time you won't need this, but may be useful
 		/// when working without a Window.</param>
-		public static void LayoutPush(Vec3 start, Vec2 dimensions, bool addMargin = false) => NativeAPI.ui_layout_push(start, dimensions, addMargin);
+		public static void LayoutPush(Vec3 start, Vec2 dimensions, bool addMargin = false) => NativeAPI.ui_layout_push(start, dimensions, NB.Int(addMargin));
 		/// <summary>This cuts off a portion of the current layout area, and
 		/// pushes that new area onto the layout stack. Left and Top cuts will
 		/// always work, but Right and Bottom cuts can only exist inside of a
@@ -153,7 +153,7 @@ namespace StereoKit
 		/// <param name="addMargin">Adds a spacing margin to the interior of
 		/// the layout. Most of the time you won't need this, but may be useful
 		/// when working without a Window.</param>
-		public static void LayoutPushCut(UICut cutTo, float sizeMeters, bool addMargin = false) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters, addMargin);
+		public static void LayoutPushCut(UICut cutTo, float sizeMeters, bool addMargin = false) => NativeAPI.ui_layout_push_cut(cutTo, sizeMeters, NB.Int(addMargin));
 		/// <summary>This removes a layout from the layout stack that was
 		/// previously added using LayoutPush, or LayoutPushCut.</summary>
 		public static void LayoutPop() => NativeAPI.ui_layout_pop();
@@ -190,7 +190,7 @@ namespace StereoKit
 		/// <returns>True if the hand has an active or focused UI element.
 		/// False otherwise.</returns>
 		public static bool IsInteracting(Handed hand)
-			=> NativeAPI.ui_is_interacting(hand);
+			=> NB.Bool(NativeAPI.ui_is_interacting(hand));
 
 		/// <summary>This allows you to explicitly set a theme color, for finer
 		/// grained control over the UI appearance. Each theme type is still
@@ -276,7 +276,7 @@ namespace StereoKit
 		/// <param name="dimensions">The size of the layout area from the top
 		/// left, in local meters.</param>
 		public static void LayoutArea(Vec3 start, Vec2 dimensions, bool addMargin = true)
-			=> NativeAPI.ui_layout_area(start, dimensions, addMargin);
+			=> NativeAPI.ui_layout_area(start, dimensions, NB.Int(addMargin));
 
 		/// <summary>Moves the current layout position back to the end of the
 		/// line that just finished, so it can continue on the same line as the
@@ -311,14 +311,24 @@ namespace StereoKit
 		/// <param name="focusState">The focus state tells if the element has
 		/// a hand inside of the volume that qualifies for focus.</param>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand, out BtnState focusState)
-			=> NativeAPI.ui_volume_at_16(id, bounds, interactType, out hand, out focusState);
+		{ unsafe {
+			fixed (BtnState* focusStatePtr = &focusState)
+			fixed (Handed*   handPtr       = &hand)
+			fixed (char*     idPtr         =  id)
+			return NativeAPI.ui_volume_at_16(idPtr, bounds, interactType, handPtr, focusStatePtr);
+		} }
 
 		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
 		/// <param name="hand">This will be the last unpreoccupied hand found
 		/// inside the volume, and is the hand controlling the interaction.
 		/// </param>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand)
-			=> NativeAPI.ui_volume_at_16(id, bounds, interactType, out hand, IntPtr.Zero);
+		{ unsafe {
+			fixed (Handed* handPtr = &hand)
+			fixed (char*   idPtr   =  id)
+			return NativeAPI.ui_volume_at_16(idPtr, bounds, interactType, handPtr, null);
+		} }
+
 		/// <summary>A volume for helping to build one handed interactions.
 		/// This checks for the presence of a hand inside the bounds, and if
 		/// found, return that hand along with activation and focus 
@@ -334,7 +344,10 @@ namespace StereoKit
 		/// <returns>Based on the interactType, this is a BtnState that tells
 		/// the activation state of the interaction.</returns>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType)
-			=> NativeAPI.ui_volume_at_16(id, bounds, interactType, IntPtr.Zero, IntPtr.Zero);
+		{ unsafe {
+			fixed (char* idPtr = id)
+			return NativeAPI.ui_volume_at_16(idPtr, bounds, interactType, null, null);
+		} }
 
 		/// <summary>This draws a line horizontally across the current
 		/// layout. Makes a good separator between sections of UI!</summary>
@@ -349,8 +362,11 @@ namespace StereoKit
 		/// <param name="usePadding">Should padding be included for
 		/// positioning this text? Sometimes you just want un-padded text!
 		/// </param>
-		public static void Label (string text, bool usePadding = true)
-			=> NativeAPI.ui_label_16(text, usePadding);
+		public static void Label(string text, bool usePadding = true)
+		{ unsafe {
+			fixed (char* textPtr = text)
+			NativeAPI.ui_label_16(textPtr, NB.Int(usePadding));
+		} }
 
 		/// <summary>Adds some text to the layout, but this overload allows you
 		/// can specify the size that you want it to use. Text uses the UI's
@@ -366,7 +382,10 @@ namespace StereoKit
 		/// positioning this text? Sometimes you just want un-padded text!
 		/// </param>
 		public static void Label(string text, Vec2 size, bool usePadding = true)
-			=> NativeAPI.ui_label_sz_16(text, size, usePadding);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			NativeAPI.ui_label_sz_16(textPtr, size, NB.Int(usePadding));
+		} }
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -379,7 +398,10 @@ namespace StereoKit
 		/// within its bounds? Align.TopLeft is how most English text is
 		/// aligned.</param>
 		public static void Text(string text, Align textAlign = Align.TopLeft)
-			=> NativeAPI.ui_text_16(text, IntPtr.Zero, UIScroll.None, 0, textAlign, TextFit.Wrap);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			NativeAPI.ui_text_16(textPtr, null, UIScroll.None, 0, textAlign, TextFit.Wrap); 
+		} }
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -399,7 +421,10 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static void Text(string text, Align textAlign, TextFit fit, Vec2 size)
-			=> NativeAPI.ui_text_sz_16(text, IntPtr.Zero, UIScroll.None, size, textAlign, fit);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			NativeAPI.ui_text_sz_16(textPtr, null, UIScroll.None, size, textAlign, fit);
+		} }
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -419,7 +444,10 @@ namespace StereoKit
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space.</param>
 		public static void TextAt(string text, Align textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_text_at_16(text, IntPtr.Zero, UIScroll.None, textAlign, fit, topLeftCorner, size);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			NativeAPI.ui_text_at_16(textPtr, null, UIScroll.None, textAlign, fit, topLeftCorner, size);
+		} }
 
 		/// <summary>A scrolling text element! This is for reading large chunks
 		/// of text that may be too long to fit in the available space. It
@@ -445,7 +473,11 @@ namespace StereoKit
 		/// <returns>Returns true if any of the scroll bars have changed this
 		/// frame.</returns>
 		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, Vec2 size, Align textAlign = Align.TopLeft, TextFit fit = TextFit.Wrap)
-			=> NativeAPI.ui_text_sz_16(text, ref scroll, scrollDirection, size, textAlign, fit);
+		{ unsafe {
+			fixed (char* textPtr   = text)
+			fixed (Vec2* scrollPtr = &scroll)
+			return NB.Bool(NativeAPI.ui_text_sz_16(textPtr, scrollPtr, scrollDirection, size, textAlign, fit));
+		} }
 
 		/// <summary>A scrolling text element! This is for reading large chunks
 		/// of text that may be too long to fit in the available space. It
@@ -472,7 +504,11 @@ namespace StereoKit
 		/// <returns>Returns true if any of the scroll bars have changed this
 		/// frame.</returns>
 		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, float height, Align textAlign = Align.TopLeft, TextFit fit = TextFit.Wrap)
-			=> NativeAPI.ui_text_16(text, ref scroll, scrollDirection, height, textAlign, fit);
+		{ unsafe {
+			fixed (char* textPtr   = text)
+			fixed (Vec2* scrollPtr = &scroll)
+			return NB.Bool(NativeAPI.ui_text_16(textPtr, scrollPtr, scrollDirection, height, textAlign, fit));
+		} }
 
 		/// <inheritdoc cref="Text(string, ref Vec2, UIScroll, Vec2, Align, TextFit)"/>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
@@ -480,14 +516,20 @@ namespace StereoKit
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space.</param>
 		public static bool TextAt(string text, ref Vec2 scroll, UIScroll scrollDirection, Align textAlign, TextFit fit, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_text_at_16(text, ref scroll, scrollDirection, textAlign, fit, topLeftCorner, size);
+		{
+			unsafe
+			{
+				fixed (Vec2* scrollPtr = &scroll)
+					return NativeAPI.ui_text_at_16(text, scrollPtr, scrollDirection, textAlign, fit, topLeftCorner, size);
+			}
+		}
 
 		/// <summary>Adds an image to the UI!</summary>
 		/// <param name="image">A valid sprite.</param>
 		/// <param name="size">Size in Hierarchy local meters. If one of the
 		/// components is 0, it'll be automatically determined from the other
 		/// component and the image's aspect ratio.</param>
-		public static void Image (Sprite image, Vec2 size) 
+		public static void Image(Sprite image, Vec2 size)
 			=> NativeAPI.ui_image(image?._inst ?? IntPtr.Zero, size);
 
 		/// <summary>A pressable button! A button will expand to fit the text
@@ -499,7 +541,7 @@ namespace StereoKit
 		/// </param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
-		public static bool Button (string text) 
+		public static bool Button(string text)
 			=> NativeAPI.ui_button_16(text);
 
 		/// <inheritdoc cref="Button(string)"/>
@@ -539,7 +581,7 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
-			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, new Color(1,1,1,1));
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, new Color(1, 1, 1, 1));
 
 		/// <summary>A pressable button accompanied by an image! The button
 		/// will expand to fit the text provided to it, horizontally. Text is
@@ -566,7 +608,7 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1,1,1,1));
+			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1, 1, 1, 1));
 
 		/// <inheritdoc cref="ButtonImg(string,Sprite,Color,UIBtnLayout)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
@@ -725,7 +767,7 @@ namespace StereoKit
 		/// means it's toggled on, and false means it's toggled off.</param>
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
-		public static bool Toggle (string text, ref bool value)
+		public static bool Toggle(string text, ref bool value)
 			=> NativeAPI.ui_toggle_16(text, ref value);
 
 
@@ -921,15 +963,24 @@ namespace StereoKit
 		/// one is shown to the user.</param>
 		/// <returns>Returns true every time the contents of 'value' change.
 		/// </returns>
-		public static bool Input(string id, ref string value, Vec2 size = new Vec2(), TextContext type = TextContext.Text) {
-			StringBuilder builder = value != null
-				? new StringBuilder(value, value.Length + 16)
-				: new StringBuilder(16);
+		public static bool Input(string id, ref string value, Vec2 size = new Vec2(), TextContext type = TextContext.Text)
+		{
+			// Allocate buffer
+			const int extra = 16;
+			Span<char> buffer = stackalloc char[(value?.Length ?? 0) + extra];
 
-			if (NativeAPI.ui_input_16(id, builder, builder.Capacity, size, type))
+			// Copy initial value into buffer
+			if (!string.IsNullOrEmpty(value))
+				value.AsSpan().CopyTo(buffer);
+
+			unsafe
 			{
-				value = builder.ToString();
-				return true;
+				fixed (char* ptr = buffer)
+					if (NativeAPI.ui_input_16(id, ptr, buffer.Length, size, type))
+					{
+						value = new string(ptr);
+						return true;
+					}
 			}
 			return false;
 		}
@@ -953,14 +1004,22 @@ namespace StereoKit
 		/// </returns>
 		public static bool InputAt(string id, ref string value, Vec3 topLeftCorner, Vec2 size, TextContext type = TextContext.Text)
 		{
-			StringBuilder builder = value != null
-				? new StringBuilder(value, value.Length + 16)
-				: new StringBuilder(16);
+			// Allocate buffer
+			const int extra = 16;
+			Span<char> buffer = stackalloc char[(value?.Length ?? 0) + extra];
 
-			if (NativeAPI.ui_input_at_16(id, builder, builder.Capacity, topLeftCorner, size, type))
+			// Copy initial value into buffer
+			if (!string.IsNullOrEmpty(value))
+				value.AsSpan().CopyTo(buffer);
+
+			unsafe
 			{
-				value = builder.ToString();
-				return true;
+				fixed (char* ptr = buffer)
+					if (NativeAPI.ui_input_at_16(id, ptr, buffer.Length, topLeftCorner, size, type))
+					{
+						value = new string(ptr);
+						return true;
+					}
 			}
 			return false;
 		}
@@ -987,7 +1046,7 @@ namespace StereoKit
 		/// right. This allows you to flip the fill direction to right to left.
 		/// </param>
 		public static void HProgressBar(float percent, float width = 0, bool flipFillDirection = false)
-			=> NativeAPI.ui_hprogress_bar(percent, width, flipFillDirection);
+			=> NativeAPI.ui_hprogress_bar(percent, width, NB.Int(flipFillDirection));
 
 		/// <summary>This is a simple vertical progress indicator bar. This
 		/// is used by the VSlider to draw the slider bar beneath the
@@ -1000,7 +1059,7 @@ namespace StereoKit
 		/// bottom. This allows you to flip the fill direction to bottom to 
 		/// top.</param>
 		public static void VProgressBar(float percent, float height = 0, bool flipFillDirection = false)
-			=> NativeAPI.ui_vprogress_bar(percent, height, flipFillDirection);
+			=> NativeAPI.ui_vprogress_bar(percent, height, NB.Int(flipFillDirection));
 
 		/// <summary>This is a simple horizontal progress indicator bar. This
 		/// is used by the HSlider to draw the slider bar beneath the
@@ -1012,7 +1071,7 @@ namespace StereoKit
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space.</param>
 		public static void ProgressBarAt(float percent, Vec3 topLeftCorner, Vec2 size, UIDir barDirection = UIDir.Horizontal, bool flipFillDirection = false)
-			=> NativeAPI.ui_progress_bar_at(percent, topLeftCorner, size, barDirection, flipFillDirection);
+			=> NativeAPI.ui_progress_bar_at(percent, topLeftCorner, size, barDirection, NB.Int(flipFillDirection));
 
 		/// <summary>A horizontal slider element! You can stick your finger 
 		/// in it, and slide the value up and down.</summary>
@@ -1035,7 +1094,7 @@ namespace StereoKit
 		/// <param name="notifyOn">Allows you to modify the behavior of the
 		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool HSlider(string id, ref float value, float min, float max, float step = 0, float width = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change) 
+		public static bool HSlider(string id, ref float value, float min, float max, float step = 0, float width = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
 			=> NativeAPI.ui_hslider_16(id, ref value, min, max, step, width, confirmMethod, notifyOn);
 
 		/// <summary>A horizontal slider element! You can stick your finger 
@@ -1135,7 +1194,7 @@ namespace StereoKit
 		/// <param name="notifyOn">Allows you to modify the behavior of the
 		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
-		public static bool VSlider(string id, ref float value, float min, float max, float step = 0, float height = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change) 
+		public static bool VSlider(string id, ref float value, float min, float max, float step = 0, float height = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
 			=> NativeAPI.ui_vslider_16(id, ref value, min, max, step, height, confirmMethod, notifyOn);
 
 		/// <summary>A vertical slider element! You can stick your finger
@@ -1236,13 +1295,13 @@ namespace StereoKit
 		/// interacting with this Handle?</param>
 		/// <returns>Returns true for every frame the user is grabbing the
 		/// handle.</returns>
-		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
-			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType, allowedGestures);
+		public static bool HandleBegin(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
+			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, NB.Int(drawHandle), moveType, allowedGestures);
 
 		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
 		/// and all elements have been drawn. Pops the pose transform pushed
 		/// by UI.HandleBegin() from the hierarchy stack.</summary>
-		public static void HandleEnd   ()
+		public static void HandleEnd()
 			=> NativeAPI.ui_handle_end();
 
 		/// <summary>This begins and ends a handle so you can just use  its 
@@ -1267,7 +1326,7 @@ namespace StereoKit
 		/// handle.</returns>
 		public static bool Handle(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
 		{
-			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType, allowedGestures);
+			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, NB.Int(drawHandle), moveType, allowedGestures);
 			NativeAPI.ui_handle_end();
 			return result;
 		}
@@ -1285,7 +1344,9 @@ namespace StereoKit
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
 		public static void WindowBegin(string text, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
-			=> NativeAPI.ui_window_begin_16(text, IntPtr.Zero, Vec2.Zero, windowType, moveType);
+		{
+			unsafe { NativeAPI.ui_window_begin_16(text, null, Vec2.Zero, windowType, moveType); }
+		}
 
 		/// <summary>Begins a new window! This will push an automatically
 		/// determined pose onto the transform stack, and all UI elements will
@@ -1304,7 +1365,9 @@ namespace StereoKit
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
 		public static void WindowBegin(string text, Vec2 size, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
-			=> NativeAPI.ui_window_begin_16(text, IntPtr.Zero, size, windowType, moveType);
+		{
+			unsafe { NativeAPI.ui_window_begin_16(text, null, size, windowType, moveType); }
+		}
 
 		/// <summary>Begins a new window! This will push a pose onto the 
 		/// transform stack, and all UI elements will be relative to that new 
@@ -1325,7 +1388,14 @@ namespace StereoKit
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
 		public static void WindowBegin(string text, ref Pose pose, Vec2 size, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
-			=> NativeAPI.ui_window_begin_16(text, ref pose, size, windowType, moveType);
+		{
+			unsafe
+			{
+				Pose posePin = pose;
+				NativeAPI.ui_window_begin_16(text, &posePin, size, windowType, moveType);
+				pose = posePin;
+			}
+		}
 
 		/// <summary>Begins a new window! This will push a pose onto the 
 		/// transform stack, and all UI elements will be relative to that new 
@@ -1344,7 +1414,14 @@ namespace StereoKit
 		/// <param name="moveType">Describes how the window will move when 
 		/// dragged around.</param>
 		public static void WindowBegin(string text, ref Pose pose, UIWin windowType = UIWin.Normal, UIMove moveType = UIMove.FaceUser)
-			=> NativeAPI.ui_window_begin_16(text, ref pose, Vec2.Zero, windowType, moveType);
+		{
+			unsafe
+			{
+				Pose posePin = pose;
+				NativeAPI.ui_window_begin_16(text, &posePin, Vec2.Zero, windowType, moveType);
+				pose = posePin;
+			}
+		}
 
 		/// <summary>Finishes a window! Must be called after UI.WindowBegin()
 		/// and all elements have been drawn.</summary>
@@ -1381,7 +1458,7 @@ namespace StereoKit
 		/// will NOT hide the keyboard. If false, interaction will hide the
 		/// keyboard.</param>
 		public static void PushPreserveKeyboard(bool preserveKeyboard)
-			=> NativeAPI.ui_push_preserve_keyboard(preserveKeyboard);
+			=> NativeAPI.ui_push_preserve_keyboard(NB.Int(preserveKeyboard));
 
 		/// <summary>This pops the keyboard presentation state to what it was
 		/// previously.</summary>
@@ -1394,7 +1471,7 @@ namespace StereoKit
 		/// by a PopGrabAura call.</summary>
 		/// <param name="enabled">Is the grab aura enabled or not?</param>
 		public static void PushGrabAura(bool enabled)
-			=> NativeAPI.ui_push_grab_aura(enabled);
+			=> NativeAPI.ui_push_grab_aura(NB.Int(enabled));
 
 		/// <summary>This removes an enabled status for grab auras from the
 		/// stack, returning it to the state before the previous PushGrabAura
@@ -1408,7 +1485,7 @@ namespace StereoKit
 		/// </summary>
 		/// <returns>The enabled value at the top of the stack.</returns>
 		public static bool GrabAuraEnabled()
-			=> NativeAPI.ui_grab_aura_enabled();
+			=> NB.Bool(NativeAPI.ui_grab_aura_enabled());
 
 		/// <summary>This pushes a Text Style onto the style stack! All text
 		/// elements rendered by the GUI system will now use this styling.
@@ -1447,7 +1524,7 @@ namespace StereoKit
 		/// state of the current stack?</param>
 		[Obsolete("Use override with HierarchyParent parameter")]
 		public static void PushEnabled(bool enabled, bool ignoreParent)
-			=> NativeAPI.ui_push_enabled(enabled, ignoreParent ? HierarchyParent.Ignore : HierarchyParent.Inherit);
+			=> NativeAPI.ui_push_enabled(NB.Int(enabled), ignoreParent ? HierarchyParent.Ignore : HierarchyParent.Inherit);
 
 		/// <summary>All UI between PushEnabled and its matching PopEnabled
 		/// will set the UI to an enabled or disabled state, allowing or
@@ -1458,7 +1535,7 @@ namespace StereoKit
 		/// <param name="parentBehavior">Do we want to ignore or inherit the
 		/// state of the current stack?</param>
 		public static void PushEnabled(bool enabled, HierarchyParent parentBehavior = HierarchyParent.Inherit)
-			=> NativeAPI.ui_push_enabled(enabled, parentBehavior);
+			=> NativeAPI.ui_push_enabled(NB.Int(enabled), parentBehavior);
 
 		/// <summary>Removes an 'enabled' state from the stack, and whatever
 		/// was below will then be used as the primary enabled state.</summary>
@@ -1651,7 +1728,7 @@ namespace StereoKit
 		/// <returns>The final Mesh, ready for use in SK's theming system.</returns>
 		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, params UILathePt[] lathePts)
 		{
-			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, true, lathePts, lathePts.Length);
+			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, NB.Int(deleteFlatSides), 1, lathePts, lathePts.Length);
 			return result != IntPtr.Zero ? new Mesh(result) : null;
 		}
 
@@ -1662,7 +1739,7 @@ namespace StereoKit
 		/// the rounded button may be exceptions.</param>
 		public static Mesh GenQuadrantMesh(UICorner roundedCorners, float cornerRadius, uint cornerResolution, bool deleteFlatSides, bool quadrantify, params UILathePt[] lathePts)
 		{
-			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, deleteFlatSides, quadrantify, lathePts, lathePts.Length);
+			IntPtr result = NativeAPI.ui_gen_quadrant_mesh(roundedCorners, cornerRadius, cornerResolution, NB.Int(deleteFlatSides), NB.Int(quadrantify), lathePts, lathePts.Length);
 			return result != IntPtr.Zero ? new Mesh(result) : null;
 		}
 
@@ -1693,13 +1770,21 @@ namespace StereoKit
 		/// <param name="focusState">This is the current frame's "focus" state
 		/// for the button.</param>
 		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
-			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState, out _);
+		{
+			unsafe { NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState, null); }
+		}
 
 		/// <inheritdoc cref="ButtonBehavior(Vec3, Vec2, string, out float, out BtnState, out BtnState)"/>
 		/// <param name="hand">Id of the hand that interacted with the button.
 		/// This will be -1 if no interaction has occurred.</param>
-		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out int hand)
-			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState, out hand);
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out Interactor interactor)
+		{
+			unsafe
+			{
+				fixed (Interactor* interactorPtr = &interactor)
+				NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState, interactorPtr);
+			}
+		}
 
 		/// <summary>This is the core functionality of StereoKit's buttons,
 		/// without any of the rendering parts! If you're trying to create your
@@ -1724,10 +1809,17 @@ namespace StereoKit
 		/// state for the button.</param>
 		/// <param name="focusState">This is the current frame's "focus" state
 		/// for the button.</param>
-		/// <param name="hand">Id of the hand that interacted with the button.
-		/// This will be -1 if no interaction has occurred.</param>
-		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, float buttonDepth, float buttonActivationDepth, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out int hand)
-			=> NativeAPI.ui_button_behavior_depth(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), buttonDepth, buttonActivationDepth, out fingerOffset, out buttonState, out focusState, out hand);
+		/// <param name="interactor">Id of the Interactor that interacted with
+		/// the button. This will be `Interactor.None` if no interaction has
+		/// occurred.</param>
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, float buttonDepth, float buttonActivationDepth, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out Interactor interactor)
+		{
+			unsafe
+			{
+				fixed(Interactor* interactorPtr = &interactor)
+				NativeAPI.ui_button_behavior_depth(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), buttonDepth, buttonActivationDepth, out fingerOffset, out buttonState, out focusState, interactorPtr);
+			}
+		}
 
 		/// <summary>This is the core functionality of StereoKit's slider
 		/// elements, without any of the rendering parts! If you're trying to

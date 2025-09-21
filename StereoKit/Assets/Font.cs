@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace StereoKit {
 	/// <summary>This class represents a text font asset! On the back-end, this asset
@@ -17,8 +16,8 @@ namespace StereoKit {
 		/// them later on!</summary>
 		public string Id
 		{
-			get => Marshal.PtrToStringAnsi(NativeAPI.font_get_id(_inst));
-			set => NativeAPI.font_set_id(_inst, value);
+			get { unsafe { return NU8.Str(NativeAPI.font_get_id(_inst)); } }
+			set { unsafe { byte* val = NU8.Bytes(value); NativeAPI.font_set_id(_inst, val); NU8.Free(val); } }
 		}
 
 		internal Font(IntPtr font)
@@ -30,8 +29,11 @@ namespace StereoKit {
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Font()
 		{
-			if (_inst != IntPtr.Zero)
-				NativeAPI.assets_releaseref_threadsafe(_inst);
+			unsafe
+			{
+				if (_inst != IntPtr.Zero)
+					NativeAPI.assets_releaseref_threadsafe((void*)_inst);
+			}
 		}
 
 		/// <summary>Searches the asset list for a font with the given Id, returning null if
@@ -40,7 +42,13 @@ namespace StereoKit {
 		/// <returns>An existing font asset, or null if none is found.</returns>
 		public static Font Find(string fontId)
 		{
-			IntPtr fontInst = NativeAPI.font_find(fontId);
+			IntPtr fontInst;
+			unsafe
+			{
+				byte* fontIdBytes = NU8.Bytes(fontId);
+				fontInst = NativeAPI.font_find(fontIdBytes);
+				NU8.Free(fontIdBytes);
+			}
 			if (fontInst == IntPtr.Zero)
 			{
 				Log.Warn($"Couldn't find a font named {fontId}");
@@ -69,7 +77,13 @@ namespace StereoKit {
 		/// fallback fonts, hence there will always be a set of fonts.</returns>
 		public static Font FromFamily(string fontFamily)
 		{
-			IntPtr inst = NativeAPI.font_create_family(fontFamily);
+			IntPtr inst;
+			unsafe
+			{
+				byte* fontFamilyBytes = NU8.Bytes(fontFamily);
+				inst = NativeAPI.font_create_family(fontFamilyBytes);
+				NU8.Free(fontFamilyBytes);
+			}
 			return inst == IntPtr.Zero ? null : new Font(inst);
 		}
 

@@ -33,6 +33,8 @@ bool   tex_load_image_info(void* data, size_t data_size, bool32_t srgb_data, tex
 void   tex_update_label   (tex_t texture);
 size_t tex_format_pitch   (tex_format_ format, int32_t width);
 void  _tex_set_options    (skg_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level);
+bool  _tex_valid_lighting_source(const tex_t cubemap_texture, bool log);
+bool  _tex_get_cubemap_lighting (const tex_t cubemap_texture, spherical_harmonics_t* out_lighting);
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
 const char *tex_msg_invalid_fmt           = "Texture invalid format: %s";
@@ -461,11 +463,11 @@ tex_t tex_create_rendertarget(int32_t width, int32_t height, int32_t msaa, tex_f
 	if (color_format == tex_format_none && depth_format != tex_format_none) {
 		result = tex_create(tex_type_image_nomips | tex_type_depthtarget, depth_format);
 
-		tex_set_color_arr(result, width, height, nullptr, 1, msaa, nullptr);
+		tex_set_color_arr(result, width, height, nullptr, 1, msaa);
 	} else {
 		result = tex_create(tex_type_image_nomips | tex_type_rendertarget, color_format);
 
-		tex_set_color_arr(result, width, height, nullptr, 1, msaa, nullptr);
+		tex_set_color_arr(result, width, height, nullptr, 1, msaa);
 		if (depth_format != tex_format_none)
 			tex_add_zbuffer(result, depth_format);
 	}
@@ -799,7 +801,7 @@ void tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	assets_unique_name(asset_type_tex, "sk/tex/zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex_create(tex_type_depth, format);
 	tex_set_id       (texture->depth_buffer, id);
-	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->tex.array_count, texture->tex.multisample, nullptr);
+	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->tex.array_count, texture->tex.multisample);
 	skg_tex_attach_depth(&texture->tex, &texture->depth_buffer->tex);
 	texture->depth_buffer->header.state = asset_state_loaded;
 }
@@ -971,7 +973,7 @@ void tex_on_load_remove(tex_t texture, void (*on_load)(tex_t texture, void *cont
 
 ///////////////////////////////////////////
 
-void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
+void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample) {
 	profiler_zone();
 
 	bool dynamic        = texture->type & tex_type_dynamic;
@@ -1002,7 +1004,7 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		tex_set_meta(texture, width, height, texture->format);
 
 		if (texture->depth_buffer != nullptr) {
-			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, multisample, nullptr);
+			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->tex.array_count, multisample);
 			tex_set_zbuffer  (texture, texture->depth_buffer);
 		}
 		tex_update_label(texture);
@@ -1013,8 +1015,10 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 	}
 
 	if (skg_tex_is_valid(&texture->tex)) {
-		if (sh_lighting_info != nullptr)
-			*sh_lighting_info = tex_get_cubemap_lighting(texture);
+		if (_tex_valid_lighting_source(texture, false)) {
+			texture->light_info = sk_malloc_t(spherical_harmonics_t, 1);
+			_tex_get_cubemap_lighting(texture, texture->light_info);
+		}
 
 		tex_set_fallback(texture, nullptr);
 		texture->header.state = asset_state_loaded;
@@ -1026,13 +1030,13 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t multisample, spherical_harmonics_t* out_sh_lighting_info) {
-	tex_set_color_arr_mips(texture, width, height, array_data, array_count, 1, multisample, out_sh_lighting_info);
+void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t multisample) {
+	tex_set_color_arr_mips(texture, width, height, array_data, array_count, 1, multisample);
 }
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample, spherical_harmonics_t * out_sh_lighting_info) {
+void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample) {
 	profiler_zone();
 
 	struct tex_upload_job_t {
@@ -1042,18 +1046,17 @@ void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void *
 		void                 **array_data;
 		int32_t                array_count;
 		int32_t                mip_count;
-		spherical_harmonics_t *sh_lighting_info;
 		int32_t                multisample;
 	};
-	tex_upload_job_t job_data = {texture, width, height, array_data, array_count, mip_count, out_sh_lighting_info, multisample};
+	tex_upload_job_t job_data = {texture, width, height, array_data, array_count, mip_count, multisample};
 
 	// OpenGL doesn't like multiple threads, but D3D is fine with it.
 	if (backend_graphics_get() == backend_graphics_d3d11) {
-		_tex_set_color_arr(job_data.texture, job_data.width, job_data.height, job_data.array_data, job_data.array_count, job_data.mip_count, job_data.sh_lighting_info, job_data.multisample);
+		_tex_set_color_arr(job_data.texture, job_data.width, job_data.height, job_data.array_data, job_data.array_count, job_data.mip_count, job_data.multisample);
 	} else {
 		assets_execute_gpu([](void *data) {
 			tex_upload_job_t *job_data = (tex_upload_job_t *)data;
-			_tex_set_color_arr(job_data->texture, job_data->width, job_data->height, job_data->array_data, job_data->array_count, job_data->mip_count, job_data->sh_lighting_info, job_data->multisample);
+			_tex_set_color_arr(job_data->texture, job_data->width, job_data->height, job_data->array_data, job_data->array_count, job_data->mip_count, job_data->multisample);
 			return (bool32_t)true; 
 		}, &job_data);
 	}
@@ -1103,6 +1106,48 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 
 ///////////////////////////////////////////
 
+bool _tex_valid_lighting_source(const tex_t cubemap_texture, bool log) {
+	skg_tex_t* tex = &cubemap_texture->tex;
+
+	if (tex->width != tex->height || tex->array_count != 6) {
+		if (log) log_warn("Invalid texture size for calculating spherical harmonics. Must be an equirect image, or have 6 images all same width and height.");
+		return false;
+	}
+	else if (!(tex->format == skg_tex_fmt_rgba32 || tex->format == skg_tex_fmt_rgba32_linear || tex->format == skg_tex_fmt_rgba64f || tex->format == skg_tex_fmt_rgba128 || tex->format == tex_format_rg11b10)) {
+		if (log) log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32, rg11b10, rgba64f or rgba128.");
+		return false;
+	}
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool _tex_get_cubemap_lighting(const tex_t cubemap_texture, spherical_harmonics_t *out_lighting) {
+	*out_lighting = {};
+
+	skg_tex_t* tex = &cubemap_texture->tex;
+
+	if (!_tex_valid_lighting_source(cubemap_texture, true))
+		return false;
+
+	int32_t  mip_level = maxi((int32_t)0, (int32_t)skg_mip_count(tex->width, tex->height) - 6);
+	int32_t  mip_w, mip_h;
+	skg_mip_dimensions(tex->width, tex->height, mip_level, &mip_w, &mip_h);
+	size_t   face_size = skg_tex_fmt_memory(tex->format, mip_w, mip_h);
+	size_t   cube_size = face_size * 6;
+	uint8_t* cube_color_data = (uint8_t*)sk_malloc(cube_size);
+	void* data[6];
+	for (int32_t f = 0; f < 6; f++) {
+		data[f] = cube_color_data + face_size * f;
+		skg_tex_get_mip_contents_arr(tex, mip_level, f, data[f], face_size);
+	}
+	*out_lighting = sh_calculate(data, cubemap_texture->format, mip_w);
+	sk_free(cube_color_data);
+	return true;
+}
+
+///////////////////////////////////////////
+
 spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 	profiler_zone();
 
@@ -1110,35 +1155,14 @@ spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 
 	skg_tex_t *tex = &cubemap_texture->tex;
 
-	if (cubemap_texture->light_info != nullptr)
-		return *cubemap_texture->light_info;
-
-	// If they want spherical harmonics, lets calculate it for them, or give
-	// them a good error message!
-	if (tex->width != tex->height || tex->array_count != 6) {
-		log_warn("Invalid texture size for calculating spherical harmonics. Must be an equirect image, or have 6 images all same width and height.");
-		return {};
-	} else if (!(tex->format == skg_tex_fmt_rgba32 || tex->format == skg_tex_fmt_rgba32_linear || tex->format == skg_tex_fmt_rgba64f || tex->format == skg_tex_fmt_rgba128 || tex->format == tex_format_rg11b10)) {
-		log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32, rg11b10, rgba64f or rgba128.");
-		return {};
-	} else {
-		int32_t  mip_level = maxi((int32_t)0, (int32_t)skg_mip_count(tex->width, tex->height) - 6);
-		int32_t  mip_w, mip_h;
-		skg_mip_dimensions(tex->width, tex->height, mip_level, &mip_w, &mip_h);
-		size_t   face_size       = skg_tex_fmt_memory(tex->format, mip_w, mip_h);
-		size_t   cube_size       = face_size * 6;
-		uint8_t *cube_color_data = (uint8_t*)sk_malloc(cube_size);
-		void    *data[6];
-		for (int32_t f = 0; f < 6; f++) {
-			data[f] = cube_color_data + face_size * f;
-			skg_tex_get_mip_contents_arr(tex, mip_level, f, data[f], face_size);
+	if (cubemap_texture->light_info == nullptr) {
+		spherical_harmonics_t lighting;
+		if (!_tex_get_cubemap_lighting(cubemap_texture, &lighting)) {
+			cubemap_texture->light_info = sk_malloc_t(spherical_harmonics_t, 1);
+			*cubemap_texture->light_info = lighting;
 		}
-
-		cubemap_texture ->light_info = sk_malloc_t(spherical_harmonics_t, 1);
-		*cubemap_texture->light_info = sh_calculate(data, cubemap_texture->format, mip_w);
-		sk_free(cube_color_data);
-		return *cubemap_texture->light_info;
 	}
+	return cubemap_texture->light_info ? *cubemap_texture->light_info : spherical_harmonics_t{};
 }
 
 ///////////////////////////////////////////
@@ -1328,7 +1352,7 @@ void tex_set_meta(tex_t texture, int32_t width, int32_t height, tex_format_ form
 
 ///////////////////////////////////////////
 
-void tex_get_data(tex_t texture, void* out_data, size_t out_data_size, int32_t mip_level) {
+void tex_get_data(tex_t texture, void* ref_color_buffer, size_t color_buffer_size, int32_t mip_level) {
 	if (mip_level > tex_get_mips(texture)) {
 		log_warn("Cannot retrieve invalid mip-level!");
 		return;
@@ -1338,20 +1362,20 @@ void tex_get_data(tex_t texture, void* out_data, size_t out_data_size, int32_t m
 
 	struct tex_data_job_t {
 		tex_t   texture;
-		void*   out_data;
-		size_t  out_data_size;
+		void*   ref_color_buffer;
+		size_t  color_buffer_size;
 		int32_t mip_level;
 	};
-	tex_data_job_t job_data = { texture, out_data, out_data_size, mip_level };
+	tex_data_job_t job_data = { texture, ref_color_buffer, color_buffer_size, mip_level };
 
 	bool32_t result = assets_execute_gpu([](void *data) {
 		tex_data_job_t *job_data = (tex_data_job_t *)data;
-		return (bool32_t)skg_tex_get_mip_contents(&job_data->texture->tex, job_data->mip_level, job_data->out_data, job_data->out_data_size);
+		return (bool32_t)skg_tex_get_mip_contents(&job_data->texture->tex, job_data->mip_level, job_data->ref_color_buffer, job_data->color_buffer_size);
 	}, &job_data);
 
 	if (!result) {
 		log_warn("Couldn't get texture contents!");
-		memset(out_data, 0, out_data_size);
+		memset(ref_color_buffer, 0, color_buffer_size);
 	}
 }
 
@@ -1467,7 +1491,7 @@ tex_t tex_gen_particle(int32_t width, int32_t height, float roundness, gradient_
 
 ///////////////////////////////////////////
 
-tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info) {
+tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution) {
 	tex_t result = tex_create(tex_type_image | tex_type_cubemap, tex_format_rg11b10);
 	if (result == nullptr) {
 		return nullptr;
@@ -1522,9 +1546,6 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 	for (int32_t i = 0; i < 6; i++) {
 		sk_free(data[i]);
 	}
-
-	if (out_sh_lighting_info != nullptr)
-		*out_sh_lighting_info = tex_get_cubemap_lighting(result);
 
 	return result;
 }

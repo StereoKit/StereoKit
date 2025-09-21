@@ -98,14 +98,18 @@ namespace StereoKit
 		/// </param>
 		/// <returns>The bounds that also encapsulate the provided transformed
 		/// box.</returns>
-		public Bounds Grown (Bounds box, Matrix boxTransform)
-			=> NativeAPI.bounds_grow_to_fit_box(this, box, boxTransform);
+		public Bounds Grown(Bounds box, Matrix boxTransform)
+		{
+			unsafe { return NativeAPI.bounds_grow_to_fit_box(this, box, &boxTransform); }
+		}
 		/// <summary>Grow the Bounds to encapsulate the provided box.</summary>
 		/// <param name="box">The box to encapsulate!</param>
 		/// <returns>The bounds that also encapsulate the provided box.
 		/// </returns>
-		public Bounds Grown (Bounds box)
-			=> NativeAPI.bounds_grow_to_fit_box(this, box, IntPtr.Zero);
+		public Bounds Grown(Bounds box)
+		{
+			unsafe { return NativeAPI.bounds_grow_to_fit_box(this, box, null); }
+		}
 		/// <summary>This returns a Bounds that encapsulates the transformed
 		/// points of the current Bounds's corners. Note that this will likely
 		/// introduce a lot of extra empty volume in many cases, as the result
@@ -128,7 +132,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurred, false if not.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Ray ray, out Vec3 at)
-			=> NativeAPI.bounds_ray_intersect(this, ray, out at);
+		{ unsafe { fixed (Vec3* atPtr = &at) return NB.Bool(NativeAPI.bounds_ray_intersect(this, ray, atPtr)); } }
 
 		/// <summary>Does the Bounds contain the given point? This includes
 		/// points that are on the surface of the Bounds.</summary>
@@ -137,7 +141,7 @@ namespace StereoKit
 		/// <returns>True if the point is on, or in the Bounds.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Contains(Vec3 pt)
-			=> NativeAPI.bounds_point_contains(this, pt);
+			=> NB.Bool(NativeAPI.bounds_point_contains(this, pt));
 
 		/// <summary>Does the Bounds contain or intersects with the given line?
 		/// </summary>
@@ -147,7 +151,7 @@ namespace StereoKit
 		/// </returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Contains(Vec3 linePt1, Vec3 linePt2)
-			=> NativeAPI.bounds_line_contains(this, linePt1, linePt2);
+			=> NB.Bool(NativeAPI.bounds_line_contains(this, linePt1, linePt2));
 
 		/// <summary>Does the bounds contain or intersect with the given
 		/// capsule?</summary>
@@ -157,7 +161,7 @@ namespace StereoKit
 		/// <returns>True if the capsule is in, or intersects with the 
 		/// bounds.</returns>
 		public bool Contains(Vec3 linePt1, Vec3 linePt2, float radius)
-			=> NativeAPI.bounds_capsule_contains(this, linePt1, linePt2, radius);
+			=> NB.Bool(NativeAPI.bounds_capsule_contains(this, linePt1, linePt2, radius));
 
 		/// <summary>Scale this bounds. It will scale the center as well as	the dimensions!
 		///  Modifies this bounds object.</summary>

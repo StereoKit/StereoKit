@@ -77,7 +77,7 @@ namespace StereoKit
 			/// extensions via `OpenXR.RequestExt`, and this can be used to
 			/// opt-in to extensions that StereoKit would normally request
 			/// automatically.</summary>
-			public static bool UseMinimumExts { set { NativeLib.Load(); NativeAPI.backend_openxr_use_minimum_exts(value); } }
+			public static bool UseMinimumExts { set { NativeLib.Load(); NativeAPI.backend_openxr_use_minimum_exts(NB.Int(value)); } }
 
 			/// <summary>This tells if an OpenXR extension has been requested
 			/// and successfully loaded by the runtime. This MUST only be
@@ -85,7 +85,8 @@ namespace StereoKit
 			/// <param name="extensionName">The extension name as listed in the
 			/// OpenXR spec. For example: "XR_EXT_hand_tracking".</param>
 			/// <returns>If the extension is available to use.</returns>
-			public static bool ExtEnabled(string extensionName) => NativeAPI.backend_openxr_ext_enabled(extensionName);
+			public static bool ExtEnabled(string extensionName)
+			{ unsafe { byte* bytes = NU8.Bytes(extensionName); bool result = NB.Bool(NativeAPI.backend_openxr_ext_enabled(bytes)); NU8.Free(bytes); return result; } }
 
 			/// <summary>This is basically `xrGetInstanceProcAddr` from OpenXR,
 			/// you can use this to get and call functions from an extension
@@ -95,7 +96,8 @@ namespace StereoKit
 			/// <returns>A function pointer, or null on failure. You can use 
 			/// `Marshal.GetDelegateForFunctionPointer` to turn this into a
 			/// delegate that you can call.</returns>
-			public static IntPtr GetFunctionPtr(string functionName) => NativeAPI.backend_openxr_get_function(functionName);
+			public static IntPtr GetFunctionPtr(string functionName)
+			{ unsafe { byte* bytes = NU8.Bytes(functionName); IntPtr result = (IntPtr)NativeAPI.backend_openxr_get_function(bytes); NU8.Free(bytes); return result; } }
 
 			/// <summary>This is basically `xrGetInstanceProcAddr` from OpenXR,
 			/// you can use this to get and call functions from an extension
@@ -103,11 +105,14 @@ namespace StereoKit
 			/// to turn the result into a delegate that you can call.</summary>
 			/// <param name="functionName"></param>
 			/// <returns>A delegate, or null on failure.</returns>
-			public static TDelegate GetFunction<TDelegate>(string functionName) {
-				IntPtr fn = NativeAPI.backend_openxr_get_function(functionName);
+			public static TDelegate GetFunction<TDelegate>(string functionName)
+			{ unsafe {
+				byte*  functionNameBytes = NU8.Bytes(functionName);
+				IntPtr fn                = (IntPtr)NativeAPI.backend_openxr_get_function(functionNameBytes);
+				NU8.Free(functionNameBytes);
 				if (fn == IntPtr.Zero) return default;
 				return Marshal.GetDelegateForFunctionPointer<TDelegate>(fn);
-			}
+			} }
 
 			/// <summary>This sets a scaling value for joints provided by the
 			/// articulated hand extension. Some systems just don't seem to get
@@ -126,7 +131,8 @@ namespace StereoKit
 			/// <param name="extensionName">The extension name as listed in the
 			/// OpenXR spec. For example: "XR_EXT_hand_tracking".</param>
 			public  static void RequestExt (string extensionName) { NativeLib.Load(); _RequestExt(extensionName); }
-			private static void _RequestExt(string extensionName) => NativeAPI.backend_openxr_ext_request(extensionName);
+			private static void _RequestExt(string extensionName)
+			{ unsafe { byte* bytes = NU8.Bytes(extensionName); NativeAPI.backend_openxr_ext_request(bytes); NU8.Free(bytes); } }
 
 			/// <summary>This ensures that StereoKit does not load a particular
 			/// extension! StereoKit will behave as if the extension is not
@@ -136,7 +142,8 @@ namespace StereoKit
 			/// <param name="extensionName">The extension name as listed in the
 			/// OpenXR spec. For example: "XR_EXT_hand_tracking".</param>
 			public  static void ExcludeExt (string extensionName) { NativeLib.Load(); _ExcludeExt(extensionName); }
-			private static void _ExcludeExt(string extensionName) => NativeAPI.backend_openxr_ext_exclude(extensionName);
+			private static void _ExcludeExt(string extensionName)
+			{ unsafe { byte* bytes = NU8.Bytes(extensionName); NativeAPI.backend_openxr_ext_exclude(bytes); NU8.Free(bytes); } }
 
 			/// <summary>This allows you to add XrCompositionLayers to the list
 			/// that StereoKit submits to xrEndFrame. You must call this every
@@ -151,14 +158,11 @@ namespace StereoKit
 			/// other composition layers in the list. The primary projection
 			/// layer that StereoKit renders to is at 0, -1 would be before it,
 			/// and +1 would be after.</param>
-			public static void AddCompositionLayer<T>(T XrCompositionLayerX, int sortOrder) where T : struct
-			{
-				int    size = Marshal.SizeOf<T>();
-				IntPtr ptr  = Marshal.AllocHGlobal(size);
-				Marshal.StructureToPtr(XrCompositionLayerX, ptr, false);
-				NativeAPI.backend_openxr_composition_layer( ptr, size, sortOrder);
-				Marshal.FreeHGlobal(ptr);
-			}
+			public static void AddCompositionLayer<T>(T XrCompositionLayerX, int sortOrder) where T : unmanaged
+			{ unsafe {
+				int size = Marshal.SizeOf<T>();
+				NativeAPI.backend_openxr_composition_layer(&XrCompositionLayerX, size, sortOrder);
+			} }
 
 			/// <summary>This adds an item to the chain of objects submitted to
 			/// StereoKit's xrEndFrame call!</summary>
@@ -166,14 +170,11 @@ namespace StereoKit
 			/// follows the OpenXR data struct pattern.</typeparam>
 			/// <param name="XrBaseHeader">An OpenXR object that will be
 			/// chained into the xrEndFrame call.</param>
-			public static void AddEndFrameChain<T>(T XrBaseHeader) where T : struct
-			{
-				int    size = Marshal.SizeOf<T>();
-				IntPtr ptr  = Marshal.AllocHGlobal(size);
-				Marshal.StructureToPtr(XrBaseHeader, ptr, false);
-				NativeAPI.backend_openxr_end_frame_chain(ptr, size);
-				Marshal.FreeHGlobal(ptr);
-			}
+			public static void AddEndFrameChain<T>(T XrBaseHeader) where T : unmanaged
+			{ unsafe {
+				int size = Marshal.SizeOf<T>();
+				NativeAPI.backend_openxr_end_frame_chain(&XrBaseHeader, size);
+			} }
 
 			private static event Action _onPreCreateSession;
 			private static bool         _onPreCreateSessionRegistered = false;
@@ -250,15 +251,15 @@ namespace StereoKit
 			/// <summary>This is the `JavaVM*` object that StereoKit uses on
 			/// Android. This is only valid after SK.Initialize, on Android
 			/// systems.</summary>
-			public static IntPtr JavaVM => NativeAPI.backend_android_get_java_vm();
+			public static IntPtr JavaVM { get { unsafe { return (IntPtr)NativeAPI.backend_android_get_java_vm(); } } }
 			/// <summary>This is the `jobject` activity that StereoKit uses on
 			/// Android. This is only valid after SK.Initialize, on Android
 			/// systems.</summary>
-			public static IntPtr Activity => NativeAPI.backend_android_get_activity();
+			public static IntPtr Activity { get { unsafe { return (IntPtr)NativeAPI.backend_android_get_activity(); } } }
 			/// <summary>This is the `JNIEnv*` object that StereoKit uses on
 			/// Android. This is only valid after SK.Initialize, on Android
 			/// systems.</summary>
-			public static IntPtr JNIEnvironment => NativeAPI.backend_android_get_jni_env();
+			public static IntPtr JNIEnvironment { get { unsafe { return (IntPtr)NativeAPI.backend_android_get_jni_env(); } } }
 		}
 
 		/// <summary>When using Direct3D11 for rendering, this contains a
@@ -268,10 +269,10 @@ namespace StereoKit
 		{
 			/// <summary>This is the main `ID3D11Device*` StereoKit uses for
 			/// rendering.</summary>
-			public static IntPtr D3DDevice  => NativeAPI.backend_d3d11_get_d3d_device();
+			public static IntPtr D3DDevice { get { unsafe { return (IntPtr)NativeAPI.backend_d3d11_get_d3d_device(); } } }
 			/// <summary>This is the main `ID3D11DeviceContext*` StereoKit uses
 			/// for rendering.</summary>
-			public static IntPtr D3DContext => NativeAPI.backend_d3d11_get_d3d_context();
+			public static IntPtr D3DContext { get { unsafe { return (IntPtr)NativeAPI.backend_d3d11_get_d3d_context(); } } }
 		}
 
 		/// <summary>When using OpenGL with the WGL loader for rendering, this
@@ -283,10 +284,10 @@ namespace StereoKit
 		{
 			/// <summary>This is the Handle to Device Context `HDC` StereoKit
 			/// uses with `wglMakeCurrent`.</summary>
-			public static IntPtr HDC => NativeAPI.backend_opengl_wgl_get_hdc();
+			public static IntPtr HDC { get { unsafe { return (IntPtr)NativeAPI.backend_opengl_wgl_get_hdc(); } } }
 			/// <summary>This is the Handle to an OpenGL Rendering Context
 			/// `HGLRC` StereoKit uses with `wglMakeCurrent`.</summary>
-			public static IntPtr HGLRC => NativeAPI.backend_opengl_wgl_get_hglrc();
+			public static IntPtr HGLRC { get { unsafe { return (IntPtr)NativeAPI.backend_opengl_wgl_get_hglrc(); } } }
 		}
 
 		/// <summary>When using OpenGL with the GLX loader for rendering, this
@@ -297,13 +298,13 @@ namespace StereoKit
 		{
 			/// <summary>This is the `Display*` from X used to create the GLX
 			/// context.</summary>
-			public static IntPtr Display  => NativeAPI.backend_opengl_glx_get_display();
+			public static IntPtr Display { get { unsafe { return (IntPtr)NativeAPI.backend_opengl_glx_get_display(); } } }
 			/// <summary>This is the `GLXContext` that StereoKit uses with
 			/// `glXMakeCurrent`</summary>
-			public static IntPtr Context  => NativeAPI.backend_opengl_glx_get_context();
+			public static IntPtr Context { get { unsafe { return (IntPtr)NativeAPI.backend_opengl_glx_get_context(); } } }
 			/// <summary>This is the `GLXDrawable` that StereoKit uses with
 			/// `glXMakeCurrent`.</summary>
-			public static IntPtr Drawable => NativeAPI.backend_opengl_glx_get_drawable();
+			public static IntPtr Drawable { get { unsafe { return (IntPtr)NativeAPI.backend_opengl_glx_get_drawable(); } } }
 		}
 
 		/// <summary>When using OpenGL ES with the EGL loader for rendering,
@@ -316,10 +317,10 @@ namespace StereoKit
 		{
 			/// <summary>This is the `EGLDisplay` StereoKit receives from
 			/// `eglGetDisplay`</summary>
-			public static IntPtr Display => NativeAPI.backend_opengl_egl_get_display();
+			public static IntPtr Display { get { unsafe { return (IntPtr)NativeAPI.backend_opengl_egl_get_display(); } } }
 			/// <summary>This is the `EGLContext` StereoKit receives from
 			/// `eglCreateContext`.</summary>
-			public static IntPtr Context => NativeAPI.backend_opengl_egl_get_context();
+			public static IntPtr Context { get { unsafe { return (IntPtr)NativeAPI.backend_opengl_egl_get_context(); } } }
 		}
 		
 	}

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using System.Threading;
 
 namespace StereoKit
@@ -100,13 +101,25 @@ namespace StereoKit
 			}
 		}
 
-		[DllImport("kernel32", CharSet = CharSet.Unicode)]
-		static extern IntPtr LoadLibraryW(string fileName);
+		[DllImport("kernel32")]
+		static unsafe extern IntPtr LoadLibraryW(ushort* fileName);
 		static bool LoadWindows(string arch)
 		{
-			if (LoadLibraryW($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/win-{arch}/native/StereoKitC.dll") != IntPtr.Zero) return true;
-			if (LoadLibraryW("StereoKitC") != IntPtr.Zero) return true;
-			return false;
+			bool result = false;
+			unsafe
+			{
+				ushort* filename = Utf16StringMarshaller.ConvertToUnmanaged($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/win-{arch}/native/StereoKitC.dll");
+				result = LoadLibraryW(filename) != IntPtr.Zero;
+				Utf16StringMarshaller.Free(filename);
+
+				if (!result)
+				{
+					filename = Utf16StringMarshaller.ConvertToUnmanaged("StereoKitC");
+					result = LoadLibraryW(filename) != IntPtr.Zero;
+					Utf16StringMarshaller.Free(filename);
+				}
+			}
+			return result;
 		}
 
 		static bool LoadUnix(string arch)
@@ -124,26 +137,60 @@ namespace StereoKit
 			return result;
 		}
 
-		[DllImport("dl", CharSet = CharSet.Ansi)]
-		static extern IntPtr dlopen(string fileName, int flags);
+		[DllImport("dl")]
+		static unsafe extern IntPtr dlopen(byte* fileName, int flags);
 		static bool LoadUnix1(string arch)
 		{
+			bool result = false;
 			const int RTLD_NOW = 2;
-			if (dlopen($"./runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW)                                       != IntPtr.Zero) return true;
-			if (dlopen($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
-			if (dlopen("libStereoKitC.so", RTLD_NOW)                                                                       != IntPtr.Zero) return true;
-			return false;
+			unsafe {
+				byte* filename = Utf8StringMarshaller.ConvertToUnmanaged($"./runtimes/linux-{arch}/native/libStereoKitC.so");
+				result = dlopen(filename, RTLD_NOW) != IntPtr.Zero;
+				Utf8StringMarshaller.Free(filename);
+
+				if (!result)
+				{
+					filename = Utf8StringMarshaller.ConvertToUnmanaged($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so");
+					result   = dlopen(filename, RTLD_NOW) != IntPtr.Zero;
+					Utf8StringMarshaller.Free(filename);
+				}
+				if (!result)
+				{
+					filename = Utf8StringMarshaller.ConvertToUnmanaged("libStereoKitC.so");
+					result   = dlopen(filename, RTLD_NOW) != IntPtr.Zero;
+					Utf8StringMarshaller.Free(filename);
+				}
+			}
+			return result;
 		}
 
 		// libdl.so.2 is apparently preferred when present?
-		[DllImport("libdl.so.2", CharSet = CharSet.Ansi, EntryPoint = "dlopen")]
-		static extern IntPtr dlopen2(string fileName, int flags);
+		[DllImport("libdl.so.2", EntryPoint = "dlopen")]
+		static unsafe extern IntPtr dlopen2(byte* fileName, int flags);
 		static bool LoadUnix2(string arch)
 		{
+			bool result = false;
 			const int RTLD_NOW = 2;
-			if (dlopen2($"./runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW)                                       != IntPtr.Zero) return true;
-			if (dlopen2($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
-			if (dlopen2("libStereoKitC.so", RTLD_NOW)                                                                       != IntPtr.Zero) return true;
+			unsafe
+			{
+
+				byte* filename = Utf8StringMarshaller.ConvertToUnmanaged($"./runtimes/linux-{arch}/native/libStereoKitC.so");
+				result = dlopen2(filename, RTLD_NOW) != IntPtr.Zero;
+				Utf8StringMarshaller.Free(filename);
+
+				if (!result)
+				{
+					filename = Utf8StringMarshaller.ConvertToUnmanaged($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so");
+					result   = dlopen2(filename, RTLD_NOW) != IntPtr.Zero;
+					Utf8StringMarshaller.Free(filename);
+				}
+				if (!result)
+				{
+					filename = Utf8StringMarshaller.ConvertToUnmanaged("libStereoKitC.so");
+					result   = dlopen2(filename, RTLD_NOW) != IntPtr.Zero;
+					Utf8StringMarshaller.Free(filename);
+				}
+			}
 			return false;
 		}
 

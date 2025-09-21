@@ -32,8 +32,8 @@ namespace StereoKit
 		/// them later on!</summary>
 		public string Id
 		{
-			get => Marshal.PtrToStringAnsi(NativeAPI.sprite_get_id(_inst));
-			set => NativeAPI.sprite_set_id(_inst, value);
+			get { unsafe { return NU8.Str(NativeAPI.sprite_get_id(_inst)); } }
+			set { unsafe { byte* val = NU8.Bytes(value); NativeAPI.sprite_set_id(_inst, val); NU8.Free(val); } }
 		}
 		
 		/// <summary>The aspect ratio of the sprite! This is width/height. 
@@ -57,10 +57,10 @@ namespace StereoKit
 		}
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Sprite()
-		{
+		{ unsafe {
 			if (_inst != IntPtr.Zero)
-				NativeAPI.assets_releaseref_threadsafe(_inst);
-		}
+				NativeAPI.assets_releaseref_threadsafe((void*)_inst);
+		} }
 
 		/// <summary>Draws the sprite at the location specified by the
 		/// transform matrix. A sprite is always sized in model space as 1 x
@@ -94,10 +94,12 @@ namespace StereoKit
 		/// <returns>A Sprite asset with the given id, or null if none is
 		/// found.</returns>
 		public static Sprite Find(string id)
-		{
-			IntPtr sprite = NativeAPI.sprite_find(id);
+		{ unsafe {
+			byte*  idBytes = NU8.Bytes(id);
+			IntPtr sprite  = NativeAPI.sprite_find(idBytes);
+			NU8.Free(idBytes);
 			return sprite == IntPtr.Zero ? null : new Sprite(sprite);
-		}
+		} }
 
 		/// <summary>Create a sprite from an image file! This loads a Texture
 		/// from file, and then uses that Texture as the source for the 
@@ -117,10 +119,14 @@ namespace StereoKit
 		/// <returns>A Sprite asset, or null if the image failed to load!
 		/// </returns>
 		public static Sprite FromFile(string file, SpriteType type = SpriteType.Atlased, string atlasId = "default")
-		{
-			IntPtr inst = NativeAPI.sprite_create_file(NativeHelper.ToUtf8(file), type, atlasId);
+		{ unsafe {
+			byte*  fileBytes    = NU8.Bytes(file);
+			byte*  atlasIdBytes = NU8.Bytes(atlasId);
+			IntPtr inst         = NativeAPI.sprite_create_file(fileBytes, type, atlasIdBytes);
+			NU8.Free(fileBytes);
+			NU8.Free(atlasIdBytes);
 			return inst == IntPtr.Zero ? null : new Sprite(inst);
-		}
+		} }
 
 		/// <summary>Create a sprite from a Texture object!</summary>
 		/// <param name="image">The texture to build a sprite from. Must be a
@@ -137,10 +143,12 @@ namespace StereoKit
 		/// <returns>A Sprite asset, or null if the image failed when adding
 		/// to the sprite system!</returns>
 		public static Sprite FromTex(Tex image, SpriteType type = SpriteType.Atlased, string atlasId = "default")
-		{
-			IntPtr inst = NativeAPI.sprite_create(image._inst, type, atlasId);
+		{ unsafe {
+			byte*  atlasIdBytes = NU8.Bytes(atlasId);
+			IntPtr inst         = NativeAPI.sprite_create(image._inst, type, atlasIdBytes);
+			NU8.Free(atlasIdBytes);
 			return inst == IntPtr.Zero ? null : new Sprite(inst);
-		}
+		} }
 
 		/// <inheritdoc cref="Default.SpriteRadioOn" />
 		public static Sprite RadioOn => Default.SpriteRadioOn;

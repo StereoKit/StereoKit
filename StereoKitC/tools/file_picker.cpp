@@ -83,7 +83,7 @@ fp_sort_by_                  fp_sortby                = fp_sort_by_name;
 bool                         fp_sort_order_changed    = false;
 bool                         fp_sort_order_asc        = true;
 bool                         fp_list_mode             = false;
-void                         (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename, int32_t filename_length) = nullptr;
+void                         (*fp_callback)(void *callback_data, bool32_t confirmed, const char *filename) = nullptr;
 
 bool                         fp_show                  = false;
 picker_mode_                 fp_mode;
@@ -112,28 +112,6 @@ void file_picker_uwp_picked (IAsyncOperation<StorageFile> result, AsyncStatus st
 
 ///////////////////////////////////////////
 
-void platform_file_picker(picker_mode_ mode, void *callback_data, void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count) {
-	// This is basically a manual lambda capture for the wrapper callback
-	struct callback_t {
-		void *callback_data;
-		void (*on_confirm)(void *callback_data, bool32_t confirmed, const char *filename);
-	};
-	callback_t *data = sk_malloc_t(callback_t, 1);
-	data->callback_data = callback_data;
-	data->on_confirm    = on_confirm;
-
-	// Call the file picker that does all the real work, and pass the callback
-	// along to _our_ callback.
-	platform_file_picker_sz(mode, data, [](void *callback_data, bool32_t confirmed, const char *filename, int32_t) {
-		callback_t *data = (callback_t *)callback_data;
-		if (data->on_confirm)
-			data->on_confirm(data->callback_data, confirmed, filename);
-		sk_free(data);
-	}, filters, filter_count);
-}
-
-///////////////////////////////////////////
-
 char *platform_append_filter(char *to, const file_filter_t *filter, bool search_pattern, const char *postfix) {
 	const char *curr = filter->ext;
 	while (*curr == '.' || *curr == '*') curr++;
@@ -145,7 +123,7 @@ char *platform_append_filter(char *to, const file_filter_t *filter, bool search_
 
 ///////////////////////////////////////////
 
-void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char* filename_ptr, int32_t filename_length), const file_filter_t* in_arr_filters, int32_t filter_count) {
+void platform_file_picker(picker_mode_ mode, void *callback_data, void (*picker_callback)(void *callback_data, bool32_t confirmed, const char* filename), const file_filter_t* in_arr_filters, int32_t filter_count) {
 #if defined(SK_OS_WINDOWS)
 	if (device_display_get_type() == display_type_flatscreen) {
 		fp_wfilename[0] = '\0';
@@ -173,20 +151,20 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*pick
 			settings.lpstrTitle = L"Open";
 			if (GetOpenFileNameW(&settings) == TRUE) {
 				char *filename = platform_from_wchar(fp_wfilename);
-				if (picker_callback_sz) picker_callback_sz(callback_data, true, filename, (int32_t)(strlen(filename)+1));
+				if (picker_callback) picker_callback(callback_data, true, filename);
 				sk_free(filename);
 			} else {
-				if (picker_callback_sz) picker_callback_sz(callback_data, false, nullptr, 0);
+				if (picker_callback) picker_callback(callback_data, false, nullptr);
 			}
 		} else if (mode == picker_mode_save) {
 			settings.Flags      = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
 			settings.lpstrTitle = L"Save As";
 			if (GetSaveFileNameW(&settings) == TRUE) {
 				char *filename = platform_from_wchar(fp_wfilename);
-				if (picker_callback_sz) picker_callback_sz(callback_data, true, filename, (int32_t)(strlen(filename)+1));
+				if (picker_callback) picker_callback(callback_data, true, filename);
 				sk_free(filename);
 			} else {
-				if (picker_callback_sz) picker_callback_sz(callback_data, false, nullptr, 0);
+				if (picker_callback) picker_callback(callback_data, false, nullptr);
 			}
 		}
 
@@ -195,7 +173,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*pick
 		return;
 	}
 #elif defined(SK_OS_WINDOWS_UWP)
-	fp_callback  = picker_callback_sz;
+	fp_callback  = picker_callback;
 	fp_call_data = callback_data;
 
 	CoreDispatcher dispatcher = CoreApplication::MainView().CoreWindow().Dispatcher();
@@ -261,7 +239,7 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*pick
 
 	fp_win_pose  = matrix_transform_pose( matrix_invert(render_get_cam_root()), ui_popup_pose({0,-0.1f,0}));
 	fp_call_data = callback_data;
-	fp_callback  = picker_callback_sz;
+	fp_callback  = picker_callback;
 	fp_mode      = mode;
 	fp_show      = true;
 
@@ -374,7 +352,7 @@ void file_picker_open_folder(const char *folder) {
 ///////////////////////////////////////////
 
 void file_picker_finish() {
-	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename, (int32_t)(strlen(fp_filename)+1));
+	if (fp_callback) fp_callback(fp_call_data, fp_call_status, fp_filename);
 	fp_call_status = false;
 	fp_callback    = nullptr;
 	fp_call_data   = nullptr;

@@ -1,10 +1,6 @@
-﻿using CppAst;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
 using System.Text;
 
 class BindCSharp
@@ -42,6 +38,8 @@ class BindCSharp
 			// directly :) Instead, modify the header file, and run the StereoKitAPIGen
 			// project.
 
+			#nullable enable
+
 			using System;
 			using System.Runtime.InteropServices;
 			using System.Runtime.CompilerServices;
@@ -50,7 +48,7 @@ class BindCSharp
 
 			namespace StereoKit;
 			
-			internal static partial class NativeAPI
+			internal static unsafe partial class NativeAPI
 			{
 				const string            dll   = "StereoKitC";
 				const StringMarshalling utf16 = StringMarshalling.Utf16;
@@ -59,11 +57,16 @@ class BindCSharp
 
 			""");
 
-		foreach (var m in data.modules)
+		foreach (SKModule m in data.modules)
 			BuildModuleFunctions(data, fnFileText, m);
 
-		//foreach (string d in delegates.Values)
-		//	if (!string.IsNullOrEmpty(d)) fnFileText.AppendLine($"\t\t[UnmanagedFunctionPointer(CallingConvention.Cdecl)] {d}");
+		foreach (var f in data.functions
+			.SelectMany(f   => f.parameters)
+			.Select    (p   => p.type.functionPtr)
+			.Where     (ptr => ptr != null)
+			.Distinct  ()) {
+			BuildDelegate(data, fnFileText, f.Val);
+		}
 
 		fnFileText.AppendLine("}\r\n");
 
@@ -98,6 +101,9 @@ class BindCSharp
 				? custom
 				: Tools.SnakeToCamelU(Tools.RemovePrefix(str, e.name));
 
+		string name = NameObject(e.name);
+		if (name == "_") return;
+
 		builder.AppendLine(Tools.ToStrComment(CommentText(e.comment), "///"));
 		if (e.isBitflag) builder.AppendLine("[Flags]");
 		builder.AppendLine($"public enum {NameObject(e.name)}\r\n{{");
@@ -122,25 +128,21 @@ class BindCSharp
 			if (NameOverrides.TryGet(f.name, out string overrideName) && overrideName == "_")
 				continue;
 
-			SKStringType strType   = SKStringType.None;
-			string       paramList = "";
+			string paramList = "";
 			for (int i = 0; i < f.parameters.Length; i++)
 			{
 				SKParameter p = f.parameters[i];
-				paramList += $"{(SKHeaderData.IsAsset(p.type, data.modules) ? "IntPtr" : PInvokeParamToStr(p))} {NameParam(p.nameFlagless)}{(i == f.parameters.Length-1 ? "" : ", ")}";
-
-				if (p.stringType != SKStringType.None)
-					strType = p.stringType;
+				paramList += $"{PInvokeParamToStr(p, data.modules)} {NameParam(p.nameFlagless)}{(i == f.parameters.Length-1 ? "" : ", ")}";
 			}
-			if (strType == SKStringType.None)
-				strType = f.returnType.name switch { "char" => SKStringType.ASCII, "char16_t" => SKStringType.UTF16, _ => SKStringType.None };
+			bool   isAsset       = SKHeaderData.IsAsset(f.returnType, data.modules);
+			string returnTypeStr = ReturnTypeToStr(f.returnType);
 
-			if (f.returnType.name == "bool32_t")
-				text.AppendLine("\t[return: MarshalAs(UnmanagedType.Bool)]");
-			text.Append(strType != SKStringType.None
-				? $"\t[LibraryImport(dll, StringMarshalling = {strType.ToString().ToLower(),-5})][UnmanagedCallConv(CallConvs = new[] {{typeof(CallConvCdecl)}})]"
-				: $"\t[LibraryImport(dll                           )][UnmanagedCallConv(CallConvs = new[] {{typeof(CallConvCdecl)}})]");
-			text.AppendLine($"public static partial {(SKHeaderData.IsAsset(f.returnType, data.modules) ? "IntPtr" : ReturnTypeToStr(f.returnType)),-15} {f.name, -30}({paramList});");
+			text.AppendLine($"\t// {f.src.ToString()}");
+
+			text.Append($"\t[DllImport(dll)][UnmanagedCallConv(CallConvs = new[] {{typeof(CallConvCdecl)}})]");
+			text.Append($" public static extern ");
+			text.Append($"{(isAsset ? "IntPtr" : returnTypeStr + (f.returnType.pointerLvl == 1 && returnTypeStr != "string" && returnTypeStr != "IntPtr" ? "*" : "")),-15} ");
+			text.AppendLine($"{f.name, -30}({paramList});");
 		}
 	}
 
@@ -166,43 +168,79 @@ class BindCSharp
 
 	static string TypeToStr(SKType type)
 	{
-		if (type.name == "char8_t" && type.pointerLvl >= 1)
-			return "string";
-		if ((type.name == "char" || type.name=="char16_t" ) && type.pointerLvl >= 1)
-			return "string";
-		if (type.name == "void" && type.pointerLvl > 0)
-			return "IntPtr";
 		return NameType(type.name);
 	}
 
 	static string ReturnTypeToStr(SKType type)
 	{
-		// Strings in the return type always need special handling
-		if ((type.name == "char8_t" || type.name == "char" || type.name == "char16_t" ) && type.pointerLvl >= 1)
-			return "string";
 		return TypeToStr(type);
 	}
 
-	static string PInvokeParamToStr(SKParameter param)
+	static string PInvokeParamToStr(SKParameter param, SKModule[] modules)
 	{
+		if (SKHeaderData.IsAsset(param.type, modules))
+			return "IntPtr";
+
 		string prefix  = "";
 		string postfix = "";
 
-		if (param.isArrayPtr)
+		if (param.type.pointerLvl > 0)
+		{
+			for (int i = 0; i < param.type.pointerLvl; i++)
+				postfix += "*";
+		}
+		else if (param.type.isOptional)
+		{
+			postfix += "*";
+		}
+		else if (param.isArrayPtr)
 		{
 			if (param.passType == SKPassType.Out)
 				return "out IntPtr";
 			if (param.passType == SKPassType.Ref)
-				prefix = "ref ";
+				prefix = "[In, Out] ";
 			postfix = "[]";
-		} else {
+		}
+		else
+		{
 			if (param.passType != SKPassType.None)
 				prefix = $"{param.passType.ToString().ToLower()} ";
 		}
 
-		if (param.type.name == "bool32_t")
-			prefix = "[MarshalAs(UnmanagedType.Bool)] " + prefix;
+		if (param.type.arraySize1 > 0)
+		{
+			prefix  = $"[MarshalAs(UnmanagedType.LPArray, SizeConst = {param.type.arraySize1})] " + prefix;
+			postfix = "[]";
+		}
 
-		return $"{prefix}{TypeToStr(param.type)}{postfix}";
+		string name = TypeToStr(param.type);
+		if (param.type.functionPtr != null)
+		{
+			SKFunction fn = param.type.functionPtr.Val;
+
+			name = "delegate*<";
+			for (int i = 0; i < fn.parameters.Length; i++)
+				name += $"{DelegateTypeToStr(fn.parameters[i].type, modules)},";
+			
+			if (fn.returnType.IsVoid)
+				name += "void>";
+			else
+				name += $"{DelegateTypeToStr(fn.returnType, modules)}>";
+			
+		}
+		return $"{prefix}{name}{postfix}";
+	}
+
+	static string DelegateTypeToStr(SKType type, SKModule[] modules)
+	{
+		if (type.name == "bool32_t") return "int";
+		if (type.pointerLvl > 0 && type.name != "char") return "IntPtr";
+		if (SKHeaderData.IsAsset(type, modules)) return "IntPtr";
+		return TypeToStr(type);
+	}
+
+	static void BuildDelegate(SKHeaderData data, StringBuilder text, SKFunction d)
+	{
+		//text.AppendLine($"\t[UnmanagedFunctionPointer(CallingConvention.Cdecl)] {d.name}");
 	}
 }

@@ -38,7 +38,7 @@ namespace StereoKit
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Plane plane, out Vec3 at)
-			=> NativeAPI.plane_ray_intersect(plane, this, out at);
+		{ unsafe { fixed (Vec3* atPtr = &at) return NB.Bool(NativeAPI.plane_ray_intersect(plane, this, atPtr)); } }
 
 		/// <summary>Checks the intersection of this ray with a sphere!
 		/// </summary>
@@ -51,7 +51,7 @@ namespace StereoKit
 		/// to the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Sphere sphere, out Vec3 at)
-			=> NativeAPI.sphere_ray_intersect(sphere, this, out at);
+		{ unsafe { fixed (Vec3* atPtr = &at) return NB.Bool(NativeAPI.sphere_ray_intersect(sphere, this, atPtr)); } }
 
 		/// <summary>Checks the intersection of this ray with a bounding box!
 		/// </summary>
@@ -64,7 +64,7 @@ namespace StereoKit
 		/// to the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Bounds bounds, out Vec3 at)
-			=> NativeAPI.bounds_ray_intersect(bounds, this, out at);
+		{ unsafe { fixed (Vec3* atPtr = &at) return NB.Bool(NativeAPI.bounds_ray_intersect(bounds, this, atPtr)); } }
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision
@@ -83,7 +83,7 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Mesh mesh, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, Cull.Back, out modelSpaceAt, out _);
+		{ unsafe { fixed (Ray* atPtr = &modelSpaceAt) return NB.Bool(NativeAPI.mesh_ray_intersect(mesh._inst, this, Cull.Back, atPtr, null)); } }
 
 		/// <inheritdoc cref="Intersect(Mesh, out Ray)"/>
 		/// <param name="cullFaces">How should intersection work with respect
@@ -91,7 +91,7 @@ namespace StereoKit
 		/// that are facing away from the ray, or don't skip anything? A good
 		/// default would be Cull.Back.</param>
 		public bool Intersect(Mesh mesh, Cull cullFaces, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, cullFaces, out modelSpaceAt, out _);
+		{ unsafe { fixed (Ray* atPtr = &modelSpaceAt) return NB.Bool(NativeAPI.mesh_ray_intersect(mesh._inst, this, cullFaces, atPtr, null)); } }
 
 		/// <summary>Checks the intersection point of this ray and a Mesh 
 		/// with collision data stored on the CPU. A mesh without collision
@@ -116,8 +116,11 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Mesh mesh, Cull cullFaces, out Ray modelSpaceAt, out uint outStartInds)
-			=> NativeAPI.mesh_ray_intersect(mesh._inst, this, cullFaces, out modelSpaceAt, out outStartInds);
-
+		{ unsafe { 
+			fixed(uint* startInds = &outStartInds)
+			fixed(Ray*  atPtr     = &modelSpaceAt)
+			return NB.Bool(NativeAPI.mesh_ray_intersect(mesh._inst, this, cullFaces, atPtr, startInds));
+		} }
 
 		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
@@ -134,9 +137,13 @@ namespace StereoKit
 		/// </returns>
 		public bool Intersect(Mesh mesh, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(mesh._inst, this, Cull.Back, out Ray intersection, out _);
-			modelSpaceAt = intersection.position;
-			return result;
+			unsafe
+			{
+				Ray  intersection;
+				bool result = NB.Bool(NativeAPI.mesh_ray_intersect(mesh._inst, this, Cull.Back, &intersection, null));
+				modelSpaceAt = intersection.position;
+				return result;
+			}
 		}
 
 		/// <summary>Checks the intersection point of this ray and the Solid
@@ -155,7 +162,10 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Model model, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(model._inst, this, Cull.Back, out modelSpaceAt);
+		{ unsafe { 
+			fixed (Ray* atPtr = &modelSpaceAt) 
+			return NB.Bool(NativeAPI.model_ray_intersect(model._inst, this, Cull.Back, atPtr));
+		} }
 
 		/// <inheritdoc cref="Intersect(Model, out Ray)"/>
 		/// <param name="cullFaces">How should intersection work with respect
@@ -163,7 +173,10 @@ namespace StereoKit
 		/// that are facing away from the ray, or don't skip anything? A good
 		/// default would be Cull.Back.</param>
 		public bool Intersect(Model model, Cull cullFaces, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(model._inst, this, cullFaces, out modelSpaceAt);
+		{ unsafe { 
+			fixed (Ray* atPtr = &modelSpaceAt)
+			return NB.Bool(NativeAPI.model_ray_intersect(model._inst, this, cullFaces, atPtr));
+		} }
 
 		/// <summary>Calculates the point on the Ray that's closest to the
 		/// given point! This will be clamped if the point is behind the ray's

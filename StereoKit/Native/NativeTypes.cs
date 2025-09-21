@@ -425,15 +425,6 @@ namespace StereoKit
 		}
 	}
 
-	/// <summary>The callback type for Input events.</summary>
-	/// <param name="source">What type of device is the source of the provided
-	/// pointer</param>
-	/// <param name="type">What type of event was this.</param>
-	/// <param name="pointer">Where was the input device at the time of the
-	/// input event?</param>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void InputEventCallback(InputSource source, BtnState type, in Pointer pointer);
-
 	/// <summary>Pointer is an abstraction of a number of different input 
 	/// sources, and a way to surface input events!</summary>
 	[StructLayout(LayoutKind.Sequential)]
@@ -483,10 +474,11 @@ namespace StereoKit
 		public Ray Ray
 		{
 			get
-			{
-				NativeAPI.ray_from_mouse(pos, out Ray ray);
+			{ unsafe {
+				Ray ray;
+				NativeAPI.ray_from_mouse(pos, &ray);
 				return ray;
-			}
+			} }
 		}
 	}
 
@@ -496,7 +488,7 @@ namespace StereoKit
 	public delegate void LogCallback(LogLevel level, string text);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void LogCallbackData(IntPtr context, LogLevel level, string text);
+	internal unsafe delegate void LogCallbackData(IntPtr context, LogLevel level, byte* text);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void XRPreSessionCreateCallback(IntPtr context);
@@ -528,7 +520,7 @@ namespace StereoKit
 	public delegate float AudioGenerator(float time);
 
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void PickerCallback(IntPtr callback_data, int confirmed, IntPtr filename, int filename_length);
+	internal unsafe delegate void PickerCallback(IntPtr callback_data, int confirmed, byte* filename);
 
 	/// <summary>Index values for each finger! From 0-4, from thumb to little finger.</summary>
 	public enum FingerId

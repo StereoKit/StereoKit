@@ -12,9 +12,9 @@ namespace StereoKit
 	/// just customize your interactions!</summary>
 	public struct Interactor
 	{
-		private int _inst;
+		internal int _inst;
 
-		private Interactor(int inst)
+		internal Interactor(int inst)
 		{
 			_inst = inst;
 		}
@@ -27,44 +27,44 @@ namespace StereoKit
 		/// still capturing occlusion from blocking elements too close to the
 		/// start. By default, this is a large negative value.</summary>
 		public float MinDistance {
-			get => NativeAPI.interactor_get_min_distance(_inst);
-			set => NativeAPI.interactor_set_min_distance(_inst, value);
+			get => NativeAPI.interactor_get_min_distance(this);
+			set => NativeAPI.interactor_set_min_distance(this, value);
 		}
 		/// <summary>The world space radius of the interactor capsule, in
 		/// meters.</summary>
 		public float Radius {
-			get => NativeAPI.interactor_get_radius(_inst);
-			set => NativeAPI.interactor_set_radius(_inst, value);
+			get => NativeAPI.interactor_get_radius(this);
+			set => NativeAPI.interactor_set_radius(this, value);
 		}
 		/// <summary>The world space start of the interactor capsule. Some
 		/// interactions can be directional, especially for `Line` type
 		/// interactors, so if you think of the interactor as an "oriented"
 		/// capsule, this would be the origin which points towards the capsule
 		/// `End`.</summary>
-		public Vec3     Start => NativeAPI.interactor_get_capsule_start(_inst);
+		public Vec3     Start => NativeAPI.interactor_get_capsule_start(this);
 
 		/// <summary>The world space end of the interactor capsule. Some
 		/// interactions can be directional, especially for `Line` type
 		/// interactors, so if you think of the interactor as an "oriented"
 		/// capsule, this would be the end which the `Start`/origin points
 		/// towards.</summary>
-		public Vec3     End => NativeAPI.interactor_get_capsule_end(_inst);
+		public Vec3     End => NativeAPI.interactor_get_capsule_end(this);
 		/// <summary>The tracking state of this interactor.</summary>
-		public BtnState Tracked => NativeAPI.interactor_get_tracked(_inst);
+		public BtnState Tracked => NativeAPI.interactor_get_tracked(this);
 		/// <summary>The id of the interaction element that is currently
 		/// focused, this will be `IdHash.None` if this interactor has nothing
 		/// focused.</summary>
-		public IdHash   Focused => NativeAPI.interactor_get_focused(_inst);
+		public IdHash   Focused => NativeAPI.interactor_get_focused(this);
 		/// <summary>The id of the interaction element that is currently
 		/// active, this will be `IdHash.None` if this interactor has nothing
 		/// active. This will always be the same id as `Focused` when not
 		/// `None`.</summary>
-		public IdHash   Active  => NativeAPI.interactor_get_active (_inst);
+		public IdHash   Active  => NativeAPI.interactor_get_active (this);
 		/// <summary>This pose is the source of translation and rotation motion
 		/// caused by the interactor. In most cases it will be the same as your
 		/// Start with the orientation of your interactor, but in some instance
 		/// may be something else!</summary>
-		public Pose     Motion  => NativeAPI.interactor_get_motion (_inst);
+		public Pose     Motion  => NativeAPI.interactor_get_motion (this);
 
 		/// <summary>Update the interactor with data for the current frame!
 		/// This should be called as soon as possible at the start of the frame
@@ -90,10 +90,12 @@ namespace StereoKit
 		/// <param name="active">The activation state of the Interactor.</param>
 		/// <param name="tracked">The tracking state of the Interactor.</param>
 		public void Update(Vec3 capsuleStart, Vec3 capsuleEnd, Pose motion, Vec3 motionAnchor, Vec3 secondaryMotion, BtnState active, BtnState tracked)
-			=> NativeAPI.interactor_update(_inst, capsuleStart, capsuleEnd, motion, motionAnchor, secondaryMotion, active, tracked);
+			=> NativeAPI.interactor_update(this, capsuleStart, capsuleEnd, motion, motionAnchor, secondaryMotion, active, tracked);
 
+		/// <summary>This will immediately remove and destroy the interactor
+		/// instance this represents from StereoKit's list of Interactors.</summary>
 		public void Destroy()
-			=> NativeAPI.interactor_destroy(_inst);
+			=> NativeAPI.interactor_destroy(this);
 
 		/// <summary>If this interactor has an element focused, this will
 		/// output information about the location of that element, as well as
@@ -103,7 +105,12 @@ namespace StereoKit
 		/// <param name="atLocal">The intersection point relative to the Bounds, NOT relative to the Pose!</param>
 		/// <returns>True if bounds data is available.</returns>
 		public bool TryGetFocusBounds(out Pose poseWorld, out Bounds boundsLocal, out Vec3 atLocal)
-			=> NativeAPI.interactor_get_focus_bounds(_inst, out poseWorld, out boundsLocal, out atLocal);
+		{ unsafe {
+			fixed(Pose  * poseWorldPtr   = &poseWorld  )
+			fixed(Bounds* boundsLocalPtr = &boundsLocal)
+			fixed(Vec3  * atLocalPtr     = &atLocal    )
+			return NB.Bool(NativeAPI.interactor_get_focus_bounds(this, poseWorldPtr, boundsLocalPtr, atLocalPtr));
+		} }
 
 		/// <summary>Create a new custom Interactor.</summary>
 		/// <param name="shapeType">A line, or a point? These interactors
@@ -125,13 +132,39 @@ namespace StereoKit
 		/// motion can this interactor provide? This should be 0-3.</param>
 		/// <returns>The Interactor that was just created.</returns>
 		public static Interactor Create(InteractorType shapeType, InteractorEvent events, InteractorActivation activationType, int inputSourceId, float capsuleRadius, int secondaryMotionDimensions)
-			=> new Interactor(NativeAPI.interactor_create(shapeType, events, activationType, inputSourceId, capsuleRadius, secondaryMotionDimensions));
+			=> NativeAPI.interactor_create(shapeType, events, activationType, inputSourceId, capsuleRadius, secondaryMotionDimensions);
 
 		/// <summary>The number of interactors currently in the system. Can be used with `Get`.</summary>
 		public static int Count => NativeAPI.interactor_count();
 		/// <summary>Returns the `Interactor` at the given index. Should be used with `Count`.</summary>
 		/// <param name="index">The index.</param>
 		/// <returns>An Interactor.</returns>
-		public static Interactor Get(int index) => new Interactor(NativeAPI.interactor_get(index));
+		public static Interactor Get(int index) => NativeAPI.interactor_get(index);
+
+		/// <summary>An invalid or nonexistant Interactor. Can be used in
+		/// comparisons `==` or `!=`.</summary>
+		public static Interactor None => new Interactor(-1);
+
+		/// <summary>An equality test.</summary>
+		/// <param name="b">Another Interactor.</param>
+		/// <returns>True if they represent same Interactor, false otherwise.</returns>
+		public override bool Equals(object b) => (b is Interactor h) ? _inst == h._inst : false;
+		/// <summary>An equality test.</summary>
+		/// <param name="b">Another Interactor.</param>
+		/// <returns>True if equal, false otherwise.</returns>
+		public bool Equals(Interactor b) => _inst == b._inst;
+		/// <summary>Same as int.GetHashCode</summary>
+		/// <returns>Same as int.GetHashCode</returns>
+		public override int GetHashCode() => _inst.GetHashCode();
+		/// <summary>An equality test.</summary>
+		/// <param name="a">An Interactor instance.</param>
+		/// <param name="b">An Interactor instance.</param>
+		/// <returns>True if they represent same Interactor, false otherwise.</returns>
+		public static bool operator ==(Interactor a, Interactor b) => a._inst == b._inst;
+		/// <summary>An inequality test.</summary>
+		/// <param name="a">An interactor isntance.</param>
+		/// <param name="b">An interactor isntance.</param>
+		/// <returns>True if they represent same Interactor, false otherwise.</returns>
+		public static bool operator !=(Interactor a, Interactor b) => a._inst != b._inst;
 	}
 }

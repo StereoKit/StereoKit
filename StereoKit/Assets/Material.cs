@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -141,8 +140,8 @@ namespace StereoKit
 		/// visualization work. Note that this may not work on some mobile
 		/// OpenGL systems like Quest.</summary>
 		public bool Wireframe {
-			get => NativeAPI.material_get_wireframe(_inst);
-			set => NativeAPI.material_set_wireframe(_inst, value); }
+			get => NativeAPI.material_get_wireframe(_inst) != 0;
+			set => NativeAPI.material_set_wireframe(_inst, NB.Int(value)); }
 		/// <summary>How does this material interact with the ZBuffer? 
 		/// Generally DepthTest.Less would be normal behavior: don't draw
 		/// objects that are occluded. But this can also be used to achieve
@@ -161,8 +160,8 @@ namespace StereoKit
 		/// 
 		/// Not writing to the buffer can also be faster! :)</summary>
 		public bool DepthWrite {
-			get => NativeAPI.material_get_depth_write(_inst);
-			set => NativeAPI.material_set_depth_write(_inst, value); }
+			get => NB.Bool(NativeAPI.material_get_depth_write(_inst));
+			set => NativeAPI.material_set_depth_write(_inst, NB.Int(value)); }
 		/// <summary>Should the near/far depth plane clip (discard) what we're
 		/// drawing? This defaults to true, and should almost always be true!
 		/// However, it can be useful to set this to false for occasions like
@@ -170,8 +169,8 @@ namespace StereoKit
 		/// critical, and out of clip objects are still useful to have.
 		/// </summary>
 		public bool DepthClip {
-			get => NativeAPI.material_get_depth_clip(_inst);
-			set => NativeAPI.material_set_depth_clip(_inst, value); }
+			get => NB.Bool(NativeAPI.material_get_depth_clip(_inst));
+			set => NativeAPI.material_set_depth_clip(_inst, NB.Int(value)); }
 		/// <summary>This property will force this material to draw earlier
 		/// or later in the draw queue. Positive values make it draw later,
 		/// negative makes it earlier. This is really helpful when doing tricks
@@ -207,9 +206,9 @@ namespace StereoKit
 		/// <summary>Gets or sets the unique identifier of this asset resource!
 		/// This can be helpful for debugging, managing your assets, or finding
 		/// them later on!</summary>
-		public string Id { 
-			get => Marshal.PtrToStringAnsi(NativeAPI.material_get_id(_inst));
-			set => NativeAPI.material_set_id(_inst, value); }
+		public string Id {
+			get { unsafe { return NU8.Str(NativeAPI.material_get_id(_inst)); } }
+			set { unsafe { byte* val = NU8.Bytes(value); NativeAPI.material_set_id(_inst, val); NU8.Free(val); } } }
 
 		/// <summary>Creates a material from a shader, and uses the shader's
 		/// default settings. If the shader is null, a warning will be added to
@@ -243,7 +242,13 @@ namespace StereoKit
 		{
 			Shader shader = Shader.FromFile(shaderFilename);
 			_inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
-			NativeAPI.material_set_id(_inst, id);
+
+			unsafe
+			{
+				byte* idBytes = NU8.Bytes(id);
+				NativeAPI.material_set_id(_inst, idBytes);
+				NU8.Free(idBytes);
+			}
 		}
 		/// <summary>Creates a material from a shader, and uses the shader's
 		/// default settings. If the shader is null, a warning will be added to
@@ -255,7 +260,13 @@ namespace StereoKit
 		public Material(string id, Shader shader)
 		{
 			_inst = NativeAPI.material_create(shader == null ? IntPtr.Zero : shader._inst);
-			NativeAPI.material_set_id(_inst, id);
+
+			unsafe
+			{
+				byte* idBytes = NU8.Bytes(id);
+				NativeAPI.material_set_id(_inst, idBytes);
+				NU8.Free(idBytes);
+			}
 		}
 		internal Material(IntPtr material)
 		{
@@ -266,8 +277,11 @@ namespace StereoKit
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Material()
 		{
-			if (_inst != IntPtr.Zero)
-				NativeAPI.assets_releaseref_threadsafe(_inst);
+			unsafe
+			{
+				if (_inst != IntPtr.Zero)
+					NativeAPI.assets_releaseref_threadsafe((void*)_inst);
+			}
 		}
 
 		/// <summary>This array accessor allows for easy access to the shader's
@@ -329,6 +343,19 @@ namespace StereoKit
 			}
 		}
 
+		private MatParamInfo _GetParamInfo(int index)
+		{
+			MaterialParam type;
+			string        name;
+			unsafe
+			{
+				byte* namePtr;
+				NativeAPI.material_get_param_info(_inst, index, &namePtr, &type);
+				name = NU8.Str(namePtr);
+			}
+			return new MatParamInfo(name, type);
+		}
+
 		/// <summary>Gets an enumerable list of all parameter information on
 		/// the Material. This includes all global shader variables and
 		/// textures.</summary>
@@ -338,10 +365,7 @@ namespace StereoKit
 		{
 			int count = ParamCount;
 			for (int i = 0; i < count; i++)
-			{
-				NativeAPI.material_get_param_info(_inst, i, out IntPtr name, out MaterialParam type);
-				yield return new MatParamInfo(Marshal.PtrToStringAnsi(name), type);
-			}
+				yield return _GetParamInfo(i);
 		}
 
 		/// <summary>Gets available shader parameter information for the
@@ -355,9 +379,7 @@ namespace StereoKit
 		{
 			if (index < 0 || index >= ParamCount)
 				throw new IndexOutOfRangeException();
-
-			NativeAPI.material_get_param_info(_inst, index, out IntPtr name, out MaterialParam type);
-			return new MatParamInfo(Marshal.PtrToStringAnsi(name), type);
+			return _GetParamInfo(index);
 		}
 
 		/// <summary>Creates a new Material asset with the same shader and
@@ -374,7 +396,15 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetFloat(string name, float value)
-			=> NativeAPI.material_set_float(_inst, name, value);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_float(_inst, nameBytes, value); NU8.Free(nameBytes); } }
+
+		/// <summary>Sets a shader parameter with the given name to the 
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="value">New value for the parameter.</param>
+		public void SetFloat(ReadOnlySpan<byte> name, float value)
+		{ unsafe { fixed (byte* namePtr = name) { NativeAPI.material_set_float(_inst, namePtr, value); } } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -382,8 +412,17 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="colorGamma">The gamma space color for the shader
 		/// to use.</param>
-		public void SetColor(string name, Color32 colorGamma)
-			=> NativeAPI.material_set_color(_inst, name, new Color(colorGamma.r/255f, colorGamma.g/255f, colorGamma.b/255f, colorGamma.a/255f ));
+		public void SetColor(string name, Color32 colorGamma) 
+			=> SetColor(name, colorGamma.ToColor());
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="colorGamma">The gamma space color for the shader
+		/// to use.</param>
+		public void SetColor(ReadOnlySpan<byte> name, Color32 colorGamma)
+			=> SetColor(name, colorGamma.ToColor());
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -392,7 +431,16 @@ namespace StereoKit
 		/// <param name="colorGamma">The gamma space color for the shader
 		/// to use.</param>
 		public void SetColor(string name, Color colorGamma)
-			=> NativeAPI.material_set_color(_inst, name, colorGamma);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_color(_inst, nameBytes, colorGamma); NU8.Free(nameBytes); } }
+
+		/// <summary>Sets a shader parameter with the given name to the
+		/// provided value. If no parameter is found, nothing happens, and
+		/// the value is not set!</summary>
+		/// <param name="name">Name of the shader parameter.</param>
+		/// <param name="colorGamma">The gamma space color for the shader
+		/// to use.</param>
+		public void SetColor(ReadOnlySpan<byte> name, Color colorGamma)
+		{ unsafe { fixed (byte* namePtr = name) { NativeAPI.material_set_color(_inst, namePtr, colorGamma); } } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -400,7 +448,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetVector(string name, Vec4 value)
-			=> NativeAPI.material_set_vector4(_inst, name, value);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_vector4(_inst, nameBytes, value); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -408,7 +456,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetVector(string name, Vec3 value)
-			=> NativeAPI.material_set_vector3(_inst, name, value);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_vector3(_inst, nameBytes, value); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -416,7 +464,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetVector(string name, Vec2 value)
-			=> NativeAPI.material_set_vector2(_inst, name, value);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_vector2(_inst, nameBytes, value); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -424,7 +472,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetInt(string name, int value)
-			=> NativeAPI.material_set_int(_inst, name, value);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_int(_inst, nameBytes, value); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -433,7 +481,7 @@ namespace StereoKit
 		/// <param name="value1">New value for the parameter.</param>
 		/// <param name="value2">New value for the parameter.</param>
 		public void SetInt(string name, int value1, int value2)
-			=> NativeAPI.material_set_int2(_inst, name, value1, value2);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_int2(_inst, nameBytes, value1, value2); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -443,7 +491,7 @@ namespace StereoKit
 		/// <param name="value2">New value for the parameter.</param>
 		/// <param name="value3">New value for the parameter.</param>
 		public void SetInt(string name, int value1, int value2, int value3)
-			=> NativeAPI.material_set_int3(_inst, name, value1, value2, value3);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_int3(_inst, nameBytes, value1, value2, value3); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -454,7 +502,7 @@ namespace StereoKit
 		/// <param name="value3">New value for the parameter.</param>
 		/// <param name="value4">New value for the parameter.</param>
 		public void SetInt(string name, int value1, int value2, int value3, int value4)
-			=> NativeAPI.material_set_int4(_inst, name, value1, value2, value3, value4);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_int4(_inst, nameBytes, value1, value2, value3, value4); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -462,7 +510,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetUInt(string name, uint value)
-			=> NativeAPI.material_set_uint(_inst, name, value);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_uint(_inst, nameBytes, value); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -471,7 +519,7 @@ namespace StereoKit
 		/// <param name="value1">New value for the parameter.</param>
 		/// <param name="value2">New value for the parameter.</param>
 		public void SetUInt(string name, uint value1, uint value2)
-			=> NativeAPI.material_set_uint2(_inst, name, value1, value2);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_uint2(_inst, nameBytes, value1, value2); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -481,7 +529,7 @@ namespace StereoKit
 		/// <param name="value2">New value for the parameter.</param>
 		/// <param name="value3">New value for the parameter.</param>
 		public void SetUInt(string name, uint value1, uint value2, uint value3)
-			=> NativeAPI.material_set_uint3(_inst, name, value1, value2, value3);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_uint3(_inst, nameBytes, value1, value2, value3); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -492,7 +540,7 @@ namespace StereoKit
 		/// <param name="value3">New value for the parameter.</param>
 		/// <param name="value4">New value for the parameter.</param>
 		public void SetUInt(string name, uint value1, uint value2, uint value3, uint value4)
-			=> NativeAPI.material_set_uint4(_inst, name, value1, value2, value3, value4);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_uint4(_inst, nameBytes, value1, value2, value3, value4); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -500,7 +548,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetBool(string name, bool value)
-			=> NativeAPI.material_set_bool(_inst, name, value);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_bool(_inst, nameBytes, NB.Int(value)); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -508,7 +556,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetMatrix(string name, Matrix value)
-			=> NativeAPI.material_set_matrix(_inst, name, value);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_matrix(_inst, nameBytes, value); NU8.Free(nameBytes); } }
 
 		/// <summary>Sets a shader parameter with the given name to the
 		/// provided value. If no parameter is found, nothing happens, and
@@ -516,7 +564,7 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="value">New value for the parameter.</param>
 		public void SetTexture(string name, Tex value)
-			=> NativeAPI.material_set_texture(_inst, name, value._inst);
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); NativeAPI.material_set_texture(_inst, nameBytes, value._inst); NU8.Free(nameBytes); } }
 
 		/// <summary>This allows you to set more complex shader data types such
 		/// as structs. Note the SK doesn't guard against setting data of the
@@ -527,18 +575,15 @@ namespace StereoKit
 		/// copying.</typeparam>
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <param name="serializableData">New value for the parameter.</param>
-		public void SetData<T>(string name, in T serializableData) where T : struct
+		public void SetData<T>(string name, in T serializableData) where T : unmanaged
 		{
-			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))
-				throw new NotSupportedException("Material.SetData's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying! Explicit would work too.");
-
-			int    size   = Marshal.SizeOf(typeof(T));
-			IntPtr memory = Marshal.AllocHGlobal(size);
-			Marshal.StructureToPtr(serializableData, memory, false);
-
-			NativeAPI.material_set_param(_inst, name, MaterialParam.Unknown, memory);
-
-			Marshal.FreeHGlobal(memory);
+			unsafe
+			{
+				byte* nameBytes = NU8.Bytes(name);
+				fixed(void* memoryPtr = &serializableData)
+				NativeAPI.material_set_param(_inst, nameBytes, MaterialParam.Unknown, memoryPtr);
+				NU8.Free(nameBytes);
+			}
 		}
 
 		/// <summary>Variants are used by special effects when a manual render
@@ -576,7 +621,8 @@ namespace StereoKit
 		/// </summary>
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise 0.</returns>
-		public float GetFloat(string name) => NativeAPI.material_get_float(_inst, name);
+		public float GetFloat(string name)
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); float result = NativeAPI.material_get_float(_inst, nameBytes); NU8.Free(nameBytes); return result; } }
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of Vec2.Zero will be
@@ -584,7 +630,8 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise
 		/// Vec2.Zero.</returns>
-		public Vec2 GetVector2(string name) => NativeAPI.material_get_vector2(_inst, name);
+		public Vec2 GetVector2(string name)
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); Vec2 result = NativeAPI.material_get_vector2(_inst, nameBytes); NU8.Free(nameBytes); return result; } }
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of Vec3.Zero will be
@@ -592,7 +639,8 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise
 		/// Vec3.Zero.</returns>
-		public Vec3 GetVector3(string name) => NativeAPI.material_get_vector3(_inst, name);
+		public Vec3 GetVector3(string name)
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); Vec3 result = NativeAPI.material_get_vector3(_inst, nameBytes); NU8.Free(nameBytes); return result; } }
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of Vec4.Zero will be
@@ -600,7 +648,8 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise
 		/// Vec4.Zero.</returns>
-		public Vec4 GetVector4(string name) => NativeAPI.material_get_vector4(_inst, name);
+		public Vec4 GetVector4(string name)
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); Vec4 result = NativeAPI.material_get_vector4(_inst, nameBytes); NU8.Free(nameBytes); return result; } }
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of Color.White will be
@@ -608,14 +657,16 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise
 		/// Color.White.</returns>
-		public Color GetColor(string name) => NativeAPI.material_get_color(_inst, name);
+		public Color GetColor(string name)
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); Color result = NativeAPI.material_get_color(_inst, nameBytes); NU8.Free(nameBytes); return result; } }
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of '0' will be returned.
 		/// </summary>
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise 0.</returns>
-		public int GetInt(string name) => NativeAPI.material_get_int(_inst, name);
+		public int GetInt(string name)
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); int result = NativeAPI.material_get_int(_inst, nameBytes); NU8.Free(nameBytes); return result; } }
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of 'false' will be
@@ -623,14 +674,16 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise false.
 		/// </returns>
-		public bool GetBool(string name) => NativeAPI.material_get_bool(_inst, name);
+		public bool GetBool(string name) 
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); int result = NativeAPI.material_get_bool(_inst, nameBytes); NU8.Free(nameBytes); return NB.Bool(result); } }
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of '0' will be returned.
 		/// </summary>
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise 0.</returns>
-		public uint GetUInt(string name) => NativeAPI.material_get_uint(_inst, name);
+		public uint GetUInt(string name)
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); uint result = NativeAPI.material_get_uint(_inst, nameBytes); NU8.Free(nameBytes); return result; } }
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of Matrix.Identity will
@@ -638,7 +691,8 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise 
 		/// Matrix.Identity.</returns>
-		public Matrix GetMatrix(string name) => NativeAPI.material_get_matrix(_inst, name);
+		public Matrix GetMatrix(string name)
+		{ unsafe { byte* nameBytes = NU8.Bytes(name); Matrix result = NativeAPI.material_get_matrix(_inst, nameBytes); NU8.Free(nameBytes); return result; } }
 
 		/// <summary>Gets the value of a shader parameter with the given name.
 		/// If no parameter is found, a default value of null will be returned.
@@ -646,8 +700,15 @@ namespace StereoKit
 		/// <param name="name">Name of the shader parameter.</param>
 		/// <returns>The parameter's value, if present, otherwise null.
 		/// </returns>
-		public Tex GetTexture(string name) {
-			IntPtr result = NativeAPI.material_get_texture(_inst, name);
+		public Tex GetTexture(string name)
+		{
+			IntPtr result;
+			unsafe
+			{
+				byte* nameBytes = NU8.Bytes(name);
+				result = NativeAPI.material_get_texture(_inst, nameBytes);
+				NU8.Free(nameBytes);
+			}
 			return result == IntPtr.Zero
 				? null
 				: new Tex(result);
@@ -661,7 +722,13 @@ namespace StereoKit
 		/// found.</returns>
 		public static Material Find(string materialId)
 		{
-			IntPtr material = NativeAPI.material_find(materialId);
+			IntPtr material;
+			unsafe
+			{
+				byte* materialIdBytes = NU8.Bytes(materialId);
+				material = NativeAPI.material_find(materialIdBytes);
+				NU8.Free(materialIdBytes);
+			}
 			return material == IntPtr.Zero ? null : new Material(material);
 		}
 		/// <summary>Creates a new Material asset with the same shader and
@@ -674,7 +741,13 @@ namespace StereoKit
 		/// id.</returns>
 		public static Material Copy(string materialId)
 		{
-			IntPtr inst = NativeAPI.material_copy_id(materialId);
+			IntPtr inst;
+			unsafe
+			{
+				byte* materialIdBytes = NU8.Bytes(materialId);
+				inst = NativeAPI.material_copy_id(materialIdBytes);
+				NU8.Free(materialIdBytes);
+			}
 			return inst == IntPtr.Zero ? null : new Material(inst);
 		}
 

@@ -15,7 +15,7 @@ static class NameOverrides
 		string[] lines = null;
 		try {
 			lines = File.ReadAllLines(fileNamePairs);
-		} catch(Exception e) {
+		} catch(Exception) {
 			Console.WriteLine($"ERROR: Name override file failed to load!\n> {fileNamePairs}");
 			return false;
 		}

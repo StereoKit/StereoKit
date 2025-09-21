@@ -27,17 +27,17 @@ namespace StereoKit
 		/// them later on!</summary>
 		public string Id
 		{
-			get => Marshal.PtrToStringAnsi(NativeAPI.mesh_get_id(_inst));
-			set => NativeAPI.mesh_set_id(_inst, value);
+			get { unsafe { return NU8.Str(NativeAPI.mesh_get_id(_inst)); } }
+			set { unsafe { byte* val = NU8.Bytes(value); NativeAPI.mesh_set_id(_inst, val); NU8.Free(val); } }
 		}
 
 		/// <summary>This is a bounding box that encapsulates the Mesh! It's
 		/// used for collision, visibility testing, UI layout, and probably 
 		/// other things. While it's normally calculated from the mesh vertices,
 		/// you can also override this to suit your needs.</summary>
-		public Bounds Bounds { 
+		public Bounds Bounds {
 			get => NativeAPI.mesh_get_bounds(_inst);
-			set => NativeAPI.mesh_set_bounds(_inst, value);
+			set { unsafe { NativeAPI.mesh_set_bounds(_inst, &value); } }
 		}
 
 		/// <summary>Should StereoKit keep the mesh data on the CPU for later
@@ -47,8 +47,8 @@ namespace StereoKit
 		/// you set this to true again later on, it will not contain data 
 		/// until it's set again.</summary>
 		public bool KeepData {
-			get => NativeAPI.mesh_get_keep_data(_inst);
-			set => NativeAPI.mesh_set_keep_data(_inst, value);
+			get => NB.Bool(NativeAPI.mesh_get_keep_data(_inst));
+			set => NativeAPI.mesh_set_keep_data(_inst, NB.Int(value));
 		}
 
 		/// <summary>The number of vertices stored in this Mesh! This is
@@ -78,8 +78,11 @@ namespace StereoKit
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Mesh()
 		{
-			if (_inst != IntPtr.Zero)
-				NativeAPI.assets_releaseref_threadsafe(_inst);
+			unsafe
+			{
+				if (_inst != IntPtr.Zero)
+					NativeAPI.assets_releaseref_threadsafe((void*)_inst);
+			}
 		}
 
 		/// <summary>Assigns the vertices and indices for this Mesh! This will
@@ -109,7 +112,14 @@ namespace StereoKit
 		/// frequently or need all the performance you can get, setting this to
 		/// false is a nice way to gain some speed!</param>
 		public void SetData(Vertex[] vertices, uint[] indices, bool calculateBounds = true)
-			=> NativeAPI.mesh_set_data(_inst, vertices, vertices.Length, indices, indices.Length, calculateBounds);
+		{
+			unsafe
+			{
+				fixed (uint* indicesPtr = indices)
+				fixed (Vertex* verticesPtr = vertices)
+					NativeAPI.mesh_set_data(_inst, verticesPtr, vertices.Length, indicesPtr, indices.Length, NB.Int(calculateBounds));
+			}
+		}
 
 		/// <summary>Assigns the vertices for this Mesh! This will create a
 		/// vertex buffer object on the graphics card. If you're
@@ -132,28 +142,31 @@ namespace StereoKit
 		/// frequently or need all the performance you can get, setting this to
 		/// false is a nice way to gain some speed!</param>
 		public void SetVerts(Vertex[] vertices, bool calculateBounds = true)
-			=> NativeAPI.mesh_set_verts(_inst, vertices, vertices.Length, calculateBounds);
+		{
+			unsafe
+			{
+				fixed (Vertex* verticesPtr = vertices)
+					NativeAPI.mesh_set_verts(_inst, verticesPtr, vertices.Length, NB.Int(calculateBounds));
+			}
+		}
 
 		/// <summary>This marshalls the Mesh's vertex data into an array. If
 		/// KeepData is false, then the Mesh is _not_ storing verts on the CPU,
-		/// and this information will _not_ be available.
-		/// 
-		/// Due to the way marshalling works, this is _not_ a cheap function!
-		/// </summary>
+		/// and this information will _not_ be available.</summary>
 		/// <returns>An array of vertices representing the Mesh, or null if
 		/// KeepData is false.</returns>
 		public Vertex[] GetVerts()
 		{
-			NativeAPI.mesh_get_verts(_inst, out IntPtr ptr, out int size, Memory.Reference);
-			if (ptr == IntPtr.Zero)
-				return null;
+			unsafe
+			{
+				Vertex* vertices;
+				int size;
+				NativeAPI.mesh_get_verts(_inst, &vertices, &size, Memory.Reference);
+				if (vertices == null)
+					return null;
 
-			int szStruct = Marshal.SizeOf(typeof(Vertex));
-			Vertex[] result = new Vertex[size];
-			// AHHHHHH
-			for (uint i = 0; i < size; i++)
-				result[i] = Marshal.PtrToStructure<Vertex>(new IntPtr(ptr.ToInt64() + (szStruct * i)));
-			return result;
+				return new ReadOnlySpan<Vertex>(vertices, size).ToArray();
+			}
 		}
 
 		/// <summary>Assigns the face indices for this Mesh! Faces are always
@@ -166,29 +179,33 @@ namespace StereoKit
 		/// <param name="indices">A list of face indices, must be a multiple of
 		/// 3. Each index represents a vertex from the array assigned using
 		/// SetVerts.</param>
-		public void SetInds (uint[] indices)
-			=>NativeAPI.mesh_set_inds(_inst, indices, indices.Length);
+		public void SetInds(uint[] indices)
+		{
+			unsafe
+			{
+				fixed (uint* indicesPtr = indices)
+					NativeAPI.mesh_set_inds(_inst, indicesPtr, indices.Length);
+			}
+		}
 
 		/// <summary>This marshalls the Mesh's index data into an array. If
 		/// KeepData is false, then the Mesh is _not_ storing indices on the
-		/// CPU, and this information will _not_ be available.
-		/// 
-		/// Due to the way marshalling works, this is _not_ a cheap function!
-		/// </summary>
+		/// CPU, and this information will _not_ be available.</summary>
 		/// <returns>An array of indices representing the Mesh, or null if
 		/// KeepData is false.</returns>
 		public uint[] GetInds()
 		{
-			NativeAPI.mesh_get_inds(_inst, out IntPtr ptr, out int size, Memory.Reference);
-			if (ptr == IntPtr.Zero)
-				return null;
 
-			int szStruct = Marshal.SizeOf(typeof(uint));
-			uint[] result = new uint[size];
-			// AHHHHHH
-			for (uint i = 0; i < size; i++)
-				result[i] = Marshal.PtrToStructure<uint>(new IntPtr(ptr.ToInt64() + (szStruct * i)));
-			return result;
+			unsafe
+			{
+				uint* indices;
+				int size;
+				NativeAPI.mesh_get_inds(_inst, &indices, &size, Memory.Reference);
+				if (indices == null)
+					return null;
+
+				return new ReadOnlySpan<uint>(indices, size).ToArray();
+			}
 		}
 
 		/// <summary>Checks the intersection point of this ray and a Mesh
@@ -210,7 +227,13 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt, out _);
+		{
+			unsafe
+			{
+				fixed (Ray* modelSpaceAtRef = &modelSpaceAt)
+					return NB.Bool(NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, modelSpaceAtRef, null));
+			}
+		}
 
 		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
@@ -232,7 +255,14 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt, out uint outStartInds)
-			=> NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt, out outStartInds);
+		{
+			unsafe
+			{
+				fixed (uint* startInds = &outStartInds)
+				fixed (Ray* modelSpaceAtRef = &modelSpaceAt)
+					return NB.Bool(NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, modelSpaceAtRef, startInds));
+			}
+		}
 
 		/// <summary>Checks the intersection point of this ray and a Mesh
 		/// with collision data stored on the CPU. A mesh without collision
@@ -251,11 +281,15 @@ namespace StereoKit
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Vec3 modelSpaceAt)
 		{
-			bool result = NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, out Ray intersection, out _);
-			modelSpaceAt = intersection.position;
-			return result;
+			unsafe
+			{
+				Ray intersection;
+				bool result = NB.Bool(NativeAPI.mesh_ray_intersect(_inst, modelSpaceRay, Cull.Back, &intersection, null));
+				modelSpaceAt = intersection.position;
+				return result;
+			}
 		}
-		
+
 		/// <summary>Retrieves the vertices associated with a particular
 		/// triangle on the Mesh.</summary>
 		/// <param name="triangleIndex">Starting index of the triangle, should
@@ -265,7 +299,15 @@ namespace StereoKit
 		/// <param name="c">The third vertex of the found triangle</param>
 		/// <returns>Returns true if triangle index was valid</returns>
 		public bool GetTriangle(uint triangleIndex, out Vertex a, out Vertex b, out Vertex c)
-			=> NativeAPI.mesh_get_triangle(_inst, triangleIndex, out a, out b, out c);
+		{
+			unsafe
+			{
+				fixed (Vertex* aPtr = &a)
+				fixed (Vertex* bPtr = &b)
+				fixed (Vertex* cPtr = &c)
+					return NB.Bool(NativeAPI.mesh_get_triangle(_inst, triangleIndex, aPtr, bPtr, cPtr));
+			}
+		}
 
 		/// <inheritdoc cref="Mesh.Draw(Material, Matrix)"/>
 		/// <param name="colorLinear">A per-instance linear space color value
@@ -280,7 +322,7 @@ namespace StereoKit
 		/// a 3rd person perspective, but filtering it out from the 1st
 		/// person perspective.</param>
 		public void Draw(Material material, Matrix transform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
-			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, colorLinear, layer);
+		{ unsafe { NativeAPI.render_add_mesh(_inst, material._inst, &transform, colorLinear, layer); } }
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
@@ -289,7 +331,7 @@ namespace StereoKit
 		/// <param name="transform">A Matrix that will transform the mesh 
 		/// from Model Space into the current Hierarchy Space.</param>
 		public void Draw(Material material, Matrix transform)
-			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, Color.White, RenderLayer.Layer0);
+		{ unsafe { NativeAPI.render_add_mesh(_inst, material._inst, &transform, Color.White, RenderLayer.Layer0); } }
 
 		/// <summary>Generates a plane on the XZ axis facing up that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV
@@ -309,7 +351,7 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GeneratePlane(Vec2 dimensions, int subdivisions = 0, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions, doubleSided));
+			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, Vec3.Up, Vec3.Forward, subdivisions, NB.Int(doubleSided)));
 
 		/// <summary>Generates a plane with an arbitrary orientation that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV 
@@ -337,7 +379,7 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A plane mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GeneratePlane(Vec2 dimensions, Vec3 planeNormal, Vec3 planeTopDirection, int subdivisions = 0, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions, doubleSided));
+			=> new Mesh(NativeAPI.mesh_gen_plane(dimensions, planeNormal, planeTopDirection, subdivisions, NB.Int(doubleSided)));
 
 		/// <summary>Generates a circle on the XZ axis facing up that is 
 		/// pre-sized to the given diameter. UV coordinates correspond to a unit 
@@ -357,7 +399,7 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A circle mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GenerateCircle(float diameter, int spokes = 16, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, Vec3.Up, Vec3.Forward, spokes, doubleSided));
+			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, Vec3.Up, Vec3.Forward, spokes, NB.Int(doubleSided)));
 
 		/// <summary>Generates a circle with an arbitrary orientation that is
 		/// pre-sized to the given diameter. UV coordinates start at the top 
@@ -384,7 +426,7 @@ namespace StereoKit
 		/// rendered?</param>
 		/// <returns>A circle mesh, pre-sized to the given dimensions.</returns>
 		public static Mesh GenerateCircle(float diameter, Vec3 planeNormal, Vec3 planeTopDirection, int spokes = 16, bool doubleSided = false)
-			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, planeNormal, planeTopDirection, spokes, doubleSided));
+			=> new Mesh(NativeAPI.mesh_gen_circle(diameter, planeNormal, planeTopDirection, spokes, NB.Int(doubleSided)));
 
 		/// <summary>Generates a flat-shaded cube mesh, pre-sized to the
 		/// given dimensions. UV coordinates are projected flat on each face,
@@ -472,8 +514,13 @@ namespace StereoKit
 		/// </returns>
 		public static Mesh Find(string meshId)
 		{
-			IntPtr mesh = NativeAPI.mesh_find(meshId);
-			return mesh == IntPtr.Zero ? null : new Mesh(mesh);
+			unsafe
+			{
+				byte*  meshIdBytes = NU8.Bytes(meshId);
+				IntPtr mesh        = NativeAPI.mesh_find(meshIdBytes);
+				NU8.Free(meshIdBytes);
+				return mesh == IntPtr.Zero ? null : new Mesh(mesh);
+			}
 		}
 
 		/// <inheritdoc cref="Default.MeshSphere" />

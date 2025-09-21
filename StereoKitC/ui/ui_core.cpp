@@ -74,13 +74,13 @@ button_state_ ui_volume_at_16(const char16_t *id, bounds_t bounds, ui_confirm_ i
 
 ///////////////////////////////////////////
 
-void ui_button_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, float& out_finger_offset, button_state_& out_button_state, button_state_& out_focus_state, int32_t* out_opt_hand) {
-	ui_button_behavior_depth(window_relative_pos, size, id, skui_settings.depth, skui_settings.depth / 2, out_finger_offset, out_button_state, out_focus_state, out_opt_hand);
+void ui_button_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, float& out_finger_offset, button_state_& out_button_state, button_state_& out_focus_state, interactor_t* out_opt_interactor) {
+	ui_button_behavior_depth(window_relative_pos, size, id, skui_settings.depth, skui_settings.depth / 2, out_finger_offset, out_button_state, out_focus_state, out_opt_interactor);
 }
 
 ///////////////////////////////////////////
 
-void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id, float button_depth, float button_activation_depth, float &out_finger_offset, button_state_ &out_button_state, button_state_ &out_focus_state, int32_t* out_opt_hand) {
+void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id, float button_depth, float button_activation_depth, float &out_finger_offset, button_state_ &out_button_state, button_state_ &out_focus_state, interactor_t* out_opt_interactor) {
 	out_button_state  = button_state_inactive;
 	out_focus_state   = button_state_inactive;
 	out_finger_offset = button_depth;
@@ -113,8 +113,8 @@ void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id,
 		out_focus_state = button_make_state(actor->focused_prev_prev == id, actor->focused_prev == id);
 	}
 
-	if (out_opt_hand)
-		*out_opt_hand = interactor;
+	if (out_opt_interactor)
+		*out_opt_interactor = interactor;
 }
 
 ///////////////////////////////////////////

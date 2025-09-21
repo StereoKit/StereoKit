@@ -36,7 +36,7 @@ namespace StereoKit
 		/// <returns>True if the permission requires user interaction, false
 		/// otherwise.</returns>
 		public static bool IsInteractive(PermissionType permission)
-			=> NativeAPI.permission_is_interactive(permission);
+			=> NB.Bool(NativeAPI.permission_is_interactive(permission));
 
 		/// <summary>This sends off a request to the OS for a particular
 		/// permission! If the permission IsInteractive, then this will bring

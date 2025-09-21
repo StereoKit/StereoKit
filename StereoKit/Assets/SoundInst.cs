@@ -39,7 +39,7 @@ namespace StereoKit
 		/// <summary>Is this Sound instance currently playing? For streaming
 		/// assets, this will be true even if they don't have any new data
 		/// in them, and they're just idling at the end of their data.</summary>
-		public bool IsPlaying => NativeAPI.sound_inst_is_playing(this);
+		public bool IsPlaying => NB.Bool(NativeAPI.sound_inst_is_playing(this));
 
 		/// <summary>This stops the sound early if it's still playing.</summary>
 		public void Stop() => NativeAPI.sound_inst_stop(this);

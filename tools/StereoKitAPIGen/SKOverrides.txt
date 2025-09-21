@@ -7,11 +7,13 @@ uint8_t byte
 uint16_t ushort
 uint32_t uint
 uint64_t ulong
-bool32_t bool
+bool32_t int
 float float
 double double
 void void
 char32_t uint
+char16_t char
+char byte
 
 # Keyboard keys by default resolve to just numbers, no bueno
 key_0 N0
@@ -82,8 +84,21 @@ asset_t IntPtr
 size_t UIntPtr
 
 device_display_get_fov _
-platform_file_picker _
-platform_file_picker_sz _
+text_align_ _
+sound_read_samples _
+
+# Callback functions are tricky, write them by hand for now
 sk_step _
 sk_run _
 sk_run_data _
+sound_generate _
+tex_on_load _
+tex_on_load_remove _
+backend_openxr_add_callback_pre_session_create _
+backend_openxr_add_callback_poll_event _
+backend_openxr_remove_callback_poll_event _
+log_subscribe _
+log_unsubscribe _
+platform_file_picker _
+render_screenshot_capture _
+render_screenshot_viewpoint _

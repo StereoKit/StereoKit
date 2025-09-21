@@ -24,17 +24,17 @@ namespace StereoKit
 	public class Model : IAsset
 	{
 		internal IntPtr _inst;
-		private ModelNodeCollection   _nodeCollection;
+		private ModelNodeCollection _nodeCollection;
 		private ModelVisualCollection _visualCollection;
-		private ModelAnimCollection   _animCollection;
+		private ModelAnimCollection _animCollection;
 
 		/// <summary>Gets or sets the unique identifier of this asset resource!
 		/// This can be helpful for debugging, managing your assets, or finding
 		/// them later on!</summary>
 		public string Id
 		{
-			get => Marshal.PtrToStringAnsi(NativeAPI.model_get_id(_inst));
-			set => NativeAPI.model_set_id(_inst, value);
+			get { unsafe { return NU8.Str(NativeAPI.model_get_id(_inst)); } }
+			set { unsafe { byte* val = NU8.Bytes(value); NativeAPI.model_set_id(_inst, val); NU8.Free(val); } }
 		}
 
 		/// <summary>This is an enumerable collection of all the nodes in this
@@ -60,7 +60,7 @@ namespace StereoKit
 		public Bounds Bounds
 		{
 			get => NativeAPI.model_get_bounds(_inst);
-			set => NativeAPI.model_set_bounds(_inst, value);
+			set { unsafe { NativeAPI.model_set_bounds(_inst, &value); } }
 		}
 
 		/// <summary>Returns the first root node in the Model's hierarchy.
@@ -87,9 +87,9 @@ namespace StereoKit
 		public Model(Mesh mesh, Material material)
 		{
 			_inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
-			_nodeCollection   = new ModelNodeCollection  (this);
+			_nodeCollection = new ModelNodeCollection(this);
 			_visualCollection = new ModelVisualCollection(this);
-			_animCollection   = new ModelAnimCollection  (this);
+			_animCollection = new ModelAnimCollection(this);
 		}
 
 		/// <summary>Creates an empty Model object with an automatically 
@@ -98,9 +98,9 @@ namespace StereoKit
 		public Model()
 		{
 			_inst = NativeAPI.model_create();
-			_nodeCollection   = new ModelNodeCollection  (this);
+			_nodeCollection = new ModelNodeCollection(this);
 			_visualCollection = new ModelVisualCollection(this);
-			_animCollection   = new ModelAnimCollection  (this);
+			_animCollection = new ModelAnimCollection(this);
 		}
 
 		/// <summary>Creates a single mesh subset Model using the indicated 
@@ -112,29 +112,34 @@ namespace StereoKit
 		public Model(string id, Mesh mesh, Material material)
 		{
 			_inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
-			_nodeCollection   = new ModelNodeCollection  (this);
+			_nodeCollection = new ModelNodeCollection(this);
 			_visualCollection = new ModelVisualCollection(this);
-			_animCollection   = new ModelAnimCollection  (this);
+			_animCollection = new ModelAnimCollection(this);
 			if (_inst != IntPtr.Zero)
 			{
-				NativeAPI.material_set_id(_inst, id);
+				unsafe
+				{
+					byte* idBytes = NU8.Bytes(id);
+					NativeAPI.material_set_id(_inst, idBytes);
+					NU8.Free(idBytes);
+				}
 			}
 		}
 		internal Model(IntPtr model)
 		{
 			_inst = model;
-			_nodeCollection   = new ModelNodeCollection  (this);
+			_nodeCollection = new ModelNodeCollection(this);
 			_visualCollection = new ModelVisualCollection(this);
-			_animCollection   = new ModelAnimCollection  (this);
+			_animCollection = new ModelAnimCollection(this);
 			if (_inst == IntPtr.Zero)
 				Log.Err("Received an empty model!");
 		}
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Model()
-		{
-			if (_inst != IntPtr.Zero)
-				NativeAPI.assets_releaseref_threadsafe(_inst);
-		}
+		{ unsafe {
+				if (_inst != IntPtr.Zero)
+					NativeAPI.assets_releaseref_threadsafe((void*)_inst);
+			} }
 		#endregion
 
 		#region Methods
@@ -154,7 +159,11 @@ namespace StereoKit
 		/// <param name="mode">The mode with which to play the animation.
 		/// </param>
 		public void PlayAnim(string animationName, AnimMode mode)
-			=> NativeAPI.model_play_anim(_inst, animationName, mode);
+		{ unsafe {
+				byte* animationNameBytes = NU8.Bytes(animationName);
+				NativeAPI.model_play_anim(_inst, animationNameBytes, mode);
+				NU8.Free(animationNameBytes);
+			} }
 		/// <summary>Sets the animation up as the active animation, and begins
 		/// playing it with the animation mode.</summary>
 		/// <param name="animation">The new active animation.</param>
@@ -177,16 +186,18 @@ namespace StereoKit
 		/// <param name="name">Case sensitive name of the animation.</param>
 		/// <returns>A link to the animation, or null if none is found.</returns>
 		public Anim FindAnim(string name)
-		{
-			int idx = NativeAPI.model_anim_find(_inst, name);
-			return idx == -1
-				? null
-				: new Anim(this, idx);
-		}
+		{ unsafe {
+				byte* nameBytes = NU8.Bytes(name);
+				int idx = NativeAPI.model_anim_find(_inst, nameBytes);
+				NU8.Free(nameBytes);
+				return idx == -1
+					? null
+					: new Anim(this, idx);
+			} }
 		/// <summary> This is a link to the currently active animation. If no
 		/// animation is active, this value will be null. To set the active
 		/// animation, use `PlayAnim`.</summary>
-		public Anim ActiveAnim { 
+		public Anim ActiveAnim {
 			get
 			{
 				int idx = NativeAPI.model_anim_active(_inst);
@@ -236,14 +247,14 @@ namespace StereoKit
 		/// <returns>True if an intersection occurs, false otherwise!
 		/// </returns>
 		public bool Intersect(Ray modelSpaceRay, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, Cull.Back, out modelSpaceAt);
+		{ unsafe { fixed (Ray* modelSpaceAtRef = &modelSpaceAt) return NB.Bool(NativeAPI.model_ray_intersect(_inst, modelSpaceRay, Cull.Back, modelSpaceAtRef)); } }
 
 		/// <inheritdoc cref="Intersect(Ray, out Ray)"/>
 		/// <param name="cullFaces">How should intersection work with respect
 		/// to the direction the triangles are facing? Should we skip triangles
 		/// that are facing away from the ray, or don't skip anything?</param>
 		public bool Intersect(Ray modelSpaceRay, Cull cullFaces, out Ray modelSpaceAt)
-			=> NativeAPI.model_ray_intersect(_inst, modelSpaceRay, cullFaces, out modelSpaceAt);
+		{ unsafe { fixed (Ray* modelSpaceAtRef = &modelSpaceAt) return NB.Bool(NativeAPI.model_ray_intersect(_inst, modelSpaceRay, cullFaces, modelSpaceAtRef)); } }
 
 		/// <summary>This adds a root node to the `Model`'s node hierarchy! If
 		/// There is already an initial root node, this node will still be a
@@ -265,11 +276,13 @@ namespace StereoKit
 		/// issue with mesh and material being inconsistently null, then this
 		/// result will also be null.</returns>
 		public ModelNode AddNode(string name, Matrix modelTransform, Mesh mesh = null, Material material = null, bool solid = true)
-		{
-			return new ModelNode(
-				this,
-				NativeAPI.model_node_add(_inst, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1 : 0));
-		}
+		{ unsafe {
+				byte* nameBytes = NU8.Bytes(name);
+				ModelNode result = new ModelNode(this,
+					NativeAPI.model_node_add(_inst, nameBytes, modelTransform, mesh?._inst ?? default, material?._inst ?? default, NB.Int(solid)));
+				NU8.Free(nameBytes);
+				return result;
+			} }
 
 		/// <summary>Searches the entire list of Nodes, and will return the
 		/// first on that matches this name exactly. If no ModelNode is found,
@@ -280,12 +293,14 @@ namespace StereoKit
 		/// <returns>The first matching ModelNode, or null if none are found.
 		/// </returns>
 		public ModelNode FindNode(string name)
-		{
-			int nodeId = NativeAPI.model_node_find(_inst, name);
-			return nodeId >= 0
-				? new ModelNode(this, nodeId)
-				: null;
-		}
+		{ unsafe {
+				byte* nameBytes = NU8.Bytes(name);
+				int nodeId = NativeAPI.model_node_find(_inst, nameBytes);
+				NU8.Free(nameBytes);
+				return nodeId >= 0
+					? new ModelNode(this, nodeId)
+					: null;
+			} }
 
 		/// <summary>Examines the visuals as they currently are, and rebuilds
 		/// the bounds based on that! This is normally done automatically,
@@ -314,13 +329,13 @@ namespace StereoKit
 		/// a 3rd person perspective, but filtering it out from the 1st
 		/// person perspective.</param>
 		public void Draw(Matrix transform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
-			=> NativeAPI.render_add_model_mat(_inst, IntPtr.Zero, transform, colorLinear, layer);
+		{ unsafe { NativeAPI.render_add_model_mat(_inst, IntPtr.Zero, &transform, colorLinear, layer); } }
 
 		/// <inheritdoc cref="Draw(Matrix, Color, RenderLayer)"/>
 		/// <param name="materialOverride">Allows you to override the Material
 		/// of all nodes on this Model with your own Material.</param>
 		public void Draw(Material materialOverride, Matrix transform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
-			=> NativeAPI.render_add_model_mat(_inst, materialOverride?._inst ?? IntPtr.Zero, transform, colorLinear, layer);
+		{ unsafe { NativeAPI.render_add_model_mat(_inst, materialOverride?._inst ?? IntPtr.Zero, &transform, colorLinear, layer); } }
 
 		/// <summary>Adds this Model to the render queue for this frame! If
 		/// the Hierarchy has a transform on it, that transform is combined
@@ -328,7 +343,7 @@ namespace StereoKit
 		/// <param name="transform">A Matrix that will transform the Model
 		/// from Model Space into the current Hierarchy Space.</param>
 		public void Draw(Matrix transform)
-			=> NativeAPI.render_add_model_mat(_inst, IntPtr.Zero, transform, Color.White, RenderLayer.Layer0);
+		{ unsafe { NativeAPI.render_add_model_mat(_inst, IntPtr.Zero, &transform, Color.White, RenderLayer.Layer0); } }
 		#endregion
 
 		/// <summary>Looks for a Model asset that's already loaded, matching
@@ -337,10 +352,13 @@ namespace StereoKit
 		/// <returns>A link to the Model matching 'modelId', null if none is
 		/// found.</returns>
 		public static Model Find(string modelId)
-		{
-			IntPtr model = NativeAPI.model_find(modelId);
-			return model == IntPtr.Zero ? null : new Model(model);
-		}
+		{ unsafe {
+				byte* modelIdBytes = NU8.Bytes(modelId);
+				IntPtr model = NativeAPI.model_find(modelIdBytes);
+				NU8.Free(modelIdBytes);
+
+				return model == IntPtr.Zero ? null : new Model(model);
+			} }
 
 		/// <summary>Loads a list of mesh and material subsets from a .obj,
 		/// .stl, .ply (ASCII), .gltf, or .glb file.</summary>
@@ -353,11 +371,13 @@ namespace StereoKit
 		/// <returns>A Model created from the file, or null if the file 
 		/// failed to load!</returns>
 		public static Model FromFile(string file, Shader shader = null)
-		{
-			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_file(NativeHelper.ToUtf8(file), final);
-			return inst == IntPtr.Zero ? null : new Model(inst);
-		}
+		{ unsafe {
+				IntPtr final = shader?._inst ?? IntPtr.Zero;
+				byte* fileBytes = NU8.Bytes(file);
+				IntPtr inst = NativeAPI.model_create_file(fileBytes, final);
+				NU8.Free(fileBytes);
+				return inst == IntPtr.Zero ? null : new Model(inst);
+			} }
 
 		/// <summary>Loads a list of mesh and material subsets from a .obj,
 		/// .stl, .ply (ASCII), .gltf, or .glb file stored in memory. Note
@@ -377,7 +397,7 @@ namespace StereoKit
 		public static Model FromMemory(string filename, in byte[] data, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_mem(NativeHelper.ToUtf8(filename), data, (UIntPtr)data.Length, final);
+			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -402,13 +422,9 @@ namespace StereoKit
 		/// <returns>A Model composed of a single mesh and Material.</returns>
 		public static Model FromMesh(string id, Mesh mesh, Material material)
 		{
-			IntPtr inst = NativeAPI.model_create_mesh(mesh._inst, material._inst);
-			if (inst != IntPtr.Zero)
-			{
-				NativeAPI.material_set_id(inst, id);
-				return new Model(inst);
-			}
-			return null;
+			Model result = FromMesh(mesh, material);
+			if (result != null) result.Id = id;
+			return result;
 		}
 	}
 
@@ -439,8 +455,8 @@ namespace StereoKit
 		/// Names are not required to be unique.</summary>
 		public string Name
 		{
-			get => Marshal.PtrToStringAnsi(NativeAPI.model_node_get_name(_model._inst, _nodeId));
-			set => NativeAPI.model_node_set_name(_model._inst, _nodeId, value);
+			get { unsafe { return NU8.Str(NativeAPI.model_node_get_name(_model._inst, _nodeId)); } }
+			set { unsafe { byte* val = NU8.Bytes(value); NativeAPI.model_node_set_name(_model._inst, _nodeId, val); NU8.Free(val); } }
 		}
 
 		/// <summary>A collection of key/value pairs that add additional
@@ -454,8 +470,8 @@ namespace StereoKit
 		/// attached.</summary>
 		public bool Solid
 		{
-			get => NativeAPI.model_node_get_solid(_model._inst, _nodeId);
-			set => NativeAPI.model_node_set_solid(_model._inst, _nodeId, value);
+			get => NB.Bool(NativeAPI.model_node_get_solid(_model._inst, _nodeId));
+			set => NativeAPI.model_node_set_solid(_model._inst, _nodeId, NB.Int(value));
 		}
 		/// <summary>Is this node flagged as visible? By default, this is true
 		/// for all nodes with visual elements attached. These nodes will not
@@ -464,8 +480,8 @@ namespace StereoKit
 		/// and setting this value will have no effect.</summary>
 		public bool Visible
 		{
-			get => NativeAPI.model_node_get_visible(_model._inst, _nodeId);
-			set => NativeAPI.model_node_set_visible(_model._inst, _nodeId, value);
+			get => NB.Bool(NativeAPI.model_node_get_visible(_model._inst, _nodeId));
+			set => NativeAPI.model_node_set_visible(_model._inst, _nodeId, NB.Int(value));
 		}
 		/// <summary>The transform of this node relative to the Model itself.
 		/// This incorporates transforms from all parent nodes. Setting this
@@ -512,12 +528,12 @@ namespace StereoKit
 		/// <returns>Null if this key does not exist, or a string with data
 		/// otherwise.</returns>
 		public string GetInfo(string key)
-		{
-			IntPtr result = NativeAPI.model_node_info_get(_model._inst, _nodeId, NativeHelper.ToUtf8(key));
-			return result == IntPtr.Zero
-				? null
-				: NativeHelper.FromUtf8(result);
-		}
+		{ unsafe {
+				byte* keyBytes = NU8.Bytes(key);
+				string result = NU8.Str(NativeAPI.model_node_info_get(_model._inst, _nodeId, keyBytes));
+				NU8.Free(keyBytes);
+				return result;
+			} }
 
 		/// <summary>Set a Key/Value pair associated with this ModelNode. This
 		/// is auto-populated from the GLTF extras, and you can also add your
@@ -525,7 +541,13 @@ namespace StereoKit
 		/// <param name="key">The dictionary key to look up.</param>
 		/// <param name="value"></param>
 		public void SetInfo(string key, string value)
-			=> NativeAPI.model_node_info_set(_model._inst, _nodeId, NativeHelper.ToUtf8(key), NativeHelper.ToUtf8(value));
+		{ unsafe {
+				byte* keyBytes = NU8.Bytes(key);
+				byte* valueBytes = NU8.Bytes(value);
+				NativeAPI.model_node_info_set(_model._inst, _nodeId, keyBytes, valueBytes);
+				NU8.Free(keyBytes);
+				NU8.Free(valueBytes);
+			} }
 
 		/// <summary>Advances this ModelNode class to the next Sibling in the
 		/// hierarchy tree. If it cannot, then it remains the same. </summary>
@@ -588,11 +610,13 @@ namespace StereoKit
 		/// issue with mesh and material being inconsistently null, then this
 		/// result will also be null.</returns>
 		public ModelNode AddChild(string name, Matrix localTransform, Mesh mesh = null, Material material = null, bool solid = true)
-		{
-			return new ModelNode(
-				_model,
-				NativeAPI.model_node_add_child(_model._inst, _nodeId, name, localTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1 : 0));
-		}
+		{ unsafe {
+				byte* nameBytes = NU8.Bytes(name);
+				ModelNode result = new ModelNode(_model,
+					NativeAPI.model_node_add_child(_model._inst, _nodeId, nameBytes, localTransform, mesh?._inst ?? default, material?._inst ?? default, NB.Int(solid)));
+				NU8.Free(nameBytes);
+				return result;
+			} }
 
 		private ModelNode From(int nodeId) => nodeId >= 0 ? new ModelNode(_model, nodeId) : null;
 	}
@@ -602,10 +626,10 @@ namespace StereoKit
 	public struct ModelNodeInfoCollection : IEnumerable<KeyValuePair<string, string>>
 	{
 		IntPtr _model;
-		int    _nodeId;
+		int _nodeId;
 		internal ModelNodeInfoCollection(IntPtr model, int node)
 		{
-			_model  = model;
+			_model = model;
 			_nodeId = node;
 		}
 
@@ -615,16 +639,62 @@ namespace StereoKit
 		/// <param name="key">Identifying key.</param>
 		/// <returns>Associated value, or null if not found.</returns>
 		public string this[string key] {
-			get => NativeHelper.FromUtf8(NativeAPI.model_node_info_get(_model, _nodeId, NativeHelper.ToUtf8(key)));
-			set => NativeAPI.model_node_info_set(_model, _nodeId, NativeHelper.ToUtf8(key), NativeHelper.ToUtf8(value));
+			get { unsafe {
+					byte* keyBytes = NU8.Bytes(key);
+					string result = NU8.Str(NativeAPI.model_node_info_get(_model, _nodeId, keyBytes));
+					NU8.Free(keyBytes);
+					return result;
+				} }
+			set { unsafe {
+					byte* keyBytes = NU8.Bytes(key);
+					byte* valueBytes = NU8.Bytes(value);
+					NativeAPI.model_node_info_set(_model, _nodeId, keyBytes, valueBytes);
+					NU8.Free(keyBytes);
+					NU8.Free(valueBytes);
+				} }
 		}
 
+		private static bool NodeInfoIterateKey(IntPtr model, int nodeId, ref int iterator, out string key)
+		{ unsafe {
+				byte* keyBytes;
+				bool result;
+				fixed (int* iteratorRef = &iterator)
+					result = NB.Bool(NativeAPI.model_node_info_iterate(model, nodeId, iteratorRef, &keyBytes, null));
+				key = NU8.Str(keyBytes);
+				return result;
+			} }
+
+		private static bool NodeInfoIterateValue(IntPtr model, int nodeId, ref int iterator, out string value)
+		{ unsafe {
+				byte* valueBytes;
+				bool result;
+				fixed (int* iteratorRef = &iterator)
+					result = NB.Bool(NativeAPI.model_node_info_iterate(model, nodeId, iteratorRef, null, &valueBytes));
+				value = NU8.Str(valueBytes);
+				return result;
+			} }
+
+
+		private static bool NodeInfoIterateValue(IntPtr model, int nodeId, ref int iterator, out string key, out string value)
+		{ unsafe {
+				byte* valueBytes;
+				byte* keyBytes;
+				bool result;
+				fixed (int* iteratorRef = &iterator)
+					result = NB.Bool(NativeAPI.model_node_info_iterate(model, nodeId, iteratorRef, &keyBytes, &valueBytes));
+				key = NU8.Str(keyBytes);
+				value = NU8.Str(valueBytes);
+				return result;
+			} }
+
 		/// <summary>An enumerable for the keys in this collection.</summary>
-		public IEnumerable<string> Keys { 
-			get {
+		public IEnumerable<string> Keys
+		{
+			get
+			{
 				int iterator = 0;
-				while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out IntPtr key, out _))
-					yield return NativeHelper.FromUtf8(key);
+				while (NodeInfoIterateKey(_model, _nodeId, ref iterator, out string key))
+					yield return key;
 			}
 		}
 		/// <summary>An enumerable for the values in this collection.</summary>
@@ -633,8 +703,8 @@ namespace StereoKit
 			get
 			{
 				int iterator = 0;
-				while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out _, out IntPtr val))
-					yield return NativeHelper.FromUtf8(val);
+				while (NodeInfoIterateKey(_model, _nodeId, ref iterator, out string val))
+					yield return val;
 			}
 		}
 
@@ -661,21 +731,33 @@ namespace StereoKit
 		/// non-null value.</summary>
 		/// <param name="key">Identifying key.</param>
 		/// <returns>True if found, false if not.</returns>
-		public bool Contains(string key) => NativeAPI.model_node_info_get(_model, _nodeId, NativeHelper.ToUtf8(key)) != IntPtr.Zero;
+		public bool Contains(string key)
+		{ unsafe {
+				byte* keyBytes = NU8.Bytes(key);
+				bool result = NativeAPI.model_node_info_get(_model, _nodeId, keyBytes) != null;
+				NU8.Free(keyBytes);
+				return result;
+			} }
 
 		/// <summary>Removes a specific key/value pair from the collection, if
 		/// present.</summary>
 		/// <param name="key">Identifying key.</param>
 		/// <returns>True if found and removed, false if not.</returns>
-		public bool Remove(string key) => NativeAPI.model_node_info_remove(_model, _nodeId, NativeHelper.ToUtf8(key));
+		public bool Remove(string key)
+		{ unsafe {
+				byte* keyBytes = NU8.Bytes(key);
+				bool result = NB.Bool(NativeAPI.model_node_info_remove(_model, _nodeId, keyBytes));
+				NU8.Free(keyBytes);
+				return result;
+			} }
 
 		/// <summary>The enumerator for the collection's KeyValuePairs.</summary>
 		/// <returns>Each consecutive pair in the collection.</returns>
 		public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
 		{
 			int iterator = 0;
-			while (NativeAPI.model_node_info_iterate(_model, _nodeId, ref iterator, out IntPtr key, out IntPtr val))
-				yield return new KeyValuePair<string, string>(NativeHelper.FromUtf8(key), NativeHelper.FromUtf8(val));
+			while (NodeInfoIterateValue(_model, _nodeId, ref iterator, out string key, out string val))
+				yield return new KeyValuePair<string, string>(key, val);
 		}
 
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -725,10 +807,13 @@ namespace StereoKit
 		/// issue with mesh and material being inconsistently null, then this
 		/// result will also be null.</returns>
 		public ModelNode Add(string name, Matrix modelTransform, Mesh mesh = null, Material material = null, bool solid = true)
-		{
-			return new ModelNode(_model,
-				NativeAPI.model_node_add(_model._inst, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1 : 0));
-		}
+		{ unsafe {
+				byte* nameBytes = NU8.Bytes(name);
+				ModelNode result = new ModelNode(_model,
+					NativeAPI.model_node_add(_model._inst, nameBytes, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, NB.Int(solid)));
+				NU8.Free(nameBytes);
+				return result;
+			} }
 	}
 
 	/// <summary>An enumerable for Model's visual ModelNodes</summary>
@@ -764,7 +849,7 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public class Anim
 	{
-		internal int   _animIndex;
+		internal int _animIndex;
 		internal Model _model;
 
 		internal Anim(Model model, int animIndex)
@@ -775,7 +860,7 @@ namespace StereoKit
 
 		/// <summary>The name of the animation as provided by the original
 		/// asset.</summary>
-		public string Name => Marshal.PtrToStringAnsi(NativeAPI.model_anim_get_name(_model._inst, _animIndex));
+		public string Name { get { unsafe { return NU8.Str(NativeAPI.model_anim_get_name(_model._inst, _animIndex)); } } }
 
 		/// <summary>The duration of the animation at normal playback speed, in
 		/// seconds.</summary>

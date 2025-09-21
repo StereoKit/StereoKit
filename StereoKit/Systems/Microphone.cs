@@ -23,7 +23,7 @@ namespace StereoKit
 		} }
 		/// <summary>Tells if the Microphone is currently recording audio.
 		/// </summary>
-		public static bool IsRecording => NativeAPI.mic_is_recording();
+		public static bool IsRecording => NB.Bool(NativeAPI.mic_is_recording());
 
 		/// <summary>Constructs a list of valid Microphone devices attached
 		/// to the system. These names can be passed into Start to select
@@ -40,7 +40,9 @@ namespace StereoKit
 			int      count  = NativeAPI.mic_device_count();
 			string[] result = new string[count];
 			for (int i = 0; i < count; i++)
-				result[i] = Marshal.PtrToStringAnsi(NativeAPI.mic_device_name(i));
+			{ unsafe {
+				result[i] = NU8.Str(NativeAPI.mic_device_name(i));
+			} }
 
 			return result;
 		}
@@ -68,7 +70,12 @@ namespace StereoKit
 		/// or if the deviceName is for a mic that has since been unplugged.
 		/// </returns>
 		public static bool Start(string deviceName = null)
-			=> NativeAPI.mic_start(deviceName);
+		{ unsafe {
+			byte* deviceNamePtr = NU8.Bytes(deviceName);
+			bool  result        = NB.Bool(NativeAPI.mic_start(deviceNamePtr));
+			NU8.Free(deviceNamePtr);
+			return result;
+		} }
 
 		/// <summary>If the Microphone is recording, this will stop it.
 		/// </summary>

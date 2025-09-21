@@ -17,10 +17,10 @@ namespace StereoKit
 		/// provided.</summary>
 		public System.Numerics.Plane p;
 		/// <summary>The direction the plane is facing.</summary>
-		public Vec3 normal { get=>p.Normal; set=>p.Normal = value; }
+		public Vec3 normal { get => p.Normal; set => p.Normal = value; }
 		/// <summary>The distance/travel along the plane's normal from the 
 		/// origin to the surface of the plane.</summary>
-		public float d { get=>p.D; set=>p.D = value; }
+		public float d { get => p.D; set => p.D = value; }
 
 		/// <summary>Implicit conversion from the System.Numerics backing type.</summary>
 		/// <param name="p">A System.Numerics plane.</param>
@@ -36,7 +36,7 @@ namespace StereoKit
 		/// formula!</summary>
 		/// <param name="normal">Direction the plane is facing.</param>
 		/// <param name="d">Distance along the normal from the origin to the surface of the plane.</param>
-		public Plane(Vec3 normal, float d) 
+		public Plane(Vec3 normal, float d)
 			=> p = new System.Numerics.Plane(normal, d);
 		/// <summary>Creates a plane from a normal, and any point on the plane!</summary>
 		/// <param name="pointOnPlane">Any point directly on the surface of the plane.</param>
@@ -64,7 +64,7 @@ namespace StereoKit
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Ray ray, out Vec3 at)
-			=> NativeAPI.plane_ray_intersect(this, ray, out at);
+		{ unsafe { fixed (Vec3* atPtr = &at) return NB.Bool(NativeAPI.plane_ray_intersect(this, ray, atPtr)); } }
 
 		/// <summary>Checks the intersection of a line with this plane!
 		/// </summary>
@@ -76,7 +76,7 @@ namespace StereoKit
 		/// the 'at' parameter for intersection information!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public bool Intersect(Vec3 lineStart, Vec3 lineEnd, out Vec3 at)
-			=> NativeAPI.plane_line_intersect(this, lineStart, lineEnd, out at);
+		{ unsafe { fixed (Vec3* atPtr = &at) return NB.Bool(NativeAPI.plane_line_intersect(this, lineStart, lineEnd, atPtr)); } }
 
 		/// <summary>Finds the closest point on this plane to the given 
 		/// point!</summary>

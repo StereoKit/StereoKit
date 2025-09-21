@@ -25,8 +25,8 @@ namespace StereoKit
 		/// them later on!</summary>
 		public string Id
 		{
-			get => Marshal.PtrToStringAnsi(NativeAPI.sound_get_id(_inst));
-			set => NativeAPI.sound_set_id(_inst, value);
+			get { unsafe { return NU8.Str(NativeAPI.sound_get_id(_inst)); } }
+			set { unsafe { byte* val = NU8.Bytes(value); NativeAPI.sound_set_id(_inst, val); NU8.Free(val); } }
 		}
 
 		/// <summary>This will return the total length of the sound in
@@ -60,10 +60,10 @@ namespace StereoKit
 		}
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Sound()
-		{
+		{ unsafe {
 			if (_inst != IntPtr.Zero)
-				NativeAPI.assets_releaseref_threadsafe(_inst);
-		}
+				NativeAPI.assets_releaseref_threadsafe((void*)_inst);
+		} }
 
 		/// <summary>Plays the sound at the 3D location specified, using the
 		/// volume parameter as an additional volume control option! Sound
@@ -92,12 +92,12 @@ namespace StereoKit
 		/// <param name="samples">An array of audio samples, where each
 		/// sample is between -1 and +1.</param>
 		public void WriteSamples(in float[] samples)
-			=> NativeAPI.sound_write_samples(_inst, samples, (ulong)samples.Length);
+		{ unsafe { fixed(float* samplesPtr = samples) NativeAPI.sound_write_samples(_inst, samplesPtr, (ulong)samples.Length); } }
 		/// <inheritdoc cref="WriteSamples(in float[])"/>
 		/// <param name="sampleCount">You can use this to write only a subset
 		/// of the samples in the array, rather than the entire array!</param>
 		public void WriteSamples(in float[] samples, int sampleCount)
-			=> NativeAPI.sound_write_samples(_inst, samples, (ulong)sampleCount);
+		{ unsafe { fixed (float* samplesPtr = samples) NativeAPI.sound_write_samples(_inst, samplesPtr, (ulong)sampleCount); } }
 
 		/// <summary>Only works if this Sound is a stream type! This writes
 		/// a number of audio samples to the sample buffer, and samples 
@@ -127,7 +127,12 @@ namespace StereoKit
 		/// stream's buffer and written to the provided sample buffer.
 		/// </returns>
 		public int ReadSamples(ref float[] samples)
-			=> (int)NativeAPI.sound_read_samples(_inst, samples, (ulong)samples.Length);
+		{
+			unsafe { fixed (float* ptr = samples)
+			{
+				return (int)NativeAPI.sound_read_samples(_inst, (IntPtr)ptr, (ulong)samples.Length);
+			}}
+		}
 
 		/// <summary>This will read samples from the sound stream, starting
 		/// from the first unread sample. Check UnreadSamples for how many
@@ -149,10 +154,12 @@ namespace StereoKit
 		/// <param name="soundId">Which Sound are you looking for?</param>
 		/// <returns>A link to the sound matching 'soundId', null if none is found.</returns>
 		public static Sound Find(string soundId)
-		{
-			IntPtr sound = NativeAPI.sound_find(soundId);
+		{ unsafe {
+			byte*  soundIdBytes = NU8.Bytes(soundId);
+			IntPtr sound        = NativeAPI.sound_find(soundIdBytes);
+			NU8.Free(soundIdBytes);
 			return sound == IntPtr.Zero ? null : new Sound(sound);
-		}
+		} }
 
 		/// <summary>Loads a sound effect from file! Currently, StereoKit
 		/// supports .wav and .mp3 files. Audio is converted to mono.</summary>
@@ -160,10 +167,12 @@ namespace StereoKit
 		/// .mp3 files.</param>
 		/// <returns>A sound object, or null if something went wrong.</returns>
 		public static Sound FromFile(string filename)
-		{
-			IntPtr inst = NativeAPI.sound_create(NativeHelper.ToUtf8(filename));
+		{ unsafe {
+			byte*  filenameBytes = NU8.Bytes(filename);
+			IntPtr inst          = NativeAPI.sound_create(filenameBytes);
+			NU8.Free(filenameBytes);
 			return inst == IntPtr.Zero ? null : new Sound(inst);
-		}
+		} }
 
 		/// <summary>Create a sound used for streaming audio in or out! This
 		/// is useful for things like reading from a microphone stream, or
@@ -190,10 +199,12 @@ namespace StereoKit
 		/// <returns>Returns a sound effect from the samples provided! Or
 		/// null if something went wrong.</returns>
 		public static Sound FromSamples(float[] samplesAt48000s)
-		{
-			IntPtr inst = NativeAPI.sound_create_samples(samplesAt48000s, (ulong)samplesAt48000s.Length);
+		{ unsafe {
+			IntPtr inst;
+			fixed(float* samplesPtr = samplesAt48000s)
+			inst = NativeAPI.sound_create_samples(samplesPtr, (ulong)samplesAt48000s.Length);
 			return inst == IntPtr.Zero ? null : new Sound(inst);
-		}
+		} }
 
 		/// <summary>This function will generate a sound from a function you
 		/// provide! The function is called once for each sample in the
@@ -209,8 +220,7 @@ namespace StereoKit
 		/// went wrong.</returns>
 		public static Sound Generate(AudioGenerator generator, float duration)
 		{
-			AudioGenerator tmpGen = generator;
-			IntPtr inst = NativeAPI.sound_generate(tmpGen, duration);
+			IntPtr inst = NativeAPI.sound_generate(generator, duration);
 			return inst == IntPtr.Zero ? null : new Sound(inst);
 		}
 

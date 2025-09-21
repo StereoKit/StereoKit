@@ -166,7 +166,7 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 		surface->tex         = tex_create(tex_type_image_nomips | tex_type_rendertarget, surface->color);
 		surface->multisample = multisample;
 		surface->enabled     = true;
-		tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample, nullptr);
+		tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample);
 
 		char name[64];
 		snprintf(name, sizeof(name), "sk/render/pipeline_surface_%d", surface_id);
@@ -187,7 +187,7 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 
 	log_diagf("Resizing target surface: <~grn>%d<~clr>x<~grn>%d<~clr>x<~grn>%d<~clr>@<~grn>%d<~clr>msaa", width, height, surface->array_count, multisample);
 	surface->multisample = multisample;
-	tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample, nullptr);
+	tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample);
 
 	return true;
 }

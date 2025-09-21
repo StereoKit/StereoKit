@@ -21,13 +21,13 @@ namespace StereoKit
 		/// them later on!</summary>
 		public string Id
 		{
-			get => Marshal.PtrToStringAnsi(NativeAPI.shader_get_id(_inst));
-			set => NativeAPI.shader_set_id(_inst, value);
+			get { unsafe { return NU8.Str(NativeAPI.shader_get_id(_inst)); } }
+			set { unsafe { byte* val = NU8.Bytes(value); NativeAPI.shader_set_id(_inst, val); NU8.Free(val); } }
 		}
 
 		/// <summary>The name of the shader, provided in the shader file 
 		/// itself. Not the filename or id.</summary>
-		public string Name => Marshal.PtrToStringAnsi(NativeAPI.shader_get_name(_inst));
+		public string Name { get { unsafe { return NU8.Str(NativeAPI.shader_get_name(_inst)); } } }
 
 		internal Shader(IntPtr shader)
 		{
@@ -37,10 +37,10 @@ namespace StereoKit
 		}
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Shader()
-		{
+		{ unsafe {
 			if (_inst != IntPtr.Zero)
-				NativeAPI.assets_releaseref_threadsafe(_inst);
-		}
+				NativeAPI.assets_releaseref_threadsafe((void*)_inst);
+		} }
 
 		/// <summary>Creates a shader asset from a precompiled StereoKit
 		/// Shader file stored as bytes!</summary>
@@ -67,10 +67,12 @@ namespace StereoKit
 		/// <returns>A shader from the given file, or null if it failed to 
 		/// load/compile.</returns>
 		public static Shader FromFile(string file)
-		{
-			IntPtr inst = NativeAPI.shader_create_file(NativeHelper.ToUtf8(file));
+		{ unsafe {
+			byte*  fileBytes = NU8.Bytes(file); 
+			IntPtr inst      = NativeAPI.shader_create_file(fileBytes);
+			NU8.Free(fileBytes);
 			return inst == IntPtr.Zero ? null : new Shader(inst);
-		}
+		} }
 		/// <summary>Looks for a Shader asset that's already loaded, matching 
 		/// the given id! Unless the id has been set manually, the id will be 
 		/// the same as the shader's name provided in the metadata.</summary>
@@ -78,10 +80,12 @@ namespace StereoKit
 		/// the shader's metadata name!</param>
 		/// <returns>Link to a shader asset!</returns>
 		public static Shader Find(string shaderId)
-		{
-			IntPtr inst = NativeAPI.shader_find(shaderId);
+		{ unsafe {
+			byte*  shaderIdBytes = NU8.Bytes(shaderId); 
+			IntPtr inst          = NativeAPI.shader_find(shaderIdBytes);
+			NU8.Free(shaderIdBytes);
 			return inst == IntPtr.Zero ? null : new Shader(inst);
-		}
+		} }
 
 		/// <inheritdoc cref="StereoKit.Default.Shader" />
 		public static Shader Default => StereoKit.Default.Shader;

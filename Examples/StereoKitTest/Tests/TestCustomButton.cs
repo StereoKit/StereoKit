@@ -66,7 +66,7 @@ internal class TestCustomButton : ITest
 
 		Vec2   size   = Text.SizeLayout(text, UI.TextStyle) + UI.Settings.padding * 2;
 		Bounds layout = UI.LayoutReserve(size);
-		UI.ButtonBehavior(layout.TLC, size, text, out float offset, out BtnState state, out BtnState focus, out int hand);
+		UI.ButtonBehavior(layout.TLC, size, text, out float offset, out BtnState state, out BtnState focus, out Interactor actor);
 
 		layout.center    .z -= offset / 2;
 		layout.dimensions.z  = offset;
@@ -85,7 +85,7 @@ internal class TestCustomButton : ITest
 
 		Vec2   size   = Text.SizeLayout(text, UI.TextStyle) + UI.Settings.padding * 2;
 		Bounds layout = UI.LayoutReserve(size);
-		UI.ButtonBehavior(layout.TLC, size, text, out float offset, out BtnState state, out BtnState focus, out int hand);
+		UI.ButtonBehavior(layout.TLC, size, text, out float offset, out BtnState state, out BtnState focus, out Interactor actor);
 
 		layout.center.z    -= offset / 2;
 		layout.dimensions.z = offset;
@@ -104,7 +104,7 @@ internal class TestCustomButton : ITest
 
 		Vec2   size   = Text.SizeLayout(text, UI.TextStyle) + UI.Settings.padding * 2;
 		Bounds layout = UI.LayoutReserve(size);
-		UI.ButtonBehavior(layout.TLC, size, text, out float offset, out BtnState state, out BtnState focus, out int hand);
+		UI.ButtonBehavior(layout.TLC, size, text, out float offset, out BtnState state, out BtnState focus, out Interactor actor);
 
 		layout.center.z    -= offset / 2;
 		layout.dimensions.z = offset;
@@ -123,7 +123,7 @@ internal class TestCustomButton : ITest
 
 		Vec2   size   = Text.SizeLayout(text, UI.TextStyle) + UI.Settings.padding * 2;
 		Bounds layout = UI.LayoutReserve(size);
-		UI.ButtonBehavior(layout.TLC, size, text, out float offset, out BtnState state, out BtnState focus, out int hand);
+		UI.ButtonBehavior(layout.TLC, size, text, out float offset, out BtnState state, out BtnState focus, out Interactor actor);
 
 		layout.center.z    -= offset / 2;
 		layout.dimensions.z = offset;

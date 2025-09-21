@@ -11,7 +11,7 @@ namespace StereoKit
 	/// library!</summary>
 	public static class SK
 	{
-		private static Steppers                _steppers         = new Steppers();
+		private static Steppers _steppers = new Steppers();
 		private static ConcurrentQueue<Action> _mainThreadInvoke = new ConcurrentQueue<Action>();
 
 		/// <summary>This is a copy of the settings that StereoKit was
@@ -38,7 +38,7 @@ namespace StereoKit
 
 		/// <summary>Human-readable version name embedded in the StereoKitC
 		/// DLL.</summary>
-		public static string VersionName => Marshal.PtrToStringAnsi( NativeAPI.sk_version_name() );
+		public static string VersionName { get { unsafe { return NU8.Str(NativeAPI.sk_version_name()); } } }
 		/// <summary>An integer version Id! This is defined using a hex value
 		/// with this format: `0xMMMMiiiiPPPPrrrr` in order of 
 		/// Major.mInor.Patch.pre-Release</summary>
@@ -134,7 +134,7 @@ namespace StereoKit
 		/// <param name="window">This is an ISurfaceHolder.Surface.Handle or
 		/// equivalent pointer.</param>
 		public static void SetWindow(IntPtr window)
-			=> NativeAPI.sk_set_window_xam(window);
+		{ unsafe { NativeAPI.sk_set_window_xam((void*)window); } }
 
 		private static bool InitializeCall(SKSettings settings)
 		{
@@ -151,7 +151,7 @@ namespace StereoKit
 			// DllImport finds the function at the beginning of the function
 			// call, so this needs to be in a separate function from
 			// NativeLib.LoadDll
-			bool result = NativeAPI.sk_init(settings);
+			bool result = NB.Bool(NativeAPI.sk_init(settings));
 			// Get the "resolved" settings from StereoKit, so we pick up some
 			// of the final defaults or calculated settings.
 			Settings = NativeAPI.sk_get_settings();

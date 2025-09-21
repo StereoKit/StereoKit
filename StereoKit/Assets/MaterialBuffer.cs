@@ -38,10 +38,9 @@ namespace StereoKit
 	/// <typeparam name="T">a struct that uses the 
 	/// `[StructLayout(LayoutKind.Sequential)]` attribute for proper copying
 	/// </typeparam>
-	public class MaterialBuffer<T> where T : struct
+	public class MaterialBuffer<T> where T : unmanaged
 	{
 		internal IntPtr _inst;
-		private  IntPtr _localMemory;
 
 		/// <summary>Create a new global MaterialBuffer bound to the register
 		/// slot id. All shaders will have access to the data provided via 
@@ -51,12 +50,8 @@ namespace StereoKit
 		/// the slot id for '3' indicated like this `: register(b3)`</param>
 		[Obsolete("Use empty constructor, and call Renderer.SetGlobalBuffer instead! This will be removed in a future version.")]
 		public MaterialBuffer(int registerSlot) {
-			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))
-				throw new NotSupportedException("MaterialBuffer's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying! Explicit would work too.");
-
-			int size     = Marshal.SizeOf(typeof(T));
-			_localMemory = Marshal.AllocHGlobal(size);
-			_inst        = NativeAPI.material_buffer_create(size);
+			int size = Marshal.SizeOf(typeof(T));
+			_inst    = NativeAPI.material_buffer_create(size);
 			if (_inst == IntPtr.Zero)
 				throw new ArgumentException("Bad slot id, see log.");
 			else
@@ -68,18 +63,13 @@ namespace StereoKit
 		/// have access to the data provided via this instance's `Set`.</summary>
 		public MaterialBuffer()
 		{
-			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))
-				throw new NotSupportedException("MaterialBuffer's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying! Explicit would work too.");
-
-			int size     = Marshal.SizeOf(typeof(T));
-			_localMemory = Marshal.AllocHGlobal(size);
-			_inst        = NativeAPI.material_buffer_create(size);
+			int size = Marshal.SizeOf(typeof(T));
+			_inst    = NativeAPI.material_buffer_create(size);
 		}
 
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~MaterialBuffer()
 		{
-			Marshal.FreeHGlobal(_localMemory);
 			if (_inst != IntPtr.Zero)
 				SK.ExecuteOnMain(() => NativeAPI.material_buffer_release(_inst));
 		}
@@ -89,8 +79,11 @@ namespace StereoKit
 		/// <param name="data">The data you wish to upload to the GPU.</param>
 		public void Set(in T data)
 		{
-			Marshal.StructureToPtr(data, _localMemory, false);
-			NativeAPI.material_buffer_set_data(_inst, _localMemory);
+			unsafe
+			{
+				fixed (void*dataPtr = &data) 
+					NativeAPI.material_buffer_set_data(_inst, dataPtr);
+			}
 		}
 	}
 }

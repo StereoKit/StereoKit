@@ -24,8 +24,8 @@ namespace StereoKit
 		/// prevent StereoKit from drawing any of these indicators.</summary>
 		public static bool DefaultDraw
 		{
-			get => NativeAPI.interaction_get_default_draw();
-			set => NativeAPI.interaction_set_default_draw(value);
+			get => NB.Bool(NativeAPI.interaction_get_default_draw());
+			set => NativeAPI.interaction_set_default_draw(NB.Int(value));
 		}
 	}
 }

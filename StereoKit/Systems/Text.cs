@@ -246,8 +246,11 @@ namespace StereoKit
 		/// <param name="offX">An additional offset on the X axis.</param>
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
-		public static void Add(string text, Matrix transform, TextStyle style, Pivot position = Pivot.Center, Align align = Align.Center, float offX=0, float offY=0, float offZ=0) 
-			=> NativeAPI.text_add_at_16(text, transform, style, position, align, offX, offY, offZ, Color.White);
+		public static void Add(string text, Matrix transform, TextStyle style, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
+		{ unsafe {
+			fixed(char* textPtr = text)
+			NativeAPI.text_add_at_16(textPtr, &transform, style, position, align, offX, offY, offZ, Color.White);
+		} }
 
 		/// <summary>Renders text at the given location! Must be called every
 		/// frame you want this text to be visible.</summary>
@@ -262,21 +265,30 @@ namespace StereoKit
 		/// <param name="offY">An additional offset on the Y axis.</param>
 		/// <param name="offZ">An additional offset on the Z axis.</param>
 		public static void Add(string text, Matrix transform, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_at_16(text, transform, TextStyle.Default, position, align, offX, offY, offZ, Color.White);
+		{ unsafe {
+			fixed(char* textPtr = text)
+			NativeAPI.text_add_at_16(textPtr, &transform, TextStyle.Default, position, align, offX, offY, offZ, Color.White);
+		} }
 
 		/// <inheritdoc cref="Add(string, Matrix, TextStyle, Pivot, Align, float, float, float)"/>
 		/// <param name="vertexTintLinear">The vertex color of the text gets
 		/// multiplied by this color. This is a linear color value, not a gamma
 		/// corrected color value.</param>
 		public static void Add(string text, Matrix transform, TextStyle style, Color vertexTintLinear, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_at_16(text, transform, style, position, align, offX, offY, offZ, vertexTintLinear);
+		{ unsafe {
+			fixed(char* textPtr = text)
+			NativeAPI.text_add_at_16(textPtr, &transform, style, position, align, offX, offY, offZ, vertexTintLinear);
+		} }
 
 		/// <inheritdoc cref="Add(string, Matrix, Pivot, Align, float, float, float)"/>
 		/// <param name="vertexTintLinear">The vertex color of the text gets
 		/// multiplied by this color. This is a linear color value, not a gamma
 		/// corrected color value.</param>
 		public static void Add(string text, Matrix transform, Color vertexTintLinear, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_at_16(text, transform, TextStyle.Default, position, align, offX, offY, offZ, vertexTintLinear);
+		{ unsafe {
+			fixed(char* textPtr = text)
+			NativeAPI.text_add_at_16(textPtr, &transform, TextStyle.Default, position, align, offX, offY, offZ, vertexTintLinear);
+		} }
 
 		/// <summary>Renders text at the given location! Must be called every
 		/// frame you want this text to be visible.</summary>
@@ -300,7 +312,10 @@ namespace StereoKit
 		/// <param name="offZ">An additional offset on the Z axis.</param>
 		/// <returns>Returns the vertical space used by this text.</returns>
 		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_in_16(text, transform, size, fit, style, position, align, offX, offY, offZ, Color.White);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			return NativeAPI.text_add_in_16(textPtr, &transform, size, fit, style, position, align, offX, offY, offZ, Color.White);
+		} }
 
 		/// <summary>Renders text at the given location! Must be called every
 		/// frame you want this text to be visible.</summary>
@@ -322,21 +337,30 @@ namespace StereoKit
 		/// <param name="offZ">An additional offset on the Z axis.</param>
 		/// <returns>Returns the vertical space used by this text.</returns>
 		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_in_16(text, transform, size, fit, TextStyle.Default, position, align, offX, offY, offZ, Color.White);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			return NativeAPI.text_add_in_16(textPtr, &transform, size, fit, TextStyle.Default, position, align, offX, offY, offZ, Color.White);
+		} }
 
 		/// <inheritdoc cref="Add(string, Matrix, Vec2, TextFit, Pivot, Align, float, float, float)"/>
 		/// <param name="vertexTintLinear">The vertex color of the text gets
 		/// multiplied by this color. This is a linear color value, not a gamma
 		/// corrected color value.</param>
 		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, Color vertexTintLinear, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_in_16(text, transform, size, fit, TextStyle.Default, position, align, offX, offY, offZ, vertexTintLinear);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			return NativeAPI.text_add_in_16(textPtr, &transform, size, fit, TextStyle.Default, position, align, offX, offY, offZ, vertexTintLinear);
+		} }
 
 		/// <inheritdoc cref="Add(string, Matrix, Vec2, TextFit, TextStyle, Pivot, Align, float, float, float)"/>
 		/// <param name="vertexTintLinear">The vertex color of the text gets
 		/// multiplied by this color. This is a linear color value, not a gamma
 		/// corrected color value.</param>
 		public static float Add(string text, Matrix transform, Vec2 size, TextFit fit, TextStyle style, Color vertexTintLinear, Pivot position = Pivot.Center, Align align = Align.Center, float offX = 0, float offY = 0, float offZ = 0)
-			=> NativeAPI.text_add_in_16(text, transform, size, fit, style, position, align, offX, offY, offZ, vertexTintLinear);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			return NativeAPI.text_add_in_16(textPtr, &transform, size, fit, style, position, align, offX, offY, offZ, vertexTintLinear);
+		} }
 
 		/// <summary>Sometimes you just need to know how much room some text
 		/// takes up! This finds the size of the text in meters when using the
@@ -347,7 +371,10 @@ namespace StereoKit
 		/// <returns>The width and height of the text in meters.</returns>
 		[Obsolete("Use Text.SizeLayout")]
 		public static Vec2 Size(string text, TextStyle style)
-			=> NativeAPI.text_size_layout_16(text, style);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			return NativeAPI.text_size_layout_16(textPtr, style);
+		} }
 
 		/// <summary>Sometimes you just need to know how much room some text
 		/// takes up! This finds the size of the text in meters when using the
@@ -356,7 +383,10 @@ namespace StereoKit
 		/// <returns>The width and height of the text in meters.</returns>
 		[Obsolete("Use Text.SizeLayout")]
 		public static Vec2 Size(string text)
-			=> NativeAPI.text_size_layout_16(text, TextStyle.Default);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			return NativeAPI.text_size_layout_16(textPtr, TextStyle.Default);
+		} }
 
 		/// <summary>Need to know how much space text will take when
 		/// constrained to a certain width? This will find it using the default
@@ -368,7 +398,10 @@ namespace StereoKit
 		/// one line, and height will be the total height of the text.</returns>
 		[Obsolete("Use Text.SizeLayout")]
 		public static Vec2 Size(string text, float maxWidth)
-			=> NativeAPI.text_size_layout_constrained_16(text, TextStyle.Default, maxWidth);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			return NativeAPI.text_size_layout_constrained_16(textPtr, TextStyle.Default, maxWidth);
+		} }
 
 		/// <summary>Need to know how much space text will take when
 		/// constrained to a certain width? This will find it using the
@@ -392,7 +425,10 @@ namespace StereoKit
 		/// Text.MakeStyle or the TextStyle object for more details.</param>
 		/// <returns>The width and height of the text in meters.</returns>
 		public static Vec2 SizeLayout(string text, TextStyle style)
-			=> NativeAPI.text_size_layout_16(text, style);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			return NativeAPI.text_size_layout_16(textPtr, style);
+		} }
 
 		/// <summary>Need to know how much layout space text will take when
 		/// constrained to a certain width? This will find it using the
@@ -406,7 +442,10 @@ namespace StereoKit
 		/// than one line, and height will be the total layout height of the
 		/// text.</returns>
 		public static Vec2 SizeLayout(string text, TextStyle style, float maxWidth)
-			=> NativeAPI.text_size_layout_constrained_16(text, style, maxWidth);
+		{ unsafe {
+			fixed (char* textPtr = text)
+			return NativeAPI.text_size_layout_constrained_16(textPtr, style, maxWidth);
+		} }
 
 		/// <summary>This modifies a text layout size to include the tallest
 		/// and lowest possible values for the glyphs in this font. This is for
@@ -422,6 +461,9 @@ namespace StereoKit
 		/// <returns>The sizeLayout modified to account for the size of the
 		/// most extreme glyphs.</returns>
 		public static Vec2 SizeRender(Vec2 sizeLayout, TextStyle style, out float yOffset)
-			=> NativeAPI.text_size_render(sizeLayout, style, out yOffset);
+		{ unsafe {
+			fixed (float* yOffsetPtr = &yOffset)
+			return NativeAPI.text_size_render(sizeLayout, style, yOffsetPtr);
+		} }
 	}
 }

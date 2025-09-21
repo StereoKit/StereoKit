@@ -39,7 +39,6 @@ struct _render_list_t {
 	array_t<render_item_t> queue;
 	render_stats_t         stats;
 	render_list_state_     state;
-	bool                   prepped;
 	int32_t                prev_count;
 };
 

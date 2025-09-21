@@ -66,7 +66,7 @@ namespace StereoKit
 		/// <param name="a">Starting Quat.</param>
 		/// <param name="b">Ending Quat.</param>
 		/// <returns>A rotation Quat from `a` to `b`.</returns>
-		public static Quat operator -(Quat a,  Quat b ) => NativeAPI.quat_difference(a, b);
+		public static Quat operator -(Quat a, Quat b) { unsafe { return NativeAPI.quat_difference(&a, &b); } }
 		/// <summary>This is the combination of rotations `a` and `b`. Note
 		/// that order matters here.</summary>
 		/// <param name="a">First Quat.</param>
@@ -228,8 +228,8 @@ namespace StereoKit
 		/// rotation b.</returns>
 		[Obsolete("Replaced by Quat.Delta. Delta behaves the same, but is clearer.")]
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Quat Difference(Quat a, Quat b) 
-			=> NativeAPI.quat_difference(a, b);
+		public static Quat Difference(Quat a, Quat b)
+		{ unsafe { return NativeAPI.quat_difference(&a, &b); } }
 
 		/// <summary>Creates a quaternion that goes from one rotation to
 		/// another.</summary>
@@ -238,7 +238,7 @@ namespace StereoKit
 		/// <returns>The quaternion between from and to.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static Quat Delta(Quat from, Quat to)
-			=> NativeAPI.quat_difference(from, to);
+		{ unsafe { return NativeAPI.quat_difference(&from, &to); } }
 
 		/// <summary>Creates a rotation that goes from one direction to
 		/// another. Which is comes in handy when trying to roll

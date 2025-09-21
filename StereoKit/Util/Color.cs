@@ -31,6 +31,13 @@ namespace StereoKit
 			this.a = a;
 		}
 
+		/// <summary>Converts to a 128 bit floating point color using the 0-1
+		/// range. This will be in the same color space!</summary>
+		/// <returns>A 128 bit floating point color using the 0-1 range.
+		/// </returns>
+		public Color ToColor()
+			=> new Color(r / 255f, g / 255f, b / 255f, a / 255f);
+
 		/// <summary>Pure opaque white! Same as (255,255,255,255).</summary>
 		public static readonly Color32 White = new Color32(255, 255, 255, 255);
 		/// <summary>Pure opaque black! Same as (0,0,0,255).</summary>
@@ -119,14 +126,14 @@ namespace StereoKit
 		/// <returns>Hue, Saturation, and Value, stored in x, y, and z
 		/// respectively. All values are between 0-1.</returns>
 		public Vec3 ToHSV()
-			=> NativeAPI.color_to_hsv(this);
+		{ unsafe { fixed (Color* ptr = &this) return NativeAPI.color_to_hsv(ptr); } }
 
 		/// <summary>Converts the gamma space RGB color to a CIE LAB color
 		/// space value! Conversion back and forth from LAB space could be
 		/// somewhat lossy.</summary>
 		/// <returns>An LAB vector where x=L, y=A, z=B.</returns>
 		public Vec3 ToLAB()
-			=> NativeAPI.color_to_lab(this);
+		{ unsafe { fixed (Color* ptr = &this) return NativeAPI.color_to_lab(ptr); } }
 
 		/// <summary>Creates a Red/Green/Blue gamma space color from
 		/// Hue/Saturation/Value information.</summary>

@@ -201,7 +201,7 @@ namespace StereoKit
 		/// <summary>Sets whether or not StereoKit should render this hand
 		/// for you. Turn this to false if you're going to render your own, 
 		/// or don't need the hand itself to be visible.</summary>
-		public bool     Visible  { set { NativeAPI.input_hand_visible (handed, value); } }
+		public bool     Visible  { set { NativeAPI.input_hand_visible (handed, NB.Int(value)); } }
 	}
 
 	/// <summary>This represents a physical controller input device! Tracking
@@ -371,7 +371,13 @@ namespace StereoKit
 		public static Pose  Head  => NativeAPI.input_head();
 		/// <summary>Information about this system's mouse, or lack thereof!
 		/// </summary>
-		public static Mouse Mouse => Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
+		public static Mouse Mouse
+		{
+			get
+			{
+				unsafe { return *NativeAPI.input_mouse(); }
+			}
+		}
 
 		/// <summary>This controls the visibility of StereoKit's finger glow
 		/// effect on the UI. When true, SK will fill out global shader
@@ -380,8 +386,8 @@ namespace StereoKit
 		/// will be set to an unlikely faraway position.</summary>
 		public static bool FingerGlow
 		{
-			set => NativeAPI.input_set_finger_glow(value);
-			get => NativeAPI.input_get_finger_glow();
+			set => NativeAPI.input_set_finger_glow(NB.Int(value));
+			get => NB.Bool(NativeAPI.input_get_finger_glow());
 		}
 
 		/// <summary>Gets raw controller input data from the system. Note that
@@ -393,7 +399,9 @@ namespace StereoKit
 		/// <returns>A reference to a class that contains state information 
 		/// about the indicated controller.</returns>
 		public static Controller Controller(Handed handed)
-			=> Marshal.PtrToStructure<Controller>(NativeAPI.input_controller(handed));
+		{
+			unsafe { return *NativeAPI.input_controller(handed); }
+		}
 
 		/// <summary>This is the state of the controller's menu button, this
 		/// is not attached to any particular hand, so it's independent of a
@@ -440,7 +448,10 @@ namespace StereoKit
 		/// <param name="handed">Do you want the left or the right hand?
 		/// </param>
 		/// <returns>A copy of the entire set of hand data!</returns>
-		public static Hand Hand(Handed handed) => Marshal.PtrToStructure<Hand>(NativeAPI.input_hand(handed));
+		public static Hand Hand(Handed handed)
+		{
+			unsafe { return *NativeAPI.input_hand(handed); }
+		}
 
 		/// <summary>Retrieves all the information about the user's hand!
 		/// StereoKit will always provide hand information, however sometimes
@@ -455,7 +466,10 @@ namespace StereoKit
 		/// <param name="handed">Do you want the left or the right hand? 0 is
 		/// left, and 1 is right.</param>
 		/// <returns>A copy of the entire set of hand data!</returns>
-		public static Hand Hand(int handed) => Marshal.PtrToStructure<Hand>(NativeAPI.input_hand((Handed)handed));
+		public static Hand Hand(int handed)
+		{
+			unsafe { return *NativeAPI.input_hand((Handed)handed); }
+		}
 
 		/// <summary>This gets the _current_ source of the hand joints! This
 		/// allows you to distinguish between fully articulated joints, and
@@ -477,13 +491,16 @@ namespace StereoKit
 		/// as StereoKit's hand information. See `Hand.fingers` for more 
 		/// information.</param>
 		public static void HandOverride(Handed hand, in HandJoint[] joints)
-			=> NativeAPI.input_hand_override(hand, joints);
+		{ unsafe {
+			fixed (HandJoint* jointsPtr = joints)
+			NativeAPI.input_hand_override(hand, jointsPtr);
+		} }
 		/// <summary>Clear out the override status from Input.HandOverride,
 		/// and restore the user's control over it again.</summary>
 		/// <param name="hand">Which hand are we clearing the override on?
 		/// </param>
 		public static void HandClearOverride(Handed hand)
-			=> NativeAPI.input_hand_override(hand, IntPtr.Zero);
+		{ unsafe { NativeAPI.input_hand_override(hand, null); } }
 
 		/// <summary>StereoKit will use controller inputs to simulate an
 		/// articulated hand. This function allows you to add new simulated
@@ -504,7 +521,10 @@ namespace StereoKit
 		/// <returns>Returns the id of the hand sim pose, so it can be removed
 		/// later.</returns>
 		public static HandSimId HandSimPoseAdd(Pose[] handJointsPalmRelative25, ControllerKey button1 = ControllerKey.None, ControllerKey andButton2 = ControllerKey.None, Key orHotkey1 = StereoKit.Key.None, Key andHotkey2 = StereoKit.Key.None)
-			=> NativeAPI.input_hand_sim_pose_add(handJointsPalmRelative25, button1, andButton2, orHotkey1, andHotkey2);
+		{ unsafe {
+			fixed (Pose* handJointsPtr = handJointsPalmRelative25)
+			return NativeAPI.input_hand_sim_pose_add(handJointsPtr, button1, andButton2, orHotkey1, andHotkey2);
+		} }
 		/// <summary>Lets you remove an existing hand pose.</summary>
 		/// <param name="id">Any valid or invalid hand sim pose id.</param>
 		public static void HandSimPoseRemove(HandSimId id)
@@ -522,7 +542,7 @@ namespace StereoKit
 		/// <param name="visible">True, StereoKit renders this. False, it
 		/// doesn't.</param>
 		public static void HandVisible(Handed hand, bool visible)
-			=> NativeAPI.input_hand_visible(hand, visible);
+			=> NativeAPI.input_hand_visible(hand, NB.Int(visible));
 		/// <summary>Set the Material used to render the hand! The default
 		/// material uses an offset of 10 to ensure it gets drawn overtop of
 		/// other elements.</summary>

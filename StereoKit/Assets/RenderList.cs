@@ -20,8 +20,8 @@ namespace StereoKit
 		/// them later on!</summary>
 		public string Id
 		{
-			get => Marshal.PtrToStringAnsi(NativeAPI.render_list_get_id(_inst));
-			set => NativeAPI.render_list_set_id(_inst, value);
+			get { unsafe { return NU8.Str(NativeAPI.render_list_get_id(_inst)); } }
+			set { unsafe { byte* val = NU8.Bytes(value); NativeAPI.render_list_set_id(_inst, val); NU8.Free(val); } }
 		}
 
 		/// <summary>The number of Mesh/Material pairs that have been submitted
@@ -46,10 +46,10 @@ namespace StereoKit
 		}
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~RenderList()
-		{
+		{ unsafe {
 			if (_inst != IntPtr.Zero)
-				NativeAPI.assets_releaseref_threadsafe(_inst);
-		}
+				NativeAPI.assets_releaseref_threadsafe((void*)_inst);
+		} }
 
 		/// <summary>Clears out and de-references all Draw items currently in
 		/// the RenderList.</summary>
@@ -160,9 +160,11 @@ namespace StereoKit
 		/// <returns>A RenderList with a matching id, or null if none is found.
 		/// </returns>
 		public static RenderList Find(string listId)
-		{
-			IntPtr list = NativeAPI.render_list_find(listId);
+		{ unsafe {
+			byte*  listIdBytes = NU8.Bytes(listId);
+			IntPtr list        = NativeAPI.render_list_find(listIdBytes);
+			NU8.Free(listIdBytes);
 			return list == IntPtr.Zero ? null : new RenderList(list);
-		}
+		} }
 	}
 }

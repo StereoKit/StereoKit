@@ -113,6 +113,7 @@ struct SKConstant
 
 struct SKFunction
 {
+	public CppFunction src;
 	public SKType        returnType;
 	public string        name; // null for function pointers
 	public SKModule      module;
@@ -202,7 +203,7 @@ static class SKHeaderParser
 			.Select((f) => new SKConstant
 			{
 				name   = f.Name,
-				type   = ParseType(f.Type),
+				type   = ParseType(f.Type, f.Name),
 				module = data.modules.Aggregate(default(SKModule), (m, c) => f.Name.StartsWith(c.modulePrefix) && c.modulePrefix.Length > (m?.modulePrefix.Length ?? 0) ? c : m),
 				value  = f.InitExpression
 			})
@@ -213,7 +214,7 @@ static class SKHeaderParser
 
 	///////////////////////////////////////////
 
-	static SKType ParseType(CppType type)
+	static SKType ParseType(CppType type, string varName)
 	{
 		CppType curr   = type;
 		SKType  result = new();
@@ -233,11 +234,17 @@ static class SKHeaderParser
 					} break;
 				case CppFunctionType fun:
 					{
+						SKParameter[] parameters = fun.Parameters.Select(ParseParameter).ToArray();
+						SKType        returnType = ParseType(fun.ReturnType, "");
+						string name = $"fn_{returnType.name}_{(parameters.Length==0?"_void":"")}";
+						for (int i = 0; i < parameters.Length; i++)
+							name += $"_{(parameters[i].type.pointerLvl == 1 ? "*" : "")}{parameters[i].type.name}";
+
 						result.functionPtr = new Opt<SKFunction>(new SKFunction
 						{
-							name       = null,
-							parameters = fun.Parameters.Select(ParseParameter).ToArray(),
-							returnType = ParseType(fun.ReturnType)
+							name       = $"fn_{varName}",
+							parameters = parameters,
+							returnType = returnType
 						});
 						curr = null;
 					} break;
@@ -261,7 +268,7 @@ static class SKHeaderParser
 
 	static SKType ParseStructType(CppType type)
 	{
-		SKType result = ParseType(type);
+		SKType result = ParseType(type, type.GetDisplayName());
 		if (result.pointerLvl > 0) result.isOptional = true;
 		return result;
 	}
@@ -330,9 +337,10 @@ static class SKHeaderParser
 		=> ast.Functions
 			.Select(f => new SKFunction
 			{
+				src = f,
 				name       = f.Name,
 				parameters = ParseParameterFix(f.Parameters).ToArray(),
-				returnType = ParseType(f.ReturnType)
+				returnType = ParseType(f.ReturnType, f.Name)
 			});
 
 	///////////////////////////////////////////
@@ -362,7 +370,7 @@ static class SKHeaderParser
 		result.name         = param.Name;
 		result.nameFlagless = "";
 		result.defaultValue = param.InitExpression;
-		result.type         = ParseType(param.Type);
+		result.type         = ParseType(param.Type, param.Name);
 		result.stringType   = result.type.name == "char" ? SKStringType.ASCII : SKStringType.None;
 		if (result.type.functionPtr != null)
 			result.type.name = param.Name;

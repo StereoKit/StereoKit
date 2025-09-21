@@ -46,7 +46,7 @@ namespace StereoKit
 		/// from `Tex.FromEquirectangular` or `Tex.GenCubemap`</summary>
 		public static SphericalHarmonics SkyLight
 		{
-			set => NativeAPI.render_set_skylight(value);
+			set { unsafe { NativeAPI.render_set_skylight(&value); } }
 			get => NativeAPI.render_get_skylight();
 		}
 
@@ -54,8 +54,8 @@ namespace StereoKit
 		/// displays, and completely unavailable for transparent displays.</summary>
 		public static bool EnableSky
 		{
-			get => NativeAPI.render_enabled_skytex();
-			set => NativeAPI.render_enable_skytex(value);
+			get => NB.Bool(NativeAPI.render_enabled_skytex());
+			set => NativeAPI.render_enable_skytex(NB.Int(value));
 		}
 
 		/// <summary>By default, StereoKit renders all first-person layers.
@@ -103,7 +103,7 @@ namespace StereoKit
 
 		/// <summary>This tells if CaptureFilter has been overridden to a
 		/// specific value via `Renderer.OverrideCaptureFilter`.</summary>
-		public static bool HasCaptureFilter => NativeAPI.render_has_capture_filter();
+		public static bool HasCaptureFilter => NB.Bool(NativeAPI.render_has_capture_filter());
 
 		/// <summary>This is the current render layer mask for Mixed Reality
 		/// Capture, or 2nd person observer rendering. By default, this is
@@ -127,7 +127,7 @@ namespace StereoKit
 		public static Matrix CameraRoot
 		{
 			get => NativeAPI.render_get_cam_root();
-			set => NativeAPI.render_set_cam_root(value);
+			set { unsafe { NativeAPI.render_set_cam_root(&value); } }
 		}
 
 		/// <summary>For flatscreen applications only! This allows you to
@@ -158,7 +158,7 @@ namespace StereoKit
 		/// <param name="overrideFilter">The filter for capture rendering to
 		/// use. This is ignored if useOverrideFilter is false.</param>
 		public static void OverrideCaptureFilter(bool useOverrideFilter, RenderLayer overrideFilter = RenderLayer.All)
-			=> NativeAPI.render_override_capture_filter(useOverrideFilter, overrideFilter);
+			=> NativeAPI.render_override_capture_filter(NB.Int(useOverrideFilter), overrideFilter);
 
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
@@ -168,7 +168,7 @@ namespace StereoKit
 		/// <param name="transform">A Matrix that will transform the mesh
 		/// from Model Space into the current Hierarchy Space.</param>
 		public static void Add(Mesh mesh, Material material, Matrix transform)
-			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, Color.White, RenderLayer.Layer0);
+		{ unsafe { NativeAPI.render_add_mesh(mesh._inst, material._inst, &transform, Color.White, RenderLayer.Layer0); } }
 		/// <summary>Adds a mesh to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
 		/// the Matrix provided here.</summary>
@@ -188,7 +188,7 @@ namespace StereoKit
 		/// a 3rd person perspective, but filtering it out from the 1st
 		/// person perspective.</param>
 		public static void Add(Mesh mesh, Material material, Matrix transform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
-			=> NativeAPI.render_add_mesh(mesh._inst, material._inst, transform, colorLinear, layer);
+		{ unsafe { NativeAPI.render_add_mesh(mesh._inst, material._inst, &transform, colorLinear, layer); } }
 
 		/// <summary>Adds a Model to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
@@ -197,7 +197,7 @@ namespace StereoKit
 		/// <param name="transform">A Matrix that will transform the Model
 		/// from Model Space into the current Hierarchy Space.</param>
 		public static void Add(Model model, Matrix transform)
-			=> NativeAPI.render_add_model(model._inst, transform, Color.White, RenderLayer.Layer0);
+		{ unsafe { NativeAPI.render_add_model(model._inst, &transform, Color.White, RenderLayer.Layer0); } }
 		/// <summary>Adds a Model to the render queue for this frame! If the
 		/// Hierarchy has a transform on it, that transform is combined with
 		/// the Matrix provided here.</summary>
@@ -216,7 +216,7 @@ namespace StereoKit
 		/// a 3rd person perspective, but filtering it out from the 1st
 		/// person perspective.</param>
 		public static void Add(Model model, Matrix transform, Color colorLinear, RenderLayer layer = RenderLayer.Layer0)
-			=> NativeAPI.render_add_model(model._inst, transform, colorLinear, layer);
+		{ unsafe { NativeAPI.render_add_model(model._inst, &transform, colorLinear, layer); } }
 
 		/// <summary>Set the near and far clipping planes of the camera!
 		/// These are important to z-buffer quality, especially when using
@@ -251,7 +251,11 @@ namespace StereoKit
 		/// GPU discard pixel? This is not true distance, but rather Z-axis
 		/// distance from zero in View Space coordinates!</param>
 		public static void GetClip(out float nearPlane, out float farPlane)
-			=> NativeAPI.render_get_clip(out nearPlane, out farPlane);
+		{ unsafe {
+			fixed(float* nearPlanePtr = &nearPlane)
+			fixed(float* farPlanePtr  = &farPlane)
+			NativeAPI.render_get_clip(nearPlanePtr, farPlanePtr); 
+		} }
 
 		/// <summary>Only works for 2D windowed modes! This updates the
 		/// camera's projection matrix with a new vertical field of view.
@@ -344,7 +348,7 @@ namespace StereoKit
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
 		public static void Screenshot(string filename, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90)
-			=> NativeAPI.render_screenshot(NativeHelper.ToUtf8(filename), 90, Pose.LookAt(from, at), width, height, fieldOfViewDegrees);
+		{ unsafe { byte* filenameBytes = NU8.Bytes(filename); NativeAPI.render_screenshot(filenameBytes, 90, Pose.LookAt(from, at), width, height, fieldOfViewDegrees); NU8.Free(filenameBytes); } }
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given pose, with a resolution the same
@@ -364,7 +368,7 @@ namespace StereoKit
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
 		public static void Screenshot(string filename, int fileQuality, Pose viewpoint, int width, int height, float fieldOfViewDegrees = 90)
-			=> NativeAPI.render_screenshot(NativeHelper.ToUtf8(filename), fileQuality, viewpoint, width, height, fieldOfViewDegrees);
+		{ unsafe { byte* filenameBytes = NU8.Bytes(filename); NativeAPI.render_screenshot(filenameBytes, fileQuality, viewpoint, width, height, fieldOfViewDegrees); NU8.Free(filenameBytes); } }
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given pose, with a resolution the same
@@ -382,7 +386,7 @@ namespace StereoKit
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
 		public static void Screenshot(string filename, Pose viewpoint, int width, int height, float fieldOfViewDegrees = 90)
-			=> NativeAPI.render_screenshot(NativeHelper.ToUtf8(filename), 90, viewpoint, width, height, fieldOfViewDegrees);
+		{ unsafe { byte* filenameBytes = NU8.Bytes(filename); NativeAPI.render_screenshot(filenameBytes, 90, viewpoint, width, height, fieldOfViewDegrees); NU8.Free(filenameBytes); } }
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given position at the given point, with a
@@ -485,13 +489,13 @@ namespace StereoKit
 		/// If the width of this value is zero, then this will render to the
 		/// entire texture.</param>
 		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
-			=> NativeAPI.render_to(toRendertarget._inst, 0, camera, projection, layerFilter, materialVariant, clear, viewport);
+		{ unsafe { NativeAPI.render_to(toRendertarget._inst, 0, &camera, &projection, layerFilter, materialVariant, clear, viewport); } }
 
 		/// <inheritdoc cref="RenderTo(Tex, Matrix, Matrix, RenderLayer, int, RenderClear, Rect)"/>
 		/// <param name="toTargetIndex">Index of the render target's array
 		/// texture we want to draw to.</param>
 		public static void RenderTo(Tex toRendertarget, int toTargetIndex, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
-			=> NativeAPI.render_to(toRendertarget._inst, toTargetIndex, camera, projection, layerFilter, materialVariant, clear, viewport);
+		{ unsafe { NativeAPI.render_to(toRendertarget._inst, toTargetIndex, &camera, &projection, layerFilter, materialVariant, clear, viewport); } }
 
 		/// <summary>This attaches a texture resource globally across all
 		/// shaders. StereoKit uses this to attach the sky cubemap for use in
@@ -514,7 +518,7 @@ namespace StereoKit
 		/// the slot id for '3' indicated like this `: register(b3)`</param>
 		/// <param name="buffer">The data buffer you would like to bind, or
 		/// null to unbind.</param>
-		public static void SetGlobalBuffer<T>(int bufferRegister, MaterialBuffer<T> buffer) where T:struct
+		public static void SetGlobalBuffer<T>(int bufferRegister, MaterialBuffer<T> buffer) where T:unmanaged
 		{
 			NativeAPI.render_global_buffer(bufferRegister, buffer?._inst ?? IntPtr.Zero);
 		}

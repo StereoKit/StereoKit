@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 
 namespace StereoKit
 {
@@ -30,11 +31,11 @@ namespace StereoKit
 		const int  STD_OUTPUT_HANDLE = -11;
 		const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 4;
 
-		[DllImport("kernel32.dll", SetLastError = true)]
+		[DllImport("kernel32.dll")]
 		static extern IntPtr GetStdHandle(int nStdHandle);
 
 		[DllImport("kernel32.dll")]
-		static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+		static unsafe extern bool GetConsoleMode(IntPtr hConsoleHandle, uint* out_lpMode);
 
 		[DllImport("kernel32.dll")]
 		static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
@@ -44,8 +45,8 @@ namespace StereoKit
 				return;
 
 			IntPtr handle = GetStdHandle(STD_OUTPUT_HANDLE);
-			uint mode;
-			GetConsoleMode(handle, out mode);
+			uint mode = 0;
+			unsafe { GetConsoleMode(handle, &mode); }
 			mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 			SetConsoleMode(handle, mode);
 		}
@@ -71,35 +72,55 @@ namespace StereoKit
 		/// <param name="text">Formatted text with color tags! See the Log
 		/// class docs for guidance on color tags.</param>
 		public static void Write(LogLevel level, string text)
-			=> NativeAPI.log_write(level, text);
+		{ unsafe {
+			byte* textBytes = NU8.Bytes(text);
+			NativeAPI.log_write(level, textBytes);
+			NU8.Free(textBytes);
+		} }
 
 		/// <summary>Writes a formatted line to the log using a
 		/// LogLevel.Diagnostic severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
 		/// class docs for guidance on color tags.</param>
 		public static void Diag(string text)
-			=> NativeAPI.log_write(LogLevel.Diagnostic, text);
+		{ unsafe {
+			byte* textBytes = NU8.Bytes(text);
+			NativeAPI.log_write(LogLevel.Diagnostic, textBytes);
+			NU8.Free(textBytes);
+		} }
 
 		/// <summary>Writes a formatted line to the log using a LogLevel.Info
 		/// severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
 		/// class docs for guidance on color tags.</param>
 		public static void Info(string text)
-			=> NativeAPI.log_write(LogLevel.Info, text);
+		{ unsafe {
+			byte* textBytes = NU8.Bytes(text);
+			NativeAPI.log_write(LogLevel.Info, textBytes);
+			NU8.Free(textBytes);
+		} }
 
 		/// <summary>Writes a formatted line to the log using a LogLevel.Warn
 		/// severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
 		/// class docs for guidance on color tags.</param>
 		public static void Warn(string text)
-			=> NativeAPI.log_write(LogLevel.Warning, text);
+		{ unsafe {
+			byte* textBytes = NU8.Bytes(text);
+			NativeAPI.log_write(LogLevel.Warning, textBytes);
+			NU8.Free(textBytes);
+		} }
 
 		/// <summary>Writes a formatted line to the log using a
 		/// LogLevel.Error severity level!</summary>
 		/// <param name="text">Formatted text with color tags! See the Log
 		/// class docs for guidance on color tags.</param>
 		public static void Err(string text)
-			=> NativeAPI.log_write(LogLevel.Error, text);
+		{ unsafe {
+			byte* textBytes = NU8.Bytes(text);
+			NativeAPI.log_write(LogLevel.Error, textBytes);
+			NU8.Free(textBytes);
+		} }
 
 
 		/// <summary>Allows you to listen in on log events! Any callback
@@ -118,7 +139,10 @@ namespace StereoKit
 		{
 			// Separate function because the native call will make C# attempt
 			// to load the library as soon as it enters this method.
-			callbacks.Add(onLog, (IntPtr context, LogLevel level, string text) => onLog(level, text)); // This prevents the callback from getting GCed
+			unsafe
+			{
+				callbacks.Add(onLog, (IntPtr context, LogLevel level, byte* text) => onLog(level, Utf8StringMarshaller.ConvertToManaged(text))); // This prevents the callback from getting GCed
+			}
 			NativeAPI.log_subscribe(callbacks[onLog], IntPtr.Zero);
 		}
 

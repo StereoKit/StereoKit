@@ -34,7 +34,7 @@ namespace StereoKit
 		/// <summary>This refers to the play boundary, or guardian system
 		/// that the system may have! Not all systems have this, so it's
 		/// always a good idea to check this first!</summary>
-		public static bool HasBounds  => NativeAPI.world_has_bounds();
+		public static bool HasBounds  => NB.Bool(NativeAPI.world_has_bounds());
 		/// <summary>This is the size of a rectangle within the play
 		/// boundary/guardian's space, in meters if one exists. Check
 		/// `World.BoundsPose` for the center point and orientation of the
@@ -116,7 +116,7 @@ namespace StereoKit
 		/// <returns>A Pose representing the current orientation of the
 		/// spatial node.</returns>
 		public static Pose FromSpatialNode(Guid spatialNodeGuid, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
-			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic, qpcTime);
+			=> NativeAPI.world_from_spatial_graph(spatialNodeGuid.ToByteArray(), NB.Int(spatialNodeType == SpatialNodeType.Dynamic), qpcTime);
 
 		/// <summary>Converts a Windows Mirage spatial node GUID into a Pose
 		/// based on its current position and rotation! Check
@@ -134,7 +134,10 @@ namespace StereoKit
 		/// <returns>True if FromSpatialNode succeeded, and false if it failed.
 		/// </returns>
 		public static bool FromSpatialNode(Guid spatialNodeGuid, out Pose pose, SpatialNodeType spatialNodeType = SpatialNodeType.Static, long qpcTime = 0)
-			=> NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), spatialNodeType == SpatialNodeType.Dynamic, qpcTime, out pose);
+		{ unsafe {
+			fixed (Pose* posePtr = &pose)
+			return NB.Bool(NativeAPI.world_try_from_spatial_graph(spatialNodeGuid.ToByteArray(), NB.Int(spatialNodeType == SpatialNodeType.Dynamic), qpcTime, posePtr));
+		} }
 
 		/// <summary>Converts a Windows.Perception.Spatial.SpatialAnchor's pose
 		/// into SteroKit's coordinate system. This can be great for
@@ -149,10 +152,20 @@ namespace StereoKit
 		/// SpatialAnchor.</returns>
 		public static Pose FromPerceptionAnchor(object perceptionSpatialAnchor)
 		{
-			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
-			Pose   result  = NativeAPI.world_from_perception_anchor(unknown);
-			Marshal.Release(unknown);
-			return result;
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			{
+				unsafe
+				{
+					IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
+					Pose   result  = NativeAPI.world_from_perception_anchor((void*)unknown);
+					Marshal.Release(unknown);
+					return result;
+				}
+			}
+			else
+			{
+				return Pose.Identity;
+			}
 		}
 
 		/// <summary>Converts a Windows.Perception.Spatial.SpatialAnchor's pose
@@ -169,11 +182,24 @@ namespace StereoKit
 		/// <returns>A Pose representing the current orientation of the
 		/// SpatialAnchor.</returns>
 		public static bool FromPerceptionAnchor(object perceptionSpatialAnchor, out Pose pose)
-		{
-			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
-			bool   result  = NativeAPI.world_try_from_perception_anchor(unknown, out pose);
-			Marshal.Release(unknown);
-			return result;
+		{ 
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			{
+				unsafe
+				{
+					IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
+					bool   result;
+					fixed (Pose* posePtr = &pose)
+					result = NB.Bool(NativeAPI.world_try_from_perception_anchor((void*)unknown, posePtr));
+					Marshal.Release(unknown);
+					return result;
+				}
+			}
+			else
+			{
+				pose = Pose.Identity;
+				return false;
+			}
 		}
 
 		/// <summary>World.RaycastEnabled must be set to true first! 
@@ -191,7 +217,10 @@ namespace StereoKit
 		/// <returns>True if an intersection is detected, false if raycasting
 		/// is disabled, or there was no intersection.</returns>
 		public static bool Raycast(Ray ray, out Ray intersection)
-			=> NativeAPI.world_raycast(ray, out intersection);
+		{ unsafe {
+			fixed (Ray*intersectionPtr = &intersection)
+			return NB.Bool(NativeAPI.world_raycast(ray, intersectionPtr));
+		} }
 
 		/// <summary>Off by default. This tells StereoKit to load up and
 		/// display an occlusion surface that allows the real world to
@@ -203,8 +232,8 @@ namespace StereoKit
 		/// possible. Loading occlusion data is asynchronous, so occlusion
 		/// may not occur immediately after setting this flag.</summary>
 		public static bool OcclusionEnabled { 
-			get => NativeAPI.world_get_occlusion_enabled();
-			set => NativeAPI.world_set_occlusion_enabled(value); }
+			get => NB.Bool(NativeAPI.world_get_occlusion_enabled());
+			set => NativeAPI.world_set_occlusion_enabled(NB.Int(value)); }
 
 		/// <summary>Off by default. This tells StereoKit to load up 
 		/// collision meshes for the environment, for use with World.Raycast.
@@ -214,8 +243,8 @@ namespace StereoKit
 		/// surfaces may not be available immediately after setting this
 		/// flag.</summary>
 		public static bool RaycastEnabled { 
-			get => NativeAPI.world_get_raycast_enabled();
-			set => NativeAPI.world_set_raycast_enabled(value); }
+			get => NB.Bool(NativeAPI.world_get_raycast_enabled());
+			set => NativeAPI.world_set_raycast_enabled(NB.Int(value)); }
 
 		/// <summary>By default, this is a black(0,0,0,0) opaque unlit
 		/// material that will occlude geometry, but won't show up as visible

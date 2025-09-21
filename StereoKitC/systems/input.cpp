@@ -345,25 +345,6 @@ void input_step_late() {
 
 ///////////////////////////////////////////
 
-void input_subscribe(input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const pointer_t &in_pointer)) {
-	log_warnf("Input events are obsolete");
-
-}
-
-///////////////////////////////////////////
-
-void input_unsubscribe(input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const pointer_t &in_pointer)) {
-	log_warnf("Input events are obsolete");
-}
-
-///////////////////////////////////////////
-
-void input_fire_event(input_source_ source, button_state_ input_event, const pointer_t &pointer) {
-	log_warnf("Input events are obsolete");
-}
-
-///////////////////////////////////////////
-
 void input_update_poses() {
 #if defined(SK_XR_OPENXR)
 	if (backend_xr_get_type() == backend_xr_type_openxr)

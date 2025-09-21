@@ -126,17 +126,17 @@ namespace StereoKit
 		/// <summary>Returns the scale embedded in this transform matrix. Not
 		/// exactly cheap, requires 3 sqrt calls, but is cheaper than calling
 		/// Decompose.</summary>
-		public Vec3 Scale => NativeAPI.matrix_extract_scale(m);
+		public Vec3 Scale { get { unsafe { fixed (Matrix* ptr = &this) return NativeAPI.matrix_extract_scale(ptr); } } }
 		/// <summary>A slow function that returns the rotation quaternion 
 		/// embedded in this transform matrix. This is backed by Decompose,
 		/// so if you need any additional info, it's better to just call
 		/// Decompose instead.</summary>
-		public Quat Rotation => NativeAPI.matrix_extract_rotation(m);
+		public Quat Rotation { get { unsafe { fixed (Matrix* ptr = &this) return NativeAPI.matrix_extract_rotation(ptr); } } }
 		/// <summary>Extracts translation and rotation information from the
 		/// transform matrix, and makes a Pose from it! Not exactly fast.
 		/// This is backed by Decompose, so if you need any additional info,
 		/// it's better to just call Decompose instead.</summary>
-		public Pose Pose => NativeAPI.matrix_extract_pose(m);
+		public Pose Pose { get { unsafe { fixed (Matrix* ptr = &this) return NativeAPI.matrix_extract_pose(ptr); } } }
 
 		/// <summary>Creates an inverse matrix! If the matrix takes a point 
 		/// from a -> b, then its inverse takes the point from b -> a.

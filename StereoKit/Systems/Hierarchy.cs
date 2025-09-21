@@ -27,7 +27,10 @@
 		/// to entirely ignore the parent transform. For example, if you're in
 		/// UI space, and wish to do some world space rendering.</param>
 		public static void Push(in Matrix parentTransform, HierarchyParent parentBehavior = HierarchyParent.Inherit)
-			=> NativeAPI.hierarchy_push(parentTransform, parentBehavior);
+		{ unsafe {
+				fixed(Matrix* mPtr = &parentTransform)
+				NativeAPI.hierarchy_push(mPtr, parentBehavior);
+		} }
 
 		/// <summary>Pushes a transform Matrix calculated from a Pose onto the
 		/// stack, and combines it with the Matrix below it. Any draw
@@ -53,16 +56,16 @@
 		/// any draw call to ignore any Matrices that are on the Hierarchy
 		/// stack.</summary>
 		public static bool Enabled {
-			get => NativeAPI.hierarchy_is_enabled();
-			set => NativeAPI.hierarchy_set_enabled(value);
+			get => NB.Bool(NativeAPI.hierarchy_is_enabled());
+			set => NativeAPI.hierarchy_set_enabled(NB.Int(value));
 		}
 
 		/// <summary>Converts a world space point into the local space of the
 		/// current Hierarchy stack!</summary>
 		/// <param name="worldPoint">A point in world space.</param>
 		/// <returns>The provided point now in local hierarchy space!</returns>
-		public static Vec3 ToLocal(Vec3 worldPoint) 
-			=> NativeAPI.hierarchy_to_local_point(worldPoint);
+		public static Vec3 ToLocal(Vec3 worldPoint)
+		{ unsafe { return NativeAPI.hierarchy_to_local_point(&worldPoint); } }
 
 		/// <summary>Converts a world space direction into the local space of
 		/// the current Hierarchy stack! This excludes the translation
@@ -72,7 +75,7 @@
 		/// <returns>The provided direction now in local hierarchy space!
 		/// </returns>
 		public static Vec3 ToLocalDirection(Vec3 worldDirection)
-			=> NativeAPI.hierarchy_to_local_direction(worldDirection);
+		{ unsafe { return NativeAPI.hierarchy_to_local_direction(&worldDirection); } }
 
 		/// <summary>Converts a world space rotation into the local space of
 		/// the current Hierarchy stack!</summary>
@@ -80,7 +83,7 @@
 		/// <returns>The provided rotation now in local hierarchy space!
 		/// </returns>
 		public static Quat ToLocal(Quat worldOrientation)
-			=> NativeAPI.hierarchy_to_local_rotation(worldOrientation);
+		{ unsafe { return NativeAPI.hierarchy_to_local_rotation(&worldOrientation); } }
 
 
 		/// <summary>Converts a world pose relative to the current
@@ -88,7 +91,7 @@
 		/// <param name="worldPose">A pose in world space.</param>
 		/// <returns>The provided pose now in local hierarchy space!</returns>
 		public static Pose ToLocal(Pose worldPose)
-			=> NativeAPI.hierarchy_to_local_pose(worldPose);
+		{ unsafe { return NativeAPI.hierarchy_to_local_pose(&worldPose); } }
 
 		/// <summary>Converts a world ray relative to the current
 		/// hierarchy stack into local space!</summary>
@@ -102,7 +105,7 @@
 		/// <param name="localPoint">A point in local space.</param>
 		/// <returns>The provided point now in world space!</returns>
 		public static Vec3 ToWorld(Vec3 localPoint)
-			=> NativeAPI.hierarchy_to_world_point(localPoint);
+		{ unsafe { return NativeAPI.hierarchy_to_world_point(&localPoint); } }
 
 		/// <summary>Converts a local direction relative to the current 
 		/// hierarchy stack into world space! This excludes the translation 
@@ -111,21 +114,21 @@
 		/// <param name="localDirection">A direction in local space.</param>
 		/// <returns>The provided direction now in world space!</returns>
 		public static Vec3 ToWorldDirection(Vec3 localDirection)
-			=> NativeAPI.hierarchy_to_world_direction(localDirection);
+		{ unsafe { return NativeAPI.hierarchy_to_world_direction(&localDirection); } }
 
 		/// <summary>Converts a local rotation relative to the current 
 		/// hierarchy stack into world space!</summary>
 		/// <param name="localOrientation">A rotation in local space.</param>
 		/// <returns>The provided rotation now in world space!</returns>
 		public static Quat ToWorld(Quat localOrientation)
-			=> NativeAPI.hierarchy_to_world_rotation(localOrientation);
+		{ unsafe { return NativeAPI.hierarchy_to_world_rotation(&localOrientation); } }
 
 		/// <summary>Converts a local pose relative to the current
 		/// hierarchy stack into world space!</summary>
 		/// <param name="localPose">A pose in local space.</param>
 		/// <returns>The provided pose now in world space!</returns>
 		public static Pose ToWorld(Pose localPose)
-			=> NativeAPI.hierarchy_to_world_pose(localPose);
+		{ unsafe { return NativeAPI.hierarchy_to_world_pose(&localPose); } }
 
 		/// <summary>Converts a local ray relative to the current
 		/// hierarchy stack into world space!</summary>

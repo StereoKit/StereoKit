@@ -1,4 +1,9 @@
-﻿using System;
+﻿// SPDX-License-Identifier: MIT
+// The authors below grant copyright rights under the MIT license:
+// Copyright (c) 2019-2025 Nick Klingensmith
+// Copyright (c) 2025 Qualcomm Technologies, Inc.
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
@@ -31,8 +36,8 @@ namespace StereoKit {
 		/// unique Name for the anchor.</summary>
 		public string Id
 		{
-			get => NativeHelper.FromUtf8(NativeAPI.anchor_get_id(_inst));
-			set => NativeAPI.anchor_set_id(_inst, NativeHelper.ToUtf8(value));
+			get { unsafe { return NU8.Str(NativeAPI.anchor_get_id(_inst)); } }
+			set { unsafe { byte* val = NU8.Bytes(value); NativeAPI.anchor_set_id(_inst, val); NU8.Free(val); } }
 		}
 		/// <summary>The most recently identified Pose of the Anchor. While an
 		/// Anchor will generally be in the same position once discovered, it
@@ -46,11 +51,11 @@ namespace StereoKit {
 		public BtnState Tracked => NativeAPI.anchor_get_tracked(_inst);
 		/// <summary>Will this Anchor persist across multiple app sessions? You
 		/// can use `TrySetPersistent` to change this value.</summary>
-		public bool Persistent => NativeAPI.anchor_get_persistent(_inst);
+		public bool Persistent => NativeAPI.anchor_get_persistent(_inst)>0;
 		/// <summary>A unique system provided name identifying this anchor.
 		/// This will be the same across sessions for persistent Anchors.
 		/// </summary>
-		public string Name => NativeHelper.FromUtf8(NativeAPI.anchor_get_name(_inst));
+		public string Name { get { unsafe { return NU8.Str(NativeAPI.anchor_get_name(_inst)); } } }
 		
 		/// <summary>Tries to get the underlying perception spatial anchor 
 		/// for platforms using Microsoft spatial anchors.</summary>
@@ -61,12 +66,16 @@ namespace StereoKit {
 		public bool TryGetPerceptionAnchor<T>(out T spatialAnchor) where T : class
 		{
 			spatialAnchor = null;
-			bool result = NativeAPI.anchor_get_perception_anchor(_inst, out IntPtr pointer);
-			if (result)
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return false;
+
+			unsafe
 			{
-				spatialAnchor = Marshal.GetObjectForIUnknown(pointer) as T;
+				void* anchor;
+				bool  result = NB.Bool(NativeAPI.anchor_get_perception_anchor(_inst, &anchor));
+				if (result)
+					spatialAnchor = Marshal.GetObjectForIUnknown((nint)anchor) as T;
+				return result;
 			}
-			return result;
 		}
 
 		/// <summary>Tries to get the underlying perception spatial anchor as a COM pointer.
@@ -75,12 +84,17 @@ namespace StereoKit {
 		/// <returns>True if the pointer was successfully obtained, false otherwise.</returns>
 		public bool TryGetPerceptionAnchor(out IntPtr spatialAnchor)
 		{
-			bool result = NativeAPI.anchor_get_perception_anchor(_inst, out spatialAnchor);
-			if (!result)
+			spatialAnchor = IntPtr.Zero;
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return false;
+
+			unsafe
 			{
-				spatialAnchor = IntPtr.Zero;
+				void* anchor;
+				bool  result = NB.Bool(NativeAPI.anchor_get_perception_anchor(_inst, &anchor));
+				if (result)
+					spatialAnchor = (IntPtr)anchor;
+				return result;
 			}
-			return result;
 		}
 		
 		internal Anchor(IntPtr anchor)
@@ -91,10 +105,10 @@ namespace StereoKit {
 		}
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Anchor()
-		{
+		{ unsafe {
 			if (_inst != IntPtr.Zero)
-				NativeAPI.assets_releaseref_threadsafe(_inst);
-		}
+				NativeAPI.assets_releaseref_threadsafe((void*)_inst);
+		} }
 
 		/// <summary>This will attempt to make or prevent this Anchor from
 		/// persisting across app sessions. You may want to check if the system
@@ -104,7 +118,7 @@ namespace StereoKit {
 		/// <param name="persistent">Whether this should or shouldn't persist
 		/// across sessions.</param>
 		/// <returns>Success or failure of setting persistence.</returns>
-		public bool TrySetPersistent(bool persistent) => NativeAPI.anchor_try_set_persistent(_inst, persistent);
+		public bool TrySetPersistent(bool persistent) => NB.Bool(NativeAPI.anchor_try_set_persistent(_inst, NB.Int(persistent)));
 
 		/// <summary>This creates a new Anchor from a world space pose.</summary>
 		/// <param name="pose">A world space pose for the new Anchor.</param>

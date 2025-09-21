@@ -600,7 +600,7 @@ SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           (void);
 SK_API void          sk_shutdown_unsafe    (void);
-SK_API void          sk_quit               (quit_reason_ quitReason = quit_reason_user);
+SK_API void          sk_quit               (quit_reason_ quitReason sk_default(quit_reason_user));
 SK_API bool32_t      sk_step               (void (*app_step)(void));
 SK_API void          sk_run                (void (*app_step)(void), void (*app_shutdown)(void) sk_default(nullptr));
 SK_API void          sk_run_data           (void (*app_step)(void *step_data), void *step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data);
@@ -917,7 +917,7 @@ SK_API bool32_t bounds_point_contains  (bounds_t bounds, vec3 pt);
 SK_API bool32_t bounds_line_contains   (bounds_t bounds, vec3 pt1, vec3 pt2);
 SK_API bool32_t bounds_capsule_contains(bounds_t bounds, vec3 pt1, vec3 pt2, float radius);
 SK_API bounds_t bounds_grow_to_fit_pt  (bounds_t bounds, vec3 pt);
-SK_API bounds_t bounds_grow_to_fit_box (bounds_t bounds, bounds_t box, const matrix *opt_box_transform sk_default(nullptr));
+SK_API bounds_t bounds_grow_to_fit_box (bounds_t bounds, bounds_t box, const matrix *opt_in_box_transform sk_default(nullptr));
 SK_API bounds_t bounds_transform       (bounds_t bounds, matrix transform);
 SK_API vec3     ray_point_closest      (ray_t ray, vec3 pt);
 
@@ -1187,16 +1187,16 @@ SK_API asset_state_ tex_asset_state         (const tex_t texture);
 SK_API void         tex_on_load             (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
 SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context));
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
-SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1));
+SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1));
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
 SK_API tex_t        tex_get_zbuffer         (tex_t texture);
-SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level sk_default(0));
+SK_API void         tex_get_data            (tex_t texture, void* ref_color_buffer, size_t color_buffer_size, int32_t mip_level sk_default(0));
 SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_gen_particle        (int32_t width, int32_t height, float roundness sk_default(1), gradient_t gradient_linear sk_default(nullptr));
-SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
+SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution);
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
 SK_API tex_format_  tex_get_format          (tex_t texture);
 SK_API int32_t      tex_get_width           (tex_t texture);
@@ -1944,8 +1944,7 @@ typedef enum text_context_ {
 } text_context_;
 SK_MakeFlag(text_context_);
 
-SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*picker_callback   )(void *callback_data, bool32_t confirmed, const char *filename), const file_filter_t *filters, int32_t filter_count);
-SK_API void     platform_file_picker_sz     (picker_mode_ mode, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char *filename_ptr, int32_t filename_length), const file_filter_t *in_arr_filters, int32_t filter_count);
+SK_API void     platform_file_picker        (picker_mode_ mode, void *callback_data, void (*picker_callback)(void *callback_data, bool32_t confirmed, const char *filename_utf8), const file_filter_t *in_arr_filters, int32_t filter_count);
 SK_API void     platform_file_picker_close  (void);
 SK_API bool32_t platform_file_picker_visible(void);
 SK_API bool32_t platform_read_file          (const char *filename_utf8,  void **out_data, size_t *out_size);
@@ -1956,7 +1955,7 @@ SK_API bool32_t platform_keyboard_get_force_fallback(void);
 SK_API void     platform_keyboard_set_force_fallback(bool32_t force_fallback);
 SK_API void     platform_keyboard_show              (bool32_t visible, text_context_ type);
 SK_API bool32_t platform_keyboard_visible           (void);
-SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, const char** keyboard_layout, int32_t layouts_num);
+SK_API bool32_t platform_keyboard_set_layout        (text_context_ type, const char** arr_keyboard_layout, int32_t layouts_num);
 
 ///////////////////////////////////////////
 
@@ -2470,10 +2469,6 @@ SK_API void                  input_set_finger_glow           (bool32_t visible);
 SK_API hand_sim_id_t         input_hand_sim_pose_add         (const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
 SK_API void                  input_hand_sim_pose_remove      (hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear       (void);
-
-SK_API SK_DEPRECATED void    input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API SK_DEPRECATED void    input_unsubscribe               (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
-SK_API SK_DEPRECATED void    input_fire_event                (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
 
 ///////////////////////////////////////////
 
