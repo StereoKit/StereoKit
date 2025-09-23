@@ -198,8 +198,8 @@ void mesh_set_data(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, co
 
 	assets_execute_gpu([](void *data) {
 		mesh_upload_job_t *job_data = (mesh_upload_job_t *)data;
-		_mesh_set_verts(job_data->mesh, job_data->vertices, job_data->vertex_count, job_data->calculate_bounds, true);
-		_mesh_set_inds (job_data->mesh, job_data->indices,  job_data->index_count);
+		if (job_data->vertex_count > 0) _mesh_set_verts(job_data->mesh, job_data->vertices, job_data->vertex_count, job_data->calculate_bounds, true);
+		if (job_data->index_count  > 0) _mesh_set_inds (job_data->mesh, job_data->indices,  job_data->index_count);
 		
 		return (bool32_t)true;
 	}, &job_data);

@@ -299,7 +299,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	cgltf_mesh      *m = mesh;
 	cgltf_primitive *p = &m->primitives[primitive_id];
 
-	if (p->type != cgltf_primitive_type_triangles) {
+	if (p->type != cgltf_primitive_type_triangles && p->type != cgltf_primitive_type_points) {
 		log_errf("[%s] Unimplemented GLTF primitive mode: %d", filename, p->type);
 		return nullptr;
 	}
@@ -397,10 +397,12 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	vind_t *inds      = nullptr;
 	if (p->indices == nullptr) {
 		// No indices listed, create indices that map to one index per vertex
-		ind_count = vert_count;
-		inds      = sk_malloc_t(vind_t, ind_count);
-		for (size_t i = 0; i < ind_count; i++) {
-			inds[i] = (vind_t)i;
+		if (p->type == cgltf_primitive_type_triangles) {
+			ind_count = vert_count;
+			inds      = sk_malloc_t(vind_t, ind_count);
+			for (size_t i = 0; i < ind_count; i++) {
+				inds[i] = (vind_t)i;
+			}
 		}
 	} else {
 		// Extract indices from the index buffer
