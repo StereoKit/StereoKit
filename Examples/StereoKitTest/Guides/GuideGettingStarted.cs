@@ -9,13 +9,17 @@
 /// # Restart the Terminal to refresh your Path variable
 /// ```
 /// 
-/// > On _Linux_, many distros [can do something like this](https://learn.microsoft.com/en-us/dotnet/core/install/linux):
-/// > For Ubuntu:
-/// > - `sudo apt-get install dotnet-sdk-9.0`
-/// > - On Ubuntu 24.04 or earlier, you will need to add dotnet/backports first
-/// > - `sudo add-apt-repository ppa:dotnet/backports`
-/// > For Debian:
-/// > - `sudo dnf install dotnet-sdk-9.0`
+/// On _Linux_, most distros have the .NET SDK in their package manager. You can find a [more complete list here] (https://learn.microsoft.com/en-us/dotnet/core/install/linux).
+/// 
+/// ```bash
+/// # Ubuntu
+/// sudo apt-get install dotnet-sdk-9.0
+/// # Debian
+/// sudo dnf install dotnet-sdk-9.0
+/// 
+/// # On Ubuntu 24.04 or earlier, you need dotnet/backports
+/// sudo add-apt-repository ppa:dotnet / backports`
+/// ```
 /// 
 /// With the .NET SDK installed, setting up a StereoKit project is quite simple!
 /// 
