@@ -250,7 +250,7 @@ bool32_t interaction_handle(id_hash_t id, int32_t priority, pose_t* ref_handle_p
 			quat   dest_rot = quat_identity;
 			switch (move_type) {
 			case ui_move_exact: {
-				dest_rot = actor->interaction_start_el.orientation * quat_difference(actor->interaction_start_motion.orientation, actor->motion.orientation);
+				dest_rot = matrix_transform_quat(handle_parent_to_world, actor->interaction_start_el.orientation) * quat_difference(actor->interaction_start_motion.orientation, actor->motion.orientation);
 			} break;
 			case ui_move_face_user: {
 				if (device_display_get_type() == display_type_flatscreen) {
@@ -280,8 +280,8 @@ bool32_t interaction_handle(id_hash_t id, int32_t priority, pose_t* ref_handle_p
 					dest_rot = quat_lookat_up(look_from, face_point, vec3_up);
 				}
 			} break;
-			case ui_move_pos_only: { dest_rot = actor->interaction_start_el.orientation; } break;
-			default:               { dest_rot = actor->interaction_start_el.orientation; log_err("Unimplemented move type!"); } break;
+			case ui_move_pos_only: { dest_rot = matrix_transform_quat(handle_parent_to_world, actor->interaction_start_el.orientation); } break;
+			default:               { dest_rot = matrix_transform_quat(handle_parent_to_world, actor->interaction_start_el.orientation); log_err("Unimplemented move type!"); } break;
 			}
 
 			// Amplify the movement in and out, so that objects at a
