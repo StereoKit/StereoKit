@@ -94,6 +94,29 @@ namespace StereoKit
 		/// <returns>A System.Numerics compatible vector.</returns>
 		public static implicit operator Vector4(Vec4 v) => v.v;
 
+        /// <summary>Override of the equals operator for the Vec4 class.</summary>
+        /// <param name="a">Any vector.</param>
+        /// <param name="b">Any vector.</param>
+        /// <returns>true if the Vectors match, false otherwise.</returns>
+        public static bool operator ==(Vec4 a, Vec4 b)
+        {
+			if (a.w == b.w && a.x == b.x && a.y == b.y && a.z == b.z)
+			{
+				return true;
+			}
+
+			return false;
+        }
+
+        /// <summary>Override of the not equals operator for the Vec4 class.</summary>
+        /// <param name="a">Any vector.</param>
+        /// <param name="b">Any vector.</param>
+        /// <returns>false if the Vectors match, true otherwise.</returns>
+        public static bool operator !=(Vec4 a, Vec4 b)
+		{
+			return !(a == b);
+		}
+
 		/// <summary>Adds matching components together. Commutative.</summary>
 		/// <param name="a">Any vector.</param>
 		/// <param name="b">Any vector.</param>
