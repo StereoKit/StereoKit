@@ -300,7 +300,7 @@ bool32_t interaction_handle(id_hash_t id, int32_t priority, pose_t* ref_handle_p
 			else if (actor_world->secondary_motion_dimensions == 3) { secondary_motion = actor_world->motion.orientation * actor_world->interaction_secondary_motion_total; }
 
 			vec3 pivot_new_position_world = matrix_transform_pt(matrix_trs(actor_world->motion.position + secondary_motion, actor_world->motion.orientation, vec3_one * amplify_factor), actor_world->interaction_intersection_local);
-			vec3 handle_offset_world      = dest_rot_world * (-actor_world->interaction_start_el_pivot);
+			vec3 handle_offset_world      = dest_rot_world * (matrix_extract_scale(handle_parent_to_world) * -actor_world->interaction_start_el_pivot);
 			vec3 dest_pos_world           = pivot_new_position_world + handle_offset_world;
 
 			// Transform from world space, to the space the handle is in
