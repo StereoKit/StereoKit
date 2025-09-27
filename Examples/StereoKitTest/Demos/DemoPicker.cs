@@ -4,6 +4,7 @@
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
 
 using StereoKit;
+using System;
 
 class DemoPicker : ITest
 {
@@ -22,6 +23,88 @@ class DemoPicker : ITest
 	Pose     menuPose   = Demo.contentPose.Pose;
 	Material volumeMat;
 	Material jointMaterial;
+	ViewMode viewMode;
+
+	public enum ViewMode
+	{
+		Visuals,
+		Tools,
+		Anim,
+		Tree,
+	}
+
+	public static void ModelInspector(Model model, Pose modelPose, ref float modelScale, ref ViewMode mode, ref bool showNodes, ref bool showModel, ref bool editNodes)
+	{
+		UI.PanelAt(UI.LayoutAt, new Vec2(UI.LayoutRemaining.x, UI.LineHeight));
+		if (UI.Radio("Visuals", mode == ViewMode.Visuals)) mode = ViewMode.Visuals;
+		UI.SameLine();
+		if (UI.Radio("Tools",  mode == ViewMode.Tools   )) mode = ViewMode.Tools;
+		UI.SameLine();
+		if (UI.Radio("Anim",   mode == ViewMode.Anim    )) mode = ViewMode.Anim;
+		UI.SameLine();
+		if (UI.Radio("Tree",   mode == ViewMode.Tree    )) mode = ViewMode.Tree;
+
+		if (mode == ViewMode.Tools)
+		{
+			UI.Toggle("Show Nodes", ref showNodes);
+			UI.Toggle("Edit Nodes", ref editNodes);
+			UI.Toggle("Show Model", ref showModel);
+		}
+		else if (mode == ViewMode.Visuals)
+		{
+			foreach (var node in model.Visuals)
+			{
+				bool vis = node.Visible;
+				if (UI.Toggle(node.Name, ref vis, Sprite.RadioOff, Sprite.RadioOn, UIBtnLayout.CenterNoText, V.XY(UI.LineHeight, UI.LineHeight)))
+					node.Visible = vis;
+
+				UI.SameLine();
+				Bounds b = UI.LayoutReserve(new Vec2(UI.LineHeight, 0));
+				b.center.z -= b.dimensions.x * 0.5f;
+				if (node.Material != null)
+					Mesh.Sphere.Draw(node.Material, Matrix.TS(b.center, b.dimensions.x * 0.5f));
+
+				UI.SameLine();
+				b = UI.LayoutReserve(new Vec2(UI.LineHeight, 0));
+				b.center.z -= b.dimensions.x * 0.5f;
+				Mesh m = node.Mesh;
+				if (m != null)
+					m.Draw(Material.Default, Matrix.TS(b.center, b.dimensions.x * 0.5f * (1.0f /m.Bounds.dimensions.Magnitude)));
+
+				UI.SameLine();
+				UI.Label(node.Name);
+			}
+		}
+		else if (mode == ViewMode.Anim)
+		{
+			bool hasAnims = model.Anims.Count > 0;
+			if (!hasAnims) UI.Label("No Animations");
+
+			UI.PushEnabled(hasAnims);
+			foreach (Anim anim in model.Anims)
+			{
+				if (UI.ButtonImg(anim.Name, Sprite.ArrowRight))
+					model.PlayAnim(anim, AnimMode.Loop);
+			}
+			float animScrub = model.AnimCompletion;
+			if (UI.HSlider("Scrub", ref animScrub, 0, 1, 0))
+			{
+				if (model.AnimMode != AnimMode.Manual)
+					model.PlayAnim(model.ActiveAnim, AnimMode.Manual);
+				model.AnimCompletion = animScrub;
+			}
+			UI.PopEnabled();
+		}
+
+		Hierarchy.Push(modelPose.ToMatrix(), HierarchyParent.Ignore);
+		// Step Animation manually in case showModel is false, and the
+		// call to Draw gets skipped.
+		model.StepAnim();
+		if (showModel) model.Draw(Matrix.S(modelScale));
+		if (showNodes) ShowNodes(model, Material.Unlit);
+		if (editNodes) PickNodes(model, Material.Unlit);
+		Hierarchy.Pop();
+	}
 
 	public void Initialize()
 	{
@@ -47,11 +130,20 @@ class DemoPicker : ITest
 			Platform.FilePicker(PickerMode.Open, OnLoadModel, null, Assets.ModelFormats);
 		}
 		/// :End:
+		UI.SameLine();
+		string id = model?.Id ?? "";
+		int min = Math.Max(0, id.Length - 20);
+		int len = id.Length - min;
+		UI.Label(id.Substring(min, len));
 
 		float percent = (Assets.CurrentTask - modelTask) / (float)(Assets.TotalTasks - modelTask);
-		UI.HProgressBar(percent);
+		if (percent < 1)
+			UI.HProgressBar(percent);
 
-		UI.Label("Scale");
+		if (model != null)
+			ModelInspector(model, modelPose, ref modelScale, ref viewMode, ref showNodes, ref showModel, ref editNodes);
+
+		/*UI.Label("Scale");
 		UI.HSlider("ScaleSlider", ref menuScale, 0, 1, 0);
 
 		UI.Toggle("Show Nodes", ref showNodes);
@@ -95,8 +187,9 @@ class DemoPicker : ITest
 			if (showNodes) ShowNodes(model, jointMaterial);
 			if (editNodes) PickNodes(model, jointMaterial);
 			Hierarchy.Pop();
-		}
+		}*/
 
+		UI.WindowEnd();
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.1f), V.XYZ(.34f, .34f, .1f)));
 	}
 
@@ -128,31 +221,15 @@ class DemoPicker : ITest
 
 	private static void PickNodes(Model model, Material jointMaterial)
 	{
-		float     scale       = Hierarchy.ToLocalDirection(Vec3.UnitX).Magnitude;
-		ModelNode closest     = null;
-		float     closestDist = (10 * U.cm * scale) * (10 * U.cm * scale);
-		for (int i = 0; i < 2; i += 1) {
-			Hand h  = Input.Hand(i);
-			Vec3 pt = Hierarchy.ToLocal(h.pinchPt);
-			if (!h.IsTracked) continue;
-			for (int n = 0; n < model.Nodes.Count; n++)
-			{
-				var   node = model.Nodes[n];
-				float distSq = Vec3.DistanceSq(pt, node.ModelTransform.Translation);
-				if (distSq < closestDist)
-				{
-					closestDist = distSq;
-					closest = node;
-				}
-			}
-		}
-		if (closest != null)
+		float scale = Hierarchy.ToLocalDirection(Vec3.UnitX).Magnitude;
+
+		for (int n = 0; n < model.Nodes.Count; n++)
 		{
-			Mesh.Sphere.Draw(jointMaterial, closest.ModelTransform.Pose.ToMatrix(0.05f * scale), new Color(0,1,0));
-			Pose pose = closest.ModelTransform.Pose;
-			if (UI.Handle(closest.Name, ref pose, new Bounds(Vec3.One * 0.1f * scale)))
+			var  node = model.Nodes[n];
+			Pose pose = node.ModelTransform.Pose;
+			if (UI.Handle(node.Name, ref pose, new Bounds(Vec3.One * 0.1f * scale)))
 			{
-				closest.ModelTransform = pose.ToMatrix(closest.ModelTransform.Scale);
+				node.ModelTransform = pose.ToMatrix(node.ModelTransform.Scale);
 			}
 		}
 	}
