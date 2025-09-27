@@ -14,14 +14,11 @@ class DemoPicker : ITest
 	Model    model      = null;
 	float    modelScale = 1;
 	int      modelTask  = 0;
-	float    animScrub  = 0;
-	float    menuScale  = 1;
 	bool     showNodes  = false;
 	bool     editNodes  = false;
 	bool     showModel  = true;
 	Pose     modelPose  = (Matrix.T(-0.4f,-0.3f,0) * Demo.contentPose).Pose;
 	Pose     menuPose   = Demo.contentPose.Pose;
-	Material volumeMat;
 	Material jointMaterial;
 	ViewMode viewMode;
 
@@ -35,12 +32,12 @@ class DemoPicker : ITest
 	public static void ModelInspector(Model model, Pose modelPose, Material jointMaterial, ref float modelScale, ref ViewMode mode, ref bool showNodes, ref bool showModel, ref bool editNodes)
 	{
 		UI.PanelAt(UI.LayoutAt, new Vec2(UI.LayoutRemaining.x, UI.LineHeight));
-		if (UI.Radio("Visuals", mode == ViewMode.Visuals)) mode = ViewMode.Visuals;
+		if (UI.Radio("Visuals",   mode == ViewMode.Visuals)) mode = ViewMode.Visuals;
 		UI.SameLine();
-		if (UI.Radio("Tools",  mode == ViewMode.Tools   )) mode = ViewMode.Tools;
+		if (UI.Radio("Tools",     mode == ViewMode.Tools  )) mode = ViewMode.Tools;
 		UI.SameLine();
 		UI.PushEnabled(model.Anims.Count > 0);
-		if (UI.Radio("Animation",   mode == ViewMode.Anim    )) mode = ViewMode.Anim;
+		if (UI.Radio("Animation", mode == ViewMode.Anim   )) mode = ViewMode.Anim;
 		UI.PopEnabled();
 
 		if (mode == ViewMode.Tools)
@@ -115,17 +112,13 @@ class DemoPicker : ITest
 		model.StepAnim();
 		if (showModel) model.Draw(Matrix.Identity);
 		if (showNodes) ShowNodes(model, jointMaterial);
-		if (editNodes) PickNodes(model, jointMaterial);
+		if (editNodes) EditNodes(model, Default.MaterialUIBox);
 		Hierarchy.Pop();
 	}
 
 	public void Initialize()
 	{
-		volumeMat = Default.MaterialUIBox.Copy();
-		//volumeMat["border_size"] = 0.0f;
-		//volumeMat["border_affect_radius"] = 0.3f;
-
-		jointMaterial = Material.Unlit.Copy();
+		jointMaterial = Material.Default.Copy();
 		jointMaterial.DepthTest   = DepthTest.Always;
 		jointMaterial.QueueOffset = 1;
 	}
@@ -154,7 +147,7 @@ class DemoPicker : ITest
 			UI.HProgressBar(percent);
 
 		if (model != null)
-			ModelInspector(model, modelPose, volumeMat, ref modelScale, ref viewMode, ref showNodes, ref showModel, ref editNodes);
+			ModelInspector(model, modelPose, jointMaterial, ref modelScale, ref viewMode, ref showNodes, ref showModel, ref editNodes);
 
 		UI.WindowEnd();
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.1f), V.XYZ(.34f, .34f, .1f)));
@@ -184,25 +177,24 @@ class DemoPicker : ITest
 		{
 			var node = model.Nodes[n];
 			Matrix nodeTransform = Matrix.S(0.025f * scale) * node.ModelTransform;
-			Mesh.Sphere.Draw(Material.Default, nodeTransform);
+			Mesh.Sphere.Draw(jointMaterial, nodeTransform);
 
 			Vec3 textPos = nodeTransform.Translation + downLocal * (0.025f * scale);
 			Text.Add(node.Name, Matrix.TRS(textPos,Quat.LookAt(textPos, headLocal), scale), Pivot.TopCenter, Align.TopCenter);
 		}
 	}
 
-	private static void PickNodes(Model model, Material jointMaterial)
+	private static void EditNodes(Model model, Material jointMaterial)
 	{
 		float scale = Hierarchy.ToLocalDirection(Vec3.UnitX).Magnitude;
 
 		for (int n = 0; n < model.Nodes.Count; n++)
 		{
-			var  node = model.Nodes[n];
-			Bounds b    = node.Mesh?.Bounds * node.ModelTransform.Scale ?? new Bounds(Vec3.One * 0.1f * scale);
-			Pose   pose = node.ModelTransform.Pose;
+			ModelNode node = model.Nodes[n];
+			Bounds    b    = node.Mesh?.Bounds * node.ModelTransform.Scale ?? new Bounds(Vec3.One * 0.1f * scale);
+			Pose      pose = node.ModelTransform.Pose;
 			if (UI.HandleBegin(node.Name, ref pose, b))
 				node.ModelTransform = pose.ToMatrix(node.ModelTransform.Scale);
-
 			if (UI.LastElementFocused.IsActive())
 				Mesh.Cube.Draw(jointMaterial, Matrix.TS(b.center, b.dimensions));
 			UI.HandleEnd();
