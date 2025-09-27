@@ -4,6 +4,7 @@
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
 
 using StereoKit;
+using System;
 
 class DemoPicker : ITest
 {
@@ -22,12 +23,107 @@ class DemoPicker : ITest
 	Pose     menuPose   = Demo.contentPose.Pose;
 	Material volumeMat;
 	Material jointMaterial;
+	ViewMode viewMode;
+
+	public enum ViewMode
+	{
+		Visuals,
+		Tools,
+		Anim,
+	}
+
+	public static void ModelInspector(Model model, Pose modelPose, Material jointMaterial, ref float modelScale, ref ViewMode mode, ref bool showNodes, ref bool showModel, ref bool editNodes)
+	{
+		UI.PanelAt(UI.LayoutAt, new Vec2(UI.LayoutRemaining.x, UI.LineHeight));
+		if (UI.Radio("Visuals", mode == ViewMode.Visuals)) mode = ViewMode.Visuals;
+		UI.SameLine();
+		if (UI.Radio("Tools",  mode == ViewMode.Tools   )) mode = ViewMode.Tools;
+		UI.SameLine();
+		UI.PushEnabled(model.Anims.Count > 0);
+		if (UI.Radio("Animation",   mode == ViewMode.Anim    )) mode = ViewMode.Anim;
+		UI.PopEnabled();
+
+		if (mode == ViewMode.Tools)
+		{
+			UI.Toggle("Show Nodes", ref showNodes);
+			UI.Toggle("Edit Nodes", ref editNodes);
+			UI.Toggle("Show Model", ref showModel);
+		}
+		else if (mode == ViewMode.Visuals)
+		{
+			foreach (var node in model.Visuals)
+			{
+				bool vis = node.Visible;
+				if (UI.Toggle(node.Name, ref vis, Sprite.RadioOff, Sprite.RadioOn, UIBtnLayout.CenterNoText, V.XY(UI.LineHeight, UI.LineHeight)))
+					node.Visible = vis;
+
+				UI.SameLine();
+				Bounds b = UI.LayoutReserve(new Vec2(UI.LineHeight, 0));
+				b.center.z -= b.dimensions.x * 0.5f;
+				if (node.Material != null)
+					Mesh.Sphere.Draw(node.Material, Matrix.TS(b.center, b.dimensions.x * 0.5f));
+
+				UI.SameLine();
+				b = UI.LayoutReserve(new Vec2(UI.LineHeight, 0));
+				b.center.z -= b.dimensions.x * 0.5f;
+				Mesh m = node.Mesh;
+				if (m != null)
+					m.Draw(Material.Default, Matrix.TS(b.center, b.dimensions.x * 0.5f * (1.0f /m.Bounds.dimensions.Magnitude)));
+
+				UI.SameLine();
+				UI.Label(node.Name);
+			}
+		}
+		else if (mode == ViewMode.Anim)
+		{
+			UI.PushEnabled(model.Anims.Count > 0);
+			foreach (Anim anim in model.Anims)
+			{
+				if (UI.ButtonImg(anim.Name, Sprite.ArrowRight))
+					model.PlayAnim(anim, AnimMode.Loop);
+			}
+			float animScrub = model.AnimCompletion;
+			if (UI.HSlider("Scrub", ref animScrub, 0, 1, 0))
+			{
+				if (model.AnimMode != AnimMode.Manual)
+					model.PlayAnim(model.ActiveAnim, AnimMode.Manual);
+				model.AnimCompletion = animScrub;
+			}
+
+			if (UI.ButtonImg("Play", Sprite.ArrowRight, UIBtnLayout.CenterNoText))
+			{
+				model.PlayAnim(model.ActiveAnim, AnimMode.Loop);
+				model.AnimCompletion = animScrub;
+			}
+			UI.SameLine();
+			if (UI.ButtonImg("Stop", Sprite.Close, UIBtnLayout.CenterNoText))
+			{
+				model.PlayAnim(model.ActiveAnim, AnimMode.Manual);
+				model.AnimCompletion = animScrub;
+			}
+			UI.SameLine();
+			if (UI.ButtonImg("Reset", Sprite.Backspace, UIBtnLayout.CenterNoText))
+			{
+				model.AnimCompletion = 0;
+			}
+			UI.PopEnabled();
+		}
+
+		Hierarchy.Push(modelPose.ToMatrix(modelScale), HierarchyParent.Ignore);
+		// Step Animation manually in case showModel is false, and the
+		// call to Draw gets skipped.
+		model.StepAnim();
+		if (showModel) model.Draw(Matrix.Identity);
+		if (showNodes) ShowNodes(model, jointMaterial);
+		if (editNodes) PickNodes(model, jointMaterial);
+		Hierarchy.Pop();
+	}
 
 	public void Initialize()
 	{
 		volumeMat = Default.MaterialUIBox.Copy();
-		volumeMat["border_size"] = 0.0f;
-		volumeMat["border_affect_radius"] = 0.3f;
+		//volumeMat["border_size"] = 0.0f;
+		//volumeMat["border_affect_radius"] = 0.3f;
 
 		jointMaterial = Material.Unlit.Copy();
 		jointMaterial.DepthTest   = DepthTest.Always;
@@ -47,56 +143,20 @@ class DemoPicker : ITest
 			Platform.FilePicker(PickerMode.Open, OnLoadModel, null, Assets.ModelFormats);
 		}
 		/// :End:
+		UI.SameLine();
+		string id = model?.Id ?? "";
+		int min = Math.Max(0, id.Length - 20);
+		int len = id.Length - min;
+		UI.Label(id.Substring(min, len));
 
 		float percent = (Assets.CurrentTask - modelTask) / (float)(Assets.TotalTasks - modelTask);
-		UI.HProgressBar(percent);
-
-		UI.Label("Scale");
-		UI.HSlider("ScaleSlider", ref menuScale, 0, 1, 0);
-
-		UI.Toggle("Show Nodes", ref showNodes);
-		UI.SameLine();
-		UI.Toggle("Show Model", ref showModel);
-		UI.Toggle("Edit Nodes", ref editNodes);
+		if (percent < 1)
+			UI.HProgressBar(percent);
 
 		if (model != null)
-		{
-			UI.HSeparator();
-			foreach (Anim anim in model.Anims)
-			{
-				if (UI.Button(anim.Name))
-					model.PlayAnim(anim, AnimMode.Loop);
-			}
-			UI.HSeparator();
-			if (UI.HSlider("Scrub", ref animScrub, 0, 1, 0))
-			{
-				if (model.AnimMode != AnimMode.Manual)
-					model.PlayAnim(model.ActiveAnim, AnimMode.Manual);
-				model.AnimCompletion = animScrub;
-			}
-		}
+			ModelInspector(model, modelPose, volumeMat, ref modelScale, ref viewMode, ref showNodes, ref showModel, ref editNodes);
 
 		UI.WindowEnd();
-
-		if (model != null) {
-			Bounds scaled = model.Bounds * modelScale * menuScale;
-			if (!editNodes)
-			{
-				UI.HandleBegin("Model", ref modelPose, scaled);
-				Default.MeshCube.Draw(volumeMat, Matrix.TS(scaled.center, scaled.dimensions));
-				UI.HandleEnd();
-			}
-
-			Hierarchy.Push(modelPose.ToMatrix(modelScale * menuScale));
-			// Step Animation manually in case showModel is false, and the
-			// call to Draw gets skipped.
-			model.StepAnim();
-			if (showModel) model.Draw(Matrix.Identity);
-			if (showNodes) ShowNodes(model, jointMaterial);
-			if (editNodes) PickNodes(model, jointMaterial);
-			Hierarchy.Pop();
-		}
-
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.1f), V.XYZ(.34f, .34f, .1f)));
 	}
 
@@ -117,43 +177,35 @@ class DemoPicker : ITest
 
 	private static void ShowNodes(Model model, Material jointMaterial)
 	{
+		Vec3 headLocal = Hierarchy.ToLocal(Input.Head.position);
+		Vec3 downLocal = Hierarchy.ToLocalDirection(-Vec3.UnitY).Normalized;
 		float scale = Hierarchy.ToLocalDirection(Vec3.UnitX).Magnitude;
 		for (int n = 0; n < model.Nodes.Count; n++)
 		{
 			var node = model.Nodes[n];
-			Mesh.Cube.Draw(jointMaterial, node.ModelTransform.Pose.ToMatrix(0.025f * scale));
-			Text.Add(node.Name, Matrix.S(scale)*node.ModelTransform, Pivot.TopCenter, Align.TopCenter);
+			Matrix nodeTransform = Matrix.S(0.025f * scale) * node.ModelTransform;
+			Mesh.Sphere.Draw(Material.Default, nodeTransform);
+
+			Vec3 textPos = nodeTransform.Translation + downLocal * (0.025f * scale);
+			Text.Add(node.Name, Matrix.TRS(textPos,Quat.LookAt(textPos, headLocal), scale), Pivot.TopCenter, Align.TopCenter);
 		}
 	}
 
 	private static void PickNodes(Model model, Material jointMaterial)
 	{
-		float     scale       = Hierarchy.ToLocalDirection(Vec3.UnitX).Magnitude;
-		ModelNode closest     = null;
-		float     closestDist = (10 * U.cm * scale) * (10 * U.cm * scale);
-		for (int i = 0; i < 2; i += 1) {
-			Hand h  = Input.Hand(i);
-			Vec3 pt = Hierarchy.ToLocal(h.pinchPt);
-			if (!h.IsTracked) continue;
-			for (int n = 0; n < model.Nodes.Count; n++)
-			{
-				var   node = model.Nodes[n];
-				float distSq = Vec3.DistanceSq(pt, node.ModelTransform.Translation);
-				if (distSq < closestDist)
-				{
-					closestDist = distSq;
-					closest = node;
-				}
-			}
-		}
-		if (closest != null)
+		float scale = Hierarchy.ToLocalDirection(Vec3.UnitX).Magnitude;
+
+		for (int n = 0; n < model.Nodes.Count; n++)
 		{
-			Mesh.Sphere.Draw(jointMaterial, closest.ModelTransform.Pose.ToMatrix(0.05f * scale), new Color(0,1,0));
-			Pose pose = closest.ModelTransform.Pose;
-			if (UI.Handle(closest.Name, ref pose, new Bounds(Vec3.One * 0.1f * scale)))
-			{
-				closest.ModelTransform = pose.ToMatrix(closest.ModelTransform.Scale);
-			}
+			var  node = model.Nodes[n];
+			Bounds b    = node.Mesh?.Bounds * node.ModelTransform.Scale ?? new Bounds(Vec3.One * 0.1f * scale);
+			Pose   pose = node.ModelTransform.Pose;
+			if (UI.HandleBegin(node.Name, ref pose, b))
+				node.ModelTransform = pose.ToMatrix(node.ModelTransform.Scale);
+
+			if (UI.LastElementFocused.IsActive())
+				Mesh.Cube.Draw(jointMaterial, Matrix.TS(b.center, b.dimensions));
+			UI.HandleEnd();
 		}
 	}
 }
