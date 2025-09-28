@@ -291,7 +291,7 @@ bool32_t interaction_handle(id_hash_t id, int32_t priority, pose_t* ref_handle_p
 			float       amplify_factor =
 				fmaxf(0.01f, vec3_distance(actor_world->motion.position,                   actor_world->motion_anchor)) /
 				fmaxf(0.01f, vec3_distance(actor_world->interaction_start_motion.position, actor_world->interaction_start_motion_anchor));
-			amplify_factor = 1;// powf(amplify_factor, amplify_factor > 1 ? amplify_push : amplify_pull);
+			amplify_factor = powf(amplify_factor, amplify_factor > 1 ? amplify_push : amplify_pull);
 
 			// Find secondary motion from scroll wheels/analog sticks, etc.
 			vec3 secondary_motion = vec3_zero;
