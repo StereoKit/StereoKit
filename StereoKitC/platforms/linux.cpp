@@ -10,6 +10,7 @@
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
 #include <X11/keysym.h>
 #include <X11/XKBlib.h>
 #include <X11/extensions/Xfixes.h>
@@ -163,6 +164,11 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 		XInternAtom(linux_display, "_NET_WM_NAME", False),
 		XInternAtom(linux_display, "UTF8_STRING",  False), 8, PropModeReplace,
 		(unsigned char *)title, strlen(title));
+
+	// Ensure it knows its process id
+	Atom  net_wm_pid = XInternAtom(linux_display, "_NET_WM_PID", False);
+	pid_t pid        = getpid();
+	XChangeProperty(linux_display, win.x_window, net_wm_pid, XA_CARDINAL, 32, PropModeReplace, (unsigned char*)&pid, 1);
 
 	// loads the XMODIFIERS environment variable to see what input method to use
 	XSetLocaleModifiers("");
