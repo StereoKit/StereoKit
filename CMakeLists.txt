@@ -194,9 +194,14 @@ include("cmake/CPM.cmake")
 if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
     NAME openxr_loader # 1.1.49
-    GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG release-1.1.49
-    GIT_SHALLOW 1
+
+    # URL for faster clone
+    URL https://github.com/KhronosGroup/OpenXR-SDK/archive/refs/tags/release-1.1.49.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+
+    #GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
+    #GIT_TAG release-1.1.49
+    #GIT_SHALLOW 1
     OPTIONS
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
     "BUILD_WITH_XCB_HEADERS OFF"
@@ -210,9 +215,14 @@ endif()
 #### meshoptimizer - https://github.com/zeux/meshoptimizer ####
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME meshoptimizer # 0.20
-  GITHUB_REPOSITORY zeux/meshoptimizer
-  GIT_TAG           v0.20
-  GIT_SHALLOW       1
+
+  # URL for faster clone
+  URL https://github.com/zeux/meshoptimizer/archive/refs/tags/v0.20.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+
+  #GITHUB_REPOSITORY zeux/meshoptimizer
+  #GIT_TAG           v0.20
+  #GIT_SHALLOW       1
 )
 target_compile_options(meshoptimizer PRIVATE $<$<CXX_COMPILER_ID:GNU>:-w> $<$<CXX_COMPILER_ID:Clang>:-w> $<$<CXX_COMPILER_ID:MSVC>:/W0>)
 set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -220,9 +230,15 @@ set_target_properties(meshoptimizer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 #### basis_universal - https://github.com/BinomialLLC/basis_universal ####
 CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
   NAME basis_universal # 1.16.4
-  GITHUB_REPOSITORY BinomialLLC/basis_universal
-  GIT_TAG           1.16.4
-  GIT_SHALLOW       1
+
+  # URL for faster clone
+  URL https://github.com/BinomialLLC/basis_universal/archive/refs/tags/1.16.4.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+
+  #GITHUB_REPOSITORY BinomialLLC/basis_universal
+  #GIT_TAG           1.16.4
+  #GIT_SHALLOW       1
+
   DOWNLOAD_ONLY     YES # basis universal doesn't have a library in it, we include code from this library directly
 )
 add_compile_definitions(BASISD_SUPPORT_FXT1=0)
@@ -233,14 +249,19 @@ add_compile_definitions(BASISD_SUPPORT_ETC2_EAC_A8=0)
 add_compile_definitions(BASISD_SUPPORT_BC7=0)
 add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
 
-#### Tracy Profiler - https://github.com/wolfpld/tracy ####
+#### Tracy Profiler - https://github.com/wolfpld/tzracy ####
 
 if (SK_PROFILE)
   CPMAddPackage(
     NAME tracy
-    GITHUB_REPOSITORY wolfpld/tracy
-    GIT_TAG v0.12.2
-    GIT_SHALLOW 1
+
+    # URL for faster clone
+    URL https://github.com/wolfpld/tracy/archive/refs/tags/v0.12.2.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+
+    #GITHUB_REPOSITORY wolfpld/tracy
+    #GIT_TAG v0.12.2
+    #GIT_SHALLOW 1
     OPTIONS
       "TRACY_ENABLE ON"
       "TRACY_ON_DEMAND ON"
@@ -254,6 +275,7 @@ if (NOT SK_LOCAL_SK_GPU)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
     NAME sk_gpu # 2025.9.7
     URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.9.7/sk_gpu.v2025.9.7.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   )
 else()
   # For building directly with in-progress sk_gpu changes, point this to your
