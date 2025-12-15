@@ -31,7 +31,7 @@ struct vsIn {
 	float2 uv      : TEXCOORD0;
 	float4 color   : COLOR0;
 };
-struct psIn : sk_ps_input_t {
+struct psIn {
 	float4 pos     : SV_POSITION;
 	float3 normal  : NORMAL0;
 	float2 uv      : TEXCOORD0;
@@ -39,21 +39,22 @@ struct psIn : sk_ps_input_t {
 	float3 irradiance: COLOR1;
 	float3 world   : TEXCOORD1;
 	float3 view_dir: TEXCOORD2;
+	uint view_id : SV_RenderTargetArrayIndex;
 };
 
-psIn vs(vsIn input, sk_vs_input_t sk_in) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn o;
-	uint view_id = sk_view_init(sk_in, o);
-	uint id      = sk_inst_id  (sk_in);
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
 
 	o.world = mul(float4(input.pos.xyz, 1), sk_inst[id].world).xyz;
-	o.pos   = mul(float4(o.world,  1), sk_viewproj[view_id]);
+	o.pos   = mul(float4(o.world,  1), sk_viewproj[o.view_id]);
 
 	o.normal     = normalize(mul(float4(input.norm, 0), sk_inst[id].world).xyz);
 	o.uv         = (input.uv * tex_trans.zw) + tex_trans.xy;
 	o.color      = input.color * sk_inst[id].color * color;
 	o.irradiance = sk_lighting(o.normal);
-	o.view_dir   = sk_camera_pos[view_id].xyz - o.world;
+	o.view_dir   = sk_camera_pos[o.view_id].xyz - o.world;
 	return o;
 }
 
