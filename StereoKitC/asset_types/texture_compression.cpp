@@ -1,7 +1,7 @@
 #include "texture_compression.h"
 #include "../sk_memory.h"
 
-#include <sk_gpu.h>
+#include <sk_renderer.h>
 #include <basisu_transcoder.h>
 
 using namespace basist;

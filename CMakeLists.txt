@@ -40,7 +40,7 @@ set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest pro
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
 set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
 set(SK_WINDOWS_GL                   OFF CACHE BOOL "Build Windows version using OpenGL as the renderer. This is primarily for debugging GL code while developing on Windows.")
-set(SK_LOCAL_SK_GPU                 OFF CACHE BOOL "Build using a local version of sk_gpu, instead of the latest release. This is useful for testing in-progress changes to sk_gpu.")
+set(SK_LOCAL_SK_RENDERER            ON  CACHE BOOL "Build using a local version of sk_renderer, instead of the latest release. This is useful for testing in-progress changes to sk_renderer.")
 set(SK_PROFILE                      OFF CACHE BOOL "Build with Tracy profiler enabled.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
@@ -102,7 +102,6 @@ endif()
 ###########################################
 
 if (ANDROID)
-  set(SK_SHADER_TARGETS "e")
   set(ANDROID_LIBS
     android
     EGL)
@@ -119,7 +118,6 @@ elseif(EMSCRIPTEN)
   #set(EMSCRIPTEN_LIBS)
   set(SK_BUILD_OPENXR_LOADER OFF)
   set(SK_BUILD_SHARED_LIBS OFF)
-  set(SK_SHADER_TARGETS "w")
   add_definitions("-D_XM_NO_INTRINSICS_")
   set(SK_LINKER_FLAGS 
     -sFULL_ES3
@@ -130,7 +128,6 @@ elseif(EMSCRIPTEN)
     -g
     -gsource-map )
 elseif (UNIX)
-  set(SK_SHADER_TARGETS "e")
   set(LINUX_LIBS
     Threads::Threads
     EGL
@@ -150,11 +147,8 @@ elseif (UNIX)
 
 elseif(WIN32)
   if (SK_WINDOWS_GL)
-    set(SK_SHADER_TARGETS "g")
     add_definitions("-DSKG_FORCE_OPENGL")
     add_definitions("-DSK_GPU_LABELS")
-  else()
-    set(SK_SHADER_TARGETS "x")
   endif()
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   if (MSVC)
@@ -249,17 +243,18 @@ if (SK_PROFILE)
   set_target_properties(TracyClient PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
-#### sk_gpu - https://github.com/StereoKit/sk_gpu ####
-if (NOT SK_LOCAL_SK_GPU)
+#### sk_gpu - https://github.com/StereoKit/sk_renderer ####
+if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME sk_gpu # 2025.9.7
-    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.9.7/sk_gpu.v2025.9.7.zip
+    NAME sk_renderer # 2025.9.7
+    GITHUB_REPOSITORY StereoKit/sk_renderer
   )
 else()
-  # For building directly with in-progress sk_gpu changes, point this to your
-  # local sk_gpu clone, and use it instead of CPM.
-  add_subdirectory(../sk_gpu/bin/distribute ../sk_gpu/bin/distribute/bin)
+  # For building directly with in-progress sk_renderer changes, point this to your
+  # local sk_renderer clone, and use it instead of CPM.
+  add_subdirectory(../sk_renderer ../sk_renderer/build)
 endif()
+
 
 ###########################################
 ## StereoKitC                            ##
@@ -339,7 +334,6 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/miniaudio.cpp
   StereoKitC/libraries/qoi.h
   StereoKitC/libraries/qoi.cpp
-  StereoKitC/libraries/sk_gpu.cpp
   StereoKitC/libraries/sk_fontfile.h
   StereoKitC/libraries/sk_fontfile.cpp
   StereoKitC/libraries/sokol_time.h
@@ -558,7 +552,7 @@ endif()
 
 skshaderc_compile_headers(StereoKitC
   ${CMAKE_BINARY_DIR}/shaders/
-  "-O3 -f -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+  "-O3 -f -z ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
   StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_default.hlsl
   StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
@@ -637,7 +631,7 @@ target_link_libraries( StereoKitC
     ${CMAKE_DL_LIBS}
     meshoptimizer
   PUBLIC
-    sk_gpu
+    sk_renderer
     ${OPENXR_LIB}
     ${ANDROID_LIBS}
 )
@@ -803,7 +797,7 @@ if (SK_BUILD_TESTS)
 
   skshaderc_compile_headers( StereoKitCTest
     ${CMAKE_BINARY_DIR}/test_shaders/
-    "-O3 -f ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+    "-O3 -f ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
     Examples/StereoKitCTest/Shaders/blit.hlsl
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
     Examples/StereoKitCTest/Shaders/skt_light_only.hlsl)

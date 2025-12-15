@@ -19,7 +19,7 @@
 #include <libgen.h>
 #include <fontconfig/fontconfig.h>
 
-#include <sk_gpu.h>
+#include <sk_renderer.h>
 
 #include "../xr_backends/openxr.h"
 #include "../systems/render.h"

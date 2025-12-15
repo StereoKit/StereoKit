@@ -3,7 +3,7 @@
 #include "../asset_types/texture.h"
 #include "../libraries/profiler.h"
 
-#include <sk_gpu.h>
+#include <sk_renderer.h>
 #include <stdio.h>
 
 namespace sk {

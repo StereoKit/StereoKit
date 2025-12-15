@@ -27,7 +27,7 @@
 #include "../hands/input_hand.h"
 #include "../platforms/platform.h"
 
-#include <sk_gpu.h>
+#include <sk_renderer.h>
 #include <limits.h>
 #include <stdio.h>
 
