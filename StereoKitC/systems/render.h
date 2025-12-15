@@ -7,6 +7,7 @@
 
 #include "../stereokit.h"
 #include "../libraries/array.h"
+#include <sk_renderer.h>
 
 namespace sk {
 
@@ -29,6 +30,7 @@ matrix        render_get_cam_final        ();
 matrix        render_get_cam_final_inv    ();
 color128      render_get_clear_color_ln   ();
 vec2          render_get_clip             ();
+const skr_vert_type_t* render_get_default_vert();
 void          render_clear                ();
 vec3          render_unproject_pt         (vec3 normalized_screen_pt);
 void          render_update_projection    ();

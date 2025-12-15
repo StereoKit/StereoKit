@@ -40,7 +40,6 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-
 struct render_transform_buffer_t {
 	XMMATRIX world;
 	color128 color;
@@ -145,6 +144,7 @@ const int32_t inst_pool_sizes[] = { 1,8,32,128,512,819 };
 
 struct render_state_t {
 	bool32_t                initialized;
+	skr_vert_type_t         default_vert_type;
 
 	array_t<render_transform_buffer_t> instance_list;
 	array_t<skg_buffer_t>              instance_pool     [inst_pool_size_max];
@@ -227,6 +227,15 @@ bool render_init() {
 	profiler_zone();
 
 	local = {};
+
+	// Initialize the default vertex type for vert_t
+	skr_vert_component_t vert_components[] = {
+		{ skr_vertex_fmt_f32,            3, skr_semantic_position, 0, 0 },
+		{ skr_vertex_fmt_f32,            3, skr_semantic_normal,   0, 0 },
+		{ skr_vertex_fmt_f32,            2, skr_semantic_texcoord, 0, 0 },
+		{ skr_vertex_fmt_ui8_normalized, 4, skr_semantic_color,    0, 0 },
+	};
+	skr_vert_type_create(vert_components, _countof(vert_components), &local.default_vert_type);
 	local.initialized           = true;
 	local.sim_origin            = matrix_identity;
 	local.sim_head              = matrix_identity;
@@ -336,10 +345,19 @@ void render_shutdown() {
 
 	skg_buffer_destroy(&local.shader_blit);
 
+	// Destroy the default vertex type
+	skr_vert_type_destroy(&local.default_vert_type);
+
 	local = {};
 
 	radix_sort_clean();
 	hierarchy_shutdown();
+}
+
+///////////////////////////////////////////
+
+const skr_vert_type_t* render_get_default_vert() {
+	return &local.default_vert_type;
 }
 
 ///////////////////////////////////////////

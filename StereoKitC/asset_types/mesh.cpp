@@ -4,6 +4,7 @@
 #include "../sk_math_dx.h"
 #include "mesh.h"
 #include "assets.h"
+#include "../systems/render.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -44,35 +45,20 @@ bool32_t mesh_get_keep_data(mesh_t mesh) {
 void _mesh_set_verts(mesh_t mesh, const vert_t *vertices, uint32_t vertex_count, bool32_t calculate_bounds, bool update_original) {
 	// Keep track of vertex data for use on CPU side
 	if (!mesh->discard_data && update_original) {
-		if (mesh->vert_capacity < vertex_count)
-			mesh->verts = sk_realloc_t(vert_t, mesh->verts, vertex_count);
+		if (mesh->vert_capacity < vertex_count) {
+			mesh->verts         = sk_realloc_t(vert_t, mesh->verts, vertex_count);
+			mesh->vert_capacity = vertex_count;
+		}
 		memcpy(mesh->verts, vertices, sizeof(vert_t) * vertex_count);
 	}
 
-	if (!skg_buffer_is_valid( &mesh->vert_buffer )) {
-		// Create a static vertex buffer the first time we call this function!
-		mesh->vert_dynamic  = false;
-		mesh->vert_capacity = vertex_count;
-		mesh->vert_buffer   = skg_buffer_create(vertices, vertex_count, sizeof(vert_t), skg_buffer_type_vertex, skg_use_static);
-		if (!skg_buffer_is_valid(&mesh->vert_buffer))
-			log_err("mesh_set_verts: Failed to create vertex buffer");
-		skg_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
+	// skr_mesh_set_verts handles static-to-dynamic conversion and resizing internally
+	bool first_set = !skr_mesh_is_valid(&mesh->gpu_mesh);
+	if (skr_mesh_set_verts(&mesh->gpu_mesh, vertices, vertex_count) != skr_err_success) {
+		log_err("mesh_set_verts: Failed to set vertex data");
+	}
+	if (first_set) {
 		mesh_update_label(mesh);
-	} else if (mesh->vert_dynamic == false || vertex_count > mesh->vert_capacity) {
-		// If they call this a second time, or they need more verts than will
-		// fit in this buffer, lets make a new dynamic buffer!
-		skg_buffer_destroy(&mesh->vert_buffer);
-		mesh->vert_dynamic  = true;
-		mesh->vert_capacity = vertex_count;
-		mesh->vert_buffer   = skg_buffer_create(vertices, vertex_count, sizeof(vert_t), skg_buffer_type_vertex, skg_use_dynamic);
-		if (!skg_buffer_is_valid(&mesh->vert_buffer))
-			log_err("mesh_set_verts: Failed to create dynamic vertex buffer");
-		skg_mesh_set_verts(&mesh->gpu_mesh, &mesh->vert_buffer);
-		mesh_update_label(mesh);
-	} else {
-		// And if they call this a third time, or their verts fit in the same
-		// buffer, just copy things over!
-		skg_buffer_set_contents(&mesh->vert_buffer, vertices, sizeof(vert_t)*vertex_count);
 	}
 
 	mesh->vert_count = vertex_count;
@@ -130,35 +116,20 @@ void _mesh_set_inds (mesh_t mesh, const vind_t *indices, uint32_t index_count) {
 
 	// Keep track of index data for use on CPU side
 	if (!mesh->discard_data) {
-		if (mesh->ind_capacity < index_count)
-			mesh->inds = sk_realloc_t(vind_t, mesh->inds, index_count);
+		if (mesh->ind_capacity < index_count) {
+			mesh->inds         = sk_realloc_t(vind_t, mesh->inds, index_count);
+			mesh->ind_capacity = index_count;
+		}
 		memcpy(mesh->inds, indices, sizeof(vind_t) * index_count);
 	}
 
-	if (!skg_buffer_is_valid( &mesh->ind_buffer )) {
-		// Create a static vertex buffer the first time we call this function!
-		mesh->ind_dynamic  = false;
-		mesh->ind_capacity = index_count;
-		mesh->ind_buffer   = skg_buffer_create(indices, index_count, sizeof(vind_t), skg_buffer_type_index, skg_use_static);
-		if (!skg_buffer_is_valid( &mesh->ind_buffer ))
-			log_err("mesh_set_inds: Failed to create index buffer");
-		skg_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
+	// skr_mesh_set_inds handles static-to-dynamic conversion and resizing internally
+	bool first_set = mesh->ind_count == 0;
+	if (skr_mesh_set_inds(&mesh->gpu_mesh, indices, index_count) != skr_err_success) {
+		log_err("mesh_set_inds: Failed to set index data");
+	}
+	if (first_set) {
 		mesh_update_label(mesh);
-	} else if (mesh->ind_dynamic == false || index_count > mesh->ind_capacity) {
-		// If they call this a second time, or they need more inds than will
-		// fit in this buffer, lets make a new dynamic buffer!
-		skg_buffer_destroy(&mesh->ind_buffer);
-		mesh->ind_dynamic  = true;
-		mesh->ind_capacity = index_count;
-		mesh->ind_buffer   = skg_buffer_create(indices, index_count, sizeof(vind_t), skg_buffer_type_index, skg_use_dynamic);
-		if (!skg_buffer_is_valid( &mesh->ind_buffer ))
-			log_err("mesh_set_inds: Failed to create dynamic index buffer");
-		skg_mesh_set_inds(&mesh->gpu_mesh, &mesh->ind_buffer);
-		mesh_update_label(mesh);
-	} else {
-		// And if they call this a third time, or their inds fit in the same
-		// buffer, just copy things over!
-		skg_buffer_set_contents(&mesh->ind_buffer, indices, sizeof(vind_t) * index_count);
 	}
 
 	mesh->ind_count = index_count;
@@ -493,9 +464,9 @@ const char* mesh_get_id(const mesh_t mesh) {
 ///////////////////////////////////////////
 
 void mesh_update_label(mesh_t mesh) {
-#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+#if defined(_DEBUG) || defined(SK_GPU_LABELS)
 	if (mesh->header.id_text != nullptr)
-		skg_mesh_name(&mesh->gpu_mesh, mesh->header.id_text);
+		skr_mesh_set_name(&mesh->gpu_mesh, mesh->header.id_text);
 #else
 	(void)mesh;
 #endif
@@ -511,7 +482,10 @@ void mesh_addref(mesh_t mesh) {
 
 mesh_t mesh_create() {
 	mesh_t result = (_mesh_t*)assets_allocate(asset_type_mesh);
-	result->gpu_mesh = skg_mesh_create(nullptr, nullptr);
+	// Initialize the gpu_mesh with vertex type and index format
+	// Actual buffer creation happens lazily in mesh_set_verts/mesh_set_inds
+	result->gpu_mesh.default_vert_type  = render_get_default_vert();
+	result->gpu_mesh.ind_format = skr_index_fmt_u32;
 	return result;
 }
 
@@ -524,6 +498,8 @@ mesh_t mesh_copy(mesh_t mesh) {
 	}
 
 	mesh_t result = (mesh_t)assets_allocate(asset_type_mesh);
+	result->gpu_mesh.default_vert_type  = render_get_default_vert();
+	result->gpu_mesh.ind_format = skr_index_fmt_u32;
 	result->bounds       = mesh->bounds;
 	result->discard_data = mesh->discard_data;
 	result->ind_draw     = mesh->ind_draw;
@@ -589,9 +565,7 @@ void mesh_release(mesh_t mesh) {
 ///////////////////////////////////////////
 
 void mesh_destroy(mesh_t mesh) {
-	skg_mesh_destroy  (&mesh->gpu_mesh);
-	skg_buffer_destroy(&mesh->vert_buffer);
-	skg_buffer_destroy(&mesh->ind_buffer);
+	skr_mesh_destroy(&mesh->gpu_mesh);
 	sk_free(mesh->verts);
 	sk_free(mesh->inds);
 	sk_free(mesh->collision_data.pts   );	// XXX doesn't this fail when no colldata has been created?
