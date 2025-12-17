@@ -484,7 +484,7 @@ mesh_t mesh_create() {
 	mesh_t result = (_mesh_t*)assets_allocate(asset_type_mesh);
 	// Initialize the gpu_mesh with vertex type and index format
 	// Actual buffer creation happens lazily in mesh_set_verts/mesh_set_inds
-	result->gpu_mesh.default_vert_type  = render_get_default_vert();
+	result->gpu_mesh.vert_type  = render_get_default_vert();
 	result->gpu_mesh.ind_format = skr_index_fmt_u32;
 	return result;
 }
@@ -498,7 +498,7 @@ mesh_t mesh_copy(mesh_t mesh) {
 	}
 
 	mesh_t result = (mesh_t)assets_allocate(asset_type_mesh);
-	result->gpu_mesh.default_vert_type  = render_get_default_vert();
+	result->gpu_mesh.vert_type  = render_get_default_vert();
 	result->gpu_mesh.ind_format = skr_index_fmt_u32;
 	result->bounds       = mesh->bounds;
 	result->discard_data = mesh->discard_data;

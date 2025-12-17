@@ -227,8 +227,8 @@ material_t material_copy(material_t material) {
 		for (int32_t i = 0; i < buff_info->var_count; i++) {
 			const sksc_shader_var_t *var = &buff_info->vars[i];
 			void *tmp = sk_malloc(var->size);
-			skr_material_get_param(&material->gpu_mat, var->name, var->type, (uint32_t)var->type_count, tmp);
-			skr_material_set_param(&result->gpu_mat, var->name, var->type, (uint32_t)var->type_count, tmp);
+			skr_material_get_param(&material->gpu_mat, var->name, (sksc_shader_var_)var->type, (uint32_t)var->type_count, tmp);
+			skr_material_set_param(&result->gpu_mat, var->name, (sksc_shader_var_)var->type, (uint32_t)var->type_count, tmp);
 			sk_free(tmp);
 		}
 	}
@@ -326,7 +326,7 @@ void material_set_shader(material_t material, shader_t shader) {
 			strncpy(old_params[i].name, var->name, sizeof(old_params[i].name) - 1);
 			old_params[i].name[sizeof(old_params[i].name) - 1] = '\0';
 			old_params[i].size  = var->size;
-			old_params[i].type  = var->type;
+			old_params[i].type  = (sksc_shader_var_)var->type;
 			old_params[i].count = var->type_count;
 			old_params[i].data  = sk_malloc(var->size);
 			skr_material_get_param(&material->gpu_mat, var->name, (sksc_shader_var_)var->type, var->type_count, old_params[i].data);
@@ -817,7 +817,7 @@ void material_set_param_id(material_t material, id_hash_t id, material_param_ ty
 		int32_t i = sksc_shader_meta_get_var_index_h(material->shader->gpu_shader.meta, id);
 		if (i != -1) {
 			const sksc_shader_var_t *info = sksc_shader_meta_get_var_info(material->shader->gpu_shader.meta, i);
-			skr_material_set_param(&material->gpu_mat, info->name, info->type, info->type_count, value);
+			skr_material_set_param(&material->gpu_mat, info->name, (sksc_shader_var_)info->type, info->type_count, value);
 		}
 	}
 }
@@ -848,7 +848,7 @@ bool32_t material_get_param_id(material_t material, id_hash_t id, material_param
 		int32_t i = sksc_shader_meta_get_var_index_h(material->shader->gpu_shader.meta, id);
 		if (i != -1) {
 			const sksc_shader_var_t *info = sksc_shader_meta_get_var_info(material->shader->gpu_shader.meta, i);
-			skr_material_get_param(&material->gpu_mat, info->name, info->type, info->type_count, out_value);
+			skr_material_get_param(&material->gpu_mat, info->name, (sksc_shader_var_)info->type, info->type_count, out_value);
 			return true;
 		}
 	}

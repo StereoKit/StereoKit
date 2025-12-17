@@ -64,10 +64,6 @@ struct render_blit_data_t {
 	float pixel_width;
 	float pixel_height;
 };
-struct render_inst_buffer {
-	int32_t      max;
-	skg_buffer_t buffer;
-};
 struct render_screenshot_t {
 	void        (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context);
 	void*         context;
@@ -131,27 +127,13 @@ struct render_action_t {
 
 ///////////////////////////////////////////
 
-typedef enum inst_pool_size_ {
-	inst_pool_size_1,
-	inst_pool_size_8,
-	inst_pool_size_32,
-	inst_pool_size_128,
-	inst_pool_size_512,
-	inst_pool_size_819,
-	inst_pool_size_max,
-} inst_pool_size_;
-const int32_t inst_pool_sizes[] = { 1,8,32,128,512,819 };
-
 struct render_state_t {
 	bool32_t                initialized;
 	skr_vert_type_t         default_vert_type;
-
-	array_t<render_transform_buffer_t> instance_list;
-	array_t<skg_buffer_t>              instance_pool     [inst_pool_size_max];
-	int32_t                            instance_pool_used[inst_pool_size_max];
+	skr_render_list_t       gpu_render_list;
 
 	material_buffer_t       shader_globals;
-	skg_buffer_t            shader_blit;
+	skr_buffer_t            shader_blit;
 	matrix                  camera_root;
 	matrix                  camera_root_final;
 	matrix                  camera_root_final_inv;
@@ -191,35 +173,18 @@ struct render_state_t {
 	bool32_t                sky_show;
 	tex_t                   sky_pending_tex;
 
-	material_t              last_material;
-	shader_t                last_shader;
-	mesh_t                  last_mesh;
-
 	array_t<render_list_t>  list_stack;
 	render_list_t           list_active;
 };
 static render_state_t local = {};
 
-const int32_t    render_instance_max     = 819;
-const int32_t    render_skytex_register  = 11;
-const skg_bind_t render_list_global_bind = { 1,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
-const skg_bind_t render_list_inst_bind   = { 2,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
-const skg_bind_t render_list_blit_bind   = { 3,  skg_stage_vertex | skg_stage_pixel, skg_register_constant };
+const int32_t render_skytex_register = 11;
 
 ///////////////////////////////////////////
 
-void          render_set_material     (material_t material);
-skg_buffer_t *render_fill_inst_buffer (const array_t<render_transform_buffer_t>* list, int32_t* ref_offset, int32_t* out_count);
-void          render_reset_buffer_pool();
-void          render_save_to_file     (color32* color_buffer, int width, int height, void* context);
-
-void          render_list_prep        (render_list_t list, int32_t material_variant);
-void          render_list_add         (const render_item_t *item);
-void          render_list_add_to      (render_list_t list, const render_item_t *item);
-
-void          radix_sort7             (render_item_t *a, size_t count);
-void          radix_sort_clean        ();
-void          radix_sort_init         ();
+void render_save_to_file(color32* color_buffer, int width, int height, void* context);
+void render_list_add    (const render_item_t *item);
+void render_list_add_to (render_list_t list, const render_item_t *item);
 
 ///////////////////////////////////////////
 
@@ -254,14 +219,10 @@ bool render_init() {
 	local.list_active           = nullptr;
 
 	local.shader_globals  = material_buffer_create(sizeof(local.global_buffer));
-	local.shader_blit     = skg_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skg_buffer_type_constant, skg_use_dynamic);
-#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
-	skg_buffer_name(&local.shader_blit, "sk/render/blit_buffer");
-#endif
+	skr_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skr_buffer_type_constant, skr_use_dynamic, &local.shader_blit);
+	skr_buffer_set_name(&local.shader_blit, "sk/render/blit_buffer");
 
-	render_global_buffer_internal(1, local.shader_globals);
-	
-	local.instance_list.resize(render_instance_max);
+	skr_render_list_create(&local.gpu_render_list);
 
 	// Setup a default camera
 	render_set_clip         (local.clip_planes.x, local.clip_planes.y);
@@ -303,7 +264,6 @@ bool render_init() {
 	render_list_set_id(local.list_primary, "sk/render/primary_renderlist");
 	render_list_push  (local.list_primary);
 
-	radix_sort_init();
 	hierarchy_init();
 
 	return true;
@@ -318,7 +278,6 @@ void render_shutdown() {
 	local.list_stack        .free();
 	local.screenshot_list   .free();
 	local.render_action_list.free();
-	local.instance_list     .free();
 
 	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
 		tex_release(local.global_textures[i]);
@@ -335,22 +294,12 @@ void render_shutdown() {
 	mesh_release           (local.blit_quad);
 	material_buffer_release(local.shader_globals);
 
-	for (int32_t pool_idx = 0; pool_idx < inst_pool_size_max; pool_idx++) {
-		array_t<skg_buffer_t>* pool = &local.instance_pool[pool_idx];
-		for (int32_t i = 0; i < pool->count; i++) {
-			skg_buffer_destroy(&pool->get(i));
-		}
-		pool->free();
-	}
-
-	skg_buffer_destroy(&local.shader_blit);
-
-	// Destroy the default vertex type
-	skr_vert_type_destroy(&local.default_vert_type);
+	skr_buffer_destroy     (&local.shader_blit);
+	skr_render_list_destroy(&local.gpu_render_list);
+	skr_vert_type_destroy  (&local.default_vert_type);
 
 	local = {};
 
-	radix_sort_clean();
 	hierarchy_shutdown();
 }
 
@@ -364,8 +313,6 @@ const skr_vert_type_t* render_get_default_vert() {
 
 void render_step() {
 	profiler_zone();
-
-	render_reset_buffer_pool();
 
 	hierarchy_step();
 
@@ -889,8 +836,6 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 ///////////////////////////////////////////
 
 void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter, int32_t material_variant) {
-	skg_event_begin("Render List Setup");
-
 	// A temporary fix for multiview trying to render to mono rendertargets
 	if (view_count == 1) {
 		memset(&local.global_buffer.view      [1], 0, sizeof(local.global_buffer.view      [1]));
@@ -941,31 +886,26 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 		? vec4{ (float)sky_tex->width, (float)sky_tex->height, floorf(log2f((float)sky_tex->width)), 0 }
 		: vec4{};
 
-	// Upload shader globals and set them active!
+	// Upload shader globals
 	material_buffer_set_data(local.shader_globals, &local.global_buffer);
 
-	// Activate any material buffers we have
+	// Set global constant buffers for sk_renderer
 	for (int32_t i = 0; i < _countof(local.global_buffers); i++) {
 		if (local.global_buffers[i] != nullptr)
-			skg_buffer_bind(&local.global_buffers[i]->buffer, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_constant });
+			skr_renderer_set_global_constants(i, &local.global_buffers[i]->buffer);
 	}
 
-	// Activate any global textures we have
+	// Set global textures for sk_renderer
 	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
 		if (local.global_textures[i] != nullptr) {
 			skr_tex_t *tex = local.global_textures[i]->fallback == nullptr
 				? &local.global_textures[i]->gpu_tex
 				: &local.global_textures[i]->fallback->gpu_tex;
-			skg_tex_bind(tex, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_resource });
+			skr_renderer_set_global_texture(i, tex);
 		}
 	}
 
-	skg_event_end();
-	skg_event_begin("Execute Render List");
-
 	render_list_execute(list, filter, material_variant, inst_multiplier, 0, INT_MAX);
-
-	skg_event_end();
 }
 
 ///////////////////////////////////////////
@@ -975,104 +915,111 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 void render_check_screenshots() {
 	if (local.screenshot_list.count == 0) return;
 
-	skg_tex_t *old_target = skg_tex_target_get();
 	for (int32_t i = 0; i < local.screenshot_list.count; i++) {
-		skg_event_begin("Screenshot");
 		int32_t  w = local.screenshot_list[i].width;
 		int32_t  h = local.screenshot_list[i].height;
 
 		// Create the screenshot surface
 		size_t   size   = sizeof(color32) * w * h;
 		color32 *buffer = (color32*)sk_malloc(size);
-		
-		// Setup to render the screenshot
-		tex_t render_capture_surface = tex_create_rendertarget(w, h, 8, local.screenshot_list[i].tex_format, tex_format_depthstencil);
-		skg_tex_target_bind(&render_capture_surface->gpu_tex, -1, 0);
 
-		// Set up the viewport if we've got one!
+		// Create render targets for screenshot
+		tex_t color_surface = tex_create_rendertarget(w, h, 8, local.screenshot_list[i].tex_format, tex_format_none);
+		tex_t depth_surface = tex_create_rendertarget(w, h, 8, tex_format_depthstencil, tex_format_none);
+		tex_t resolve_tex   = tex_create_rendertarget(w, h, 1, local.screenshot_list[i].tex_format, tex_format_none);
+
+		// Set up viewport
+		skr_rect_t  viewport = { 0, 0, (float)w, (float)h };
+		skr_recti_t scissor  = { 0, 0, w, h };
 		if (local.screenshot_list[i].viewport.w != 0) {
-			int32_t viewport[4] =
-			{
-				(int32_t)(local.screenshot_list[i].viewport.x),
-				(int32_t)(local.screenshot_list[i].viewport.y),
-				(int32_t)(local.screenshot_list[i].viewport.w),
-				(int32_t)(local.screenshot_list[i].viewport.h)
-			};
-			skg_viewport(viewport);
-		} else {
-			int32_t viewport[4] = { 0,0,w,h };
-			skg_viewport(viewport);
+			viewport = {
+				local.screenshot_list[i].viewport.x,
+				local.screenshot_list[i].viewport.y,
+				local.screenshot_list[i].viewport.w,
+				local.screenshot_list[i].viewport.h };
+			scissor = {
+				(int32_t)local.screenshot_list[i].viewport.x,
+				(int32_t)local.screenshot_list[i].viewport.y,
+				(int32_t)local.screenshot_list[i].viewport.w,
+				(int32_t)local.screenshot_list[i].viewport.h };
 		}
 
-		// Clear the viewport
-		if (local.screenshot_list[i].clear != render_clear_none) {
-			skg_target_clear(
-				(local.screenshot_list[i].clear & render_clear_depth),
-				(local.screenshot_list[i].clear & render_clear_color) ? &local.clear_col.r : (float*)nullptr);
-		}
+		// Determine clear flags
+		skr_clear_ clear_flags = skr_clear_none;
+		if (local.screenshot_list[i].clear & render_clear_color) clear_flags = (skr_clear_)(clear_flags | skr_clear_color);
+		if (local.screenshot_list[i].clear & render_clear_depth) clear_flags = (skr_clear_)(clear_flags | skr_clear_depth | skr_clear_stencil);
+
+		// Begin render pass
+		skr_vec4_t clear_color = { local.clear_col.r, local.clear_col.g, local.clear_col.b, local.clear_col.a };
+		skr_renderer_begin_pass(&color_surface->gpu_tex, &depth_surface->gpu_tex, &resolve_tex->gpu_tex, clear_flags, clear_color, 1.0f, 0);
+		skr_renderer_set_viewport(viewport);
+		skr_renderer_set_scissor (scissor);
 
 		// Render!
 		render_draw_queue(local.list_primary, &local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, 1, local.screenshot_list[i].layer_filter, 0);
-		skg_tex_target_bind(nullptr, -1, 0);
 
-		tex_t resolve_tex = tex_create_rendertarget(w, h, 1, local.screenshot_list[i].tex_format, tex_format_none);
-		skg_tex_copy_to(&render_capture_surface->gpu_tex, -1, &resolve_tex->gpu_tex, -1);
+		// End render pass
+		skr_renderer_end_pass();
+
+		// Read back the resolved texture
 		tex_get_data(resolve_tex, buffer, size);
-#if defined(SKG_OPENGL)
-		int32_t line_size = tex_format_pitch(resolve_tex->format, resolve_tex->width);
-		void* tmp = sk_malloc(line_size);
-		for (int32_t y = 0; y < resolve_tex->height / 2; y++) {
-			void* top_line = ((uint8_t*)buffer) + line_size * y;
-			void* bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->height - 1) - y);
-			memcpy(tmp,      top_line, line_size);
-			memcpy(top_line, bot_line, line_size);
-			memcpy(bot_line, tmp,      line_size);
-		}
-		sk_free(tmp);
-#endif
+
 		tex_release(resolve_tex);
-		tex_release(render_capture_surface);
+		tex_release(depth_surface);
+		tex_release(color_surface);
 
 		// Notify that the color data is ready!
 		local.screenshot_list[i].render_on_screenshot_callback(buffer, w, h, local.screenshot_list[i].context);
 		sk_free(buffer);
-		skg_event_end();
 	}
 	local.screenshot_list.clear();
-	skg_tex_target_bind(old_target, -1, 0);
 }
 
 ///////////////////////////////////////////
 
 void render_draw_viewpoint(render_action_viewpoint_t* vp) {
-	skg_event_begin("Viewpoint");
-	// Setup to render the screenshot
-	skg_tex_target_bind(&vp->rendertarget->gpu_tex, vp->rendertarget_index, 0);
+	int32_t w = vp->rendertarget->width;
+	int32_t h = vp->rendertarget->height;
 
-	// Clear the viewport
-	if (vp->clear != render_clear_none) {
-		skg_target_clear(
-			(vp->clear & render_clear_depth),
-			(vp->clear & render_clear_color) ? &local.clear_col.r : (float *)nullptr);
-	}
+	// Use the render target's depth buffer if it has one
+	tex_t      depth_surface = vp->rendertarget->depth_buffer;
+	skr_tex_t* depth_tex     = depth_surface ? &depth_surface->gpu_tex : nullptr;
 
-	// Set up the viewport if we've got one!
+	// Set up viewport
+	skr_rect_t  viewport = { 0, 0, (float)w, (float)h };
+	skr_recti_t scissor  = { 0, 0, w, h };
 	if (vp->viewport.w != 0) {
-		int32_t viewport[4] = {
-			(int32_t)(vp->viewport.x * vp->rendertarget->width ),
-			(int32_t)(vp->viewport.y * vp->rendertarget->height),
-			(int32_t)(vp->viewport.w * vp->rendertarget->width ),
-			(int32_t)(vp->viewport.h * vp->rendertarget->height) };
-		skg_viewport(viewport);
+		viewport = {
+			vp->viewport.x * w,
+			vp->viewport.y * h,
+			vp->viewport.w * w,
+			vp->viewport.h * h };
+		scissor = {
+			(int32_t)(vp->viewport.x * w),
+			(int32_t)(vp->viewport.y * h),
+			(int32_t)(vp->viewport.w * w),
+			(int32_t)(vp->viewport.h * h) };
 	}
+
+	// Determine clear flags
+	skr_clear_ clear_flags = skr_clear_none;
+	if (vp->clear & render_clear_color) clear_flags = (skr_clear_)(clear_flags | skr_clear_color);
+	if (vp->clear & render_clear_depth) clear_flags = (skr_clear_)(clear_flags | skr_clear_depth | skr_clear_stencil);
+
+	// Begin render pass
+	skr_vec4_t clear_color = { local.clear_col.r, local.clear_col.g, local.clear_col.b, local.clear_col.a };
+	skr_renderer_begin_pass(&vp->rendertarget->gpu_tex, depth_tex, nullptr, clear_flags, clear_color, 1.0f, 0);
+	skr_renderer_set_viewport(viewport);
+	skr_renderer_set_scissor (scissor);
 
 	// Render!
 	render_draw_queue(local.list_primary, &vp->camera, &vp->projection, 0, 1, 1, vp->layer_filter, vp->material_variant);
-	skg_tex_target_bind(nullptr, -1, 0);
+
+	// End render pass
+	skr_renderer_end_pass();
 
 	// Release the reference we added, the user should have their own ref
 	tex_release(vp->rendertarget);
-	skg_event_end();
 }
 
 ///////////////////////////////////////////
@@ -1093,58 +1040,17 @@ void render_action_list_execute() {
 ///////////////////////////////////////////
 
 void render_clear() {
-	//log_infof("draws: %d, instances: %d, material: %d, shader: %d, texture %d, mesh %d", render_stats.draw_calls, render_stats.draw_instances, render_stats.swaps_material, render_stats.swaps_shader, render_stats.swaps_texture, render_stats.swaps_mesh);
 	render_list_clear(local.list_primary);
-
-	local.last_material = nullptr;
-	local.last_shader   = nullptr;
-	local.last_mesh     = nullptr;
-}
-
-///////////////////////////////////////////
-
-void render_blit_to_bound(material_t material) {
-	material_check_dirty(material);
-
-	// Wipe our swapchain color and depth target clean, and then set them up for rendering!
-	float color[4] = { 0,0,0,0 };
-	skg_target_clear(true, color);
-
-	skg_tex_t *target = skg_tex_target_get();
-
-	// Setup shader args for the blit operation
-	render_blit_data_t data = {};
-	data.width  = (float)target->width;
-	data.height = (float)target->height;
-	data.pixel_width  = 1.0f / target->width;
-	data.pixel_height = 1.0f / target->height;
-
-	// Setup render states for blitting
-	skg_buffer_set_contents(&local.shader_blit, &data, sizeof(render_blit_data_t));
-	skg_buffer_bind        (&local.shader_blit, render_list_blit_bind);
-	render_set_material(material);
-	skg_mesh_bind(&local.blit_quad->gpu_mesh);
-	
-	// And draw to it!
-	skg_draw(0, 0, local.blit_quad->ind_count, 1);
-
-	local.last_material = nullptr;
-	local.last_mesh     = nullptr;
-	local.last_shader   = nullptr;
 }
 
 ///////////////////////////////////////////
 
 void render_blit(tex_t to, material_t material) {
-	skg_tex_t *old_target = skg_tex_target_get();
+	material_check_dirty(material);
 
-	int32_t array_count = skr_tex_get_array_count(&to->gpu_tex);
-	for (int32_t i = 0; i < array_count; i++)
-	{
-		skg_tex_target_bind(&to->gpu_tex, i, 0);
-		render_blit_to_bound(material);
-	}
-	skg_tex_target_bind(old_target, -1, 0);
+	skr_vec3i_t size = skr_tex_get_size(&to->gpu_tex);
+	skr_recti_t bounds = { 0, 0, size.x, size.y };
+	skr_renderer_blit(&material->gpu_mat, &to->gpu_tex, bounds);
 }
 
 ///////////////////////////////////////////
@@ -1218,94 +1124,6 @@ void render_to(tex_t to_rendertarget, int32_t to_target_index, const matrix& cam
 
 ///////////////////////////////////////////
 
-void render_set_material(material_t material) {
-	if (material == local.last_material)
-		return;
-	local.last_material = material;
-	local.list_active->stats.swaps_material++;
-
-	// Update and bind the material parameter buffer
-	if (material->args.buffer != nullptr) {
-		skg_buffer_bind(&material->args.buffer_gpu, material->args.buffer_bind);
-	}
-
-	// Bind the material textures
-	for (int32_t i = 0; i < material->args.texture_count; i++) {
-		if (local.global_textures[material->args.textures[i].bind.slot] == nullptr) {
-			tex_t tex = material->args.textures[i].tex;
-			if (tex->fallback != nullptr)
-				tex = tex->fallback;
-			skg_tex_bind(&tex->gpu_tex, material->args.textures[i].bind);
-		}
-	}
-
-	// And bind the pipeline
-	skg_pipeline_bind(&material->pipeline);
-}
-
-///////////////////////////////////////////
-
-inst_pool_size_ inst_pool_from_size(int32_t size) {
-	if      (size <= inst_pool_sizes[inst_pool_size_1  ]) return inst_pool_size_1;
-	else if (size <= inst_pool_sizes[inst_pool_size_8  ]) return inst_pool_size_8;
-	else if (size <= inst_pool_sizes[inst_pool_size_32 ]) return inst_pool_size_32;
-	else if (size <= inst_pool_sizes[inst_pool_size_128]) return inst_pool_size_128;
-	else if (size <= inst_pool_sizes[inst_pool_size_512]) return inst_pool_size_512;
-	else if (size <= inst_pool_sizes[inst_pool_size_819]) return inst_pool_size_819;
-	else { log_err("Bad pool size"); return inst_pool_size_1; }
-}
-
-///////////////////////////////////////////
-
-void render_reset_buffer_pool() {
-	for (int32_t i = 0; i < inst_pool_size_max; i++) {
-		int32_t buffer_id = local.instance_pool_used[i] = 0;
-	}
-}
-
-///////////////////////////////////////////
-
-skg_buffer_t *render_fill_inst_buffer(const array_t<render_transform_buffer_t>* list, int32_t* ref_offset, int32_t* out_count) {
-	// Find a buffer that can contain this list! Or the biggest one
-	int32_t size  = list->count - *ref_offset;
-	int32_t start = *ref_offset;
-
-	// Check if it fits, if it doesn't, then set up data so we only fill what we have! 
-	if (size > render_instance_max) {
-		*ref_offset += render_instance_max;
-		*out_count   = render_instance_max;
-	} else {
-		// this means we've gotten through the whole list :)
-		*ref_offset = 0;
-		*out_count  = size;
-	}
-
-	// Get the appropriate pool for this size
-	inst_pool_size_        pool_idx  = inst_pool_from_size(*out_count);
-	array_t<skg_buffer_t>* pool      = &local.instance_pool     [pool_idx];
-	int32_t*               pool_used = &local.instance_pool_used[pool_idx];
-	// If our pool for this size is empty, add a new buffer
-	if (*pool_used >= pool->count) {
-		skg_buffer_t new_buffer = skg_buffer_create(nullptr, inst_pool_sizes[pool_idx], sizeof(render_transform_buffer_t), skg_buffer_type_constant, skg_use_dynamic);
-#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
-		char name[64];
-		snprintf(name, sizeof(name), "sk/render/instance_pool_%d_%d", inst_pool_sizes[pool_idx], *pool_used);
-		skg_buffer_name(&new_buffer, name);
-#endif
-		pool->add(new_buffer);
-	}
-
-	// Fetch the buffer at the top of the pool
-	skg_buffer_t* buffer = &pool->get(*pool_used);
-	*pool_used += 1;
-
-	// Copy data into the buffer, and return it!
-	skg_buffer_set_contents(buffer, &list->data[start], sizeof(render_transform_buffer_t) * *out_count);
-	return buffer;
-}
-
-///////////////////////////////////////////
-
 vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 	XMMATRIX fast_proj, fast_view;
 	math_matrix_to_fast(render_get_projection_matrix(), &fast_proj);
@@ -1321,23 +1139,9 @@ vec3 render_unproject_pt(vec3 normalized_screen_pt) {
 ///////////////////////////////////////////
 
 void render_get_device(void **device, void **context) {
-	skg_platform_data_t platform = skg_get_platform_data();
-#if defined(SKG_DIRECT3D11)
-	*device  = platform._d3d11_device;
-	//*context = platform._d3d11_context;
-	*context = nullptr;
-#elif defined(_SKG_GL_LOAD_EGL)
-	*device  = platform._egl_display;
-	*context = platform._egl_context;
-#elif defined(_SKG_GL_LOAD_WGL)
-	*device  = platform._gl_hdc;
-	*context = platform._gl_hrc;
-#elif defined(_SKG_GL_LOAD_GLX)
-	*device  = platform._glx_drawable;
-	*context = platform._glx_context;
-#else
-	log_warn("render_get_device not implemented for sk_gpu!");
-#endif
+	// sk_renderer uses Vulkan
+	*device  = skr_get_vk_device();
+	*context = skr_get_vk_instance();
 }
 
 ///////////////////////////////////////////
@@ -1432,28 +1236,6 @@ void render_list_add_to(render_list_t list, const render_item_t *item) {
 
 ///////////////////////////////////////////
 
-inline void render_list_execute_run(_render_list_t *list, material_t material, const skg_mesh_t *mesh, int32_t mesh_inds, uint32_t inst_multiplier) {
-	if (mesh_inds == 0) return;
-
-	render_set_material(material);
-	skg_mesh_bind      (mesh);
-	list->stats.swaps_mesh++;
-
-	// Collect and draw instances
-	int32_t offsets = 0, inst_count = 0;
-	do {
-		skg_buffer_t *instances = render_fill_inst_buffer(&local.instance_list, &offsets, &inst_count);
-		skg_buffer_bind(instances, render_list_inst_bind);
-
-		skg_draw(0, 0, mesh_inds, inst_count * inst_multiplier);
-		list->stats.draw_calls     += 1;
-		list->stats.draw_instances += inst_count;
-
-	} while (offsets != 0);
-}
-
-///////////////////////////////////////////
-
 void render_list_execute(render_list_t list, render_layer_ filter, int32_t material_variant, uint32_t inst_multiplier, int32_t queue_start, int32_t queue_end) {
 	list->state = render_list_state_rendering;
 
@@ -1461,68 +1243,8 @@ void render_list_execute(render_list_t list, render_layer_ filter, int32_t mater
 		list->state = render_list_state_rendered;
 		return;
 	}
-	render_list_prep(list, material_variant);
-	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
-	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
-	render_item_t *run_start    = nullptr;
-	material_t     run_material = nullptr;
-	for (int32_t i = 0; i < list->queue.count; i++) {
-		render_item_t *item = &list->queue[i];
-		
-		// Skip this item if it's filtered out
-		if ((item->layer & filter) == 0 || item->sort_id < sort_id_start) continue;
-		// End early if we're past the end of the desired queue range
-		if (item->sort_id >= sort_id_end) break;
-
-		// Pick the right material according to the variant
-		material_t item_mat = material_variant == 0
-			? item->material
-			: item->material->variants[material_variant - 1];
-
-		// Skip if the material variant is null
-		if (item_mat == nullptr) continue;
-
-		// If it's the first in the run, record the material/mesh
-		if (run_start == nullptr) {
-			run_start    = item;
-			run_material = item_mat;
-		}
-		// If the material/mesh changed
-		else if (run_material != item_mat || run_start->mesh != item->mesh) {
-			// Render the run that just ended
-			render_list_execute_run(list, run_material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, inst_multiplier);
-			local.instance_list.clear();
-			// Start the next run
-			run_start    = item;
-			run_material = item_mat;
-		}
-
-		// Add the current item to the run of instances
-		XMMATRIX transpose = XMMatrixTranspose(item->transform);
-		local.instance_list.add(render_transform_buffer_t{ transpose, item->color });
-	}
-	// Render the last remaining run, which won't be triggered by the loop's
-	// conditions
-	if (local.instance_list.count > 0) {
-		render_list_execute_run(list, run_material, &run_start->mesh->gpu_mesh, run_start->mesh_inds, inst_multiplier);
-		local.instance_list.clear();
-	}
-
-	list->state = render_list_state_rendered;
-
-	local.last_material = nullptr;
-	local.last_shader   = nullptr;
-	local.last_mesh     = nullptr;
-}
-
-///////////////////////////////////////////
-
-void render_list_prep(render_list_t list, int32_t material_variant) {
-	// Sort the render queue
-	radix_sort7(&list->queue[0], list->queue.count);
-
-	// Make sure the material buffers are all up-to-date
+	// Make sure all materials are up-to-date
 	material_t curr = nullptr;
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		if (curr == list->queue[i].material) continue;
@@ -1533,6 +1255,46 @@ void render_list_prep(render_list_t list, int32_t material_variant) {
 			: curr->variants[material_variant - 1];
 		if (check) material_check_dirty(check);
 	}
+
+	// Calculate sort_id range for queue filtering
+	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
+	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
+
+	// Clear and populate the sk_renderer render list
+	skr_render_list_clear(&local.gpu_render_list);
+
+	for (int32_t i = 0; i < list->queue.count; i++) {
+		render_item_t *item = &list->queue[i];
+
+		// Skip this item if it's filtered out
+		if ((item->layer & filter) == 0) continue;
+		if (item->sort_id < sort_id_start || item->sort_id >= sort_id_end) continue;
+
+		// Pick the right material according to the variant
+		material_t item_mat = material_variant == 0
+			? item->material
+			: item->material->variants[material_variant - 1];
+
+		// Skip if the material variant is null
+		if (item_mat == nullptr) continue;
+
+		// Prepare instance data - transpose the matrix for GPU
+		XMMATRIX transpose = XMMatrixTranspose(item->transform);
+		render_transform_buffer_t inst = { transpose, item->color };
+
+		// Add to sk_renderer's render list - it handles sorting and batching
+		skr_render_list_add(&local.gpu_render_list,
+			&item->mesh->gpu_mesh,
+			&item_mat->gpu_mat,
+			&inst, sizeof(inst), 1);
+	}
+
+	// Draw everything via sk_renderer
+	skr_renderer_draw(&local.gpu_render_list,
+		&local.global_buffer, sizeof(local.global_buffer),
+		inst_multiplier);
+
+	list->state = render_list_state_rendered;
 }
 
 ///////////////////////////////////////////
@@ -1623,150 +1385,46 @@ void render_list_add_model_mat(render_list_t list, model_t model, material_t mat
 ///////////////////////////////////////////
 
 void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color, render_clear_ clear, rect_t viewport_pct, render_layer_ layer_filter, int32_t material_variant) {
-	skg_tex_t* old_target = skg_tex_target_get();
-	skg_tex_target_bind(&to_rendertarget->gpu_tex, -1, 0);
+	int32_t w = to_rendertarget->width;
+	int32_t h = to_rendertarget->height;
 
-	if (clear != render_clear_none) {
-		skg_target_clear(
-			(clear & render_clear_depth),
-			(clear & render_clear_color) ? &clear_color.r : (float*)nullptr);
-	}
+	// Create a temporary depth buffer
+	tex_t depth_surface = tex_create_rendertarget(w, h, 1, tex_format_depthstencil, tex_format_none);
 
+	// Set up viewport
 	if (viewport_pct.w == 0) viewport_pct.w = 1;
 	if (viewport_pct.h == 0) viewport_pct.h = 1;
 
-	int32_t viewport_i[4] = {
-		(int32_t)(viewport_pct.x * to_rendertarget->width ),
-		(int32_t)(viewport_pct.y * to_rendertarget->height),
-		(int32_t)(viewport_pct.w * to_rendertarget->width ),
-		(int32_t)(viewport_pct.h * to_rendertarget->height) };
-	skg_viewport(viewport_i);
+	skr_rect_t  viewport = {
+		viewport_pct.x * w,
+		viewport_pct.y * h,
+		viewport_pct.w * w,
+		viewport_pct.h * h };
+	skr_recti_t scissor = {
+		(int32_t)(viewport_pct.x * w),
+		(int32_t)(viewport_pct.y * h),
+		(int32_t)(viewport_pct.w * w),
+		(int32_t)(viewport_pct.h * h) };
 
+	// Determine clear flags
+	skr_clear_ clear_flags = skr_clear_none;
+	if (clear & render_clear_color) clear_flags = (skr_clear_)(clear_flags | skr_clear_color);
+	if (clear & render_clear_depth) clear_flags = (skr_clear_)(clear_flags | skr_clear_depth | skr_clear_stencil);
+
+	// Begin render pass
+	skr_vec4_t skr_clear_color = { clear_color.r, clear_color.g, clear_color.b, clear_color.a };
+	skr_renderer_begin_pass(&to_rendertarget->gpu_tex, &depth_surface->gpu_tex, nullptr, clear_flags, skr_clear_color, 1.0f, 0);
+	skr_renderer_set_viewport(viewport);
+	skr_renderer_set_scissor (scissor);
+
+	// Render!
 	render_draw_queue(list, &camera, &projection, 0, 1, 1, layer_filter, material_variant);
 
-	skg_tex_target_bind(old_target, -1, 0);
-}
+	// End render pass
+	skr_renderer_end_pass();
 
-///////////////////////////////////////////
-// Radix render sorting!                 //
-///////////////////////////////////////////
-
-// https://travisdowns.github.io/blog/2019/05/22/sorting.html
-
-#if _MSC_VER
-#include <intrin.h>
-#endif
-
-const size_t   RADIX_BITS   = 8;
-const size_t   RADIX_SIZE   = (size_t)1 << RADIX_BITS;
-const size_t   RADIX_LEVELS = (63 / RADIX_BITS) + 1;
-const uint64_t RADIX_MASK   = RADIX_SIZE - 1;
-
-using freq_array_type = size_t [RADIX_LEVELS][RADIX_SIZE];
-
-// Since this sort is specifically for the render queue, we'll reserve a
-// chunk of memory that sticks around, and resizes if it's too small.
-render_item_t *radix_queue_area = nullptr;
-size_t         radix_queue_size = 0;
-
-void radix_sort_init() {
-	radix_queue_area = nullptr;
-	radix_queue_size = 0;
-}
-
-void radix_sort_clean() {
-	sk_free(radix_queue_area);
-	radix_queue_area = nullptr;
-	radix_queue_size = 0;
-}
-
-// never inline just to make it show up easily in profiles (inlining this lengthly function doesn't
-// really help anyways)
-static void count_frequency(render_item_t *a, size_t count, freq_array_type freqs) {
-	for (size_t i = 0; i < count; i++) {
-		uint64_t value = a[i].sort_id;
-		for (size_t pass = 0; pass < RADIX_LEVELS; pass++) {
-			freqs[pass][value & RADIX_MASK]++;
-			value >>= RADIX_BITS;
-		}
-	}
-}
-
-/**
-* Determine if the frequencies for a given level are "trivial".
-* 
-* Frequencies are trivial if only a single frequency has non-zero
-* occurrences. In that case, the radix step just acts as a copy so we can
-* skip it.
-*/
-static bool is_trivial(size_t freqs[RADIX_SIZE], size_t count) {
-	for (size_t i = 0; i < RADIX_SIZE; i++) {
-		size_t freq = freqs[i];
-		if (freq != 0) {
-			return freq == count;
-		}
-	}
-	assert(count == 0); // we only get here if count was zero
-	return true;
-}
-
-void radix_sort7(render_item_t *a, size_t count) {
-	// Resize up if needed
-	if (radix_queue_size < count) {
-		sk_free(radix_queue_area);
-		radix_queue_area = sk_malloc_t(render_item_t, count);
-		radix_queue_size = count;
-	}
-	freq_array_type freqs = {};
-	count_frequency(a, count, freqs);
-
-	render_item_t *from = a, *to = radix_queue_area;
-
-	for (size_t pass = 0; pass < RADIX_LEVELS; pass++) {
-
-		if (is_trivial(freqs[pass], count)) {
-			// this pass would do nothing, just skip it
-			continue;
-		}
-
-		uint64_t shift = pass * RADIX_BITS;
-
-		// array of pointers to the current position in each queue, which we set up based on the
-		// known final sizes of each queue (i.e., "tighly packed")
-		render_item_t *queue_ptrs[RADIX_SIZE], *next = to;
-		for (size_t i = 0; i < RADIX_SIZE; i++) {
-			queue_ptrs[i] = next;
-			next += freqs[pass][i];
-		}
-
-		// copy each element into the appropriate queue based on the current RADIX_BITS sized
-		// "digit" within it
-		for (size_t i = 0; i < count; i++) {
-			render_item_t value = from[i];
-			size_t        index = (value.sort_id >> shift) & RADIX_MASK;
-			*queue_ptrs[index]++ = value;
-#ifdef _MSC_VER
-	#if defined(_M_ARM) || defined(_M_ARM64)
-			__prefetch (queue_ptrs[index] + 1);
-	#else
-			_m_prefetch(queue_ptrs[index] + 1);
-	#endif
-#else
-			__builtin_prefetch(queue_ptrs[index] + 1);
-#endif
-		}
-
-		// swap from and to areas
-		render_item_t *tmp = to;
-		to   = from;
-		from = tmp;
-	}
-
-	// because of the last swap, the "from" area has the sorted payload: if it's
-	// not the original array "a", do a final copy
-	if (from != a) {
-		memcpy(a, from, count*sizeof(render_item_t));
-	}
+	// Cleanup
+	tex_release(depth_surface);
 }
 
 } // namespace sk
