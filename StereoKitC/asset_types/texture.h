@@ -12,7 +12,8 @@ struct _tex_t {
 	tex_t            fallback;
 	bool32_t         owned;
 
-	// Metadata fields
+	// Metadata fields - kept for quick CPU access
+	// TODO: can get rid of some maybe?
 	int32_t          width;
 	int32_t          height;
 	tex_format_      format;
@@ -23,7 +24,7 @@ struct _tex_t {
 	tex_sample_comp_ sample_comp;
 	tex_address_     address_mode;
 	int32_t          anisotropy;
-	skg_tex_t        tex;
+	skr_tex_t        gpu_tex;
 	tex_t            depth_buffer;
 	spherical_harmonics_t *light_info;
 };

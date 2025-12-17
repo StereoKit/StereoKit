@@ -953,9 +953,9 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	// Activate any global textures we have
 	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
 		if (local.global_textures[i] != nullptr) {
-			skg_tex_t *tex = local.global_textures[i]->fallback == nullptr
-				? &local.global_textures[i]->tex
-				: &local.global_textures[i]->fallback->tex;
+			skr_tex_t *tex = local.global_textures[i]->fallback == nullptr
+				? &local.global_textures[i]->gpu_tex
+				: &local.global_textures[i]->fallback->gpu_tex;
 			skg_tex_bind(tex, { (uint16_t)i,  skg_stage_vertex | skg_stage_pixel, skg_register_resource });
 		}
 	}
@@ -987,7 +987,7 @@ void render_check_screenshots() {
 		
 		// Setup to render the screenshot
 		tex_t render_capture_surface = tex_create_rendertarget(w, h, 8, local.screenshot_list[i].tex_format, tex_format_depthstencil);
-		skg_tex_target_bind(&render_capture_surface->tex, -1, 0);
+		skg_tex_target_bind(&render_capture_surface->gpu_tex, -1, 0);
 
 		// Set up the viewport if we've got one!
 		if (local.screenshot_list[i].viewport.w != 0) {
@@ -1016,14 +1016,14 @@ void render_check_screenshots() {
 		skg_tex_target_bind(nullptr, -1, 0);
 
 		tex_t resolve_tex = tex_create_rendertarget(w, h, 1, local.screenshot_list[i].tex_format, tex_format_none);
-		skg_tex_copy_to(&render_capture_surface->tex, -1, &resolve_tex->tex, -1);
+		skg_tex_copy_to(&render_capture_surface->gpu_tex, -1, &resolve_tex->gpu_tex, -1);
 		tex_get_data(resolve_tex, buffer, size);
 #if defined(SKG_OPENGL)
-		int32_t line_size = skg_tex_fmt_pitch(resolve_tex->tex.format, resolve_tex->tex.width);
+		int32_t line_size = tex_format_pitch(resolve_tex->format, resolve_tex->width);
 		void* tmp = sk_malloc(line_size);
-		for (int32_t y = 0; y < resolve_tex->tex.height / 2; y++) {
+		for (int32_t y = 0; y < resolve_tex->height / 2; y++) {
 			void* top_line = ((uint8_t*)buffer) + line_size * y;
-			void* bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->tex.height - 1) - y);
+			void* bot_line = ((uint8_t*)buffer) + line_size * ((resolve_tex->height - 1) - y);
 			memcpy(tmp,      top_line, line_size);
 			memcpy(top_line, bot_line, line_size);
 			memcpy(bot_line, tmp,      line_size);
@@ -1047,7 +1047,7 @@ void render_check_screenshots() {
 void render_draw_viewpoint(render_action_viewpoint_t* vp) {
 	skg_event_begin("Viewpoint");
 	// Setup to render the screenshot
-	skg_tex_target_bind(&vp->rendertarget->tex, vp->rendertarget_index, 0);
+	skg_tex_target_bind(&vp->rendertarget->gpu_tex, vp->rendertarget_index, 0);
 
 	// Clear the viewport
 	if (vp->clear != render_clear_none) {
@@ -1138,9 +1138,10 @@ void render_blit_to_bound(material_t material) {
 void render_blit(tex_t to, material_t material) {
 	skg_tex_t *old_target = skg_tex_target_get();
 
-	for (int32_t i = 0; i < to->tex.array_count; i++)
+	int32_t array_count = skr_tex_get_array_count(&to->gpu_tex);
+	for (int32_t i = 0; i < array_count; i++)
 	{
-		skg_tex_target_bind(&to->tex, i, 0);
+		skg_tex_target_bind(&to->gpu_tex, i, 0);
 		render_blit_to_bound(material);
 	}
 	skg_tex_target_bind(old_target, -1, 0);
@@ -1234,7 +1235,7 @@ void render_set_material(material_t material) {
 			tex_t tex = material->args.textures[i].tex;
 			if (tex->fallback != nullptr)
 				tex = tex->fallback;
-			skg_tex_bind(&tex->tex, material->args.textures[i].bind);
+			skg_tex_bind(&tex->gpu_tex, material->args.textures[i].bind);
 		}
 	}
 
@@ -1623,7 +1624,7 @@ void render_list_add_model_mat(render_list_t list, model_t model, material_t mat
 
 void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color, render_clear_ clear, rect_t viewport_pct, render_layer_ layer_filter, int32_t material_variant) {
 	skg_tex_t* old_target = skg_tex_target_get();
-	skg_tex_target_bind(&to_rendertarget->tex, -1, 0);
+	skg_tex_target_bind(&to_rendertarget->gpu_tex, -1, 0);
 
 	if (clear != render_clear_none) {
 		skg_target_clear(

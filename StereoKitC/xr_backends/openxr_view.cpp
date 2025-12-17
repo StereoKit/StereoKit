@@ -902,7 +902,7 @@ bool openxr_render_frame() {
 			for (int32_t i = 0; i < xr_displays.count; i++) {
 				swapchain_t* swapchain = &xr_displays[i].swapchain_color;
 				if (swapchain->render_surface >= 0 && render_pipeline_surface_get_enabled(swapchain->render_surface) && swapchain->textures[swapchain->render_surface_tex]->depth_buffer)
-					skg_tex_target_discard(&swapchain->textures[swapchain->render_surface_tex]->depth_buffer->tex);
+					skg_tex_target_discard(&swapchain->textures[swapchain->render_surface_tex]->depth_buffer->gpu_tex);
 			}
 		}
 

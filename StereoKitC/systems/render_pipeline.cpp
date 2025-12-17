@@ -70,7 +70,7 @@ void render_pipeline_draw() {
 		{
 			if (s->strategy == pipeline_render_strategy_sequential) {
 				for (int32_t layer = 0; layer < s->array_count; layer++) {
-					skg_tex_target_bind(&s->tex->tex, layer, 0);
+					skg_tex_target_bind(&s->tex->gpu_tex, layer, 0);
 					skg_target_clear(true, &s->clear_color.r);
 
 					for (int32_t quilt_y = 0; quilt_y < s->quilt_height; quilt_y += 1) {
@@ -87,7 +87,7 @@ void render_pipeline_draw() {
 				s->strategy == pipeline_render_strategy_simultaneous ||
 				s->strategy == pipeline_render_strategy_multiview) {
 
-				skg_tex_target_bind(&s->tex->tex, -1, 0);
+				skg_tex_target_bind(&s->tex->gpu_tex, -1, 0);
 				skg_target_clear   (true, &s->clear_color.r);
 
 				// Regulat simultaneous array textures draw one inst per
@@ -202,11 +202,11 @@ void render_pipeline_surface_to_swapchain(pipeline_surface_id surface_id, skg_sw
 		// If this is a zbuffer, then we don't need depth data after this point. We
 		// discard it if we can.
 		if (surface->tex->depth_buffer)
-			skg_tex_target_discard(&surface->tex->depth_buffer->tex);
+			skg_tex_target_discard(&surface->tex->depth_buffer->gpu_tex);
 
 		// This copies the color data over to the swapchain, and resolves any
 		// multisampling on the primary target texture.
-		skg_tex_copy_to_swapchain(&surface->tex->tex, swapchain);
+		skg_tex_copy_to_swapchain(&surface->tex->gpu_tex, swapchain);
 
 		// Present to the screen
 		{
@@ -227,13 +227,13 @@ void render_pipeline_surface_to_tex(pipeline_surface_id surface_id, tex_t destin
 		// If this is a zbuffer, then we don't need depth data after this point. We
 		// discard it if we can.
 		if (surface->tex->depth_buffer)
-			skg_tex_target_discard(&surface->tex->depth_buffer->tex);
+			skg_tex_target_discard(&surface->tex->depth_buffer->gpu_tex);
 
 		if (mat) {
 			material_set_texture(mat, "source", surface->tex);
 			render_blit(destination, mat);
 		} else {
-			skg_tex_copy_to(&surface->tex->tex, -1, &destination->tex, -1);
+			skg_tex_copy_to(&surface->tex->gpu_tex, -1, &destination->gpu_tex, -1);
 		}
 	}
 	skg_event_end();

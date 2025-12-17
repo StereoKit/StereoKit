@@ -191,7 +191,9 @@ typedef enum tex_format_ {
 	  the time you're dealing with color images! Matches well with the
 	  Color32 struct! If you're storing normals, rough/metal, or
 	  anything else, use Rgba32Linear.*/
-	tex_format_rgba32 = 1,
+	tex_format_rgba32_srgb = 1,
+	/*Alias for tex_format_rgba32_srgb for backwards compatibility.*/
+	tex_format_rgba32 = tex_format_rgba32_srgb,
 	/*Red/Green/Blue/Transparency data channels, at 8 bits
 	  per-channel in linear color space. This is what you'll want most
 	  of the time you're dealing with color data! Matches well with the
@@ -200,7 +202,9 @@ typedef enum tex_format_ {
 	/*Blue/Green/Red/Transparency data channels, at 8 bits
 	  per-channel in sRGB color space. This is a common swapchain format
 	  on Windows.*/
-	tex_format_bgra32 = 3,
+	tex_format_bgra32_srgb = 3,
+	/*Alias for tex_format_bgra32_srgb for backwards compatibility.*/
+	tex_format_bgra32 = tex_format_bgra32_srgb,
 	/*Blue/Green/Red/Transparency data channels, at 8 bits
 	  per-channel in linear color space. This is a common swapchain
 	  format on Windows.*/
@@ -275,11 +279,15 @@ typedef enum tex_format_ {
 	/*A single channel of data, with 32 bits per-pixel! This
 	  basically treats each pixel as a generic float, so you can do all
 	  sorts of strange and interesting things with this.*/
-	tex_format_r32 = 15,
+	tex_format_r32f = 15,
+	/*Alias for tex_format_r32f for backwards compatibility.*/
+	tex_format_r32 = tex_format_r32f,
 	/*A depth data format, 24 bits for depth data, and 8 bits
 	  to store stencil information! Stencil data can be used for things
 	  like clipping effects, deferred rendering, or shadow effects.*/
-	tex_format_depthstencil = 16,
+	tex_format_depth24s8 = 16,
+	/*Alias for tex_format_depth24s8 for backwards compatibility.*/
+	tex_format_depthstencil = tex_format_depth24s8,
 	/*32 bits of data per depth value! This is pretty detailed,
 	  and is excellent for experiences that have a very far view
 	  distance.*/
@@ -292,8 +300,18 @@ typedef enum tex_format_ {
 	/*A double channel of data that supports 8 bits for the red
 	  channel and 8 bits for the green channel.*/
 	tex_format_r8g8 = 19,
+	/*A shared exponent format with 9 bits each for R, G, B, and
+	  5 bits for the shared exponent. This is a compact HDR format.*/
+	tex_format_rgb9e5 = 20,
+	/*A depth data format with 32 bits for depth and 8 bits for
+	  stencil. The extra stencil bits provide more precision than
+	  depth24s8 while still offering stencil support.*/
+	tex_format_depth32s8 = 21,
+	/*A depth data format with 16 bits for depth and 8 bits for
+	  stencil. This is a more compact depth-stencil format.*/
+	tex_format_depth16s8 = 22,
 
-	tex_format_bc1_rgb_srgb,
+	tex_format_bc1_rgb_srgb = 23,
 	tex_format_bc1_rgb,
 	tex_format_bc3_rgba_srgb,
 	tex_format_bc3_rgba,
