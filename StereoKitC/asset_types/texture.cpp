@@ -461,7 +461,7 @@ tex_t tex_create_file_type(const char *file, tex_type_ type, bool32_t srgb_data,
 	static const asset_load_action_t actions[] = {
 		asset_load_action_t {tex_load_arr_files,  asset_thread_asset},
 		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
-		asset_load_action_t {tex_load_arr_upload, backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu },
+		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, 0) );
 
@@ -502,7 +502,7 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 
 	static const asset_load_action_t actions[] = {
 		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
-		asset_load_action_t {tex_load_arr_upload, backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu },
+		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, (float)(load_data->color_width * load_data->color_height)) );
 
@@ -604,10 +604,9 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	static const asset_load_action_t actions[] = {
 		asset_load_action_t {tex_load_arr_files,  asset_thread_asset},
 		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
-		asset_load_action_t {tex_load_arr_upload, backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu },
+		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, 0) );
-
 
 	return result;
 }
@@ -775,7 +774,7 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 	static const asset_load_action_t actions[] = {
 		asset_load_action_t {load,               asset_thread_asset},
 		asset_load_action_t {tex_load_arr_parse, asset_thread_asset},
-		asset_load_action_t {upload,             backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu },
+		asset_load_action_t {upload,             asset_thread_asset},
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, 0) );
 
@@ -1135,16 +1134,11 @@ void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void *
 	};
 	tex_upload_job_t job_data = {texture, width, height, array_data, array_count, mip_count, out_sh_lighting_info, multisample};
 
-	// OpenGL doesn't like multiple threads, but D3D is fine with it.
-	if (backend_graphics_get() == backend_graphics_d3d11) {
-		_tex_set_color_arr(job_data.texture, job_data.width, job_data.height, job_data.array_data, job_data.array_count, job_data.mip_count, job_data.sh_lighting_info, job_data.multisample);
-	} else {
-		assets_execute_gpu([](void *data) {
-			tex_upload_job_t *job_data = (tex_upload_job_t *)data;
-			_tex_set_color_arr(job_data->texture, job_data->width, job_data->height, job_data->array_data, job_data->array_count, job_data->mip_count, job_data->sh_lighting_info, job_data->multisample);
-			return (bool32_t)true; 
-		}, &job_data);
-	}
+	assets_execute_gpu([](void *data) {
+		tex_upload_job_t *job_data = (tex_upload_job_t *)data;
+		_tex_set_color_arr(job_data->texture, job_data->width, job_data->height, job_data->array_data, job_data->array_count, job_data->mip_count, job_data->sh_lighting_info, job_data->multisample);
+		return (bool32_t)true;
+	}, &job_data);
 }
 
 ///////////////////////////////////////////
@@ -1175,7 +1169,7 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 
 	static const asset_load_action_t actions[] = {
 		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
-		asset_load_action_t {tex_load_arr_upload, backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu  }, // DX can multithreaded upload, GL cannot
+		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
 	};
 	asset_task_t task = tex_make_loading_task(texture, load_data, actions, _countof(actions), priority, (float)(load_data->color_width * load_data->color_height));
 	if (blocking) {
