@@ -6,34 +6,25 @@
 
 namespace sk {
 
-struct shaderargs_tex_t {
-	tex_t             tex;
-	skg_bind_t        bind;
-	uint64_t          meta_hash;
-};
-
-struct shaderargs_data_t {
-	skg_bind_t        buffer_bind;
-	size_t            buffer_size;
-	skg_buffer_t      buffer_gpu;
-	bool              buffer_dirty;
-	void             *buffer;
-	shaderargs_tex_t *textures;
-	int32_t           texture_count;
-};
-
 struct _material_t {
 	asset_header_t    header;
 	shader_t          shader;
-	shaderargs_data_t args;
+	skr_material_t    gpu_mat;
+
+	// Cached state for API compatibility and recreating gpu_mat on state change
 	transparency_     alpha_mode;
 	cull_             cull;
-	bool32_t          wireframe;
 	depth_test_       depth_test;
 	bool32_t          depth_write;
 	bool32_t          depth_clip;
 	int32_t           queue_offset;
-	skg_pipeline_t    pipeline;
+
+	// Texture references for proper lifetime management
+	// sk_renderer manages the GPU bindings, but we need to track SK texture refs
+	tex_t*            textures;
+	uint64_t*         texture_meta_hashes; // Cached hashes to detect texture changes
+	int32_t           texture_count;
+
 	material_t        chain;
 	material_t        variants[3];
 };
@@ -41,12 +32,11 @@ struct _material_t {
 struct _material_buffer_t {
 	int32_t      refs;
 	int32_t      size;
-	skg_buffer_t buffer;
+	skr_buffer_t buffer;
 };
 
-void   material_destroy          (material_t material);
-void   material_check_dirty      (material_t material);
-void   material_check_tex_changes(material_t material);
-size_t material_param_size       (material_param_ type);
+void   material_destroy    (material_t material);
+void   material_check_dirty(material_t material);
+size_t material_param_size (material_param_ type);
 
 } // namespace sk
