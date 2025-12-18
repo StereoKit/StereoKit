@@ -222,9 +222,9 @@ void simulator_step_end() {
 
 	render_pipeline_draw();
 
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
+	skr_surface_t* surface = platform_win_get_surface(sim_window);
 	sim_render_sys->profile_frame_duration = stm_since(sim_render_sys->profile_frame_start);
-	render_pipeline_surface_to_swapchain(sim_surface, swapchain);
+	render_pipeline_surface_to_swapchain(sim_surface, surface);
 }
 
 ///////////////////////////////////////////

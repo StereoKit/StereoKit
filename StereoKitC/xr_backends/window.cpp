@@ -118,7 +118,7 @@ void window_shutdown() {
 	render_pipeline_shutdown();
 	platform_win_destroy(local->window);
 
-	local = {};
+	*local = {};
 	sk_free(local);
 }
 
@@ -158,9 +158,9 @@ void window_step_end() {
 
 	render_pipeline_draw();
 
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(local->window);
+	skr_surface_t* surface = platform_win_get_surface(local->window);
 	local->render_sys->profile_frame_duration = stm_since(local->render_sys->profile_frame_start);
-	render_pipeline_surface_to_swapchain(local->surface, swapchain);
+	render_pipeline_surface_to_swapchain(local->surface, surface);
 }
 
 }
