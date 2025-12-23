@@ -1,8 +1,10 @@
 #include "stereokit.hlsli"
 
+//--name = sk/default_ui
+
 //--color:color = 1, 1, 1, 1
 //--diffuse     = white
-float4       color;
+float4       color = float4(1,1,1,1);
 Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 

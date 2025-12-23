@@ -139,8 +139,7 @@ void material_set_default_textures(material_t material) {
 		// Release old texture if present, store new one
 		if (material->textures[i] != nullptr)
 			tex_release(material->textures[i]);
-		material->textures[i]            = default_tex; // tex_find already adds a ref
-		material->texture_meta_hashes[i] = default_tex->meta_hash;
+		material->textures[i] = default_tex; // tex_find already adds a ref
 
 		// Update sk_renderer binding
 		tex_t physical_tex = default_tex->fallback ? default_tex->fallback : default_tex;
@@ -237,8 +236,7 @@ material_t material_copy(material_t material) {
 	for (int32_t i = 0; i < material->texture_count; i++) {
 		if (material->textures[i] != nullptr) {
 			tex_addref(material->textures[i]);
-			result->textures[i]            = material->textures[i];
-			result->texture_meta_hashes[i] = material->texture_meta_hashes[i];
+			result->textures[i] = material->textures[i];
 
 			tex_t physical_tex = material->textures[i]->fallback
 				? material->textures[i]->fallback
@@ -677,8 +675,7 @@ bool32_t material_set_texture_id(material_t material, id_hash_t id, tex_t value)
 				tex_addref(tex_to_set);
 				if (material->textures[i] != nullptr)
 					tex_release(material->textures[i]);
-				material->textures[i]            = tex_to_set;
-				material->texture_meta_hashes[i] = tex_to_set->meta_hash;
+				material->textures[i] = tex_to_set;
 			}
 
 			// Set the GPU texture binding (use fallback if present)
@@ -972,6 +969,9 @@ void material_check_dirty(material_t material) {
 			tex_t physical_tex = tex->fallback != nullptr
 				? tex->fallback
 				: tex;
+
+			// Update sk_renderer texture binding
+			skr_material_set_tex(&material->gpu_mat, meta->resources[i].name, &physical_tex->gpu_tex);
 
 			// Update the _i info param with texture dimensions
 			id_hash_t tex_info_hash = hash_string_with("_i", meta->resources[i].name_hash);

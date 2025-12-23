@@ -21,9 +21,7 @@ struct inst_t {
 	float4x4 world;
 	float4   color;
 };
-cbuffer transform_buffer : register(b2) {
-	inst_t sk_inst[819]; // 819 is UINT16_MAX / sizeof(inst_t)
-};
+StructuredBuffer<inst_t> sk_inst : register(t12);
 TextureCube  sk_cubemap   : register(t11);
 SamplerState sk_cubemap_s : register(s11);
 

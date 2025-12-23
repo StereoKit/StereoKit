@@ -1,5 +1,5 @@
 #include "stereokit.hlsli"
-
+//--name = sk/blit
 //--source = white
 
 Texture2D    source   : register(t0);

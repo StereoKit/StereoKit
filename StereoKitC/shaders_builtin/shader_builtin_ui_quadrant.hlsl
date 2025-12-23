@@ -1,5 +1,7 @@
 #include "stereokit.hlsli"
 
+//--name = sk/default_ui_quadrant
+
 struct vsIn {
 	float4 pos      : SV_Position;
 	float3 norm     : NORMAL0;

@@ -1,4 +1,5 @@
 #include "stereokit.hlsli"
+//--name = sk/lightmap
 
 //--tex_trans = 0,0,1,1
 //--diffuse   = white

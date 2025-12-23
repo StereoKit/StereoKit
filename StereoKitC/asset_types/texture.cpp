@@ -13,6 +13,7 @@
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
+#include "shader.h"
 #include "texture.h"
 #include "texture_.h"
 #include "texture_compression.h"
@@ -51,14 +52,18 @@ tex_t tex_loading_texture = nullptr;
 ///////////////////////////////////////////
 
 skr_tex_flags_ tex_type_to_skr_flags(tex_type_ type) {
-	skr_tex_flags_ flags = (skr_tex_flags_)0;
+	// Z-buffers are write-only depth attachments (not sampled)
+	if (type & tex_type_zbuffer) {
+		return skr_tex_flags_writeable;
+	}
+
+	// Most textures are sampled
+	skr_tex_flags_ flags = skr_tex_flags_readable;
 	if (type & tex_type_cubemap)      flags = (skr_tex_flags_)(flags | skr_tex_flags_cubemap);
 	if (type & tex_type_dynamic)      flags = (skr_tex_flags_)(flags | skr_tex_flags_dynamic);
 	if (type & tex_type_mips)         flags = (skr_tex_flags_)(flags | skr_tex_flags_gen_mips);
 	if (type & tex_type_rendertarget) flags = (skr_tex_flags_)(flags | skr_tex_flags_writeable);
-	if (type & tex_type_depthtarget)  flags = (skr_tex_flags_)(flags | skr_tex_flags_writeable);
-	// Note: tex_type_zbuffer and tex_type_depth are determined by format, not flags
-	// tex_type_image_nomips means mip_count = 1 during creation
+	if (type & tex_type_depthtarget)  flags = (skr_tex_flags_)(flags | skr_tex_flags_writeable); // Readable depth (shadow maps)
 	return flags;
 }
 
@@ -96,33 +101,7 @@ skr_tex_sampler_t tex_get_skr_sampler(tex_t texture) {
 	return sampler;
 }
 
-// Convert Vulkan format to skr_tex_fmt_
-skr_tex_fmt_ skr_tex_fmt_from_native(int64_t native_fmt) {
-	// VkFormat values - common formats used in StereoKit
-	switch (native_fmt) {
-	case 37:  return skr_tex_fmt_rgba32_linear;  // VK_FORMAT_R8G8B8A8_UNORM
-	case 43:  return skr_tex_fmt_rgba32_srgb;    // VK_FORMAT_R8G8B8A8_SRGB
-	case 44:  return skr_tex_fmt_bgra32_linear;  // VK_FORMAT_B8G8R8A8_UNORM
-	case 50:  return skr_tex_fmt_bgra32_srgb;    // VK_FORMAT_B8G8R8A8_SRGB
-	case 64:  return skr_tex_fmt_rg11b10;        // VK_FORMAT_B10G11R11_UFLOAT_PACK32
-	case 9:   return skr_tex_fmt_r8;             // VK_FORMAT_R8_UNORM
-	case 16:  return skr_tex_fmt_r8g8;           // VK_FORMAT_R8G8_UNORM
-	case 70:  return skr_tex_fmt_r16u;           // VK_FORMAT_R16_UNORM
-	case 71:  return skr_tex_fmt_r16s;           // VK_FORMAT_R16_SNORM
-	case 76:  return skr_tex_fmt_r16f;           // VK_FORMAT_R16_SFLOAT
-	case 100: return skr_tex_fmt_r32f;           // VK_FORMAT_R32_SFLOAT
-	case 91:  return skr_tex_fmt_rgba64u;        // VK_FORMAT_R16G16B16A16_UNORM
-	case 92:  return skr_tex_fmt_rgba64s;        // VK_FORMAT_R16G16B16A16_SNORM
-	case 97:  return skr_tex_fmt_rgba64f;        // VK_FORMAT_R16G16B16A16_SFLOAT
-	case 109: return skr_tex_fmt_rgba128;        // VK_FORMAT_R32G32B32A32_SFLOAT
-	case 124: return skr_tex_fmt_depth16;        // VK_FORMAT_D16_UNORM
-	case 126: return skr_tex_fmt_depth32;        // VK_FORMAT_D32_SFLOAT
-	case 129: return skr_tex_fmt_depth24s8;      // VK_FORMAT_D24_UNORM_S8_UINT
-	case 130: return skr_tex_fmt_depth32s8;      // VK_FORMAT_D32_SFLOAT_S8_UINT
-	case 67:  return skr_tex_fmt_rgb10a2;        // VK_FORMAT_A2B10G10R10_UNORM_PACK32
-	default:  return skr_tex_fmt_none;
-	}
-}
+// tex_format_ and skr_tex_fmt_ have matching enum values, so we can cast between them
 
 ///////////////////////////////////////////
 // Texture loading stages                //
@@ -683,87 +662,44 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 			return tex_load_arr_upload(task, asset, job_data);
 		}
 
-		const vec3 up   [6] = { vec3_up, vec3_up, -vec3_forward, vec3_forward, vec3_up, vec3_up };
-		const vec3 fwd  [6] = { {1,0, 0}, {-1,0,0}, {0,-1,0}, {0,1,0}, {0,0,1}, { 0,0,-1} };
-		const vec3 right[6] = { {0,0,-1}, { 0,0,1}, {1, 0,0}, {1,0,0}, {1,0,0}, {-1,0, 0} };
+		skr_cmd_begin();
 
-		tex_t equirect = tex_create(tex_type_image_nomips, tex->format);
-		tex_set_color_arr(equirect, data->color_width, data->color_height, data->color_data, data->file_count);
-		tex_set_address  (equirect, tex_address_clamp);
-	
-		material_t convert_material = material_find(default_id_material_equirect);
-		material_set_texture(convert_material, "source", equirect);
+		// Must add rendertarget flag so skr_tex gets writeable flag for blit destination
+		tex->type = (tex_type_)(tex->type | tex_type_rendertarget);
+		tex_set_color_arr(tex, tex->width, tex->height, nullptr, 6);
+		shader_t convert_shader = shader_find(default_id_shader_equirect);
 
-		tex_t       face           = tex_create(tex_type_rendertarget | tex_type_mips, equirect->format);
-		void*       face_data[6]   = {};
-		size_t      size           = tex_format_size(face->format, tex->width, tex->height);
-		skr_vec3i_t base_size      = { tex->width, tex->height, 1 };
-		uint32_t    mip_count      = skr_tex_calc_mip_count(base_size);
-		uint32_t    total_tex_size = 0;
-		for (int32_t mip_level = 0; mip_level < mip_count; mip_level++) {
-			skr_vec3i_t mip_size = skr_tex_calc_mip_dimensions(base_size, mip_level);
-			total_tex_size += skr_tex_calc_mip_size(equirect->gpu_tex.format, mip_size, 0);
-		}
-		tex_set_color_arr_mips(face, tex->width, tex->height, nullptr, 1, mip_count);
+		// Make the texture for our source equirect data
+		skr_tex_sampler_t sampler = {};
+		sampler.sample  = skr_tex_sample_linear;
+		sampler.address = skr_tex_address_wrap;
+		skr_tex_data_t tex_data = {};
+		tex_data.data        = data->color_data[0];
+		tex_data.layer_count = 1;
+		tex_data.mip_count   = 1;
+		skr_tex_t equirect;
+		skr_tex_create((skr_tex_fmt_)tex->format, skr_tex_flags_readable, sampler, {data->color_width, data->color_height, 1}, 1, 0, &tex_data, &equirect);
 
-		for (int32_t i = 0; i < 6; i++) {
-			material_set_vector4(convert_material, "up",      { up   [i].x, up   [i].y, up   [i].z, 0 });
-			material_set_vector4(convert_material, "right",   { right[i].x, right[i].y, right[i].z, 0 });
-			material_set_vector4(convert_material, "forward", { fwd  [i].x, fwd  [i].y, fwd  [i].z, 0 });
+		// Make the material for converting equirect to cubemap
+		skr_material_info_t mat_info = {};
+		mat_info.shader     = &convert_shader->gpu_shader;
+		mat_info.write_mask = skr_write_rgba;
+		mat_info.depth_test = skr_compare_always;
+		skr_material_t convert_mat;
+		skr_material_create(mat_info, &convert_mat);
+		skr_material_set_tex(&convert_mat, "source", &equirect);
 
-			face_data[i] = sk_malloc(total_tex_size);
+		// Now convert the first layer and generate the rest of the mips
+		skr_vec3i_t size   = skr_tex_get_size(&tex->gpu_tex);
+		skr_recti_t bounds = { 0, 0, size.x, size.y };
+		skr_renderer_blit    (&convert_mat, &tex->gpu_tex, bounds);
+		skr_tex_generate_mips(&tex->gpu_tex, nullptr);
 
-			// Blit conversion _definitely_ needs executed on the GPU thread
-			struct blit_t {
-				tex_t      face;
-				material_t material;
-				void      *face_data;
-			};
-			blit_t blit_data = { face, convert_material, face_data[i] };
-			assets_execute_gpu([](void *data) {
-				blit_t *blit_data = (blit_t *)data;
-				render_blit (blit_data->face, blit_data->material);
-				tex_gen_mips(blit_data->face);
+		skr_material_destroy(&convert_mat);
+		skr_tex_destroy(&equirect);
+		shader_release(convert_shader);
 
-				skr_vec3i_t base_size = { blit_data->face->width, blit_data->face->height, 1 };
-				uint32_t    mip_count = skr_tex_calc_mip_count(base_size);
-				uint8_t*    mip_data  = (uint8_t*)blit_data->face_data;
-				for (int32_t mip_level = 0; mip_level < mip_count; mip_level++) {
-					skr_vec3i_t mip_size = skr_tex_calc_mip_dimensions(base_size, mip_level);
-					size_t      mem_size = skr_tex_calc_mip_size      (blit_data->face->gpu_tex.format, mip_size, 0);
-
-					tex_get_data(blit_data->face, mip_data, mem_size, mip_level);
-
-					mip_data += mem_size;
-				}
-				return (bool32_t)true;
-			}, &blit_data);
-		}
-
-		tex_release(face);
-		material_release(convert_material);
-		tex_release(equirect);
-
-		// When tex_set_color_arr is called on _mipped_ textures from a non-gpu
-		// thread, it uses the deferred context! This can lead to things
-		// happening out of order when listening to asset_state_loaded, so we
-		// force this call to happen on the GPU thread.
-		struct set_tex_t {
-			tex_t   tex;
-			void**  data;
-		};
-		set_tex_t set_data = {};
-		set_data.tex  = tex;
-		set_data.data = (void**)&face_data;
-		assets_execute_gpu([](void* data) {
-			set_tex_t* set_data = (set_tex_t*)data;
-			skr_vec3i_t size = { set_data->tex->width, set_data->tex->height, 1 };
-			tex_set_color_arr_mips(set_data->tex, set_data->tex->width, set_data->tex->height, set_data->data, 6, skr_tex_calc_mip_count(size));
-			return (bool32_t)true;
-		}, &set_data);
-		for (int32_t i = 0; i < 6; i++) {
-			sk_free(face_data[i]);
-		}
+		skr_cmd_end();
 
 		tex->header.state = asset_state_loaded;
 		return (bool32_t)true;
@@ -823,12 +759,12 @@ bool32_t tex_gen_mips(tex_t texture) {
 ///////////////////////////////////////////
 
 void tex_update_label(tex_t texture) {
-#if (defined(_DEBUG) || defined(SK_GPU_LABELS))
+//#if (defined(_DEBUG) || defined(SK_GPU_LABELS))
 	if (texture->header.id_text != nullptr)
 		skr_tex_set_name(&texture->gpu_tex, texture->header.id_text);
-#else
-	(void)texture;
-#endif
+//#else
+//	(void)texture;
+//#endif
 }
 
 ///////////////////////////////////////////
@@ -888,7 +824,7 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 	if (native_surface != nullptr) {
 		skr_tex_external_info_t info = {};
 		info.image         = (VkImage)native_surface;
-		info.format        = skr_tex_fmt_from_native(native_fmt);
+		info.format        = skr_tex_fmt_from_native((uint32_t)native_fmt);
 		info.size          = { width, height, 1 };
 		info.sampler       = tex_get_skr_sampler(texture);
 		info.multisample   = multisample;
@@ -1081,6 +1017,11 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 			log_err("Failed to create texture");
 		}
 
+		// Generate mipmaps if texture has mips flag but only one mip level of data was provided
+		if ((texture->type & tex_type_mips) && mip_count == 1 && flat_data != nullptr) {
+			skr_tex_generate_mips(&texture->gpu_tex, nullptr);
+		}
+
 		tex_set_meta(texture, width, height, texture->format);
 
 		if (texture->depth_buffer != nullptr) {
@@ -1092,6 +1033,10 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		// Update existing dynamic texture
 		if (flat_data != nullptr) {
 			skr_tex_set_data(&texture->gpu_tex, &tex_data);
+			// Regenerate mipmaps for dynamic textures
+			if ((texture->type & tex_type_mips) && mip_count == 1) {
+				skr_tex_generate_mips(&texture->gpu_tex, nullptr);
+			}
 		}
 	} else {
 		log_warn("Attempting additional writes to a non-dynamic texture!");
@@ -1122,7 +1067,9 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** arra
 void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample, spherical_harmonics_t * out_sh_lighting_info) {
 	profiler_zone();
 
-	struct tex_upload_job_t {
+	_tex_set_color_arr(texture, width, height, array_data, array_count, mip_count, out_sh_lighting_info, multisample);
+
+	/*struct tex_upload_job_t {
 		tex_t                  texture;
 		int32_t                width;
 		int32_t                height;
@@ -1138,7 +1085,7 @@ void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void *
 		tex_upload_job_t *job_data = (tex_upload_job_t *)data;
 		_tex_set_color_arr(job_data->texture, job_data->width, job_data->height, job_data->array_data, job_data->array_count, job_data->mip_count, job_data->sh_lighting_info, job_data->multisample);
 		return (bool32_t)true;
-	}, &job_data);
+	}, &job_data);*/
 }
 
 ///////////////////////////////////////////
@@ -1388,8 +1335,7 @@ size_t tex_format_pitch(tex_format_ format, int32_t width) {
 ///////////////////////////////////////////
 
 tex_format_ tex_get_tex_format(int64_t native_fmt) {
-	skr_tex_fmt_ skr_fmt = skr_tex_fmt_from_native(native_fmt);
-	// tex_format_ matches skr_tex_fmt_ values
+	skr_tex_fmt_ skr_fmt = skr_tex_fmt_from_native((uint32_t)native_fmt);
 	return (tex_format_)skr_fmt;
 }
 
@@ -1398,6 +1344,9 @@ tex_format_ tex_get_tex_format(int64_t native_fmt) {
 id_hash_t tex_meta_hash(tex_t texture) {
 	id_hash_t result = hash_int     (texture->width);
 	result           = hash_int_with(texture->height, result);
+	uint64_t image   = (uint64_t)texture->gpu_tex.image;
+	result           = hash_int_with((int32_t)(image & 0xFFFFFFFF), result);
+	result           = hash_int_with((int32_t)(image >> 32),        result);
 	// May want to consider texture format or some other items as well, but
 	// this is plenty for now.
 	return result;

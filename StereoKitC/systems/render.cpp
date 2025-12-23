@@ -7,7 +7,7 @@
 #include "render.h"
 #include "render_.h"
 #include "world.h"
-#include "defaults.h"
+#include "lighting.h"
 #include "../_stereokit.h"
 #include "../device.h"
 #include "../libraries/stref.h"
@@ -150,9 +150,6 @@ struct render_state_t {
 	float                   ortho_viewport_height;
 
 	render_global_buffer_t  global_buffer;
-	mesh_t                  blit_quad;
-	vec4                    lighting[9];
-	spherical_harmonics_t   lighting_src;
 	color128                clear_col;
 	render_list_t           list_primary;
 	float                   viewport_scale;
@@ -166,12 +163,6 @@ struct render_state_t {
 
 	array_t<render_screenshot_t> screenshot_list;
 	array_t<render_action_t>     render_action_list;
-
-	mesh_t                  sky_mesh;
-	material_t              sky_mat;
-	material_t              sky_mat_default;
-	bool32_t                sky_show;
-	tex_t                   sky_pending_tex;
 
 	array_t<render_list_t>  list_stack;
 	render_list_t           list_active;
@@ -201,6 +192,7 @@ bool render_init() {
 		{ skr_vertex_fmt_ui8_normalized, 4, skr_semantic_color,    0, 0 },
 	};
 	skr_vert_type_create(vert_components, _countof(vert_components), &local.default_vert_type);
+
 	local.initialized           = true;
 	local.sim_origin            = matrix_identity;
 	local.sim_head              = matrix_identity;
@@ -229,37 +221,6 @@ bool render_init() {
 	render_set_cam_root     (matrix_identity);
 	render_update_projection();
 
-	// Set up resources for doing blit operations
-	local.blit_quad = mesh_find(default_id_mesh_screen_quad);
-
-	// Create a default skybox
-	local.sky_mesh = mesh_create();
-	vind_t inds [] = {2,1,0, 3,2,0};
-	vert_t verts[] = {
-		vert_t{ {-1, 1,1}, {0,0,1}, {0,0}, {255,255,255,255} },
-		vert_t{ { 1, 1,1}, {0,0,1}, {1,0}, {255,255,255,255} },
-		vert_t{ { 1,-1,1}, {0,0,1}, {1,1}, {255,255,255,255} },
-		vert_t{ {-1,-1,1}, {0,0,1}, {0,1}, {255,255,255,255} }, };
-	mesh_set_data(local.sky_mesh, verts, _countof(verts), inds, _countof(inds));
-	mesh_set_id  (local.sky_mesh, "sk/render/skybox_mesh");
-
-	// Create a default skybox material
-	shader_t shader_sky = shader_find(default_id_shader_sky);
-	local.sky_mat_default = material_create(shader_sky);
-	material_set_id          (local.sky_mat_default, "sk/render/skybox_material");
-	material_set_queue_offset(local.sky_mat_default, 100);
-	material_set_depth_write (local.sky_mat_default, false);
-	material_set_depth_test  (local.sky_mat_default, depth_test_less_or_eq);
-	render_set_skymaterial(local.sky_mat_default);
-	shader_release(shader_sky);
-
-	// Create a default skybox texture
-	tex_t sky_cubemap = tex_find(default_id_cubemap);
-	render_set_skytex   (sky_cubemap);
-	render_set_skylight (sk_default_lighting);
-	render_enable_skytex(true);
-	tex_release(sky_cubemap);
-	
 	local.list_primary = render_list_create();
 	render_list_set_id(local.list_primary, "sk/render/primary_renderlist");
 	render_list_push  (local.list_primary);
@@ -287,11 +248,6 @@ void render_shutdown() {
 		material_buffer_release(local.global_buffers[i]);
 		local.global_buffers[i] = {};
 	}
-	tex_release            (local.sky_pending_tex);
-	material_release       (local.sky_mat_default);
-	material_release       (local.sky_mat);
-	mesh_release           (local.sky_mesh);
-	mesh_release           (local.blit_quad);
 	material_buffer_release(local.shader_globals);
 
 	skr_buffer_destroy     (&local.shader_blit);
@@ -315,10 +271,6 @@ void render_step() {
 	profiler_zone();
 
 	hierarchy_step();
-
-	if (local.sky_show && device_display_get_blend() == display_blend_opaque) {
-		render_add_mesh(local.sky_mesh, local.sky_mat, matrix_identity, {1,1,1,1}, render_layer_vfx);
-	}
 }
 
 ///////////////////////////////////////////
@@ -558,103 +510,6 @@ void render_set_sim_head(pose_t pose) {
 
 ///////////////////////////////////////////
 
-void render_check_pending_skytex() {
-	if (local.sky_pending_tex == nullptr) return;
-
-	asset_state_ state = tex_asset_state(local.sky_pending_tex);
-
-	// Check if it's errored out
-	if (state < 0) {
-		tex_release(local.sky_pending_tex);
-		local.sky_pending_tex = nullptr;
-		return;
-	}
-
-	// Check if it's a valid asset, we'll know for sure once the metadata is
-	// loaded.
-	if (state >= asset_state_loaded_meta && (local.sky_pending_tex->type & tex_type_cubemap) == 0) {
-		log_warnf("Skytex must be a cubemap, ignoring %s", tex_get_id(local.sky_pending_tex));
-
-		tex_release(local.sky_pending_tex);
-		local.sky_pending_tex = nullptr;
-		return;
-	}
-
-	// Check if it's loaded
-	if (state >= asset_state_loaded) {
-		render_global_texture(render_skytex_register, local.sky_pending_tex);
-
-		tex_release(local.sky_pending_tex);
-		local.sky_pending_tex = nullptr;
-		return;
-	}
-}
-
-///////////////////////////////////////////
-
-void render_set_skytex(tex_t sky_texture) {
-	if (sky_texture == nullptr) return;
-
-	tex_addref(sky_texture);
-	local.sky_pending_tex = sky_texture;
-
-	// This is also checked every step, but if the texture is already valid, we
-	// can set it up right away and avoid any potential frame delays.
-	render_check_pending_skytex();
-}
-
-///////////////////////////////////////////
-
-tex_t render_get_skytex() {
-	if (local.sky_pending_tex != nullptr) {
-		tex_addref(local.sky_pending_tex);
-		return local.sky_pending_tex;
-	}
-
-	if (local.global_textures[render_skytex_register] != nullptr) {
-		tex_addref(local.global_textures[render_skytex_register]);
-		return local.global_textures[render_skytex_register];
-	}
-
-	return nullptr;
-}
-
-///////////////////////////////////////////
-
-void render_set_skymaterial(material_t sky_material) {
-	// Don't allow null, fall back to the default sky material on null.
-	if (sky_material == nullptr) {
-		sky_material = local.sky_mat_default;
-	}
-
-	// Safe swap the material reference
-	material_addref(sky_material);
-	if (local.sky_mat != nullptr) material_release(local.sky_mat);
-	local.sky_mat = sky_material;
-}
-
-///////////////////////////////////////////
-
-material_t render_get_skymaterial(void) {
-	material_addref(local.sky_mat);
-	return local.sky_mat;
-}
-
-///////////////////////////////////////////
-
-void render_set_skylight(const spherical_harmonics_t &light_info) {
-	local.lighting_src = light_info;
-	sh_to_fast(light_info, local.lighting);
-}
-
-///////////////////////////////////////////
-
-spherical_harmonics_t render_get_skylight() {
-	return local.lighting_src;
-}
-
-///////////////////////////////////////////
-
 render_layer_ render_get_filter() {
 	return local.primary_filter;
 }
@@ -723,18 +578,6 @@ render_layer_ render_get_capture_filter() {
 
 bool32_t render_has_capture_filter() {
 	return local.use_capture_filter;
-}
-
-///////////////////////////////////////////
-
-void render_enable_skytex(bool32_t show_sky) {
-	local.sky_show = show_sky;
-}
-
-///////////////////////////////////////////
-
-bool32_t render_enabled_skytex() {
-	return local.sky_show;
 }
 
 ///////////////////////////////////////////
@@ -867,7 +710,7 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	}
 
 	// Copy in the other global shader variables
-	memcpy(local.global_buffer.lighting, local.lighting, sizeof(vec4) * 9);
+	memcpy(local.global_buffer.lighting, lighting_get_lighting(), sizeof(vec4) * 9);
 	local.global_buffer.time       = time_totalf();
 	local.global_buffer.view_count = view_count;
 	local.global_buffer.eye_offset = eye_offset;

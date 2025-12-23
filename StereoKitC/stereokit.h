@@ -2626,6 +2626,8 @@ typedef enum backend_graphics_ {
 	backend_graphics_opengles_egl,
 	/*WebGL is used for rendering. This is used by default on Web.*/
 	backend_graphics_webgl,
+	/*Vulkan is used for rendering via sk_renderer.*/
+	backend_graphics_vulkan,
 } backend_graphics_;
 
 typedef uint64_t openxr_handle_t;

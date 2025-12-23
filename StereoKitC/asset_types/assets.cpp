@@ -819,6 +819,8 @@ int32_t asset_thread(void *thread_inst_obj) {
 	while (asset_thread_enabled && !sk_is_initialized())
 		platform_sleep(1);
 
+	skr_thread_init();
+
 	ft_mutex_t wait_mtx = ft_mutex_create();
 
 	while (asset_thread_enabled || asset_thread_tasks.count>0) {
@@ -827,6 +829,8 @@ int32_t asset_thread(void *thread_inst_obj) {
 		if (asset_thread_enabled && asset_thread_tasks.count == 0)
 			ft_condition_wait(asset_tasks_available, wait_mtx);
 	}
+
+	skr_thread_shutdown();
 
 	ft_mutex_destroy(&wait_mtx);
 	thread->running = false;

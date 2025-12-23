@@ -45,6 +45,10 @@ bool offscreen_init() {
 
 void offscreen_step_begin() {
 	input_step();
+
+	// Begin the render frame early so that any graphics operations the
+	// application performs during step are captured.
+	skr_renderer_frame_begin();
 }
 
 ///////////////////////////////////////////

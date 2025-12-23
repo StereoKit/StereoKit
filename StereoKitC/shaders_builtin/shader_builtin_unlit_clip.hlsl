@@ -1,5 +1,7 @@
 #include "stereokit.hlsli"
 
+//--name = sk/unlit_clip
+
 //--color:color = 1, 1, 1, 1
 //--tex_trans   = 0,0,1,1
 //--diffuse     = white

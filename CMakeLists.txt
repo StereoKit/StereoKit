@@ -244,6 +244,8 @@ if (SK_PROFILE)
 endif()
 
 #### sk_gpu - https://github.com/StereoKit/sk_renderer ####
+set(SKR_ENABLE_STATIC_ANALYSIS OFF CACHE PATH "Faster build" FORCE)
+set(SKR_BUILD_EXAMPLES OFF CACHE PATH "Faster build" FORCE)
 if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
     NAME sk_renderer # 2025.9.7
@@ -254,6 +256,8 @@ else()
   # local sk_renderer clone, and use it instead of CPM.
   add_subdirectory(../sk_renderer ../sk_renderer/build)
 endif()
+# Ensure sk_renderer is built with PIC for linking into shared library
+set_target_properties(sk_renderer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 
 ###########################################
@@ -381,6 +385,8 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/render.cpp
   StereoKitC/systems/render_pipeline.h
   StereoKitC/systems/render_pipeline.cpp
+  StereoKitC/systems/lighting.h
+  StereoKitC/systems/lighting.cpp
   StereoKitC/systems/sprite_drawer.h
   StereoKitC/systems/sprite_drawer.cpp
   StereoKitC/systems/system.h
@@ -552,7 +558,7 @@ endif()
 
 skshaderc_compile_headers(StereoKitC
   ${CMAKE_BINARY_DIR}/shaders/
-  "-O3 -f -z ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+  "-e -O3 -f -z ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
   StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_default.hlsl
   StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
@@ -797,7 +803,7 @@ if (SK_BUILD_TESTS)
 
   skshaderc_compile_headers( StereoKitCTest
     ${CMAKE_BINARY_DIR}/test_shaders/
-    "-O3 -f ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+    "-e -O3 -f ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
     Examples/StereoKitCTest/Shaders/blit.hlsl
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
     Examples/StereoKitCTest/Shaders/skt_light_only.hlsl)

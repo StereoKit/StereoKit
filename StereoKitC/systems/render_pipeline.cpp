@@ -25,29 +25,26 @@ struct pipeline_surface_t {
 	matrix*                     view_matrices;
 	matrix*                     proj_matrices;
 	bool32_t                    enabled;
+	skr_tex_t*                  resolve_target;
 };
 
 struct render_pipeline_state_t {
 	array_t<pipeline_surface_t> surfaces;
-	bool32_t                    begin_called;
 };
 static render_pipeline_state_t local = {};
 
 ///////////////////////////////////////////
 
-void render_pipeline_begin() {
+static void render_pipeline_begin() {
 	render_check_pending_skytex();
-	skr_renderer_frame_begin();
 	render_action_list_execute();
 	render_check_screenshots();
-	local.begin_called = true;
 }
 
 ///////////////////////////////////////////
 
 void render_pipeline_draw() {
-	if (!local.begin_called)
-		render_pipeline_begin();
+	render_pipeline_begin();
 
 	render_list_t list = render_get_primary_list();
 
@@ -70,7 +67,7 @@ void render_pipeline_draw() {
 			for (int32_t layer = 0; layer < s->array_count; layer++) {
 				// Begin render pass for this layer
 				// TODO: sk_renderer may need array layer support in begin_pass
-				skr_renderer_begin_pass(&s->tex->gpu_tex, depth_tex, nullptr, clear_flags, clear_color, 1.0f, 0);
+				skr_renderer_begin_pass(&s->tex->gpu_tex, depth_tex, s->resolve_target, clear_flags, clear_color, 1.0f, 0);
 
 				for (int32_t quilt_y = 0; quilt_y < s->quilt_height; quilt_y += 1) {
 					for (int32_t quilt_x = 0; quilt_x < s->quilt_width; quilt_x += 1) {
@@ -91,7 +88,7 @@ void render_pipeline_draw() {
 			s->strategy == pipeline_render_strategy_multiview) {
 
 			// Begin render pass for all layers
-			skr_renderer_begin_pass(&s->tex->gpu_tex, depth_tex, nullptr, clear_flags, clear_color, 1.0f, 0);
+			skr_renderer_begin_pass(&s->tex->gpu_tex, depth_tex, s->resolve_target, clear_flags, clear_color, 1.0f, 0);
 
 			// Regular simultaneous array textures draw one inst per
 			// `view`, and multiview draws one inst `view` times.
@@ -116,8 +113,6 @@ void render_pipeline_draw() {
 
 	render_list_clear  (list);
 	render_list_release(list);
-
-	local.begin_called = false;
 }
 
 ///////////////////////////////////////////
@@ -199,18 +194,34 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 
 ///////////////////////////////////////////
 
-void render_pipeline_surface_to_swapchain(pipeline_surface_id surface_id, skr_surface_t* skr_surface) {
+skr_acquire_ render_pipeline_surface_acquire_swapchain(pipeline_surface_id surface_id, skr_surface_t* skr_surface) {
 	pipeline_surface_t* surface = &local.surfaces[surface_id];
 
-	// Get the swapchain target
+	// Acquire the next swapchain image
 	skr_tex_t*   target         = nullptr;
 	skr_acquire_ acquire_result = skr_surface_next_tex(skr_surface, &target);
 
 	if (acquire_result == skr_acquire_success && target) {
-		// Copy the rendered content to the swapchain image
-		// The resolve happens during the render pass if MSAA is used
-		skr_tex_copy(&surface->tex->gpu_tex, target, 0, 0, 0, 0);
+		// Set the swapchain image as the MSAA resolve target
+		// The render pass will automatically resolve to this during end_pass
+		surface->resolve_target = target;
+	} else {
+		surface->resolve_target = nullptr;
 
+		if (acquire_result == skr_acquire_needs_resize) {
+			skr_surface_resize(skr_surface);
+		}
+	}
+
+	return acquire_result;
+}
+
+///////////////////////////////////////////
+
+void render_pipeline_surface_present_swapchain(pipeline_surface_id surface_id, skr_surface_t* skr_surface) {
+	pipeline_surface_t* surface = &local.surfaces[surface_id];
+
+	if (surface->resolve_target) {
 		// End frame with surface synchronization
 		skr_surface_t* surfaces[] = { skr_surface };
 		skr_renderer_frame_end(surfaces, 1);
@@ -221,13 +232,12 @@ void render_pipeline_surface_to_swapchain(pipeline_surface_id surface_id, skr_su
 			skr_surface_present(skr_surface);
 		}
 	} else {
-		// Failed to acquire - still need to end frame
+		// Failed to acquire earlier - still need to end frame
 		skr_renderer_frame_end(nullptr, 0);
-
-		if (acquire_result == skr_acquire_needs_resize) {
-			skr_surface_resize(skr_surface);
-		}
 	}
+
+	// Clear resolve target for next frame
+	surface->resolve_target = nullptr;
 }
 
 ///////////////////////////////////////////

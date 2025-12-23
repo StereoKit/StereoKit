@@ -6,6 +6,8 @@
 
 #include "_platform.h"
 
+#include <sk_renderer.h>
+
 #include "../device.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
@@ -84,24 +86,50 @@ bool platform_init() {
 		return false;
 	}
 
-	// Initialize graphics
-	void* luid = nullptr;
-#if defined(SK_XR_OPENXR)
-	if (settings->mode == app_mode_xr)
-		luid = openxr_get_luid();
-#endif
-	skg_callback_log([](skg_log_ level, const char *text) {
+	// Initialize graphics with sk_renderer
+	skr_callback_log([](skr_log_ level, const char *text) {
 		switch (level) {
-		case skg_log_info:     log_diagf("[<~ylw>sk_gpu<~clr>] %s", text); break;
-		case skg_log_warning:  log_warnf("[<~ylw>sk_gpu<~clr>] %s", text); break;
-		case skg_log_critical: log_errf ("[<~ylw>sk_gpu<~clr>] %s", text); break;
+		case skr_log_info:     log_diagf("[<~ylw>sk_renderer<~clr>] %s", text); break;
+		case skr_log_warning:  log_warnf("[<~ylw>sk_renderer<~clr>] %s", text); break;
+		case skr_log_critical: log_errf ("[<~ylw>sk_renderer<~clr>] %s", text); break;
 		}
 	});
-	if (skg_init(settings->app_name, luid) <= 0) {
-		log_fail_reason(95, log_error, "Failed to initialize sk_gpu!");
+
+
+	skr_bind_settings_t skr_binds = {};
+	skr_binds.instance_slot = 12; // Instance data binds to slot t12
+	skr_binds.material_slot = 0;  // Material data binds to $Globals, which is slot b0
+	skr_binds.system_slot   = 1;  // StereoKit's system data goes in slot b1
+	skr_settings_t skr_settings = {};
+	skr_settings.app_name          = settings->app_name;
+	skr_settings.app_version       = 1;
+	skr_settings.enable_validation = true;// settings->log_filter == log_diagnostic;
+	skr_settings.bind_settings     = &skr_binds;
+
+	// Request platform-specific surface extensions for window creation
+#if defined(SK_OS_LINUX)
+	const char* required_exts[] = { "VK_KHR_surface", "VK_KHR_xlib_surface" };
+	skr_settings.required_extensions      = required_exts;
+	skr_settings.required_extension_count = 2;
+#elif defined(SK_OS_WINDOWS)
+	const char* required_exts[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
+	skr_settings.required_extensions      = required_exts;
+	skr_settings.required_extension_count = 2;
+#elif defined(SK_OS_ANDROID)
+	const char* required_exts[] = { "VK_KHR_surface", "VK_KHR_android_surface" };
+	skr_settings.required_extensions      = required_exts;
+	skr_settings.required_extension_count = 2;
+#endif
+
+	if (!skr_init(skr_settings)) {
+		log_fail_reason(95, log_error, "Failed to initialize sk_renderer!");
 		return false;
 	}
-	device_data.gpu = string_copy(skg_adapter_name());
+
+	// Get GPU name from Vulkan physical device properties
+	VkPhysicalDeviceProperties props;
+	vkGetPhysicalDeviceProperties(skr_get_vk_physical_device(), &props);
+	device_data.gpu = string_copy(props.deviceName);
 
 	// Start up the current mode!
 	bool result = platform_set_mode(settings->mode);
@@ -119,7 +147,7 @@ bool platform_init() {
 
 void platform_shutdown() {
 	platform_stop_mode();
-	skg_shutdown();
+	skr_shutdown();
 
 	platform_impl_shutdown();
 

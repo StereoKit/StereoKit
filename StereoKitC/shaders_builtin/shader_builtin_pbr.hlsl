@@ -1,6 +1,8 @@
 #include <stereokit.hlsli>
 #include <stereokit_pbr.hlsli>
 
+//--name = sk/pbr
+
 //--color:color           = 1,1,1,1
 //--emission_factor:color = 0,0,0,0
 //--metallic              = 0

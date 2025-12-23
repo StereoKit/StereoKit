@@ -1,11 +1,10 @@
 #include "stereokit.hlsli"
+//--name = sk/default_shader
 
-//--color:color = 1,1,1,1
-//--tex_trans   = 0,0,1,1
-//--diffuse     = white
+float4 color     = float4(1,1,1,1);
+float4 tex_trans = float4(0,0,1,1);
 
-float4       color;
-float4       tex_trans;
+//--diffuse = white
 Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 

@@ -14,27 +14,21 @@
 
 #include "openxr.h"
 
+// All platforms now use Vulkan
+#define XR_USE_GRAPHICS_API_VULKAN
+
 #if defined(SK_OS_ANDROID)
 	#define XR_USE_PLATFORM_ANDROID
 	#define XR_USE_TIMESPEC
-	#define XR_USE_GRAPHICS_API_OPENGL_ES
 
 #elif defined(SK_OS_LINUX)
-	#define XR_USE_PLATFORM_EGL
 	#define XR_USE_TIMESPEC
-	#define XR_USE_GRAPHICS_API_OPENGL_ES
 
 #elif defined(SK_OS_WEB)
 	#error OpenXR not supported on web
 
 #elif defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
 	#define XR_USE_PLATFORM_WIN32
-
-	#if defined(SKG_FORCE_OPENGL)
-		#define XR_USE_GRAPHICS_API_OPENGL
-	#else
-		#define XR_USE_GRAPHICS_API_D3D11
-	#endif
 
 #endif
 
@@ -86,11 +80,13 @@
 	#define XR_TYPE_GRAPHICS_BINDING XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR
 
 #elif defined(XR_USE_GRAPHICS_API_VULKAN)
+	#include <sk_renderer.h>
 	#define XR_GFX_EXTENSION XR_KHR_VULKAN_ENABLE_EXTENSION_NAME
 	#define XrSwapchainImage XrSwapchainImageVulkanKHR
 	#define XR_TYPE_SWAPCHAIN_IMAGE XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR
 	#define XrGraphicsRequirements XrGraphicsRequirementsVulkanKHR
 	#define XR_TYPE_GRAPHICS_REQUIREMENTS XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR
+	#define xrGetGraphicsRequirementsKHR xrGetVulkanGraphicsRequirementsKHR
 	#define PFN_xrGetGraphicsRequirementsKHR PFN_xrGetVulkanGraphicsRequirementsKHR
 	#define NAME_xrGetGraphicsRequirementsKHR "xrGetVulkanGraphicsRequirementsKHR"
 	#define XrGraphicsBinding XrGraphicsBindingVulkanKHR

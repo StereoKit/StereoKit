@@ -59,6 +59,7 @@ backend_graphics_opengl_glx OpenGL_GLX
 backend_graphics_opengl_wgl OpenGL_WGL
 backend_graphics_opengles_egl OpenGLES_EGL
 backend_graphics_webgl WebGL
+backend_graphics_vulkan Vulkan
 
 device_tracking_3dof DoF3
 device_tracking_6dof DoF6

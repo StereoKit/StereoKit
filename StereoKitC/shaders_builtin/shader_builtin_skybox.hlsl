@@ -1,5 +1,7 @@
 #include "stereokit.hlsli"
 
+//--name = sk/cubemap
+
 struct vsIn {
 	float4 pos : SV_Position;
 };

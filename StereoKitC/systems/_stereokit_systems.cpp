@@ -9,6 +9,7 @@
 #include "../_stereokit.h"
 
 #include "render.h"
+#include "lighting.h"
 #include "input.h"
 #include "system.h"
 #include "text.h"
@@ -66,12 +67,20 @@ bool stereokit_systems_register() {
 	systems_add(&sys_ui_late);
 
 	system_t sys_renderer = { "Renderer" };
-	system_set_initialize_deps(sys_renderer, "Platform", "Defaults");
+	system_set_initialize_deps(sys_renderer, "Platform");
 	system_set_step_deps      (sys_renderer, "FrameBegin");
 	sys_renderer.func_initialize = render_init;
 	sys_renderer.func_step       = render_step;
 	sys_renderer.func_shutdown   = render_shutdown;
 	systems_add(&sys_renderer);
+
+	system_t sys_lighting = { "Lighting" };
+	system_set_initialize_deps(sys_lighting, "Defaults");
+	system_set_step_deps      (sys_lighting, "Renderer");
+	sys_lighting.func_initialize = lighting_init;
+	sys_lighting.func_step       = lighting_step;
+	sys_lighting.func_shutdown   = lighting_shutdown;
+	systems_add(&sys_lighting);
 
 	system_t sys_assets = { "Assets" };
 	system_set_step_deps(sys_assets, "FrameRender");

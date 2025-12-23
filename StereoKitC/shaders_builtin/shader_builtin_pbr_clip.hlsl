@@ -1,6 +1,8 @@
 #include <stereokit.hlsli>
 #include <stereokit_pbr.hlsli>
 
+//--name = sk/pbr_clip
+
 //--color:color           = 1,1,1,1
 //--emission_factor:color = 0,0,0,0
 //--tex_trans             = 0,0,1,1
