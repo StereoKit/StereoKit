@@ -1126,9 +1126,10 @@ void render_list_execute(render_list_t list, render_layer_ filter, int32_t mater
 		render_transform_buffer_t inst = { transpose, item->color };
 
 		// Add to sk_renderer's render list - it handles sorting and batching
-		skr_render_list_add(&local.gpu_render_list,
+		skr_render_list_add_indexed(&local.gpu_render_list,
 			&item->mesh->gpu_mesh,
 			&item_mat->gpu_mat,
+			0, item->mesh_inds, 0,
 			&inst, sizeof(inst), 1);
 	}
 
@@ -1205,7 +1206,7 @@ void render_list_add_model_mat(render_list_t list, model_t model, material_t mat
 		
 		render_item_t item;
 		item.mesh      = vis->mesh;
-		item.mesh_inds = vis->mesh->ind_count;
+		item.mesh_inds = vis->mesh->ind_draw;
 		item.color     = color_linear;
 		item.layer     = (uint16_t)layer;
 		matrix_mul(vis->transform_model, root, item.transform);
