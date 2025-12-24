@@ -691,6 +691,7 @@ elseif(EMSCRIPTEN)
 else()
   set(SK_BIN_OS "Unknown")
 endif()
+string(TOLOWER "${SK_BIN_OS}" SK_BIN_OS_LOWER)
 
 if(ANDROID)
   set(SK_ARCH ${ANDROID_ABI})
@@ -725,15 +726,10 @@ if(SK_DISTRIBUTE)
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
 
-  # Copy all shader build tools, but only if they're newer
-  file(GLOB_RECURSE SOURCE_FILES "${sk_gpu_SOURCE_DIR}/tools/*")
-  foreach(SOURCE_FILE ${SOURCE_FILES})
-    file(RELATIVE_PATH REL_PATH "${sk_gpu_SOURCE_DIR}/tools" ${SOURCE_FILE})
-    get_filename_component(DEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${REL_PATH}" DIRECTORY)
-    add_custom_command(TARGET StereoKitC POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E make_directory "${DEST_DIR}"
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SOURCE_FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${REL_PATH}")
-  endforeach()
+  # Copy all shader compiler
+  add_custom_command(TARGET StereoKitC POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_BIN_OS_LOWER}_${SK_ARCH}"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:skshaderc>" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_BIN_OS_LOWER}_${SK_ARCH}")
 
   if (SK_SEPARATE_DBG)
     add_custom_command(TARGET StereoKitC POST_BUILD

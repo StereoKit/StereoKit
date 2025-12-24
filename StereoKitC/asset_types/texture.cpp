@@ -1341,6 +1341,12 @@ tex_format_ tex_get_tex_format(int64_t native_fmt) {
 
 ///////////////////////////////////////////
 
+int64_t tex_fmt_to_native(tex_format_ format) {
+	return (int64_t)skr_tex_fmt_to_native((skr_tex_fmt_)format);
+}
+
+///////////////////////////////////////////
+
 id_hash_t tex_meta_hash(tex_t texture) {
 	id_hash_t result = hash_int     (texture->width);
 	result           = hash_int_with(texture->height, result);

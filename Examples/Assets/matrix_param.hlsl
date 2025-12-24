@@ -20,19 +20,20 @@ struct vsIn {
 	float2 uv   : TEXCOORD0;
 	float4 col  : COLOR0;
 };
-struct psIn : sk_ps_input_t {
+struct psIn {
 	float4 pos   : SV_POSITION;
 	float2 uv    : TEXCOORD0;
 	float4 color : COLOR0;
+	uint   view_id : SV_RenderTargetArrayIndex;
 };
 
-psIn vs(vsIn input, sk_vs_input_t sk_in) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn o;
-	uint view_id = sk_view_init(sk_in, o);
-	uint id      = sk_inst_id  (sk_in);
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
 
 	float3 world = mul(float4(input.pos.xyz, 1), custom_transform).xyz;
-	o.pos        = mul(float4(world,         1), sk_viewproj[view_id]);
+	o.pos        = mul(float4(world,         1), sk_viewproj[o.view_id]);
 
 	o.uv    = input.uv;
 	o.color = input.col * color * sk_inst[id].color;

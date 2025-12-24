@@ -11,7 +11,7 @@ struct vsIn {
 	float2 quadrant : TEXCOORD0;
 	float4 color    : COLOR0;
 };
-struct psIn : sk_ps_input_t {
+struct psIn {
 	float4 pos        : SV_Position;
 	float3 normal     : NORMAL0;
 	float4 light_edge : COLOR0;
@@ -19,14 +19,13 @@ struct psIn : sk_ps_input_t {
 	float4 world      : TEXCOORD0;
 	float  alpha      : TEXCOORD1;
 	float  glow_mask  : TEXCOORD2;
-	uint   view_id    : TEXCOORD3;
+	uint   view_id    : SV_RenderTargetArrayIndex;
 };
 
-psIn vs(vsIn input, sk_vs_input_t sk_in) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn o;
-	uint view_id = sk_view_init(sk_in, o);
-	uint id      = sk_inst_id  (sk_in);
-	o.view_id = view_id;
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
 
 	// Extract scale from the matrix
 	float4x4 world_mat = sk_inst[id].world;
@@ -44,7 +43,7 @@ psIn vs(vsIn input, sk_vs_input_t sk_in) {
 	sized_pos.zw = input.pos.zw;
 
 	o.world  = mul(sized_pos, world_mat);
-	o.pos    = mul(o.world, sk_viewproj[view_id]);
+	o.pos    = mul(o.world, sk_viewproj[o.view_id]);
 	o.normal = normalize(mul(input.norm, (float3x3)world_mat));
 
 	o.inst_col       = sk_inst[id].color;
