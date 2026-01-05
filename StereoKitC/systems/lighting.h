@@ -9,6 +9,8 @@
 
 namespace sk {
 
+const int32_t render_skytex_register = 11;
+
 bool lighting_init    ();
 void lighting_step    ();
 void lighting_shutdown();

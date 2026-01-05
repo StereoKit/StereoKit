@@ -112,7 +112,7 @@ void render_check_pending_skytex() {
 
 	// Check if it's loaded
 	if (state >= asset_state_loaded) {
-		render_global_texture(11, local.sky_pending_tex); // render_skytex_register = 11
+		render_global_texture(render_skytex_register, local.sky_pending_tex);
 
 		tex_release(local.sky_pending_tex);
 		local.sky_pending_tex = nullptr;
@@ -142,8 +142,7 @@ tex_t render_get_skytex() {
 	}
 
 	// Fall back to what's in the global texture slot
-	// This requires accessing render's global textures - for now return pending or null
-	return nullptr;
+	return render_get_global_texture(render_skytex_register);
 }
 
 ///////////////////////////////////////////

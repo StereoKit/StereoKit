@@ -158,8 +158,13 @@ struct render_state_t {
 	render_layer_           primary_filter;
 	render_layer_           capture_filter;
 	bool                    use_capture_filter;
-	tex_t                   global_textures[16];
-	material_buffer_t       global_buffers [16];
+	// global_textures: used by the renderer, updated via action list during
+	// render_step
+	tex_t                   global_textures    [16];
+	// global_textures_app: tracks what the app has set, updated immediately
+	// for application queries
+	tex_t                   global_textures_app[16];
+	material_buffer_t       global_buffers     [16];
 
 	array_t<render_screenshot_t> screenshot_list;
 	array_t<render_action_t>     render_action_list;
@@ -168,8 +173,6 @@ struct render_state_t {
 	render_list_t           list_active;
 };
 static render_state_t local = {};
-
-const int32_t render_skytex_register = 11;
 
 ///////////////////////////////////////////
 
@@ -243,6 +246,10 @@ void render_shutdown() {
 	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
 		tex_release(local.global_textures[i]);
 		local.global_textures[i] = nullptr;
+	}
+	for (int32_t i = 0; i < _countof(local.global_textures_app); i++) {
+		tex_release(local.global_textures_app[i]);
+		local.global_textures_app[i] = nullptr;
 	}
 	for (int32_t i = 0; i < _countof(local.global_buffers); i++) {
 		material_buffer_release(local.global_buffers[i]);
@@ -602,6 +609,15 @@ void render_global_texture(int32_t register_slot, tex_t texture) {
 		return;
 	}
 
+	// Update app tracking immediately for application queries
+	if (local.global_textures_app[register_slot] != texture) {
+		if (local.global_textures_app[register_slot] != nullptr)
+			tex_release(local.global_textures_app[register_slot]);
+		local.global_textures_app[register_slot] = texture;
+		if (texture != nullptr) tex_addref(texture);
+	}
+
+	// Queue action for renderer update
 	if (texture != nullptr) tex_addref(texture);
 
 	render_action_t action = {};
@@ -609,6 +625,18 @@ void render_global_texture(int32_t register_slot, tex_t texture) {
 	action.global_texture.texture = texture;
 	action.global_texture.slot    = register_slot;
 	local.render_action_list.add(action);
+}
+
+///////////////////////////////////////////
+
+tex_t render_get_global_texture(int32_t register_slot) {
+	if (register_slot < 0 || register_slot >= _countof(local.global_textures_app)) {
+		log_errf("render_get_global_texture: Register_slot should be 0-16. Received %d.", register_slot);
+		return nullptr;
+	}
+	tex_t result = local.global_textures_app[register_slot];
+	if (result != nullptr) tex_addref(result);
+	return result;
 }
 
 ///////////////////////////////////////////
