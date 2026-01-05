@@ -566,6 +566,7 @@ skshaderc_compile_headers(StereoKitC
   StereoKitC/shaders_builtin/shader_builtin_lines.hlsl
   StereoKitC/shaders_builtin/shader_builtin_pbr.hlsl
   StereoKitC/shaders_builtin/shader_builtin_pbr_clip.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_sh_compute.hlsl
   StereoKitC/shaders_builtin/shader_builtin_skybox.hlsl
   StereoKitC/shaders_builtin/shader_builtin_ui.hlsl
   StereoKitC/shaders_builtin/shader_builtin_ui_box.hlsl

@@ -13,6 +13,7 @@
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
+#include "../systems/defaults.h"
 #include "shader.h"
 #include "texture.h"
 #include "texture_.h"
@@ -664,21 +665,42 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 
 		skr_cmd_begin();
 
-		// Must add rendertarget flag so skr_tex gets writeable flag for blit destination
+		// Create the cubemap destination texture directly (NOT using tex_set_color_arr,
+		// which would set state to loaded and trigger premature on_load callbacks)
 		tex->type = (tex_type_)(tex->type | tex_type_rendertarget);
-		tex_set_color_arr(tex, tex->width, tex->height, nullptr, 6);
+		skr_tex_flags_    flags   = tex_type_to_skr_flags(tex->type);
+		skr_tex_sampler_t sampler = tex_get_skr_sampler(tex);
+		skr_vec3i_t       size    = { tex->width, tex->height, 1 };
+		skr_err_ err = skr_tex_create(
+			(skr_tex_fmt_)tex->format,
+			flags,
+			sampler,
+			size,
+			1,  // multisample
+			0,  // mip_count = 0 for auto-calculate
+			nullptr,  // no initial data
+			&tex->gpu_tex);
+		if (err != skr_err_success) {
+			skr_cmd_end();
+			log_err("Failed to create cubemap texture for equirect conversion");
+			tex->header.state = asset_state_error;
+			return (bool32_t)false;
+		}
+		tex_set_meta(tex, tex->width, tex->height, tex->format);
+		tex_update_label(tex);
+
 		shader_t convert_shader = shader_find(default_id_shader_equirect);
 
 		// Make the texture for our source equirect data
-		skr_tex_sampler_t sampler = {};
-		sampler.sample  = skr_tex_sample_linear;
-		sampler.address = skr_tex_address_wrap;
+		skr_tex_sampler_t equirect_sampler = {};
+		equirect_sampler.sample  = skr_tex_sample_linear;
+		equirect_sampler.address = skr_tex_address_wrap;
 		skr_tex_data_t tex_data = {};
 		tex_data.data        = data->color_data[0];
 		tex_data.layer_count = 1;
 		tex_data.mip_count   = 1;
 		skr_tex_t equirect;
-		skr_tex_create((skr_tex_fmt_)tex->format, skr_tex_flags_readable, sampler, {data->color_width, data->color_height, 1}, 1, 0, &tex_data, &equirect);
+		skr_tex_create((skr_tex_fmt_)tex->format, skr_tex_flags_readable, equirect_sampler, {data->color_width, data->color_height, 1}, 1, 0, &tex_data, &equirect);
 
 		// Make the material for converting equirect to cubemap
 		skr_material_info_t mat_info = {};
@@ -690,8 +712,8 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		skr_material_set_tex(&convert_mat, "source", &equirect);
 
 		// Now convert the first layer and generate the rest of the mips
-		skr_vec3i_t size   = skr_tex_get_size(&tex->gpu_tex);
-		skr_recti_t bounds = { 0, 0, size.x, size.y };
+		skr_vec3i_t blit_size = skr_tex_get_size(&tex->gpu_tex);
+		skr_recti_t bounds    = { 0, 0, blit_size.x, blit_size.y };
 		skr_renderer_blit    (&convert_mat, &tex->gpu_tex, bounds);
 		skr_tex_generate_mips(&tex->gpu_tex, nullptr);
 
@@ -699,8 +721,37 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		skr_tex_destroy(&equirect);
 		shader_release(convert_shader);
 
-		skr_cmd_end();
+		// Compute spherical harmonics on GPU using a small mip level
+		skr_vec3i_t base_size = { tex->width, tex->height, 1 };
+		int32_t     mip_count = skr_tex_calc_mip_count(base_size);
+		int32_t     mip_level = maxi(0, mip_count - 6);
+		skr_vec3i_t mip_size  = skr_tex_calc_mip_dimensions(base_size, mip_level);
 
+		skr_buffer_t sh_buffer = {};
+		skr_buffer_create(nullptr, 1, sizeof(spherical_harmonics_t), skr_buffer_type_storage, (skr_use_)(skr_use_dynamic | skr_use_compute_write), &sh_buffer);
+
+		skr_compute_t sh_compute = {};
+		skr_compute_create(&sk_default_shader_sh_compute->gpu_shader, &sh_compute);
+
+		uint32_t params[4] = { (uint32_t)mip_size.x, (uint32_t)mip_level, 0, 0 };
+		skr_compute_set_params(&sh_compute, params, sizeof(params));
+		skr_compute_set_tex   (&sh_compute, "source", &tex->gpu_tex);
+		skr_compute_set_buffer(&sh_compute, "sh_output", &sh_buffer);
+		skr_compute_execute   (&sh_compute, 1, 1, 1);
+
+		// Wait for GPU work to complete before marking texture as loaded
+		// This ensures layout transitions are visible to other threads
+		skr_future_t future = skr_cmd_end();
+		skr_future_wait(&future);
+
+		// Read back SH coefficients and store in texture
+		tex->light_info = sk_malloc_t(spherical_harmonics_t, 1);
+		skr_buffer_get(&sh_buffer, tex->light_info->coefficients, sizeof(spherical_harmonics_t));
+
+		skr_compute_destroy(&sh_compute);
+		skr_buffer_destroy (&sh_buffer);
+
+		tex_set_fallback(tex, nullptr);
 		tex->header.state = asset_state_loaded;
 		return (bool32_t)true;
 	};

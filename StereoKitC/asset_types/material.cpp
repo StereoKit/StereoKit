@@ -20,25 +20,12 @@ skr_material_info_t material_build_info(material_t material) {
 	skr_material_info_t info = {};
 	info.shader = &material->shader->gpu_shader;
 
-	switch (material->cull) {
-	case cull_back:  info.cull = skr_cull_back;  break;
-	case cull_front: info.cull = skr_cull_front; break;
-	case cull_none:  info.cull = skr_cull_none;  break;
-	default:         info.cull = skr_cull_back;  break;
-	}
+	// Read pipeline state directly from gpu_mat.key (single source of truth)
+	info.cull       = material->gpu_mat.key.cull;
+	info.depth_test = material->gpu_mat.key.depth_test;
+	info.write_mask = material->gpu_mat.key.write_mask;
 
-	switch (material->depth_test) {
-	case depth_test_less:         info.depth_test = skr_compare_less;          break;
-	case depth_test_less_or_eq:   info.depth_test = skr_compare_less_or_eq;    break;
-	case depth_test_greater:      info.depth_test = skr_compare_greater;       break;
-	case depth_test_greater_or_eq:info.depth_test = skr_compare_greater_or_eq; break;
-	case depth_test_equal:        info.depth_test = skr_compare_equal;         break;
-	case depth_test_not_equal:    info.depth_test = skr_compare_not_equal;     break;
-	case depth_test_always:       info.depth_test = skr_compare_always;        break;
-	case depth_test_never:        info.depth_test = skr_compare_never;         break;
-	default:                      info.depth_test = skr_compare_less;          break;
-	}
-
+	// alpha_mode is cached since it's a higher-level abstraction
 	switch (material->alpha_mode) {
 	case transparency_none:  info.blend_state = skr_blend_off;      break;
 	case transparency_blend: info.blend_state = skr_blend_alpha;    break;
@@ -46,9 +33,8 @@ skr_material_info_t material_build_info(material_t material) {
 	default:                 info.blend_state = skr_blend_off;      break;
 	}
 
-	info.write_mask        = material->depth_write ? skr_write_default : skr_write_rgba;
 	info.alpha_to_coverage = material->alpha_mode == transparency_msaa;
-	info.queue_offset      = material->queue_offset;
+	info.queue_offset      = material->gpu_mat.queue_offset;
 	return info;
 }
 
@@ -159,14 +145,15 @@ material_t material_create(shader_t shader) {
 	shader_addref(material_shader);
 	result->alpha_mode   = transparency_none;
 	result->shader       = material_shader;
-	result->depth_test   = depth_test_less;
-	result->depth_write  = true;
 	result->depth_clip   = false;
-	result->cull         = cull_back;
-	result->queue_offset = 0;
 
-	// Create the sk_renderer material
-	if (skr_material_create(material_build_info(result), &result->gpu_mat) != skr_err_success) {
+	// Create the sk_renderer material with defaults
+	skr_material_info_t info = {};
+	info.shader     = &material_shader->gpu_shader;
+	info.cull       = skr_cull_back;
+	info.depth_test = skr_compare_less;
+	info.write_mask = skr_write_default; // Includes depth write
+	if (skr_material_create(info, &result->gpu_mat) != skr_err_success) {
 		log_err("Failed to create GPU material");
 	}
 
@@ -185,16 +172,18 @@ material_t material_create(shader_t shader) {
 material_t material_copy(material_t material) {
 	if (material == nullptr) return nullptr;
 
-	// Allocate new material
-	material_t result = (material_t)assets_allocate(asset_type_material);
+	// Get the material info from source first
+	skr_material_info_t info = material_build_info(material);
 
-	// Copy cached state
+	// Allocate new material and create the gpu_mat from source state
+	material_t result = (material_t)assets_allocate(asset_type_material);
+	if (skr_material_create(info, &result->gpu_mat) != skr_err_success) {
+		log_err("Failed to create GPU material during copy");
+	}
+
+	// Copy cached state (cull/depth_test/depth_write are in gpu_mat.key now)
 	result->alpha_mode   = material->alpha_mode;
-	result->cull         = material->cull;
-	result->depth_test   = material->depth_test;
-	result->depth_write  = material->depth_write;
 	result->depth_clip   = material->depth_clip;
-	result->queue_offset = material->queue_offset;
 	result->chain        = material->chain;
 	memcpy(result->variants, material->variants, sizeof(result->variants));
 
@@ -205,12 +194,6 @@ material_t material_copy(material_t material) {
 	for (int32_t i = 0; i < (int32_t)_countof(result->variants); i++) {
 		if (result->variants[i] != nullptr)
 			material_addref(result->variants[i]);
-	}
-
-	// Create the sk_renderer material with copied state
-	skr_material_info_t info = material_build_info(result);
-	if (skr_material_create(info, &result->gpu_mat) != skr_err_success) {
-		log_err("Failed to create GPU material during copy");
 	}
 
 	// Allocate texture array for result
@@ -403,8 +386,15 @@ void material_set_transparency(material_t material, transparency_ mode) {
 ///////////////////////////////////////////
 
 void material_set_cull(material_t material, cull_ mode) {
-	if (material->cull == mode) return;
-	material->cull = mode;
+	skr_cull_ skr_mode;
+	switch (mode) {
+	case cull_back:  skr_mode = skr_cull_back;  break;
+	case cull_front: skr_mode = skr_cull_front; break;
+	case cull_none:  skr_mode = skr_cull_none;  break;
+	default:         skr_mode = skr_cull_back;  break;
+	}
+	if (material->gpu_mat.key.cull == skr_mode) return;
+	material->gpu_mat.key.cull = skr_mode;
 	material_recreate_gpu(material);
 }
 
@@ -420,16 +410,33 @@ void material_set_wireframe(material_t material, bool32_t wireframe) {
 ///////////////////////////////////////////
 
 void material_set_depth_test(material_t material, depth_test_ depth_test_mode) {
-	if (material->depth_test == depth_test_mode) return;
-	material->depth_test = depth_test_mode;
+	skr_compare_ skr_mode;
+	switch (depth_test_mode) {
+	case depth_test_less:          skr_mode = skr_compare_less;          break;
+	case depth_test_less_or_eq:    skr_mode = skr_compare_less_or_eq;    break;
+	case depth_test_greater:       skr_mode = skr_compare_greater;       break;
+	case depth_test_greater_or_eq: skr_mode = skr_compare_greater_or_eq; break;
+	case depth_test_equal:         skr_mode = skr_compare_equal;         break;
+	case depth_test_not_equal:     skr_mode = skr_compare_not_equal;     break;
+	case depth_test_always:        skr_mode = skr_compare_always;        break;
+	case depth_test_never:         skr_mode = skr_compare_never;         break;
+	default:                       skr_mode = skr_compare_less;          break;
+	}
+	if (material->gpu_mat.key.depth_test == skr_mode) return;
+	material->gpu_mat.key.depth_test = skr_mode;
 	material_recreate_gpu(material);
 }
 
 ///////////////////////////////////////////
 
 void material_set_depth_write(material_t material, bool32_t write_enabled) {
-	if (material->depth_write == write_enabled) return;
-	material->depth_write = write_enabled;
+	bool current = (material->gpu_mat.key.write_mask & skr_write_depth) != 0;
+	if (current == (bool)write_enabled) return;
+	if (write_enabled) {
+		material->gpu_mat.key.write_mask = (skr_write_)(material->gpu_mat.key.write_mask | skr_write_depth);
+	} else {
+		material->gpu_mat.key.write_mask = (skr_write_)(material->gpu_mat.key.write_mask & ~skr_write_depth);
+	}
 	material_recreate_gpu(material);
 }
 
@@ -445,7 +452,7 @@ void material_set_depth_clip(material_t material, bool32_t clip_enabled) {
 ///////////////////////////////////////////
 
 void material_set_queue_offset(material_t material, int32_t offset) {
-	material->queue_offset = offset;
+	material->gpu_mat.queue_offset = offset;
 }
 
 ///////////////////////////////////////////
@@ -487,7 +494,12 @@ transparency_ material_get_transparency(material_t material) {
 ///////////////////////////////////////////
 
 cull_ material_get_cull(material_t material) {
-	return material->cull;
+	switch (material->gpu_mat.key.cull) {
+	case skr_cull_back:  return cull_back;
+	case skr_cull_front: return cull_front;
+	case skr_cull_none:  return cull_none;
+	default:             return cull_back;
+	}
 }
 
 ///////////////////////////////////////////
@@ -501,13 +513,23 @@ bool32_t material_get_wireframe(material_t material) {
 ///////////////////////////////////////////
 
 depth_test_ material_get_depth_test(material_t material) {
-	return material->depth_test;
+	switch (material->gpu_mat.key.depth_test) {
+	case skr_compare_less:          return depth_test_less;
+	case skr_compare_less_or_eq:    return depth_test_less_or_eq;
+	case skr_compare_greater:       return depth_test_greater;
+	case skr_compare_greater_or_eq: return depth_test_greater_or_eq;
+	case skr_compare_equal:         return depth_test_equal;
+	case skr_compare_not_equal:     return depth_test_not_equal;
+	case skr_compare_always:        return depth_test_always;
+	case skr_compare_never:         return depth_test_never;
+	default:                        return depth_test_less;
+	}
 }
 
 ///////////////////////////////////////////
 
 bool32_t material_get_depth_write(material_t material) {
-	return material->depth_write;
+	return (material->gpu_mat.key.write_mask & skr_write_depth) != 0;
 }
 
 ///////////////////////////////////////////
@@ -519,7 +541,7 @@ bool32_t material_get_depth_clip(material_t material) {
 ///////////////////////////////////////////
 
 int32_t material_get_queue_offset(material_t material) {
-	return material->queue_offset;
+	return material->gpu_mat.queue_offset;
 }
 
 ///////////////////////////////////////////

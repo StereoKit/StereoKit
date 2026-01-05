@@ -283,7 +283,7 @@ void render_step() {
 ///////////////////////////////////////////
 
 inline uint64_t render_sort_id(material_t material, mesh_t mesh) {
-	return ((uint64_t)(material->alpha_mode*1000 + material->queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
+	return ((uint64_t)(material->alpha_mode*1000 + material->gpu_mat.queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
 }
 inline uint64_t render_sort_id_from_queue(int32_t queue_position) {
 	return (uint64_t)(queue_position) << 32;

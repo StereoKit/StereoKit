@@ -2793,6 +2793,7 @@ SK_CONST char *default_id_shader_ui_quadrant   = "default/shader_ui_quadrant";
 SK_CONST char *default_id_shader_ui_aura       = "default/shader_ui_aura";
 SK_CONST char *default_id_shader_sky           = "default/shader_sky";
 SK_CONST char *default_id_shader_lines         = "default/shader_lines";
+SK_CONST char *default_id_shader_sh_compute    = "default/shader_sh_compute";
 SK_CONST char *default_id_sound_click          = "default/sound_click";
 SK_CONST char *default_id_sound_unclick        = "default/sound_unclick";
 SK_CONST char *default_id_sound_grab           = "default/sound_grab";

@@ -13,12 +13,8 @@ struct _material_t {
 
 	// Cached state for API compatibility and recreating gpu_mat on state change
 	transparency_     alpha_mode;
-	cull_             cull;
-	depth_test_       depth_test;
-	bool32_t          depth_write;
 	bool32_t          depth_clip;
-	int32_t           queue_offset;
-
+	
 	// Texture references for proper lifetime management
 	// sk_renderer manages the GPU bindings, but we need to track SK texture refs
 	tex_t*            textures;
