@@ -1390,7 +1390,7 @@ SK_API void              material_set_cull        (material_t material, cull_ mo
 SK_API void              material_set_wireframe   (material_t material, bool32_t wireframe);
 SK_API void              material_set_depth_test  (material_t material, depth_test_ depth_test_mode);
 SK_API void              material_set_depth_write (material_t material, bool32_t write_enabled);
-SK_API void              material_set_depth_clip  (material_t material, bool32_t clip_enabled);
+SK_API void              material_set_depth_clamp (material_t material, bool32_t clamp_enabled);
 SK_API void              material_set_queue_offset(material_t material, int32_t offset);
 SK_API void              material_set_chain       (material_t material, material_t chain_material);
 SK_API void              material_set_variant     (material_t material, int32_t variant_idx, material_t variant_material);
@@ -1399,7 +1399,7 @@ SK_API cull_             material_get_cull        (material_t material);
 SK_API bool32_t          material_get_wireframe   (material_t material);
 SK_API depth_test_       material_get_depth_test  (material_t material);
 SK_API bool32_t          material_get_depth_write (material_t material);
-SK_API bool32_t          material_get_depth_clip  (material_t material);
+SK_API bool32_t          material_get_depth_clamp (material_t material);
 SK_API int32_t           material_get_queue_offset(material_t material);
 SK_API material_t        material_get_chain       (material_t material);
 SK_API material_t        material_get_variant     (material_t material, int32_t variant_idx);

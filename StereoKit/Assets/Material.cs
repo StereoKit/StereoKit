@@ -163,15 +163,15 @@ namespace StereoKit
 		public bool DepthWrite {
 			get => NativeAPI.material_get_depth_write(_inst);
 			set => NativeAPI.material_set_depth_write(_inst, value); }
-		/// <summary>Should the near/far depth plane clip (discard) what we're
-		/// drawing? This defaults to true, and should almost always be true!
-		/// However, it can be useful to set this to false for occasions like
+		/// <summary>Should depth values be clamped to the near/far planes
+		/// instead of being clipped? This defaults to false, meaning depth
+		/// clipping is enabled. Setting this to true can be useful for
 		/// shadow map rendering, where near/far clip planes are really
 		/// critical, and out of clip objects are still useful to have.
 		/// </summary>
-		public bool DepthClip {
-			get => NativeAPI.material_get_depth_clip(_inst);
-			set => NativeAPI.material_set_depth_clip(_inst, value); }
+		public bool DepthClamp {
+			get => NativeAPI.material_get_depth_clamp(_inst);
+			set => NativeAPI.material_set_depth_clamp(_inst, value); }
 		/// <summary>This property will force this material to draw earlier
 		/// or later in the draw queue. Positive values make it draw later,
 		/// negative makes it earlier. This is really helpful when doing tricks

@@ -43,7 +43,7 @@ class DemoShadows : ITest
 		shadowMap.AddressMode = TexAddress.Clamp;
 		
 		Material casterMat = new Material("Shaders/basic_shadow_caster.hlsl");
-		casterMat.DepthClip = false;
+		casterMat.DepthClamp = true;
 		casterMat.DepthTest = DepthTest.LessOrEq;
 		// This can help with shadow acne if biasing isn't working out, but can introduce peter-panning.
 		//casterMat.FaceCull  = Cull.Front;

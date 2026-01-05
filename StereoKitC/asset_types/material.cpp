@@ -21,9 +21,10 @@ skr_material_info_t material_build_info(material_t material) {
 	info.shader = &material->shader->gpu_shader;
 
 	// Read pipeline state directly from gpu_mat.key (single source of truth)
-	info.cull       = material->gpu_mat.key.cull;
-	info.depth_test = material->gpu_mat.key.depth_test;
-	info.write_mask = material->gpu_mat.key.write_mask;
+	info.cull        = material->gpu_mat.key.cull;
+	info.depth_test  = material->gpu_mat.key.depth_test;
+	info.write_mask  = material->gpu_mat.key.write_mask;
+	info.depth_clamp = material->gpu_mat.key.depth_clamp;
 
 	// alpha_mode is cached since it's a higher-level abstraction
 	switch (material->alpha_mode) {
@@ -143,16 +144,16 @@ material_t material_create(shader_t shader) {
 	}
 	material_t result = (material_t)assets_allocate(asset_type_material);
 	shader_addref(material_shader);
-	result->alpha_mode   = transparency_none;
-	result->shader       = material_shader;
-	result->depth_clip   = false;
+	result->alpha_mode = transparency_none;
+	result->shader     = material_shader;
 
 	// Create the sk_renderer material with defaults
 	skr_material_info_t info = {};
-	info.shader     = &material_shader->gpu_shader;
-	info.cull       = skr_cull_back;
-	info.depth_test = skr_compare_less;
-	info.write_mask = skr_write_default; // Includes depth write
+	info.shader      = &material_shader->gpu_shader;
+	info.cull        = skr_cull_back;
+	info.depth_test  = skr_compare_less;
+	info.write_mask  = skr_write_default; // Includes depth write
+	info.depth_clamp = false;             // Default: clip, don't clamp
 	if (skr_material_create(info, &result->gpu_mat) != skr_err_success) {
 		log_err("Failed to create GPU material");
 	}
@@ -181,10 +182,9 @@ material_t material_copy(material_t material) {
 		log_err("Failed to create GPU material during copy");
 	}
 
-	// Copy cached state (cull/depth_test/depth_write are in gpu_mat.key now)
-	result->alpha_mode   = material->alpha_mode;
-	result->depth_clip   = material->depth_clip;
-	result->chain        = material->chain;
+	// Copy cached state (cull/depth_test/depth_write/depth_clamp are in gpu_mat.key now)
+	result->alpha_mode = material->alpha_mode;
+	result->chain      = material->chain;
 	memcpy(result->variants, material->variants, sizeof(result->variants));
 
 	// Add references to shared assets
@@ -442,10 +442,9 @@ void material_set_depth_write(material_t material, bool32_t write_enabled) {
 
 ///////////////////////////////////////////
 
-void material_set_depth_clip(material_t material, bool32_t clip_enabled) {
-	if (material->depth_clip == clip_enabled) return;
-	material->depth_clip = clip_enabled;
-	// TODO: verify sk_renderer supports depth clip
+void material_set_depth_clamp(material_t material, bool32_t clamp_enabled) {
+	if (material->gpu_mat.key.depth_clamp == (bool)clamp_enabled) return;
+	material->gpu_mat.key.depth_clamp = clamp_enabled;
 	material_recreate_gpu(material);
 }
 
@@ -534,8 +533,8 @@ bool32_t material_get_depth_write(material_t material) {
 
 ///////////////////////////////////////////
 
-bool32_t material_get_depth_clip(material_t material) {
-	return material->depth_clip;
+bool32_t material_get_depth_clamp(material_t material) {
+	return material->gpu_mat.key.depth_clamp;
 }
 
 ///////////////////////////////////////////

@@ -11,9 +11,8 @@ struct _material_t {
 	shader_t          shader;
 	skr_material_t    gpu_mat;
 
-	// Cached state for API compatibility and recreating gpu_mat on state change
-	transparency_     alpha_mode;
-	bool32_t          depth_clip;
+	// Cached state - most pipeline state now in gpu_mat.key (single source of truth)
+	transparency_     alpha_mode;  // Higher-level abstraction mapping to blend_state + alpha_to_coverage
 	
 	// Texture references for proper lifetime management
 	// sk_renderer manages the GPU bindings, but we need to track SK texture refs
