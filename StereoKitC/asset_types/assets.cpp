@@ -262,6 +262,10 @@ void assets_destroy(asset_header_t *asset) {
 		return;
 	}
 
+	// Remove any on_load callbacks associated with this asset to prevent stale
+	// callbacks from firing if memory is reused for a new asset.
+	assets_on_load_remove_all(asset);
+
 	// destroy functions will often zero out their contents for safety, but we
 	// still need to free the id text. It's nice for debugging to have the name
 	// around, so we'll cache it here and free it after destruction.
@@ -333,6 +337,16 @@ void assets_on_load_remove(asset_header_t *asset, void (*on_load)(asset_header_t
 			(assets_load_callbacks[i].on_load == on_load || on_load == nullptr)) {
 			assets_load_callbacks.remove(i);
 			return;
+		}
+	}
+}
+
+///////////////////////////////////////////
+
+void assets_on_load_remove_all(asset_header_t *asset) {
+	for (int32_t i = assets_load_callbacks.count - 1; i >= 0; i--) {
+		if (assets_load_callbacks[i].asset == asset) {
+			assets_load_callbacks.remove(i);
 		}
 	}
 }

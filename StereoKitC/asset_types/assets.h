@@ -70,6 +70,7 @@ void        assets_step               ();
 void        assets_shutdown           ();
 void        assets_on_load            (asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context);
 void        assets_on_load_remove     (asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context));
+void        assets_on_load_remove_all (asset_header_t *asset);
 
 // This function will block execution until `asset_job` is finished, but will
 // ensure it is run on the GPU thread.
