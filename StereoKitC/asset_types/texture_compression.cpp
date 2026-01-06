@@ -27,23 +27,23 @@ skr_tex_fmt_ texture_preferred_compressed_format(int32_t channels, bool is_srgb)
 	//   - ETC if not using alpha
 
 	if (channels == 1) {
-		if      (skr_tex_fmt_is_supported(skr_tex_fmt_etc2_r11))  return skr_tex_fmt_etc2_r11;
-		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc4_r   ))  return skr_tex_fmt_bc4_r;
-		else                                                      return skr_tex_fmt_r8;
+		if      (skr_tex_fmt_is_supported(skr_tex_fmt_etc2_r11, (skr_tex_flags_)0, 1))  return skr_tex_fmt_etc2_r11;
+		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc4_r,    (skr_tex_flags_)0, 1))  return skr_tex_fmt_bc4_r;
+		else                                                                            return skr_tex_fmt_r8;
 	} else if (channels == 2) {
-		if      (skr_tex_fmt_is_supported(skr_tex_fmt_etc2_rg11)) return skr_tex_fmt_etc2_rg11;
-		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc5_rg   )) return skr_tex_fmt_bc5_rg;
-		else                                                      return skr_tex_fmt_r8g8;
+		if      (skr_tex_fmt_is_supported(skr_tex_fmt_etc2_rg11, (skr_tex_flags_)0, 1)) return skr_tex_fmt_etc2_rg11;
+		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc5_rg,    (skr_tex_flags_)0, 1)) return skr_tex_fmt_bc5_rg;
+		else                                                                            return skr_tex_fmt_r8g8;
 	} else if (channels == 3) {
-		if      (skr_tex_fmt_is_supported(skr_tex_fmt_astc4x4_rgba)) return (is_srgb ? skr_tex_fmt_astc4x4_rgba_srgb : skr_tex_fmt_astc4x4_rgba);
-		//else if (skr_tex_fmt_is_supported(skr_tex_fmt_atc_rgb     )) return skr_tex_fmt_atc_rgb;
-		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc1_rgb     )) return (is_srgb ? skr_tex_fmt_bc1_rgb_srgb      : skr_tex_fmt_bc1_rgb);
-		else                                                         return (is_srgb ? skr_tex_fmt_rgba32_srgb       : skr_tex_fmt_rgba32_linear);
+		if      (skr_tex_fmt_is_supported(skr_tex_fmt_astc4x4_rgba, (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_astc4x4_rgba_srgb : skr_tex_fmt_astc4x4_rgba);
+		//else if (skr_tex_fmt_is_supported(skr_tex_fmt_atc_rgb,      (skr_tex_flags_)0, 1)) return skr_tex_fmt_atc_rgb;
+		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc1_rgb,      (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_bc1_rgb_srgb      : skr_tex_fmt_bc1_rgb);
+		else                                                                               return (is_srgb ? skr_tex_fmt_rgba32_srgb       : skr_tex_fmt_rgba32_linear);
 	} else if (channels == 4) {
-		if      (skr_tex_fmt_is_supported(skr_tex_fmt_astc4x4_rgba)) return (is_srgb ? skr_tex_fmt_astc4x4_rgba_srgb : skr_tex_fmt_astc4x4_rgba);
-		//else if (skr_tex_fmt_is_supported(skr_tex_fmt_atc_rgba    )) return skr_tex_fmt_atc_rgba;
-		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc3_rgba    )) return (is_srgb ? skr_tex_fmt_bc3_rgba_srgb     : skr_tex_fmt_bc3_rgba);
-		else                                                         return (is_srgb ? skr_tex_fmt_rgba32_srgb       : skr_tex_fmt_rgba32_linear);
+		if      (skr_tex_fmt_is_supported(skr_tex_fmt_astc4x4_rgba, (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_astc4x4_rgba_srgb : skr_tex_fmt_astc4x4_rgba);
+		//else if (skr_tex_fmt_is_supported(skr_tex_fmt_atc_rgba,     (skr_tex_flags_)0, 1)) return skr_tex_fmt_atc_rgba;
+		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc3_rgba,     (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_bc3_rgba_srgb     : skr_tex_fmt_bc3_rgba);
+		else                                                                               return (is_srgb ? skr_tex_fmt_rgba32_srgb       : skr_tex_fmt_rgba32_linear);
 	}
 	log_err("Shouldn't get here!");
 	return skr_tex_fmt_none;

@@ -19,6 +19,7 @@
 #include "../hierarchy.h"
 #include "../asset_types/mesh.h"
 #include "../asset_types/texture.h"
+#include "../asset_types/texture_.h"
 #include "../asset_types/shader.h"
 #include "../asset_types/material.h"
 #include "../asset_types/model.h"
@@ -800,7 +801,7 @@ void render_check_screenshots() {
 
 		// Create render targets for screenshot
 		tex_t color_surface = tex_create_rendertarget(w, h, 8, local.screenshot_list[i].tex_format, tex_format_none);
-		tex_t depth_surface = tex_create_rendertarget(w, h, 8, tex_format_depthstencil, tex_format_none);
+		tex_t depth_surface = tex_create_rendertarget(w, h, 8, tex_get_supported_depth_format(tex_format_depthstencil, true, 8), tex_format_none);
 		tex_t resolve_tex   = tex_create_rendertarget(w, h, 1, local.screenshot_list[i].tex_format, tex_format_none);
 
 		// Set up viewport
@@ -1279,7 +1280,7 @@ void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix came
 	int32_t h = to_rendertarget->height;
 
 	// Create a temporary depth buffer
-	tex_t depth_surface = tex_create_rendertarget(w, h, 1, tex_format_depthstencil, tex_format_none);
+	tex_t depth_surface = tex_create_rendertarget(w, h, 1, tex_get_supported_depth_format(tex_format_depthstencil, true, 1), tex_format_none);
 
 	// Set up viewport
 	if (viewport_pct.w == 0) viewport_pct.w = 1;

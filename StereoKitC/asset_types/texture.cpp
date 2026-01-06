@@ -1398,6 +1398,42 @@ int64_t tex_fmt_to_native(tex_format_ format) {
 
 ///////////////////////////////////////////
 
+tex_format_ tex_get_supported_depth_format(tex_format_ preferred, bool needs_stencil, int32_t multisample) {
+	// Build the flags for a depth render target
+	skr_tex_flags_ flags = (skr_tex_flags_)(skr_tex_flags_writeable | skr_tex_flags_readable);
+
+	// Check if preferred format is supported
+	if (skr_tex_fmt_is_supported((skr_tex_fmt_)preferred, flags, multisample)) {
+		return preferred;
+	}
+
+	// D24S8 is often unsupported on Linux/Mesa - try fallbacks
+	// Prioritize formats with stencil if stencil is needed
+	tex_format_ fallbacks_with_stencil[] = { tex_format_depth32s8, tex_format_depth24s8, tex_format_depth16s8 };
+	tex_format_ fallbacks_no_stencil[]   = { tex_format_depth32, tex_format_depth16 };
+
+	if (needs_stencil) {
+		for (int i = 0; i < 3; i++) {
+			if (skr_tex_fmt_is_supported((skr_tex_fmt_)fallbacks_with_stencil[i], flags, multisample)) {
+				return fallbacks_with_stencil[i];
+			}
+		}
+	}
+
+	// Fall back to depth-only formats
+	for (int i = 0; i < 2; i++) {
+		if (skr_tex_fmt_is_supported((skr_tex_fmt_)fallbacks_no_stencil[i], flags, multisample)) {
+			return fallbacks_no_stencil[i];
+		}
+	}
+
+	// Last resort - return the preferred format and let it fail later with a proper error
+	log_warn("No supported depth format found, using preferred format which may fail");
+	return preferred;
+}
+
+///////////////////////////////////////////
+
 id_hash_t tex_meta_hash(tex_t texture) {
 	id_hash_t result = hash_int     (texture->width);
 	result           = hash_int_with(texture->height, result);
