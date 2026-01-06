@@ -62,14 +62,14 @@ class DemoShadows : ITest
 		Renderer.SkyTex = Tex.FromCubemap(@"old_depot.hdr");
 		Renderer.SkyTex.OnLoaded += t => { Renderer.SkyLight = t.CubemapLighting; lightDir = t.CubemapLighting.DominantLightDirection; };
 
-		Renderer.SetGlobalBuffer(12, shadowBuffer);
+		Renderer.SetGlobalBuffer(13, shadowBuffer);
 	}
 
 	public void Shutdown()
 	{
 		Renderer.SkyLight = oldLighting;
 		Renderer.SkyTex   = oldTex;
-		Renderer.SetGlobalBuffer(12, null);
+		Renderer.SetGlobalBuffer(13, null);
 	}
 	public void Step()
 	{
@@ -106,9 +106,9 @@ class DemoShadows : ITest
 
 		// Render the shadow map, and bind it globally so it can be used from
 		// any shader.
-		Renderer.SetGlobalTexture(12, null); // Can't draw to it if it's bound
+		Renderer.SetGlobalTexture(13, null); // Can't draw to it if it's bound
 		Renderer.RenderTo(shadowMap, view, proj, RenderLayer.All &~ RenderLayer.Vfx, ShadowMapVariant);
-		Renderer.SetGlobalTexture(12, shadowMap);
+		Renderer.SetGlobalTexture(13, shadowMap);
 	}
 
 	static Model GenerateModel(Material floorMat, Material material)

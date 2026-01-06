@@ -756,6 +756,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/main.cpp
     Examples/StereoKitCTest/demo_envmap.h
     Examples/StereoKitCTest/demo_envmap.cpp
+    Examples/StereoKitCTest/demo_shadows.h
+    Examples/StereoKitCTest/demo_shadows.cpp
     Examples/StereoKitCTest/demo_draw.h
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_aliasing.h
@@ -803,7 +805,9 @@ if (SK_BUILD_TESTS)
     "-e -O3 -f ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
     Examples/StereoKitCTest/Shaders/blit.hlsl
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
-    Examples/StereoKitCTest/Shaders/skt_light_only.hlsl)
+    Examples/StereoKitCTest/Shaders/skt_light_only.hlsl
+    Examples/StereoKitCTest/Shaders/skt_shadow.hlsl
+    Examples/StereoKitCTest/Shaders/skt_shadow_caster.hlsl)
 
   #target_link_options   (StereoKitCTest PRIVATE ${SK_LINKER_FLAGS})
 

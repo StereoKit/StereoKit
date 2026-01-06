@@ -1,11 +1,8 @@
 #include "stereokit.hlsli"
 
-//--color:color = 1,1,1,1
-//--tex_trans   = 0,0,1,1
-//--diffuse     = white
-
-float4       color;
-float4       tex_trans;
+float4       color     = float4(1,1,1,1);
+float4       tex_trans = float4(0,0,1,1);
+//--diffuse = white
 Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 
@@ -47,7 +44,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 
 	float4 world = mul(input.pos, sk_inst[id].world);
 	o.pos        = mul(world,     sk_viewproj[o.view_id]);
-	
+
 	float3 normal = normalize(mul(input.norm, (float3x3) sk_inst[id].world));
 	o.shadow_ndotl = dot(normal, light_direction);
 
@@ -65,7 +62,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 #else
 	o.shadow_uv.xy = o.shadow_uv.xy * float2(0.5f, -0.5f) + 0.5;
 #endif
-	
+
 	o.world      = world.xyz;
 	o.uv         = (input.uv * tex_trans.zw) + tex_trans.xy;
 	o.color      = color * input.col * sk_inst[id].color;
@@ -103,11 +100,11 @@ float shadow_factor_pcf3(float3 uv, float scale) {
 
 float4 ps(psIn input) : SV_TARGET {
 	float4 col = diffuse.Sample(diffuse_s, input.uv);
-	
+
 	float light = input.shadow_ndotl > 0
 		? min(input.shadow_ndotl, shadow_factor_pcf3(input.shadow_uv, 1))
 		: 0;
-	
+
 	col.rgb *= input.ambient + light * light_color;
 	return col;
 }

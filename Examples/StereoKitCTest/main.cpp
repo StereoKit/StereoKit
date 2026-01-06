@@ -15,6 +15,7 @@ using namespace sk;
 #include "demo_lighting.h"
 #include "demo_draw.h"
 #include "demo_envmap.h"
+#include "demo_shadows.h"
 #include "demo_windows.h"
 #include "demo_desktop.h"
 #include "demo_bvh.h"
@@ -85,6 +86,11 @@ scene_t demos[] = {
 		demo_envmap_init,
 		demo_envmap_update,
 		demo_envmap_shutdown,
+	}, {
+		"Shadows",
+		demo_shadows_init,
+		demo_shadows_update,
+		demo_shadows_shutdown,
 	}, {
 		"BVH",
 		demo_bvh_init,

@@ -130,7 +130,8 @@ struct render_action_t {
 struct render_state_t {
 	bool32_t                initialized;
 	skr_vert_type_t         default_vert_type;
-	skr_render_list_t       gpu_render_list;
+	array_t<skr_render_list_t> gpu_render_list_pool;
+	int32_t                 gpu_render_list_index;
 
 	material_buffer_t       shader_globals;
 	skr_buffer_t            shader_blit;
@@ -217,7 +218,8 @@ bool render_init() {
 	skr_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skr_buffer_type_constant, skr_use_dynamic, &local.shader_blit);
 	skr_buffer_set_name(&local.shader_blit, "sk/render/blit_buffer");
 
-	skr_render_list_create(&local.gpu_render_list);
+	// gpu_render_list_pool is populated on-demand in render_list_execute
+	local.gpu_render_list_index = 0;
 
 	// Setup a default camera
 	render_set_clip         (local.clip_planes.x, local.clip_planes.y);
@@ -257,9 +259,11 @@ void render_shutdown() {
 	}
 	material_buffer_release(local.shader_globals);
 
-	skr_buffer_destroy     (&local.shader_blit);
-	skr_render_list_destroy(&local.gpu_render_list);
-	skr_vert_type_destroy  (&local.default_vert_type);
+	skr_buffer_destroy    (&local.shader_blit);
+	for (int32_t i = 0; i < local.gpu_render_list_pool.count; i++)
+		skr_render_list_destroy(&local.gpu_render_list_pool[i]);
+	local.gpu_render_list_pool.free();
+	skr_vert_type_destroy (&local.default_vert_type);
 
 	local = {};
 
@@ -852,9 +856,13 @@ void render_draw_viewpoint(render_action_viewpoint_t* vp) {
 	int32_t w = vp->rendertarget->width;
 	int32_t h = vp->rendertarget->height;
 
-	// Use the render target's depth buffer if it has one
-	tex_t      depth_surface = vp->rendertarget->depth_buffer;
-	skr_tex_t* depth_tex     = depth_surface ? &depth_surface->gpu_tex : nullptr;
+	// Determine if this is a depth-only render target (e.g., shadow map)
+	bool depth_only = (vp->rendertarget->type & tex_type_depth) || (vp->rendertarget->type & tex_type_depthtarget);
+
+	// For depth-only targets, the rendertarget IS the depth buffer
+	// For color targets, use the render target's depth buffer if it has one
+	skr_tex_t* color_tex = depth_only ? nullptr : &vp->rendertarget->gpu_tex;
+	skr_tex_t* depth_tex = depth_only ? &vp->rendertarget->gpu_tex : (vp->rendertarget->depth_buffer ? &vp->rendertarget->depth_buffer->gpu_tex : nullptr);
 
 	// Set up viewport
 	skr_rect_t  viewport = { 0, 0, (float)w, (float)h };
@@ -874,12 +882,12 @@ void render_draw_viewpoint(render_action_viewpoint_t* vp) {
 
 	// Determine clear flags
 	skr_clear_ clear_flags = skr_clear_none;
-	if (vp->clear & render_clear_color) clear_flags = (skr_clear_)(clear_flags | skr_clear_color);
+	if (!depth_only && (vp->clear & render_clear_color)) clear_flags = (skr_clear_)(clear_flags | skr_clear_color);
 	if (vp->clear & render_clear_depth) clear_flags = (skr_clear_)(clear_flags | skr_clear_depth | skr_clear_stencil);
 
 	// Begin render pass
 	skr_vec4_t clear_color = { local.clear_col.r, local.clear_col.g, local.clear_col.b, local.clear_col.a };
-	skr_renderer_begin_pass(&vp->rendertarget->gpu_tex, depth_tex, nullptr, clear_flags, clear_color, 1.0f, 0);
+	skr_renderer_begin_pass(color_tex, depth_tex, nullptr, clear_flags, clear_color, 1.0f, 0);
 	skr_renderer_set_viewport(viewport);
 	skr_renderer_set_scissor (scissor);
 
@@ -906,6 +914,7 @@ void render_action_list_execute() {
 		}
 	}
 	local.render_action_list.clear();
+	local.gpu_render_list_index = 0;
 }
 
 ///////////////////////////////////////////
@@ -1131,8 +1140,17 @@ void render_list_execute(render_list_t list, render_layer_ filter, int32_t mater
 	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
 	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
+	// Get a fresh render list from the pool
+	if (local.gpu_render_list_index >= local.gpu_render_list_pool.count) {
+		skr_render_list_t new_list = {};
+		skr_render_list_create(&new_list);
+		local.gpu_render_list_pool.add(new_list);
+	}
+	skr_render_list_t* gpu_list = &local.gpu_render_list_pool[local.gpu_render_list_index];
+	local.gpu_render_list_index++;
+
 	// Clear and populate the sk_renderer render list
-	skr_render_list_clear(&local.gpu_render_list);
+	skr_render_list_clear(gpu_list);
 
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
@@ -1154,7 +1172,7 @@ void render_list_execute(render_list_t list, render_layer_ filter, int32_t mater
 		render_transform_buffer_t inst = { transpose, item->color };
 
 		// Add to sk_renderer's render list - it handles sorting and batching
-		skr_render_list_add_indexed(&local.gpu_render_list,
+		skr_render_list_add_indexed(gpu_list,
 			&item->mesh->gpu_mesh,
 			&item_mat->gpu_mat,
 			0, item->mesh_inds, 0,
@@ -1162,7 +1180,7 @@ void render_list_execute(render_list_t list, render_layer_ filter, int32_t mater
 	}
 
 	// Draw everything via sk_renderer
-	skr_renderer_draw(&local.gpu_render_list,
+	skr_renderer_draw(gpu_list,
 		&local.global_buffer, sizeof(local.global_buffer),
 		inst_multiplier);
 
