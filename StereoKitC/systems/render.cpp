@@ -1279,8 +1279,8 @@ void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix came
 	int32_t w = to_rendertarget->width;
 	int32_t h = to_rendertarget->height;
 
-	// Create a temporary depth buffer
-	tex_t depth_surface = tex_create_rendertarget(w, h, 1, tex_get_supported_depth_format(tex_format_depthstencil, true, 1), tex_format_none);
+	// Use depth buffer if attached to the render target
+	tex_t depth_surface = to_rendertarget->depth_buffer;
 
 	// Set up viewport
 	if (viewport_pct.w == 0) viewport_pct.w = 1;
@@ -1300,11 +1300,11 @@ void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix came
 	// Determine clear flags
 	skr_clear_ clear_flags = skr_clear_none;
 	if (clear & render_clear_color) clear_flags = (skr_clear_)(clear_flags | skr_clear_color);
-	if (clear & render_clear_depth) clear_flags = (skr_clear_)(clear_flags | skr_clear_depth | skr_clear_stencil);
+	if (depth_surface && (clear & render_clear_depth)) clear_flags = (skr_clear_)(clear_flags | skr_clear_depth | skr_clear_stencil);
 
 	// Begin render pass
 	skr_vec4_t skr_clear_color = { clear_color.r, clear_color.g, clear_color.b, clear_color.a };
-	skr_renderer_begin_pass(&to_rendertarget->gpu_tex, &depth_surface->gpu_tex, nullptr, clear_flags, skr_clear_color, 1.0f, 0);
+	skr_renderer_begin_pass(&to_rendertarget->gpu_tex, depth_surface ? &depth_surface->gpu_tex : nullptr, nullptr, clear_flags, skr_clear_color, 1.0f, 0);
 	skr_renderer_set_viewport(viewport);
 	skr_renderer_set_scissor (scissor);
 
@@ -1313,9 +1313,6 @@ void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix came
 
 	// End render pass
 	skr_renderer_end_pass();
-
-	// Cleanup
-	tex_release(depth_surface);
 }
 
 } // namespace sk

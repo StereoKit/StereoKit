@@ -31,12 +31,7 @@ class DemoRenderList : ITest
 	bool clear   = false;
 	void ShowRenderListWindow()
 	{
-		// OpenGL renders upside-down to rendertargets, so this is a simple fix
-		// for our case here, we just flip the camera upside down.
-		Vec3 up = Backend.Graphics == BackendGraphics.D3D11
-			?  Vec3.Up
-			: -Vec3.Up;
-		list.DrawNow(renderTex, Matrix.LookAt(Vec3.AngleXZ(Time.Totalf * 90, 0.2f) * 2.0f, Vec3.Zero, up), Matrix.Perspective(90, 1, 0.01f, 50), Color.HSV(0.4f, 0.3f, 0.5f));
+		list.DrawNow(renderTex, Matrix.LookAt(Vec3.AngleXZ(Time.Totalf * 90, 0.2f) * 2.0f, Vec3.Zero, Vec3.Up), Matrix.Perspective(90, 1, 0.01f, 50), Color.HSV(0.4f, 0.3f, 0.5f));
 
 		UI.WindowBegin("Render Lists", ref winPose);
 		UI.Label($"Render items: {RenderList.Primary.PrevCount}");
