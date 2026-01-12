@@ -103,8 +103,7 @@ endif()
 
 if (ANDROID)
   set(ANDROID_LIBS
-    android
-    EGL)
+    android)
   if (SK_DYNAMIC_OPENXR)
     add_definitions("-DSK_DYNAMIC_OPENXR")
   endif()
@@ -130,13 +129,11 @@ elseif(EMSCRIPTEN)
 elseif (UNIX)
   set(LINUX_LIBS
     Threads::Threads
-    EGL
     gbm
     X11
     Xfixes
     fontconfig )
 
-  add_definitions("-DSKG_LINUX_EGL")
   # Add pthreads
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
@@ -519,6 +516,8 @@ if (basis_universal_ADDED)
   set(SK_SRC_BASISU
     ${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp
     ${basis_universal_SOURCE_DIR}/zstd/zstd.c)
+  # Suppress warnings for basisu
+  set_source_files_properties(${SK_SRC_BASISU} PROPERTIES COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:GNU>:-w>$<$<CXX_COMPILER_ID:Clang>:-w>$<$<CXX_COMPILER_ID:MSVC>:/W0>")
 endif()
 
 set(SK_SRC_SHADERS_H
