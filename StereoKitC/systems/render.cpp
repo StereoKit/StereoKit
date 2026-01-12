@@ -4,6 +4,9 @@
  * Copyright (c) 2024 Qualcomm Technologies, Inc.
  */
 
+// profiler.h must come first to avoid SAL macro pollution from sal.h
+#include "../libraries/profiler.h"
+
 #include "render.h"
 #include "render_.h"
 #include "world.h"
@@ -11,7 +14,6 @@
 #include "../_stereokit.h"
 #include "../device.h"
 #include "../libraries/stref.h"
-#include "../libraries/profiler.h"
 #include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "../spherical_harmonics.h"
@@ -78,6 +80,18 @@ struct render_screenshot_t {
 	tex_format_   tex_format;
 };
 
+// Pending async readback for screenshot
+struct render_pending_readback_t {
+	void               (*callback)(color32* color_buffer, int32_t width, int32_t height, void* context);
+	void*                context;
+	int32_t              width;
+	int32_t              height;
+	tex_t                color_surface;  // MSAA color target (kept alive until readback completes)
+	tex_t                depth_surface;  // MSAA depth target (kept alive until readback completes)
+	tex_t                resolve_tex;    // Resolved texture being read back
+	skr_tex_readback_t   readback;
+};
+
 struct render_viewpoint_t {
 	tex_t         rendertarget;
 	int32_t       rendertarget_index;
@@ -131,8 +145,7 @@ struct render_action_t {
 struct render_state_t {
 	bool32_t                initialized;
 	skr_vert_type_t         default_vert_type;
-	array_t<skr_render_list_t> gpu_render_list_pool;
-	int32_t                 gpu_render_list_index;
+	skr_render_list_t       gpu_render_list;
 
 	material_buffer_t       shader_globals;
 	skr_buffer_t            shader_blit;
@@ -168,8 +181,9 @@ struct render_state_t {
 	tex_t                   global_textures_app[16];
 	material_buffer_t       global_buffers     [16];
 
-	array_t<render_screenshot_t> screenshot_list;
-	array_t<render_action_t>     render_action_list;
+	array_t<render_screenshot_t>       screenshot_list;
+	array_t<render_pending_readback_t> pending_readbacks;
+	array_t<render_action_t>           render_action_list;
 
 	array_t<render_list_t>  list_stack;
 	render_list_t           list_active;
@@ -219,8 +233,7 @@ bool render_init() {
 	skr_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skr_buffer_type_constant, skr_use_dynamic, &local.shader_blit);
 	skr_buffer_set_name(&local.shader_blit, "sk/render/blit_buffer");
 
-	// gpu_render_list_pool is populated on-demand in render_list_execute
-	local.gpu_render_list_index = 0;
+	skr_render_list_create(&local.gpu_render_list);
 
 	// Setup a default camera
 	render_set_clip         (local.clip_planes.x, local.clip_planes.y);
@@ -244,6 +257,7 @@ void render_shutdown() {
 	render_list_release(local.list_primary);
 	local.list_stack        .free();
 	local.screenshot_list   .free();
+	local.pending_readbacks .free();
 	local.render_action_list.free();
 
 	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
@@ -260,11 +274,9 @@ void render_shutdown() {
 	}
 	material_buffer_release(local.shader_globals);
 
-	skr_buffer_destroy    (&local.shader_blit);
-	for (int32_t i = 0; i < local.gpu_render_list_pool.count; i++)
-		skr_render_list_destroy(&local.gpu_render_list_pool[i]);
-	local.gpu_render_list_pool.free();
-	skr_vert_type_destroy (&local.default_vert_type);
+	skr_buffer_destroy     (&local.shader_blit);
+	skr_render_list_destroy(&local.gpu_render_list);
+	skr_vert_type_destroy  (&local.default_vert_type);
 
 	local = {};
 
@@ -786,18 +798,50 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 
 ///////////////////////////////////////////
 
+// Check and complete any pending async readbacks from previous frames
+void render_check_pending_readbacks() {
+	for (int32_t i = local.pending_readbacks.count - 1; i >= 0; i--) {
+		render_pending_readback_t* pending = &local.pending_readbacks[i];
+
+		// Check if readback is complete
+		if (!skr_future_check(&pending->readback.future)) {
+			continue; // Not ready yet
+		}
+
+		// Readback is complete - copy data and invoke callback
+		size_t   size   = sizeof(color32) * pending->width * pending->height;
+		color32* buffer = (color32*)sk_malloc(size);
+		size_t copy_size = (pending->readback.size < size) ? pending->readback.size : size;
+		memcpy(buffer, pending->readback.data, copy_size);
+
+		// Invoke user callback
+		pending->callback(buffer, pending->width, pending->height, pending->context);
+		sk_free(buffer);
+
+		// Cleanup
+		skr_tex_readback_destroy(&pending->readback);
+		tex_release(pending->resolve_tex);
+		tex_release(pending->depth_surface);
+		tex_release(pending->color_surface);
+
+		// Remove from list
+		local.pending_readbacks.remove(i);
+	}
+}
+
+///////////////////////////////////////////
+
 // The screenshots are produced in FIFO order, meaning the
 // order of screenshot requests by users is preserved.
 void render_check_screenshots() {
+	// First, check if any previous readbacks have completed
+	render_check_pending_readbacks();
+
 	if (local.screenshot_list.count == 0) return;
 
 	for (int32_t i = 0; i < local.screenshot_list.count; i++) {
 		int32_t  w = local.screenshot_list[i].width;
 		int32_t  h = local.screenshot_list[i].height;
-
-		// Create the screenshot surface
-		size_t   size   = sizeof(color32) * w * h;
-		color32 *buffer = (color32*)sk_malloc(size);
 
 		// Create render targets for screenshot
 		tex_t color_surface = tex_create_rendertarget(w, h, 8, local.screenshot_list[i].tex_format, tex_format_none);
@@ -837,16 +881,25 @@ void render_check_screenshots() {
 		// End render pass
 		skr_renderer_end_pass();
 
-		// Read back the resolved texture
-		tex_get_data(resolve_tex, buffer, size);
+		// Initiate async readback (will complete in a future frame after GPU finishes)
+		render_pending_readback_t pending = {};
+		pending.callback      = local.screenshot_list[i].render_on_screenshot_callback;
+		pending.context       = local.screenshot_list[i].context;
+		pending.width         = w;
+		pending.height        = h;
+		pending.color_surface = color_surface;
+		pending.depth_surface = depth_surface;
+		pending.resolve_tex   = resolve_tex;
 
-		tex_release(resolve_tex);
-		tex_release(depth_surface);
-		tex_release(color_surface);
-
-		// Notify that the color data is ready!
-		local.screenshot_list[i].render_on_screenshot_callback(buffer, w, h, local.screenshot_list[i].context);
-		sk_free(buffer);
+		if (skr_tex_readback(&resolve_tex->gpu_tex, 0, 0, &pending.readback) == skr_err_success) {
+			local.pending_readbacks.add(pending);
+		} else {
+			// Readback failed - clean up and log error
+			log_warn("Screenshot readback failed");
+			tex_release(resolve_tex);
+			tex_release(depth_surface);
+			tex_release(color_surface);
+		}
 	}
 	local.screenshot_list.clear();
 }
@@ -915,7 +968,6 @@ void render_action_list_execute() {
 		}
 	}
 	local.render_action_list.clear();
-	local.gpu_render_list_index = 0;
 }
 
 ///////////////////////////////////////////
@@ -1141,16 +1193,8 @@ void render_list_execute(render_list_t list, render_layer_ filter, int32_t mater
 	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
 	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
 
-	// Get a fresh render list from the pool
-	if (local.gpu_render_list_index >= local.gpu_render_list_pool.count) {
-		skr_render_list_t new_list = {};
-		skr_render_list_create(&new_list);
-		local.gpu_render_list_pool.add(new_list);
-	}
-	skr_render_list_t* gpu_list = &local.gpu_render_list_pool[local.gpu_render_list_index];
-	local.gpu_render_list_index++;
-
 	// Clear and populate the sk_renderer render list
+	skr_render_list_t* gpu_list = &local.gpu_render_list;
 	skr_render_list_clear(gpu_list);
 
 	for (int32_t i = 0; i < list->queue.count; i++) {

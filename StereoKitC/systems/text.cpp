@@ -1,3 +1,6 @@
+// profiler.h must come first to avoid SAL macro pollution from sal.h
+#include "../libraries/profiler.h"
+
 #include "text.h"
 #include "../stereokit.h"
 #include "../asset_types/font.h"
@@ -8,7 +11,6 @@
 #include "../sk_memory.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
-#include "../libraries/profiler.h"
 
 #include <ctype.h>
 #include <stdio.h>

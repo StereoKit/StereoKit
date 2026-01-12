@@ -1198,7 +1198,7 @@ spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 	if (cubemap_texture->width != cubemap_texture->height || skr_tex_get_array_count(tex) != 6) {
 		log_warn("Invalid texture size for calculating spherical harmonics. Must be an equirect image, or have 6 images all same width and height.");
 		return {};
-	} else if (!(cubemap_texture->format == skr_tex_fmt_rgba32_srgb || cubemap_texture->format == skr_tex_fmt_rgba32_linear || cubemap_texture->format == skr_tex_fmt_rgba64f || cubemap_texture->format == skr_tex_fmt_rgba128 || cubemap_texture->format == tex_format_rg11b10)) {
+	} else if (!(cubemap_texture->format == tex_format_rgba32_srgb || cubemap_texture->format == tex_format_rgba32_linear || cubemap_texture->format == tex_format_rgba64f || cubemap_texture->format == tex_format_rgba128 || cubemap_texture->format == tex_format_rg11b10)) {
 		log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32, rg11b10, rgba64f or rgba128.");
 		return {};
 	} else {
@@ -1486,6 +1486,7 @@ void tex_get_data(tex_t texture, void* out_data, size_t out_data_size, int32_t m
 		// Use async readback API with blocking wait
 		skr_tex_readback_t readback = {};
 		if (skr_tex_readback(&job_data->texture->gpu_tex, job_data->mip_level, 0, &readback) == skr_err_success) {
+			skr_cmd_flush();  // Force-submit the current batch so the readback commands are executed
 			skr_future_wait(&readback.future);
 			size_t copy_size = (readback.size < job_data->out_data_size) ? readback.size : job_data->out_data_size;
 			memcpy(job_data->out_data, readback.data, copy_size);
