@@ -74,7 +74,7 @@ void        assets_on_load_remove_all (asset_header_t *asset);
 
 // This function will block execution until `asset_job` is finished, but will
 // ensure it is run on the GPU thread.
-bool32_t    assets_execute_gpu        (bool32_t (*asset_job)(void *data), void *data);
+bool32_t    assets_execute_blocking   (bool32_t (*asset_job)(void *data), void *data);
 void        assets_add_task           (asset_task_t task);
 void        assets_task_set_complexity(asset_task_t *task, int32_t priority);
 void        assets_block_until        (asset_header_t *asset, asset_state_ state);

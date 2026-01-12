@@ -78,7 +78,7 @@ void mesh_set_verts(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, b
 	};
 	vert_upload_job_t job_data = {mesh, vertices, vertex_count, calculate_bounds};
 
-	assets_execute_gpu([](void *data) {
+	assets_execute_blocking([](void *data) {
 		vert_upload_job_t *job_data = (vert_upload_job_t *)data;
 		_mesh_set_verts(job_data->mesh, job_data->vertices, job_data->vertex_count, job_data->calculate_bounds, true);
 		
@@ -146,7 +146,7 @@ void mesh_set_inds(mesh_t mesh, const vind_t *indices,  int32_t index_count) {
 	};
 	ind_upload_job_t job_data = {mesh, indices, index_count};
 
-	assets_execute_gpu([](void *data) {
+	assets_execute_blocking([](void *data) {
 		ind_upload_job_t *job_data = (ind_upload_job_t *)data;
 		_mesh_set_inds(job_data->mesh, job_data->indices, job_data->index_count);
 		
@@ -167,7 +167,7 @@ void mesh_set_data(mesh_t mesh, const vert_t *vertices, int32_t vertex_count, co
 	};
 	mesh_upload_job_t job_data = {mesh, vertices, vertex_count, indices, index_count, calculate_bounds};
 
-	assets_execute_gpu([](void *data) {
+	assets_execute_blocking([](void *data) {
 		mesh_upload_job_t *job_data = (mesh_upload_job_t *)data;
 		if (job_data->vertex_count > 0) _mesh_set_verts(job_data->mesh, job_data->vertices, job_data->vertex_count, job_data->calculate_bounds, true);
 		if (job_data->index_count  > 0) _mesh_set_inds (job_data->mesh, job_data->indices,  job_data->index_count);

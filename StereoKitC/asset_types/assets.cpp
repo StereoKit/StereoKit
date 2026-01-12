@@ -57,6 +57,8 @@ array_t<asset_header_t *>      assets_multithread_destroy = {};
 ft_mutex_t                     assets_multithread_destroy_lock = {};
 ft_mutex_t                     assets_job_lock = {};
 array_t<asset_job_t *>         assets_gpu_jobs = {};
+array_t<asset_job_t *>         assets_blocking_jobs = {};
+ft_condition_t                 assets_blocking_available = {};
 ft_mutex_t                     assets_load_event_lock = {};
 array_t<asset_load_callback_t> assets_load_callbacks = {};
 array_t<asset_header_t *>      assets_load_events = {};
@@ -73,9 +75,10 @@ int32_t                asset_tasks_priority  = INT_MAX;
 ft_condition_t         asset_tasks_available = {};
 array_t<asset_task_t*> asset_active_tasks    = {};
 
-int32_t         asset_thread          (void *);
-void            asset_step_task       ();
-asset_header_t* assets_allocate_no_add(asset_type_ type, const char** out_type_str);
+int32_t         asset_thread             (void *);
+void            asset_step_task          ();
+void            asset_step_blocking_job  ();
+asset_header_t* assets_allocate_no_add   (asset_type_ type, const char** out_type_str);
 
 ///////////////////////////////////////////
 
@@ -420,6 +423,7 @@ bool assets_init() {
 	asset_thread_task_mtx           = ft_mutex_create();
 	assets_load_event_lock          = ft_mutex_create();
 	asset_tasks_available           = ft_condition_create();
+	assets_blocking_available       = ft_condition_create();
 
 	texture_compression_init();
 
@@ -514,11 +518,13 @@ void assets_shutdown() {
 
 	assets_multithread_destroy.free();
 	assets_gpu_jobs           .free();
+	assets_blocking_jobs      .free();
 	ft_mutex_destroy(&assets_multithread_destroy_lock);
 	ft_mutex_destroy(&assets_job_lock);
 	ft_mutex_destroy(&assets_load_event_lock);
 	ft_mutex_destroy(&assets_lock);
 	ft_condition_destroy(&asset_tasks_available);
+	ft_condition_destroy(&assets_blocking_available);
 
 	assets_load_call_list.free();
 	assets_load_callbacks.free();
@@ -532,8 +538,10 @@ void assets_shutdown() {
 
 ///////////////////////////////////////////
 
-bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
-	if (ft_id_matches(sk_main_thread())) {
+bool32_t assets_execute_blocking(bool32_t(*asset_job)(void *data), void *data) {
+	// If we're on any GPU-initialized thread (main thread, asset threads),
+	// we can run directly. Otherwise, queue to an asset thread and wait.
+	if (skr_thread_is_initialized()) {
 		return asset_job(data);
 	} else {
 		asset_job_t *job = sk_malloc_t(asset_job_t, 1);
@@ -542,21 +550,15 @@ bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
 		job->data      = data;
 
 		ft_mutex_lock(assets_job_lock);
-		assets_gpu_jobs.add(job);
+		assets_blocking_jobs.add(job);
 		ft_mutex_unlock(assets_job_lock);
 
-		// Block until the GPU thread has had a chance to take care of the job.
-		uint64_t start      = stm_now();
-		bool     has_warned = false;
+		// Wake up asset threads to process the job
+		ft_condition_signal(asset_tasks_available);
+
+		// Block until an asset thread has processed the job
 		while (job->finished == false) {
 			ft_yield();
-
-			// if the app hasn't started stepping yet and this takes too long,
-			// the application may be off the gpu thread unintentionally.
-			if (sk_has_stepped() == false && has_warned == false && stm_ms(stm_since(start)) > 4000) {
-				log_warn("A GPU asset is blocking its thread until the main thread is available, has async code accidentally shifted execution to a different thread since SK.Initialize?");
-				has_warned = true;
-			}
 		}
 
 		bool32_t result = job->success;
@@ -820,6 +822,27 @@ void asset_step_task() {
 
 ///////////////////////////////////////////
 
+void asset_step_blocking_job() {
+	// Process all blocking jobs - these are synchronous waits so prioritize them
+	while (true) {
+		// Acquire a blocking job if one is available
+		ft_mutex_lock(assets_job_lock);
+		if (assets_blocking_jobs.count <= 0) {
+			ft_mutex_unlock(assets_job_lock);
+			return;
+		}
+		asset_job_t *job = assets_blocking_jobs[0];
+		assets_blocking_jobs.remove(0);
+		ft_mutex_unlock(assets_job_lock);
+
+		// Process the job outside the lock
+		job->success  = job->asset_job(job->data);
+		job->finished = true;
+	}
+}
+
+///////////////////////////////////////////
+
 int32_t asset_thread(void *thread_inst_obj) {
 	asset_thread_t* thread = (asset_thread_t*)thread_inst_obj;
 	thread->id      = ft_id_current();
@@ -837,10 +860,11 @@ int32_t asset_thread(void *thread_inst_obj) {
 
 	ft_mutex_t wait_mtx = ft_mutex_create();
 
-	while (asset_thread_enabled || asset_thread_tasks.count>0) {
+	while (asset_thread_enabled || asset_thread_tasks.count>0 || assets_blocking_jobs.count>0) {
+		asset_step_blocking_job();
 		asset_step_task();
 
-		if (asset_thread_enabled && asset_thread_tasks.count == 0)
+		if (asset_thread_enabled && asset_thread_tasks.count == 0 && assets_blocking_jobs.count == 0)
 			ft_condition_wait(asset_tasks_available, wait_mtx);
 	}
 

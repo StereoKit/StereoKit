@@ -1048,12 +1048,8 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		// Determine mip count for creation
 		int32_t create_mip_count = (texture->type & tex_type_mips) ? 0 : mip_count; // 0 = auto-calculate
 
-		// Destroy old texture if needed
-		skr_tex_t old_tex = texture->gpu_tex;
-		if (skr_tex_is_valid(&old_tex))
-			skr_tex_destroy(&old_tex);
-
-		// Create new texture with optional initial data
+		// Create new texture into a temporary first
+		skr_tex_t new_tex;
 		skr_err_ err = skr_tex_create(
 			format,
 			flags,
@@ -1062,10 +1058,17 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 			multisample,
 			create_mip_count,
 			(flat_data != nullptr) ? &tex_data : nullptr,
-			&texture->gpu_tex);
+			&new_tex);
 
 		if (err != skr_err_success) {
 			log_err("Failed to create texture");
+		} else {
+			// Atomic swap: save old, put new in place, then destroy old
+			// This ensures gpu_tex always has valid handles for the render thread
+			skr_tex_t old_tex = texture->gpu_tex;
+			texture->gpu_tex = new_tex;
+			if (skr_tex_is_valid(&old_tex))
+				skr_tex_destroy(&old_tex);
 		}
 
 		// Generate mipmaps if texture has mips flag but only one mip level of data was provided
@@ -1118,9 +1121,7 @@ void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** arra
 void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample, spherical_harmonics_t * out_sh_lighting_info) {
 	profiler_zone();
 
-	_tex_set_color_arr(texture, width, height, array_data, array_count, mip_count, out_sh_lighting_info, multisample);
-
-	/*struct tex_upload_job_t {
+	struct tex_upload_job_t {
 		tex_t                  texture;
 		int32_t                width;
 		int32_t                height;
@@ -1132,11 +1133,11 @@ void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void *
 	};
 	tex_upload_job_t job_data = {texture, width, height, array_data, array_count, mip_count, out_sh_lighting_info, multisample};
 
-	assets_execute_gpu([](void *data) {
+	assets_execute_blocking([](void *data) {
 		tex_upload_job_t *job_data = (tex_upload_job_t *)data;
 		_tex_set_color_arr(job_data->texture, job_data->width, job_data->height, job_data->array_data, job_data->array_count, job_data->mip_count, job_data->sh_lighting_info, job_data->multisample);
 		return (bool32_t)true;
-	}, &job_data);*/
+	}, &job_data);
 }
 
 ///////////////////////////////////////////
@@ -1480,7 +1481,7 @@ void tex_get_data(tex_t texture, void* out_data, size_t out_data_size, int32_t m
 	};
 	tex_data_job_t job_data = { texture, out_data, out_data_size, mip_level };
 
-	bool32_t result = assets_execute_gpu([](void *data) {
+	bool32_t result = assets_execute_blocking([](void *data) {
 		tex_data_job_t *job_data = (tex_data_job_t *)data;
 
 		// Use async readback API with blocking wait
