@@ -88,68 +88,97 @@ void         font_update_cache  (font_t font);
 
 int32_t      font_source_add      (const char *filename);
 int32_t      font_source_add_data (const char *name, const void *data, size_t data_size);
-void         font_source_load_data(font_source_t* font);
+bool         font_source_load_data(font_source_t* font);
 void         font_source_release  (int32_t id);
+
+bool font_is_valid_extension(const char *filename) {
+	const char *ext = filename;
+	const char *last_dot = nullptr;
+	while (*ext) {
+		if (*ext == '.') last_dot = ext;
+		ext++;
+	}
+	if (last_dot == nullptr) return false;
+
+	// TrueType/OpenType extensions that stb_truetype supports
+	return string_eq_nocase(last_dot, ".ttf")
+	    || string_eq_nocase(last_dot, ".otf")
+	    || string_eq_nocase(last_dot, ".ttc");
+}
+
+///////////////////////////////////////////
+
+int32_t font_source_add_internal(const char *name, id_hash_t hash, void *file_data) {
+	int32_t id = font_sources.index_where(&font_source_t::name_hash, hash);
+
+	// Already loaded and valid
+	if (id != -1) {
+		font_sources[id].references += 1;
+		sk_free(file_data);
+		return id;
+	}
+
+	// Add to list and initialize
+	font_source_t new_file = {};
+	new_file.name_hash  = hash;
+	new_file.name       = string_copy(name);
+	new_file.file       = file_data;
+	new_file.references = 1;
+	id = font_sources.add(new_file);
+
+	if (!font_source_load_data(&font_sources[id])) {
+		font_source_release(id);
+		return -1;
+	}
+	return id;
+}
 
 ///////////////////////////////////////////
 
 int32_t font_source_add(const char *filename) {
-	id_hash_t hash = hash_string(filename);
-	int32_t   id   = font_sources.index_where(&font_source_t::name_hash, hash);
+	// Quick check: skip non-TrueType/OpenType files by extension
+	if (!font_is_valid_extension(filename))
+		return -1;
 
-	if (id == -1) {
-		font_source_t new_file = {};
-		new_file.name_hash = hash;
-		new_file.name      = string_copy(filename);
-		id = font_sources.add(new_file);
-	}
-	font_source_t* font = &font_sources[id];
-	font->references += 1;
-
-	if (font->references == 1) {
-		size_t length;
-		if (platform_read_file(filename, (void **)&font->file, &length)) {
-			font_source_load_data(font);
-		} else {
-			log_warnf("Font file failed to load: %s", filename);
-		}
+	// Load the file
+	void*  file_data = nullptr;
+	size_t length;
+	if (!platform_read_file(filename, &file_data, &length)) {
+		log_warnf("Font file failed to load: %s", filename);
+		return -1;
 	}
 
-	return font->file == nullptr
-		? -1
-		: id;
+	return font_source_add_internal(filename, hash_string(filename), file_data);
 }
 
 ///////////////////////////////////////////
 
 int32_t font_source_add_data(const char *name, const void *data, size_t data_size) {
-	id_hash_t hash = hash_string(name);
-	int32_t   id   = font_sources.index_where(&font_source_t::name_hash, hash);
+	void *file_data = sk_malloc(data_size);
+	memcpy(file_data, data, data_size);
 
-	if (id == -1) {
-		font_source_t new_file = {};
-		new_file.name_hash = hash;
-		new_file.name      = string_copy(name);
-		id = font_sources.add(new_file);
-	}
-	font_source_t* font = &font_sources[id];
-	font->references += 1;
-
-	if (font->references == 1) {
-		font->file = sk_malloc(data_size);
-		memcpy(font->file, data, data_size);
-		font_source_load_data(font);
-	}
-
-	return font->file == nullptr
-		? -1
-		: id;
+	return font_source_add_internal(name, hash_string(name), file_data);
 }
 
 ///////////////////////////////////////////
 
-void font_source_load_data(font_source_t* font) {
-	stbtt_InitFont(&font->info, (const unsigned char *)font->file, stbtt_GetFontOffsetForIndex((const unsigned char *)font->file,0));
+bool font_source_load_data(font_source_t* font) {
+	// Check if this is a valid TrueType/OpenType font before initializing
+	int font_offset = stbtt_GetFontOffsetForIndex((const unsigned char *)font->file, 0);
+	if (font_offset == -1) {
+		return false;
+	}
+
+	if (!stbtt_InitFont(&font->info, (const unsigned char *)font->file, font_offset)) {
+		return false;
+	}
+
+	// Check if cmap format is supported by stb_truetype (0, 4, 6, 12, 13)
+	// Formats 2, 10, 14, etc. will cause assertions when calling glyph functions
+	uint8_t      *data       = (uint8_t*)font->file;
+	uint16_t      cmap_fmt   = (data[font->info.index_map] << 8) | data[font->info.index_map + 1];
+	bool          cmap_ok    = cmap_fmt == 0 || cmap_fmt == 4 || cmap_fmt == 6 || cmap_fmt == 12 || cmap_fmt == 13;
+
 	font->scale = stbtt_ScaleForPixelHeight(&font->info, (float)font_resolution);
 
 	int32_t ascender, descender, line_gap;
@@ -168,8 +197,14 @@ void font_source_load_data(font_source_t* font) {
 	font->render_ascender  = ceilf(y1      * font->scale);
 	font->render_descender = ceilf(abs(y0) * font->scale);
 
-	stbtt_GetCodepointBitmapBox(&font->info, 'T', font->scale, font->scale, &x0, &y0, &x1, &y1);
-	font->cap_height = (float)(y1-y0);
+	// Get cap height from 'T' if cmap is supported, otherwise use ascender
+	if (cmap_ok && stbtt_FindGlyphIndex(&font->info, 'T') != 0) {
+		stbtt_GetCodepointBitmapBox(&font->info, 'T', font->scale, font->scale, &x0, &y0, &x1, &y1);
+		font->cap_height = (float)(y1-y0);
+	} else {
+		font->cap_height = font->ascender;
+	}
+	return true;
 }
 
 ///////////////////////////////////////////
