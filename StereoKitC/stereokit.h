@@ -253,65 +253,77 @@ typedef enum tex_format_ {
 	tex_format_r8 = 11,
 	/*A single channel of data, with 16 bits per-pixel! This
 	  is a good format for height maps, since it stores a fair bit of
-	  information in it. Values in the shader are always 0.0-1.0.
-	  TODO: remove during major version update, prefer s, f, or u
-	  postfixed versions of this format, this item is the same as
-	  r16u.*/
-	tex_format_r16 = 12,
+	  information in it. The "un" postfix indicates "unsigned normalized",
+	  where the raw color data is stored as an unsigned 16 bit integer,
+	  which is then normalized into the 0, 1 floating point range on the
+	  GPU.*/
+	tex_format_r16un = 12,
 	/*A single channel of data, with 16 bits per-pixel! This
 	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The u postfix indicates that the raw color data
-	  is stored as an unsigned 16 bit integer, which is then normalized
-	  into the 0, 1 floating point range on the GPU.*/
-	tex_format_r16u = tex_format_r16,
+	  information in it. The "sn" postfix indicates "signed normalized",
+	  where the raw color data is stored as a signed 16 bit integer, which
+	  is then normalized into the -1, +1 floating point range on the GPU.*/
+	tex_format_r16sn = 13,
 	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The s postfix indicates that the raw color
-	  data is stored as a signed 16 bit integer, which is then
-	  normalized into the -1, +1 floating point range on the GPU.*/
-	tex_format_r16s = 13,
+	  is a good format for index or id data, since it stores values as
+	  raw unsigned integers. The "ui" postfix indicates "unsigned integer",
+	  where the data is stored and accessed as an unsigned 16 bit integer
+	  without any normalization.*/
+	tex_format_r16ui = 14,
+	/*A single channel of data, with 16 bits per-pixel! This
+	  is a good format for index or id data, since it stores values as
+	  raw signed integers. The "si" postfix indicates "signed integer",
+	  where the data is stored and accessed as a signed 16 bit integer
+	  without any normalization.*/
+	tex_format_r16si = 15,
 	/*A single channel of data, with 16 bits per-pixel! This
 	  is a good format for height maps, since it stores a fair bit of
 	  information in it. The f postfix indicates that the raw color
 	  data is stored as 16 bit floats, which may be tricky to work with
 	  in most languages.*/
-	tex_format_r16f = 14,
+	tex_format_r16f = 16,
+	/*Alias for R16un for backwards compatibility.*/
+	tex_format_r16  = tex_format_r16un,
+	/*Alias for R16un for backwards compatibility.*/
+	tex_format_r16u = tex_format_r16un,
+	/*Alias for R16sn for backwards compatibility.*/
+	tex_format_r16s = tex_format_r16sn,
 	/*A single channel of data, with 32 bits per-pixel! This
 	  basically treats each pixel as a generic float, so you can do all
 	  sorts of strange and interesting things with this.*/
-	tex_format_r32f = 15,
+	tex_format_r32f = 17,
 	/*Alias for tex_format_r32f for backwards compatibility.*/
 	tex_format_r32 = tex_format_r32f,
 	/*A depth data format, 24 bits for depth data, and 8 bits
 	  to store stencil information! Stencil data can be used for things
 	  like clipping effects, deferred rendering, or shadow effects.*/
-	tex_format_depth24s8 = 16,
+	tex_format_depth24s8 = 18,
 	/*Alias for tex_format_depth24s8 for backwards compatibility.*/
 	tex_format_depthstencil = tex_format_depth24s8,
 	/*32 bits of data per depth value! This is pretty detailed,
 	  and is excellent for experiences that have a very far view
 	  distance.*/
-	tex_format_depth32 = 17,
+	tex_format_depth32 = 19,
 	/*16 bits of depth is not a lot, but it can be enough if
 	  your far clipping plane is pretty close. If you're seeing lots of
 	  flickering where two objects overlap, you either need to bring
 	  your far clip in, or switch to 32/24 bit depth.*/
-	tex_format_depth16 = 18,
+	tex_format_depth16 = 20,
 	/*A double channel of data that supports 8 bits for the red
 	  channel and 8 bits for the green channel.*/
-	tex_format_r8g8 = 19,
+	tex_format_r8g8 = 21,
 	/*A shared exponent format with 9 bits each for R, G, B, and
 	  5 bits for the shared exponent. This is a compact HDR format.*/
-	tex_format_rgb9e5 = 20,
+	tex_format_rgb9e5 = 22,
 	/*A depth data format with 32 bits for depth and 8 bits for
 	  stencil. The extra stencil bits provide more precision than
 	  depth24s8 while still offering stencil support.*/
-	tex_format_depth32s8 = 21,
+	tex_format_depth32s8,
 	/*A depth data format with 16 bits for depth and 8 bits for
 	  stencil. This is a more compact depth-stencil format.*/
-	tex_format_depth16s8 = 22,
+	tex_format_depth16s8,
 
-	tex_format_bc1_rgb_srgb = 23,
+	tex_format_bc1_rgb_srgb,
 	tex_format_bc1_rgb,
 	tex_format_bc3_rgba_srgb,
 	tex_format_bc3_rgba,

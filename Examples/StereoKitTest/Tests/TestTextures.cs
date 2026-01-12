@@ -212,6 +212,7 @@ internal class TestTextures : ITest
 			tex = new Tex(TexType.Image, format),
 			mat = Material.Default.Copy()
 		};
+		result.tex.Id = $"test/tex/{format}{w}x{h}";
 
 		int    size  = Marshal.SizeOf<T>();
 		IntPtr ptr   = Marshal.AllocHGlobal(size * w * h);
