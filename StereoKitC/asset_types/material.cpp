@@ -356,8 +356,10 @@ void material_set_shader(material_t material, shader_t shader) {
 	// Copy matching params to new shader
 	if (old_params) {
 		for (int32_t i = 0; i < old_param_count; i++) {
-			// Try to set the param - sk_renderer will ignore if name doesn't exist
-			skr_material_set_param(&material->gpu_mat, old_params[i].name, old_params[i].type, old_params[i].count, old_params[i].data);
+			// Only set the param if it exists in the new shader
+			if (sksc_shader_meta_get_var_index(material->shader->gpu_shader.meta, old_params[i].name) != -1) {
+				skr_material_set_param(&material->gpu_mat, old_params[i].name, old_params[i].type, old_params[i].count, old_params[i].data);
+			}
 			sk_free(old_params[i].data);
 		}
 		sk_free(old_params);
