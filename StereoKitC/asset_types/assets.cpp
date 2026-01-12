@@ -75,10 +75,11 @@ int32_t                asset_tasks_priority  = INT_MAX;
 ft_condition_t         asset_tasks_available = {};
 array_t<asset_task_t*> asset_active_tasks    = {};
 
-int32_t         asset_thread             (void *);
-void            asset_step_task          ();
-void            asset_step_blocking_job  ();
-asset_header_t* assets_allocate_no_add   (asset_type_ type, const char** out_type_str);
+int32_t         asset_thread                    (void *);
+void            asset_step_task                 ();
+void            asset_step_blocking_job         ();
+int32_t         assets_calculate_current_priority();
+asset_header_t* assets_allocate_no_add          (asset_type_ type, const char** out_type_str);
 
 ///////////////////////////////////////////
 
@@ -667,6 +668,7 @@ void assets_add_task(asset_task_t src_task) {
 	if (idx < 0) idx = ~idx;
 	asset_thread_tasks.insert(idx, task);
 	asset_tasks_processing += 1;
+	asset_tasks_priority    = assets_calculate_current_priority();
 	ft_mutex_unlock(asset_thread_task_mtx);
 
 	if (asset_thread_tasks.count > 1) ft_condition_broadcast(asset_tasks_available);

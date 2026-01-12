@@ -1043,7 +1043,12 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		skr_tex_flags_    flags   = tex_type_to_skr_flags(texture->type);
 		skr_tex_fmt_      format  = (skr_tex_fmt_)texture->format;
 		skr_tex_sampler_t sampler = tex_get_skr_sampler(texture);
-		skr_vec3i_t       size    = { width, height, 1 };
+
+		// For array textures (non-cubemap with multiple layers), set the array flag
+		// Cubemaps are handled separately by skr_tex_flags_cubemap
+		bool is_array = array_count > 1 && !(texture->type & tex_type_cubemap);
+		if (is_array) flags = (skr_tex_flags_)(flags | skr_tex_flags_array);
+		skr_vec3i_t size = { width, height, is_array ? array_count : 1 };
 
 		// Determine mip count for creation
 		int32_t create_mip_count = (texture->type & tex_type_mips) ? 0 : mip_count; // 0 = auto-calculate
