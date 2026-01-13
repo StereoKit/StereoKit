@@ -863,7 +863,7 @@ tex_t tex_get_zbuffer(tex_t texture) {
 
 ///////////////////////////////////////////
 
-void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample, int32_t framebuffer_multisample, bool32_t owned) {
+void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample, bool32_t owned) {
 	texture->owned = owned;
 
 	if (texture->owned && skr_tex_is_valid(&texture->gpu_tex))

@@ -464,8 +464,8 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 	h = h * quilt_height;
 
 	// Create the new swapchains for the current size
-	if (!openxr_create_swapchain(&display->swapchain_color, display->type, true,  array_count, xr_preferred_color_format, w, h, 1)) return false;
-	if (!openxr_create_swapchain(&display->swapchain_depth, display->type, false, array_count, xr_preferred_depth_format, w, h, 1)) return false;
+	if (!openxr_create_swapchain(&display->swapchain_color, display->type, true,  array_count, xr_preferred_color_format, w, h, 1, s)) return false;
+	if (!openxr_create_swapchain(&display->swapchain_depth, display->type, false, array_count, xr_preferred_depth_format, w, h, 1, s)) return false;
 
 	const char* strategy_name = "";
 	switch (strategy) {
@@ -508,8 +508,8 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 		// Update our textures with the new swapchain display surfaces (VkImage for Vulkan)
 		void *native_surface_col   = (void*)sc_color->backbuffers[back].image;
 		void *native_surface_depth = (void*)sc_depth->backbuffers[back].image;
-		tex_set_surface(sc_color->textures[back], native_surface_col,   tex_type_rendertarget, xr_preferred_color_format, sc_color->width, sc_color->height, array_count, 1, xr_draw_to_swapchain ? s : 1);
-		tex_set_surface(sc_depth->textures[back], native_surface_depth, tex_type_depth,        xr_preferred_depth_format, sc_depth->width, sc_depth->height, array_count, 1, xr_draw_to_swapchain ? s : 1);
+		tex_set_surface(sc_color->textures[back], native_surface_col,   tex_type_rendertarget, xr_preferred_color_format, sc_color->width, sc_color->height, array_count, 1);
+		tex_set_surface(sc_depth->textures[back], native_surface_depth, tex_type_depth,        xr_preferred_depth_format, sc_depth->width, sc_depth->height, array_count, 1);
 		tex_set_zbuffer(sc_color->textures[back], sc_depth->textures[back]);
 	}
 
@@ -866,18 +866,9 @@ bool openxr_render_frame() {
 	}
 
 	// Release the swapchains for all active displays
+	// Note: MSAA resolve and depth buffer discard are handled by sk_renderer
+	// through Vulkan render pass operations (in-tile resolve for MSAA).
 	if (render_displays) {
-		profiler_zone_name("Render Finalize");
-		if (xr_draw_to_swapchain == false) {
-			for (int32_t i = 0; i < xr_displays.count; i++) {
-				swapchain_t* swapchain = &xr_displays[i].swapchain_color;
-				if (swapchain->render_surface >= 0 && render_pipeline_surface_get_enabled(swapchain->render_surface))
-					render_pipeline_surface_to_tex(swapchain->render_surface, swapchain->textures[swapchain->render_surface_tex], nullptr);
-			}
-		}
-		// Note: When drawing directly to swapchain, depth buffer discard is
-		// handled by sk_renderer through Vulkan render pass store operations.
-
 		for (int32_t i = 0; i < xr_displays    .count; i++) openxr_display_swapchain_release(&xr_displays    [i]);
 		for (int32_t i = 0; i < xr_displays_2nd.count; i++) openxr_display_swapchain_release(&xr_displays_2nd[i]);
 	}
@@ -1011,8 +1002,14 @@ bool openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 	if (XR_FAILED(xrWaitSwapchainImage(display->swapchain_color.handle, &wait_info))) return false;
 	if (XR_FAILED(xrWaitSwapchainImage(display->swapchain_depth.handle, &wait_info))) return false;
 
-	if (xr_draw_to_swapchain)
+	if (xr_draw_to_swapchain) {
 		render_pipeline_surface_set_tex(display->swapchain_color.render_surface, display->swapchain_color.textures[color_id]);
+	} else {
+		// Set the swapchain image as the MSAA resolve target for in-tile resolve.
+		// The render pass will automatically resolve the MSAA target to this image
+		// during end_pass, which is more efficient on tile-based GPUs (Android).
+		render_pipeline_surface_set_resolve_target(display->swapchain_color.render_surface, &display->swapchain_color.textures[color_id]->gpu_tex);
+	}
 	display->swapchain_color.render_surface_tex = color_id;
 	render_pipeline_surface_set_clear         (display->swapchain_color.render_surface, color);
 	render_pipeline_surface_set_layer         (display->swapchain_color.render_surface, render_filter);
@@ -1030,6 +1027,9 @@ void openxr_display_swapchain_release(device_display_t *display) {
 	if (display->swapchain_depth.acquired) xrReleaseSwapchainImage(display->swapchain_depth.handle, &release_info);
 	display->swapchain_color.acquired = false;
 	display->swapchain_depth.acquired = false;
+
+	// Clear the MSAA resolve target for the next frame
+	render_pipeline_surface_set_resolve_target(display->swapchain_color.render_surface, nullptr);
 }
 
 ///////////////////////////////////////////

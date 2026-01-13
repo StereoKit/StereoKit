@@ -347,4 +347,10 @@ void render_pipeline_surface_set_perspective(pipeline_surface_id surface_id, mat
 	memcpy(surface->proj_matrices, proj_matrices, sizeof(matrix) * count);
 }
 
+///////////////////////////////////////////
+
+void render_pipeline_surface_set_resolve_target(pipeline_surface_id surface_id, skr_tex_t* resolve_target) {
+	local.surfaces[surface_id].resolve_target = resolve_target;
+}
+
 }

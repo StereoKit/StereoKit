@@ -346,7 +346,7 @@ namespace StereoKit
 		/// passed on to StereoKit? If so, StereoKit may delete it when it's
 		/// finished with it. If this is not desired, pass in false.</param>
 		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1, bool owned=true)
-			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, 1, 1, owned);
+			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, 1, owned);
 
 		/// <summary>This will return the texture's native resource for use
 		/// with external libraries. For D3D, this will be an ID3D11Texture2D*,
