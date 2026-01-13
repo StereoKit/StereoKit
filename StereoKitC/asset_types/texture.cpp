@@ -788,7 +788,7 @@ tex_t tex_copy(const tex_t texture, tex_type_ type, tex_format_ format) {
 	bool generate_mips = has_mips == false && wants_mips == true;
 
 	// Copy base mip (and generate remaining mips if needed)
-	skr_tex_copy(&texture->gpu_tex, &result->gpu_tex, 0, 0, 0, 0);
+	skr_tex_copy(&texture->gpu_tex, &result->gpu_tex, 0, 0, 0, 0, texture->gpu_tex.layer_count);
 	if (generate_mips) {
 		skr_tex_generate_mips(&result->gpu_tex, nullptr);
 	}

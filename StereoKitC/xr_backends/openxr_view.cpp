@@ -113,7 +113,7 @@ array_t<XrCompositionLayerBaseHeader*> xr_compositor_2nd_layer_ptrs = {};
 
 ///////////////////////////////////////////
 
-bool openxr_create_swapchain (swapchain_t *out_swapchain, XrViewConfigurationType type, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count);
+bool openxr_create_swapchain (swapchain_t *out_swapchain, XrViewConfigurationType type, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count, int32_t render_sample_count);
 void openxr_preferred_format (int64_t *out_color, int64_t *out_depth);
 bool openxr_preferred_blend  (XrViewConfigurationType view_type, display_blend_ preference, display_blend_* out_valid, XrEnvironmentBlendMode* out_blend);
 
@@ -528,7 +528,7 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 
 ///////////////////////////////////////////
 
-bool openxr_create_swapchain(swapchain_t *out_swapchain, XrViewConfigurationType type, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count) {
+bool openxr_create_swapchain(swapchain_t *out_swapchain, XrViewConfigurationType type, bool color, uint32_t array_size, int64_t format, int32_t width, int32_t height, int32_t sample_count, int32_t render_sample_count) {
 	swapchain_delete(out_swapchain);
 
 	// Create a swapchain for this viewpoint! A swapchain is a set of texture
@@ -547,6 +547,12 @@ bool openxr_create_swapchain(swapchain_t *out_swapchain, XrViewConfigurationType
 	swapchain_info.usageFlags  = color
 		? XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT
 		: XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+	// When rendering with more samples than the swapchain (MSAA), we need
+	// TRANSFER_DST for the copy/resolve operation from the MSAA render target
+	if (color && render_sample_count > sample_count) {
+		swapchain_info.usageFlags |= XR_SWAPCHAIN_USAGE_TRANSFER_DST_BIT;
+	}
 
 	// If it's a secondary view, let OpenXR know
 	XrSecondaryViewConfigurationSwapchainCreateInfoMSFT secondary = { XR_TYPE_SECONDARY_VIEW_CONFIGURATION_SWAPCHAIN_CREATE_INFO_MSFT };
@@ -724,10 +730,6 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, display_blend_ pr
 bool openxr_render_frame() {
 	profiler_zone();
 
-	// Begin the render frame early so that any graphics operations the
-	// application performs during step are captured.
-	skr_renderer_frame_begin();
-
 	// Block until the previous frame is finished displaying, and is ready for
 	// another one. Also returns a prediction of when the next frame will be
 	// displayed, for use with predicting locations of controllers, viewpoints,
@@ -879,6 +881,10 @@ bool openxr_render_frame() {
 		for (int32_t i = 0; i < xr_displays    .count; i++) openxr_display_swapchain_release(&xr_displays    [i]);
 		for (int32_t i = 0; i < xr_displays_2nd.count; i++) openxr_display_swapchain_release(&xr_displays_2nd[i]);
 	}
+
+	// End the frame without swapchain presentation - OpenXR manages its own
+	// swapchains externally via xrReleaseSwapchainImage/xrEndFrame.
+	render_pipeline_skip_present();
 
 	// We're finished with rendering our layer, so send it off for display!
 	const array_t<XrCompositionLayerBaseHeader*> *composition_layers = compositor_layers_get();

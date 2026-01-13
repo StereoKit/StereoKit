@@ -57,13 +57,14 @@ namespace sk {
 // Forward declarations
 ///////////////////////////////////////////
 
-static bool                 xr_vulkan_enable_init              ();
-static skr_device_request_t xr_vulkan_enable_device_callback   (void* vk_instance, void* user_data);
-static bool                 xr_vulkan_enable2_init             ();
-static void*                xr_vulkan_enable2_instance_callback(skr_instance_create_info_t* create_info, void* user_data);
-static skr_device_request_t xr_vulkan_enable2_device_callback  (void* vk_instance, void* user_data);
-static xr_system_           xr_ext_vulkan_enable_pre_session   (void*, XrBaseHeader* ref_session_info);
-static void                 xr_ext_vulkan_enable_shutdown      (void*);
+static bool                 xr_vulkan_enable_init               ();
+static skr_device_request_t xr_vulkan_enable_device_init        (void* vk_instance, void* user_data);
+static bool                 xr_vulkan_enable2_init              ();
+static void*                xr_vulkan_enable2_instance_create   (skr_instance_create_info_t* create_info, void* user_data);
+static skr_device_request_t xr_vulkan_enable2_device_init       (void* vk_instance, void* user_data);
+static void*                xr_vulkan_enable2_device_create     (skr_device_create_info_t* create_info, void* user_data);
+static xr_system_           xr_ext_vulkan_enable_pre_session    (void*, XrBaseHeader* ref_session_info);
+static void                 xr_ext_vulkan_enable_shutdown       (void*);
 
 ///////////////////////////////////////////
 // Public API
@@ -87,18 +88,22 @@ void xr_ext_vulkan_enable_register() {
 ///////////////////////////////////////////
 
 bool xr_ext_vulkan_enable_setup_skr(skr_settings_t* ref_settings, const char*** out_instance_exts, uint32_t* out_instance_ext_count) {
-	if (backend_openxr_ext_enabled(XR_KHR_VULKAN_ENABLE2_EXTENSION_NAME)) { 
+	if (backend_openxr_ext_enabled(XR_KHR_VULKAN_ENABLE2_EXTENSION_NAME)) {
 		if (!xr_vulkan_enable2_init()) return false;
 
-		ref_settings->instance_create_callback  = xr_vulkan_enable2_instance_callback;
+		// enable2: OpenXR creates both VkInstance and VkDevice
+		ref_settings->instance_create_callback  = xr_vulkan_enable2_instance_create;
 		ref_settings->instance_create_user_data = &local;
-		ref_settings->device_init_callback      = xr_vulkan_enable2_device_callback;
+		ref_settings->device_init_callback      = xr_vulkan_enable2_device_init;
 		ref_settings->device_init_user_data     = &local;
+		ref_settings->device_create_callback    = xr_vulkan_enable2_device_create;
+		ref_settings->device_create_user_data   = &local;
 
 	} else if (backend_openxr_ext_enabled(XR_KHR_VULKAN_ENABLE_EXTENSION_NAME )) {
 		if (!xr_vulkan_enable_init ()) return false;
 
-		ref_settings->device_init_callback      = xr_vulkan_enable_device_callback;
+		// enable: Application creates VkInstance/VkDevice, OpenXR picks physical device
+		ref_settings->device_init_callback      = xr_vulkan_enable_device_init;
 		ref_settings->device_init_user_data     = &local;
 
 	} else {
@@ -183,7 +188,7 @@ static bool xr_vulkan_enable_init() {
 
 ///////////////////////////////////////////
 
-static skr_device_request_t xr_vulkan_enable_device_callback(void* vk_instance, void* user_data) {
+static skr_device_request_t xr_vulkan_enable_device_init(void* vk_instance, void* user_data) {
 	skr_device_request_t request = {};
 
 	VkPhysicalDevice phys_device = VK_NULL_HANDLE;
@@ -234,7 +239,7 @@ static bool xr_vulkan_enable2_init() {
 
 ///////////////////////////////////////////
 
-static void* xr_vulkan_enable2_instance_callback(skr_instance_create_info_t* create_info, void* user_data) {
+static void* xr_vulkan_enable2_instance_create(skr_instance_create_info_t* create_info, void* user_data) {
 	XrVulkanInstanceCreateInfoKHR xr_create_info = { XR_TYPE_VULKAN_INSTANCE_CREATE_INFO_KHR };
 	xr_create_info.systemId               = xr_system_id;
 	xr_create_info.pfnGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)create_info->get_instance_proc_addr;
@@ -257,7 +262,7 @@ static void* xr_vulkan_enable2_instance_callback(skr_instance_create_info_t* cre
 
 ///////////////////////////////////////////
 
-static skr_device_request_t xr_vulkan_enable2_device_callback(void* vk_instance, void* user_data) {
+static skr_device_request_t xr_vulkan_enable2_device_init(void* vk_instance, void* user_data) {
 	skr_device_request_t request = {};
 
 	XrVulkanGraphicsDeviceGetInfoKHR get_info = { XR_TYPE_VULKAN_GRAPHICS_DEVICE_GET_INFO_KHR };
@@ -270,6 +275,30 @@ static skr_device_request_t xr_vulkan_enable2_device_callback(void* vk_instance,
 
 	request.physical_device = phys_device;
 	return request;
+}
+
+///////////////////////////////////////////
+
+static void* xr_vulkan_enable2_device_create(skr_device_create_info_t* create_info, void* user_data) {
+	XrVulkanDeviceCreateInfoKHR xr_create_info = { XR_TYPE_VULKAN_DEVICE_CREATE_INFO_KHR };
+	xr_create_info.systemId               = xr_system_id;
+	xr_create_info.pfnGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)create_info->get_instance_proc_addr;
+	xr_create_info.vulkanPhysicalDevice   = (VkPhysicalDevice)create_info->vk_physical_device;
+	xr_create_info.vulkanCreateInfo       = (const VkDeviceCreateInfo*)create_info->device_create_info;
+	xr_create_info.vulkanAllocator        = nullptr;
+
+	VkDevice vk_device = VK_NULL_HANDLE;
+	VkResult vk_result = VK_SUCCESS;
+	xr_check_ret(xrCreateVulkanDeviceKHR(xr_instance, &xr_create_info, &vk_device, &vk_result),
+		"xrCreateVulkanDeviceKHR", nullptr);
+
+	if (vk_result != VK_SUCCESS) {
+		log_errf("xrCreateVulkanDeviceKHR: Vulkan device creation failed [0x%X]", vk_result);
+		return nullptr;
+	}
+
+	log_diag("VkDevice created via xrCreateVulkanDeviceKHR");
+	return vk_device;
 }
 
 ///////////////////////////////////////////

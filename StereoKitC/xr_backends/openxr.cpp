@@ -20,6 +20,7 @@
 #include "../device.h"
 #include "../libraries/stref.h"
 #include "../systems/render.h"
+#include "../systems/render_pipeline.h"
 #include "../systems/audio.h"
 #include "../systems/input.h"
 #include "../systems/world.h"
@@ -622,6 +623,10 @@ void openxr_step_begin() {
 	openxr_poll_events();
 	ext_management_evt_step_begin();
 	input_step();
+
+	// Begin the render frame early so that any graphics operations the
+	// application performs during step are captured.
+	render_pipeline_begin_frame();
 }
 
 ///////////////////////////////////////////
@@ -630,7 +635,7 @@ void openxr_step_end() {
 	ext_management_evt_step_end();
 
 	if (xr_has_session) { openxr_render_frame(); }
-	else                { render_clear(); platform_sleep(33); }
+	else                { render_clear(); render_pipeline_skip_present(); platform_sleep(33); }
 
 	xr_extension_structs_clear();
 

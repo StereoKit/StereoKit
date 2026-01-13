@@ -48,7 +48,7 @@ void offscreen_step_begin() {
 
 	// Begin the render frame early so that any graphics operations the
 	// application performs during step are captured.
-	skr_renderer_frame_begin();
+	render_pipeline_begin_frame();
 }
 
 ///////////////////////////////////////////
@@ -57,6 +57,7 @@ void offscreen_step_end() {
 	input_step_late();
 
 	render_pipeline_draw();
+	render_pipeline_skip_present();
 }
 
 ///////////////////////////////////////////

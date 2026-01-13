@@ -147,7 +147,7 @@ void window_step_begin() {
 
 	// Begin the render frame early so that any graphics operations the
 	// application performs during step are captured.
-	skr_renderer_frame_begin();
+	render_pipeline_begin_frame();
 }
 
 ///////////////////////////////////////////

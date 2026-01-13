@@ -126,6 +126,20 @@ void render_pipeline_shutdown() {
 
 ///////////////////////////////////////////
 
+void render_pipeline_begin_frame() {
+	skr_renderer_frame_begin();
+}
+
+///////////////////////////////////////////
+
+void render_pipeline_skip_present() {
+	// End the frame without presenting to any swapchain surface.
+	// Used by OpenXR which manages its own swapchains externally.
+	skr_renderer_frame_end(nullptr, 0);
+}
+
+///////////////////////////////////////////
+
 pipeline_surface_id render_pipeline_surface_create(pipeline_render_strategy_ strategy, tex_format_ color, tex_format_ depth, int32_t array_count, int32_t quilt_width, int32_t quilt_height) {
 	pipeline_surface_t result = {};
 	result.enabled        = false; // shouldn't be enabled until the tex is sized
@@ -233,7 +247,7 @@ void render_pipeline_surface_present_swapchain(pipeline_surface_id surface_id, s
 		}
 	} else {
 		// Failed to acquire earlier - still need to end frame
-		skr_renderer_frame_end(nullptr, 0);
+		render_pipeline_skip_present();
 	}
 
 	// Clear resolve target for next frame
@@ -249,7 +263,11 @@ void render_pipeline_surface_to_tex(pipeline_surface_id surface_id, tex_t destin
 		material_set_texture(mat, "source", surface->tex);
 		render_blit(destination, mat);
 	} else {
-		skr_tex_copy(&surface->tex->gpu_tex, &destination->gpu_tex, 0, 0, 0, 0);
+		// Copy all array layers
+		uint32_t src_layers = surface->tex->gpu_tex.layer_count;
+		uint32_t dst_layers = destination->gpu_tex.layer_count;
+		uint32_t layer_count = src_layers < dst_layers ? src_layers : dst_layers;
+		skr_tex_copy(&surface->tex->gpu_tex, &destination->gpu_tex, 0, 0, 0, 0, layer_count);
 	}
 }
 

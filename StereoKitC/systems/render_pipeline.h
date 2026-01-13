@@ -30,7 +30,9 @@ void                render_pipeline_surface_set_viewport_scale(pipeline_surface_
 void                render_pipeline_surface_set_clear         (pipeline_surface_id surface, color128 color);
 void                render_pipeline_surface_set_perspective   (pipeline_surface_id surface, matrix* view_matrices, matrix* proj_matrices, int32_t count);
 
-void render_pipeline_shutdown();
-void render_pipeline_draw    ();
+void render_pipeline_shutdown    ();
+void render_pipeline_begin_frame ();
+void render_pipeline_draw        ();
+void render_pipeline_skip_present();
 
 } // namespace sk
