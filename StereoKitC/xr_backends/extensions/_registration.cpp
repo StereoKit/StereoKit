@@ -16,7 +16,7 @@
 #include "ext_render_model.h"
 #include "eye_interaction.h"
 #include "fb_colorspace.h"
-#include "graphics.h"
+#include "vulkan_enable.h"
 #include "hand_tracking.h"
 #include "hand_mesh.h"
 #include "input_profiles.h"
@@ -53,7 +53,7 @@ bool ext_registration() {
 	xr_ext_time_register();
 	xr_ext_android_create_instance_register();
 	xr_ext_android_thread_register();
-	xr_ext_graphics_register();
+	xr_ext_vulkan_enable_register();
 	xr_ext_hand_tracking_register();
 	xr_ext_msft_hand_mesh_register();
 	xr_ext_msft_scene_understanding_register();

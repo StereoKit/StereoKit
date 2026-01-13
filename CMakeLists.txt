@@ -457,8 +457,8 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/eye_interaction.cpp
   StereoKitC/xr_backends/extensions/fb_colorspace.h
   StereoKitC/xr_backends/extensions/fb_colorspace.cpp
-  StereoKitC/xr_backends/extensions/graphics.h
-  StereoKitC/xr_backends/extensions/graphics.cpp
+  StereoKitC/xr_backends/extensions/vulkan_enable.h
+  StereoKitC/xr_backends/extensions/vulkan_enable.cpp
   StereoKitC/xr_backends/extensions/hand_mesh.h
   StereoKitC/xr_backends/extensions/hand_mesh.cpp
   StereoKitC/xr_backends/extensions/hand_tracking.h

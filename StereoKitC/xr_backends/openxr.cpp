@@ -26,7 +26,7 @@
 
 #include "extensions/ext_management.h"
 #include "extensions/_registration.h"
-#include "extensions/graphics.h"
+#include "extensions/vulkan_enable.h"
 #include "extensions/android_thread.h"
 
 #include <openxr/openxr.h>
@@ -148,6 +148,14 @@ bool openxr_create_system() {
 	xr_system_success = false;
 	xr_system_created = true;
 
+	// Enumerate available extensions first, so ext_management_ext_available
+	// can be used during registration
+	if (!ext_management_enumerate_available()) {
+		log_warnf("OpenXR initialization failed during event: %s", "Extension Enumeration");
+		openxr_cleanup();
+		return false;
+	}
+
 	if (!ext_registration()) {
 		log_warnf("OpenXR initialization failed during event: %s", "Extension Registration");
 		openxr_cleanup();
@@ -240,17 +248,6 @@ bool openxr_create_system() {
 
 	xr_system_success = true;
 	return xr_system_success;
-}
-
-///////////////////////////////////////////
-
-void *openxr_get_luid() {
-#if defined(XR_USE_GRAPHICS_API_D3D11)
-	if (!openxr_create_system()) return nullptr;
-	return xr_ext_graphics_get_luid();
-#else
-	return nullptr;
-#endif
 }
 
 ///////////////////////////////////////////

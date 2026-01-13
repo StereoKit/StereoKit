@@ -19,7 +19,10 @@ typedef struct ext_management_state_t {
 	array_t<char*>           exts_exclude_m; // these _m lists own allocated strings
 	array_t<char*>           exts_all_m;
 	array_t<sk::id_hash_t>   exts_loaded;
+	array_t<char*>           exts_available_m; // all extensions available from OpenXR
+	array_t<sk::id_hash_t>   exts_available_hashes;
 	bool                     minimum_exts;
+	bool                     exts_enumerated;
 	bool                     exts_collected;
 
 	array_t<sk::xr_system_t> system_list;
@@ -117,7 +120,9 @@ void ext_management_request_ext(const char* extension_name) {
 
 ///////////////////////////////////////////
 
-bool ext_management_select_exts(bool minimum_exts, array_t<char*>* ref_all_available_exts, array_t<const char*>* ref_request_exts) {
+bool ext_management_enumerate_available() {
+	if (local.exts_enumerated) return true;
+
 	// Enumerate the list of extensions available on the system
 	uint32_t ext_count = 0;
 	if (XR_FAILED(xrEnumerateInstanceExtensionProperties(nullptr, 0, &ext_count, nullptr)))
@@ -129,26 +134,50 @@ bool ext_management_select_exts(bool minimum_exts, array_t<char*>* ref_all_avail
 	qsort(exts, ext_count, sizeof(XrExtensionProperties), [](const void* a, const void* b) {
 		return strcmp(((XrExtensionProperties*)a)->extensionName, ((XrExtensionProperties*)b)->extensionName); });
 
-	// See which of the available extensions we want to use
+	// Store all available extensions
 	for (uint32_t i = 0; i < ext_count; i++) {
+		local.exts_available_m     .add(string_copy(exts[i].extensionName));
+		local.exts_available_hashes.add(hash_string(exts[i].extensionName));
+	}
+	local.exts_enumerated = true;
+
+	sk_free(exts);
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool ext_management_ext_available(const char* extension_name) {
+	return local.exts_available_hashes.index_of(hash_string(extension_name)) >= 0;
+}
+
+///////////////////////////////////////////
+
+bool ext_management_select_exts(bool minimum_exts, array_t<char*>* ref_all_available_exts, array_t<const char*>* ref_request_exts) {
+	// Ensure available extensions have been enumerated
+	if (!local.exts_enumerated && !ext_management_enumerate_available())
+		return false;
+
+	// See which of the available extensions we want to use
+	for (int32_t i = 0; i < local.exts_available_m.count; i++) {
+		const char* ext_name = local.exts_available_m[i];
 
 		int32_t idx = -1;
-		idx = in_list(local.exts_exclude_m, exts[i].extensionName); if (idx >= 0) { ref_all_available_exts->add(string_copy(exts[i].extensionName)); continue; }
+		idx = in_list(local.exts_exclude_m, ext_name); if (idx >= 0) { ref_all_available_exts->add(string_copy(ext_name)); continue; }
 
 		const char* str = nullptr;
-		idx = in_list(local.exts_user, exts[i].extensionName); if (idx >= 0) { str = local.exts_user[idx];}
-		idx = in_list(local.exts_sk,   exts[i].extensionName); if (idx >= 0) { str = local.exts_sk  [idx];}
+		idx = in_list(local.exts_user, ext_name); if (idx >= 0) { str = local.exts_user[idx];}
+		idx = in_list(local.exts_sk,   ext_name); if (idx >= 0) { str = local.exts_sk  [idx];}
 
 		if (str) {
 			ref_request_exts->add(str);
 			local.exts_loaded.add(hash_string(str));
 		} else {
-			ref_all_available_exts->add(string_copy(exts[i].extensionName));
+			ref_all_available_exts->add(string_copy(ext_name));
 		}
 	}
 	local.exts_collected = true;
 
-	sk_free(exts);
 	return true;
 }
 
@@ -287,10 +316,13 @@ void ext_management_cleanup() {
 	}
 
 	// Some of these lists are in charge of allocated memory
-	for (int32_t i =0; i<local.exts_all_m    .count; i++) sk_free(local.exts_all_m    [i]);
-	for (int32_t i =0; i<local.exts_exclude_m.count; i++) sk_free(local.exts_exclude_m[i]);
-	local.exts_all_m    .free();
-	local.exts_exclude_m.free();
+	for (int32_t i =0; i<local.exts_all_m      .count; i++) sk_free(local.exts_all_m      [i]);
+	for (int32_t i =0; i<local.exts_exclude_m  .count; i++) sk_free(local.exts_exclude_m  [i]);
+	for (int32_t i =0; i<local.exts_available_m.count; i++) sk_free(local.exts_available_m[i]);
+	local.exts_all_m           .free();
+	local.exts_exclude_m       .free();
+	local.exts_available_m     .free();
+	local.exts_available_hashes.free();
 
 	local.exts_sk       .free();
 	local.exts_user     .free();
@@ -310,7 +342,9 @@ void ext_management_cleanup() {
 ///////////////////////////////////////////
 
 bool32_t backend_openxr_ext_enabled(const char *extension_name) {
-	if (backend_xr_get_type() != backend_xr_type_openxr) {
+	// Check xr_instance instead of backend_xr_get_type so this works during
+	// early init before device_display_get_type() is set.
+	if (xr_instance == XR_NULL_HANDLE) {
 		return false;
 	}
 	return local.exts_loaded.index_of(hash_string(extension_name)) >= 0 ? 1 : 0;

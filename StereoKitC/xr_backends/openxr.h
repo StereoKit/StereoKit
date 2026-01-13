@@ -19,7 +19,8 @@ typedef struct XR_MAY_ALIAS XrBaseHeader {
 	const void* XR_MAY_ALIAS    next;
 } XrBaseHeader;
 
-#define xr_check(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof("%s [%s]", message, openxr_string(xr_call_result)); return false;}}
+#define xr_check_ret(xResult, message, ret_val) do { XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) { log_errf("%s [%s]", message, openxr_string(xr_call_result)); return ret_val; } } while(0)
+#define xr_check(xResult, message) xr_check_ret(xResult, message, false)
 inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_next->next = xr_base->next; xr_base->next = xr_next; }
 
 // Some "X Macros" to simplify function loading. Otherwise, function loading
@@ -87,6 +88,7 @@ typedef struct xr_system_t {
 	poll_event_callback_t     evt_poll;
 } xr_system_t;
 
+bool openxr_create_system();  // Idempotent: creates XrInstance and XrSystemId
 bool openxr_init        ();
 void openxr_cleanup     ();
 void openxr_shutdown    ();
@@ -95,7 +97,6 @@ void openxr_step_end    ();
 bool openxr_poll_events ();
 bool openxr_render_frame();
 
-void*         openxr_get_luid         ();
 bool32_t      openxr_get_space        (XrSpace space, pose_t *out_pose, XrTime time = 0);
 const char*   openxr_string           (XrResult result);
 void          openxr_set_origin_offset(pose_t offset);

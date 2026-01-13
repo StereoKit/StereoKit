@@ -16,7 +16,9 @@
 #include "../libraries/stref.h"
 #include "../libraries/ferr_thread.h"
 #include "../libraries/profiler.h"
+#include "../libraries/array.h"
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/extensions/vulkan_enable.h"
 #include "../xr_backends/simulator.h"
 #include "../xr_backends/window.h"
 #include "../xr_backends/offscreen.h"
@@ -106,22 +108,36 @@ bool platform_init() {
 	skr_settings.enable_validation = true;// settings->log_filter == log_diagnostic;
 	skr_settings.bind_settings     = &skr_binds;
 
-	// Request platform-specific surface extensions for window creation
+	// Build extension array - start with platform-specific surface extensions
+	array_t<const char*> vk_extensions = {};
 #if defined(SK_OS_LINUX)
-	const char* required_exts[] = { "VK_KHR_surface", "VK_KHR_xlib_surface" };
-	skr_settings.required_extensions      = required_exts;
-	skr_settings.required_extension_count = 2;
+	vk_extensions.add("VK_KHR_surface");
+	vk_extensions.add("VK_KHR_xlib_surface");
 #elif defined(SK_OS_WINDOWS)
-	const char* required_exts[] = { "VK_KHR_surface", "VK_KHR_win32_surface" };
-	skr_settings.required_extensions      = required_exts;
-	skr_settings.required_extension_count = 2;
+	vk_extensions.add("VK_KHR_surface");
+	vk_extensions.add("VK_KHR_win32_surface");
 #elif defined(SK_OS_ANDROID)
-	const char* required_exts[] = { "VK_KHR_surface", "VK_KHR_android_surface" };
-	skr_settings.required_extensions      = required_exts;
-	skr_settings.required_extension_count = 2;
+	vk_extensions.add("VK_KHR_surface");
+	vk_extensions.add("VK_KHR_android_surface");
 #endif
 
-	if (!skr_init(skr_settings)) {
+	// For XR modes, initialize OpenXR early to get Vulkan requirements
+#if defined(SK_XR_OPENXR)
+	if (settings->mode == app_mode_xr) {
+		const char** xr_exts      = nullptr;
+		uint32_t     xr_ext_count = 0;
+		if (openxr_create_system() && xr_ext_vulkan_enable_setup_skr(&skr_settings, &xr_exts, &xr_ext_count)) {
+			vk_extensions.add_range(xr_exts, xr_ext_count);
+		}
+	}
+#endif
+
+	skr_settings.required_extensions      = vk_extensions.data;
+	skr_settings.required_extension_count = (uint32_t)vk_extensions.count;
+
+	bool skr_result = skr_init(skr_settings);
+	vk_extensions.free();
+	if (!skr_result) {
 		log_fail_reason(95, log_error, "Failed to initialize sk_renderer!");
 		return false;
 	}
