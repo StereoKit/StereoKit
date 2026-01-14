@@ -20,6 +20,7 @@
 #if defined(SK_OS_ANDROID)
 	#define XR_USE_PLATFORM_ANDROID
 	#define XR_USE_TIMESPEC
+	#include <jni.h>  // Required for OpenXR Android platform types
 
 #elif defined(SK_OS_LINUX)
 	#define XR_USE_TIMESPEC

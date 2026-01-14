@@ -40,9 +40,6 @@ namespace sk {
 ///////////////////////////////////////////
 
 bool ext_registration() {
-	if (xr_ext_loader_init_register() == xr_system_fail_critical)
-		return false;
-
 	// These extensions require deep integration, so we just request them here.
 	if (ext_management_get_use_min() == false) {
 		ext_management_request_ext(XR_EXT_LOCAL_FLOOR_EXTENSION_NAME);

@@ -18,14 +18,15 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_loader_init_register() {
+xr_system_ xr_ext_loader_init() {
 	// This handles both XR_KHR_loader_init and XR_KHR_loader_init_android.
 	// While these extensions are separate, the spec mixes them up a bit! I
 	// haven't seen it required on non-android systems, so currently we're
 	// restricting this specifically to Android.
 
 	// These extensions _must_ happen before normal extensions are loaded, so
-	// this code happens in place of registration.
+	// this code is called outside the normal EXT system, and at the beginning
+	// of OpenXR code.
 #ifdef XR_USE_PLATFORM_ANDROID
 	// xrInitializeLoaderKHR is somewhat unique in that it requires no
 	// extension check, and can be loaded before OpenXR is initialized! The

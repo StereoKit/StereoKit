@@ -29,6 +29,7 @@
 #include "extensions/_registration.h"
 #include "extensions/vulkan_enable.h"
 #include "extensions/android_thread.h"
+#include "extensions/loader_init.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
@@ -148,6 +149,13 @@ bool openxr_create_system() {
 	if (xr_system_created == true) return xr_system_success;
 	xr_system_success = false;
 	xr_system_created = true;
+
+	// Loader initialization must come before even instance data is enumerated
+	if (xr_ext_loader_init() == xr_system_fail_critical) {
+		log_warnf("OpenXR initialization failed during event: %s", "Loader Initialization");
+		openxr_cleanup();
+		return false;
+	}
 
 	// Enumerate available extensions first, so ext_management_ext_available
 	// can be used during registration

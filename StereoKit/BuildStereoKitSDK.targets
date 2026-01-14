@@ -78,6 +78,9 @@
 			<SKBuildCommand Condition="!Exists('$(SKSDKCacheFile)')">$(SKBuildCommand) &amp;&amp; cmake --preset $(SKSDKPreset) -DSK_BUILD_TESTS=OFF</SKBuildCommand>
 			<SKBuildCommand                                         >$(SKBuildCommand) &amp;&amp; cmake --build --preset $(SKSDKPreset)</SKBuildCommand>
 		</PropertyGroup>
+
+		<Message Importance="high" Text="[StereoKit SDK] $(SKSDKBinDir)$(SKOpenXRLoader.ToLower())/*.so"/>
+		<Message Importance="high" Text="[StereoKit SDK] $(SKOpenXRLoaderFolder)/$(SKOpenXRLoader)/$(SKSDKBuildMode.ToLower())/*.so"/>
 		
 		<Message Condition="!Exists('$(SKSDKCacheFile)')" Importance="high" Text="[StereoKit SDK] Configuring StereoKitC"/>
 		<Exec Command="$(SKBuildCommand)" />
@@ -95,8 +98,8 @@
 	<ItemGroup Condition="'$(SKSDKBuildOS)'=='Android'">
 		<!-- <None                 Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKDbgPath)" /> -->
 		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKLibPath)" />
-		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKBinDir)$(SKOpenXRLoader.ToLower())\*.so" />
-		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKOpenXRLoaderFolder)\$(SKOpenXRLoader)\$(SKSDKBuildMode.ToLower())\*.so" />
+		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKBinDir)$(SKOpenXRLoader.ToLower())/*.so" />
+		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKOpenXRLoaderFolder)/$(SKOpenXRLoader)/$(SKSDKBuildMode.ToLower())/*.so" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(SKSDKBuildOS)'=='Uwp'">
