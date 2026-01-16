@@ -15,6 +15,7 @@
 		<meta-data android:name="spaces.version" android:value="0.15.0"/>
 		<!-- AndroidXR -->
 		<property android:name="android.window.PROPERTY_ACTIVITY_XR_START_MODE" android:value="XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED" />
+		<uses-native-library android:name="libopenxr.google.so" android:required="false"/>
 		<profileable android:shell="true"/>
 	</application>
 
