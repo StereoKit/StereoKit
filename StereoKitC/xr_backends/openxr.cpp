@@ -64,6 +64,7 @@ XrTime               xr_time              = 0;
 XrTime               xr_eyes_sample_time  = 0;
 bool                 xr_system_created    = false;
 bool                 xr_system_success    = false;
+xr_runtime_          xr_known_runtime     = xr_runtime_none;
 
 bool                 xr_has_bounds        = false;
 vec2                 xr_bounds_size       = {};
@@ -225,6 +226,18 @@ bool openxr_create_system() {
 			XR_VERSION_MAJOR(inst_properties.runtimeVersion),
 			XR_VERSION_MINOR(inst_properties.runtimeVersion),
 			XR_VERSION_PATCH(inst_properties.runtimeVersion));
+
+		// This is an incomplete list of runtimes, we sometimes use these
+		// internally for runtime compatibility fixes.
+		xr_known_runtime = xr_runtime_unknown;
+		if      (string_startswith(inst_properties.runtimeName, "Meta"                 )) xr_known_runtime = xr_runtime_meta;
+		else if (string_startswith(inst_properties.runtimeName, "Oculus"               )) xr_known_runtime = xr_runtime_meta;
+		else if (string_startswith(inst_properties.runtimeName, "Monado"               )) xr_known_runtime = xr_runtime_monado;
+		else if (string_startswith(inst_properties.runtimeName, "Android XR"           )) xr_known_runtime = xr_runtime_android_xr;
+		else if (string_startswith(inst_properties.runtimeName, "Vive"                 )) xr_known_runtime = xr_runtime_vive;
+		else if (string_startswith(inst_properties.runtimeName, "SteamVR/OpenXR"       )) xr_known_runtime = xr_runtime_steamvr;
+		else if (string_startswith(inst_properties.runtimeName, "Windows Mixed Reality")) xr_known_runtime = xr_runtime_wmr;
+		else if (strstr           (inst_properties.runtimeName, "Snapdragon"           )) xr_known_runtime = xr_runtime_snapdragon;
 	}
 
 	// Always log the extension table, this may contain information about why
@@ -793,6 +806,12 @@ bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 		return true;
 	}
 	return false;
+}
+
+///////////////////////////////////////////
+
+xr_runtime_ openxr_get_known_runtime() {
+	return xr_known_runtime;
 }
 
 ///////////////////////////////////////////

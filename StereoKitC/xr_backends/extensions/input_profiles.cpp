@@ -138,7 +138,7 @@ void xr_profile_msft_hand_interaction_register() {
 		//
 		// Quest does not implement XR_EXT_hand_interaction, so we only need to
 		// do this for the MSFT one.
-		if (explicit_request == false && strstr(device_get_runtime(), "Oculus") != nullptr) {
+		if (explicit_request == false && openxr_get_known_runtime() == xr_runtime_meta) {
 			//xr_ext.MSFT_hand_interaction = xr_ext_rejected;
 			log_diag("XR_MSFT_hand_interaction - Rejected - Hides menu button events on Quest.");
 			return xr_system_fail;

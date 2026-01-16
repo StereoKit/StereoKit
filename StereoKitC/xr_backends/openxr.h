@@ -43,6 +43,19 @@ typedef enum xr_system_ {
 	xr_system_fail_critical = -1,
 } xr_system_;
 
+enum xr_runtime_ {
+	xr_runtime_none,
+	xr_runtime_unknown,
+	xr_runtime_meta,
+	xr_runtime_android_xr,
+	xr_runtime_vive,
+	xr_runtime_pico,
+	xr_runtime_monado,
+	xr_runtime_steamvr,
+	xr_runtime_wmr, // Windows Mixed Reality
+	xr_runtime_snapdragon, // Snapdragon Spaces
+};
+
 typedef struct context_callback_t {
 	void       (*callback)(void* context);
 	void*        context;
@@ -102,6 +115,7 @@ const char*   openxr_string           (XrResult result);
 void          openxr_set_origin_offset(pose_t offset);
 bool          openxr_get_stage_bounds (vec2* out_size, pose_t* out_pose, XrTime time);
 button_state_ openxr_space_tracked    ();
+xr_runtime_   openxr_get_known_runtime(void);
 
 extern XrSpace    xr_app_space;
 extern XrSpace    xr_head_space;
