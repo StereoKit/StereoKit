@@ -79,9 +79,6 @@
 			<SKBuildCommand                                         >$(SKBuildCommand) &amp;&amp; cmake --build --preset $(SKSDKPreset)</SKBuildCommand>
 		</PropertyGroup>
 
-		<Message Importance="high" Text="[StereoKit SDK] $(SKSDKBinDir)$(SKOpenXRLoader.ToLower())/*.so"/>
-		<Message Importance="high" Text="[StereoKit SDK] $(SKOpenXRLoaderFolder)/$(SKOpenXRLoader)/$(SKSDKBuildMode.ToLower())/*.so"/>
-		
 		<Message Condition="!Exists('$(SKSDKCacheFile)')" Importance="high" Text="[StereoKit SDK] Configuring StereoKitC"/>
 		<Exec Command="$(SKBuildCommand)" />
 	</Target>

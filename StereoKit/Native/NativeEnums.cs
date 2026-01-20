@@ -1438,6 +1438,9 @@ namespace StereoKit
 		OpenGLES_EGL,
 		/// <summary>WebGL is used for rendering. This is used by default on Web.</summary>
 		WebGL,
+		/// <summary>Vulkan is used for rendering via sk_renderer. This is used by
+		/// default on Android.</summary>
+		Vulkan,
 	}
 
 	/// <summary>The log tool will write to the console with annotations for console
