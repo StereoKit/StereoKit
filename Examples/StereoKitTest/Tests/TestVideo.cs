@@ -28,9 +28,18 @@ class TestVideo : ITest
 	}
 
 	Video[] videos;
+	bool    enabled;
 
 	public void Initialize()
 	{
+		// This test uses OpenGL ES external textures, not supported on Vulkan
+		if (Backend.Graphics != BackendGraphics.OpenGLES_EGL)
+		{
+			Log.Info("TestVideo: Skipping, requires OpenGL ES backend");
+			return;
+		}
+		enabled = true;
+
 		videos = new Video[] {
 			new Video() {
 				vtex = new VideoTexture("https://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4"),
@@ -58,6 +67,8 @@ class TestVideo : ITest
 
 	public void Step()
 	{
+		if (!enabled) return;
+
 		for (int i = 0; i < videos.Length; i++)
 		{
 			Video v = videos[i];
