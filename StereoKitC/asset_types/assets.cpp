@@ -222,6 +222,11 @@ void assets_addref(asset_header_t *asset) {
 ///////////////////////////////////////////
 
 void assets_releaseref(asset_header_t *asset) {
+	// Check if we've shut down the asset system and have already destroyed any
+	// lingering assets (or haven't started the asset system yet).
+	if (asset_thread_enabled == false)
+		return;
+
 	// Manage the reference count
 	if (atomic_decrement(&asset->refs) == 0) {
 		assets_destroy(asset);
@@ -238,6 +243,11 @@ void assets_releaseref(asset_header_t *asset) {
 
 void assets_releaseref_threadsafe(void *asset) {
 	asset_header_t *asset_header = (asset_header_t *)asset;
+
+	// Check if we've shut down the asset system and have already destroyed any
+	// lingering assets (or haven't started the asset system yet).
+	if (asset_thread_enabled == false)
+		return;
 
 	if (!asset_thread_enabled)
 		return;
@@ -512,6 +522,16 @@ void assets_shutdown() {
 #if defined(SK_DEBUG_MEM)
 	assets_shutdown_check();
 #endif
+
+	// Explicitly destroy any assets that are remaining. C# will often have a
+	// lot of these due to GC based asset releases.
+	// Destroy in reverse, as assets_destroy will _remove_ the item from the
+	// assets array on destroy!
+	for (int32_t i = assets.count-1; i >= 0; i--) {
+		// mark as no refs, or assets_destroy will not be pleased.
+		assets[i]->refs = 0; 
+		assets_destroy(assets[i]);
+	}
 
 	ft_mutex_destroy(&asset_thread_task_mtx);
 	asset_thread_tasks.free();

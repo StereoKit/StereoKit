@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <sk_renderer.h>
 
 ///////////////////////////////////////////
 
@@ -190,6 +191,7 @@ void sk_shutdown_unsafe(void) {
 	log_show_any_fail_reason();
 
 	systems_shutdown      ();
+	skr_shutdown          (); // I'd prefer to do this in Platform, but refactoring may be needed to make that happen
 	sk_mem_log_allocations();
 	log_clear_subscribers ();
 

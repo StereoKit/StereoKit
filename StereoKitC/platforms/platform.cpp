@@ -163,7 +163,6 @@ bool platform_init() {
 
 void platform_shutdown() {
 	platform_stop_mode();
-	skr_shutdown();
 
 	platform_impl_shutdown();
 
