@@ -258,6 +258,16 @@ void render_shutdown() {
 	local.list_stack        .free();
 	local.screenshot_list   .free();
 	local.pending_readbacks .free();
+
+	// Release refs held by any pending actions before freeing the list
+	for (int32_t i = 0; i < local.render_action_list.count; i++) {
+		render_action_t* a = &local.render_action_list[i];
+		switch (a->type) {
+		case render_action_type_global_texture: tex_release            (a->global_texture.texture); break;
+		case render_action_type_global_buffer:  material_buffer_release(a->global_buffer .buffer ); break;
+		default: break;
+		}
+	}
 	local.render_action_list.free();
 
 	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
