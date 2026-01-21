@@ -14,6 +14,11 @@
       "cacheVariables": {
         "CMAKE_CXX_FLAGS_RELEASE": "/MT",
         "CMAKE_C_FLAGS_RELEASE": "/MT"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs":  "${hostSystemName}",
+        "rhs":  "Windows"
       }
     },
     {
@@ -28,7 +33,12 @@
       "name":        "Win32_x64_Debug",
       "description": "Debug build for Win32 x64",
       "hidden":      false,
-      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_x64"
+      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_x64",
+      "condition": {
+        "type": "equals",
+        "lhs":  "${hostSystemName}",
+        "rhs":  "Windows"
+      }
     },
     {
       "name":     "Win32_x64_Debug_Fast",
@@ -43,7 +53,12 @@
       "description":  "Debug build for Win32 Arm64",
       "hidden":       false,
       "architecture": "ARM64",
-      "binaryDir":    "${sourceDir}/bin/intermediate/Win32_Arm64"
+      "binaryDir":    "${sourceDir}/bin/intermediate/Win32_Arm64",
+      "condition": {
+        "type": "equals",
+        "lhs":  "${hostSystemName}",
+        "rhs":  "Windows"
+      }
     },
     {
       "name":     "Win32_Arm64_Debug_Fast",
@@ -62,6 +77,11 @@
       "cacheVariables": {
         "CMAKE_CXX_FLAGS_RELEASE": "/MT",
         "CMAKE_C_FLAGS_RELEASE": "/MT"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs":  "${hostSystemName}",
+        "rhs":  "Windows"
       }
     },
     {
@@ -70,6 +90,107 @@
       "binaryDir":"${sourceDir}/bin/intermediate/Win32_Arm64_Fast",
       "cacheVariables": {
         "SK_BUILD_TESTS":"OFF"
+      }
+    },
+    {
+      "name":        "MinGW",
+      "description": "Cross-compile for Windows using MinGW",
+      "hidden":      true,
+      "generator":   "Ninja",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME":         "Windows",
+        "CMAKE_FIND_ROOT_PATH_MODE_PROGRAM": "NEVER",
+        "CMAKE_FIND_ROOT_PATH_MODE_LIBRARY": "ONLY",
+        "CMAKE_FIND_ROOT_PATH_MODE_INCLUDE": "ONLY"
+      },
+      "condition": {
+        "type": "notEquals",
+        "lhs":  "${hostSystemName}",
+        "rhs":  "Windows"
+      }
+    },
+    {
+      "name":        "MinGW_x64_Release",
+      "description": "Release cross-compile for Win32 x64 using MinGW",
+      "hidden":      false,
+      "inherits":    "MinGW",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE":   "Release",
+        "CMAKE_C_COMPILER":   "x86_64-w64-mingw32-gcc",
+        "CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-g++",
+        "CMAKE_RC_COMPILER":  "x86_64-w64-mingw32-windres"
+      }
+    },
+    {
+      "name":      "MinGW_x64_Release_Fast",
+      "inherits":  "MinGW_x64_Release",
+      "binaryDir": "${sourceDir}/bin/intermediate/Win32_x64_Fast",
+      "cacheVariables": {
+        "SK_BUILD_TESTS": "OFF"
+      }
+    },
+    {
+      "name":        "MinGW_x64_Debug",
+      "description": "Debug cross-compile for Win32 x64 using MinGW",
+      "hidden":      false,
+      "inherits":    "MinGW",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_x64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE":   "Debug",
+        "CMAKE_C_COMPILER":   "x86_64-w64-mingw32-gcc",
+        "CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-g++",
+        "CMAKE_RC_COMPILER":  "x86_64-w64-mingw32-windres"
+      }
+    },
+    {
+      "name":      "MinGW_x64_Debug_Fast",
+      "inherits":  "MinGW_x64_Debug",
+      "binaryDir": "${sourceDir}/bin/intermediate/Win32_x64_Fast",
+      "cacheVariables": {
+        "SK_BUILD_TESTS": "OFF"
+      }
+    },
+    {
+      "name":        "MinGW_Arm64_Release",
+      "description": "Release cross-compile for Win32 Arm64 using MinGW (requires llvm-mingw)",
+      "hidden":      false,
+      "inherits":    "MinGW",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_Arm64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE":   "Release",
+        "CMAKE_C_COMPILER":   "aarch64-w64-mingw32-gcc",
+        "CMAKE_CXX_COMPILER": "aarch64-w64-mingw32-g++",
+        "CMAKE_RC_COMPILER":  "aarch64-w64-mingw32-windres"
+      }
+    },
+    {
+      "name":      "MinGW_Arm64_Release_Fast",
+      "inherits":  "MinGW_Arm64_Release",
+      "binaryDir": "${sourceDir}/bin/intermediate/Win32_Arm64_Fast",
+      "cacheVariables": {
+        "SK_BUILD_TESTS": "OFF"
+      }
+    },
+    {
+      "name":        "MinGW_Arm64_Debug",
+      "description": "Debug cross-compile for Win32 Arm64 using MinGW (requires llvm-mingw)",
+      "hidden":      false,
+      "inherits":    "MinGW",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Win32_Arm64",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE":   "Debug",
+        "CMAKE_C_COMPILER":   "aarch64-w64-mingw32-gcc",
+        "CMAKE_CXX_COMPILER": "aarch64-w64-mingw32-g++",
+        "CMAKE_RC_COMPILER":  "aarch64-w64-mingw32-windres"
+      }
+    },
+    {
+      "name":      "MinGW_Arm64_Debug_Fast",
+      "inherits":  "MinGW_Arm64_Debug",
+      "binaryDir": "${sourceDir}/bin/intermediate/Win32_Arm64_Fast",
+      "cacheVariables": {
+        "SK_BUILD_TESTS": "OFF"
       }
     },
     {
@@ -99,7 +220,8 @@
       "inherits":    "Linux",
       "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Release",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "SK_PROFILE":       "ON"
       }
     },
     {
@@ -117,7 +239,8 @@
       "inherits":    "Linux",
       "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SK_PROFILE":       "ON"
       }
     },
     {
@@ -295,14 +418,22 @@
     }
   ],
   "buildPresets": [
-      { "name":"Win32_x64_Debug",            "configuration":"Debug",   "configurePreset":"Win32_x64_Debug",            "jobs":24 },
-      { "name":"Win32_x64_Debug_Fast",       "configuration":"Debug",   "configurePreset":"Win32_x64_Debug_Fast",       "jobs":24 },
-      { "name":"Win32_x64_Release",          "configuration":"Release", "configurePreset":"Win32_x64_Release",          "jobs":24 },
-      { "name":"Win32_x64_Release_Fast",     "configuration":"Release", "configurePreset":"Win32_x64_Release_Fast",     "jobs":24 },
-      { "name":"Win32_Arm64_Debug",          "configuration":"Debug",   "configurePreset":"Win32_Arm64_Debug",          "jobs":24 },
-      { "name":"Win32_Arm64_Debug_Fast",     "configuration":"Debug",   "configurePreset":"Win32_Arm64_Debug_Fast",     "jobs":24 },
-      { "name":"Win32_Arm64_Release",        "configuration":"Release", "configurePreset":"Win32_Arm64_Release",        "jobs":24 },
-      { "name":"Win32_Arm64_Release_Fast",   "configuration":"Release", "configurePreset":"Win32_Arm64_Release_Fast",   "jobs":24 },
+      { "name":"Win32_x64_Debug",            "configuration":"Debug",   "configurePreset":"Win32_x64_Debug",            "jobs":24, "condition":{"type":"equals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"Win32_x64_Debug_Fast",       "configuration":"Debug",   "configurePreset":"Win32_x64_Debug_Fast",       "jobs":24, "condition":{"type":"equals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"Win32_x64_Release",          "configuration":"Release", "configurePreset":"Win32_x64_Release",          "jobs":24, "condition":{"type":"equals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"Win32_x64_Release_Fast",     "configuration":"Release", "configurePreset":"Win32_x64_Release_Fast",     "jobs":24, "condition":{"type":"equals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"Win32_Arm64_Debug",          "configuration":"Debug",   "configurePreset":"Win32_Arm64_Debug",          "jobs":24, "condition":{"type":"equals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"Win32_Arm64_Debug_Fast",     "configuration":"Debug",   "configurePreset":"Win32_Arm64_Debug_Fast",     "jobs":24, "condition":{"type":"equals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"Win32_Arm64_Release",        "configuration":"Release", "configurePreset":"Win32_Arm64_Release",        "jobs":24, "condition":{"type":"equals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"Win32_Arm64_Release_Fast",   "configuration":"Release", "configurePreset":"Win32_Arm64_Release_Fast",   "jobs":24, "condition":{"type":"equals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"MinGW_x64_Debug",            "configuration":"Debug",   "configurePreset":"MinGW_x64_Debug",            "jobs":24, "condition":{"type":"notEquals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"MinGW_x64_Debug_Fast",       "configuration":"Debug",   "configurePreset":"MinGW_x64_Debug_Fast",       "jobs":24, "condition":{"type":"notEquals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"MinGW_x64_Release",          "configuration":"Release", "configurePreset":"MinGW_x64_Release",          "jobs":24, "condition":{"type":"notEquals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"MinGW_x64_Release_Fast",     "configuration":"Release", "configurePreset":"MinGW_x64_Release_Fast",     "jobs":24, "condition":{"type":"notEquals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"MinGW_Arm64_Debug",          "configuration":"Debug",   "configurePreset":"MinGW_Arm64_Debug",          "jobs":24, "condition":{"type":"notEquals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"MinGW_Arm64_Debug_Fast",     "configuration":"Debug",   "configurePreset":"MinGW_Arm64_Debug_Fast",     "jobs":24, "condition":{"type":"notEquals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"MinGW_Arm64_Release",        "configuration":"Release", "configurePreset":"MinGW_Arm64_Release",        "jobs":24, "condition":{"type":"notEquals","lhs":"${hostSystemName}","rhs":"Windows"} },
+      { "name":"MinGW_Arm64_Release_Fast",   "configuration":"Release", "configurePreset":"MinGW_Arm64_Release_Fast",   "jobs":24, "condition":{"type":"notEquals","lhs":"${hostSystemName}","rhs":"Windows"} },
       { "name":"Android_Arm64_Debug",        "configuration":"Debug",   "configurePreset":"Android_Arm64_Debug",        "jobs":24 },
       { "name":"Android_Arm64_Debug_Fast",   "configuration":"Debug",   "configurePreset":"Android_Arm64_Debug_Fast",   "jobs":24 },
       { "name":"Android_Arm64_Release",      "configuration":"Release", "configurePreset":"Android_Arm64_Release",      "jobs":24 },
