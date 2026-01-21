@@ -14,6 +14,7 @@
 #include "../stereokit.h"
 #include "../sk_memory.h"
 #include "../libraries/array.h"
+#include "../asset_types/font.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -39,9 +40,8 @@ void platform_sleep(int ms) {
 
 font_t platform_default_font() {
 	array_t<const char *> fonts = array_t<const char *>::make(3);
-	fonts.add(platform_file_exists("C:/Windows/Fonts/segoeui.ttf")
-		? "C:/Windows/Fonts/segoeui.ttf"
-		: "C:/Windows/Fonts/arial.ttf");
+	if      (platform_file_exists("C:/Windows/Fonts/segoeui.ttf")) fonts.add("C:/Windows/Fonts/segoeui.ttf");
+	else if (platform_file_exists("C:/Windows/Fonts/arial.ttf")) fonts.add("C:/Windows/Fonts/arial.ttf");
 
 	if      (platform_file_exists("C:/Windows/Fonts/YuGothR.ttc")) fonts.add("C:/Windows/Fonts/YuGothR.ttc");
 	else if (platform_file_exists("C:/Windows/Fonts/YuGothm.ttc")) fonts.add("C:/Windows/Fonts/YuGothm.ttc");
@@ -49,6 +49,9 @@ font_t platform_default_font() {
 	else if (platform_file_exists("C:/Windows/Fonts/Yumin.ttf"  )) fonts.add("C:/Windows/Fonts/Yumin.ttf");
 
 	if (platform_file_exists("C:/Windows/Fonts/segmdl2.ttf")) fonts.add("C:/Windows/Fonts/segmdl2.ttf");
+
+	if (fonts.count <= 0)
+		return font_create_default();
 
 	font_t result = font_create_files(fonts.data, fonts.count);
 	fonts.free();

@@ -11,7 +11,9 @@
 #include <windows.h>
 #include <shellapi.h>
 
+#ifndef VK_USE_PLATFORM_WIN32_KHR
 #define VK_USE_PLATFORM_WIN32_KHR
+#endif
 #include <sk_renderer.h>
 #include <vulkan/vulkan_win32.h>
 

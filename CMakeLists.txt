@@ -143,18 +143,17 @@ elseif (UNIX)
   endif()
 
 elseif(WIN32)
-  if (SK_WINDOWS_GL)
-    add_definitions("-DSKG_FORCE_OPENGL")
-    add_definitions("-DSK_GPU_LABELS")
-  endif()
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   if (MSVC)
     set(WINDOWS_LIBS
-    Comdlg32
-    DXGI
-    D3D11)
+    Comdlg32)
 
     list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
+  else()
+    # MinGW/GCC cross-compile settings
+    add_compile_options(-mavx -mf16c)
+    # Static runtime linking is applied per-target to StereoKitC only (see below)
+    # Executables use the runtime from the DLL to avoid duplicate symbol errors
   endif()
 endif()
 
@@ -253,6 +252,10 @@ else()
 endif()
 # Ensure sk_renderer is built with PIC for linking into shared library
 set_target_properties(sk_renderer PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Enable Win32 Vulkan surface support for Windows builds (needed by volk)
+if(WIN32)
+  target_compile_definitions(volk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+endif()
 
 
 ###########################################
@@ -642,9 +645,9 @@ endif()
 
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-  if (__MINGW32__)
+  if (MINGW)
     set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections )
-    set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id )
+    set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id)
     set(SK_WARNING_FLAG    -w)
   else()
     set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
@@ -667,6 +670,15 @@ endif()
 target_compile_options(StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
 target_link_options   (StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
 target_link_options   (StereoKitC PUBLIC ${SK_LINKER_FLAGS})
+
+# MinGW-specific settings
+if (MINGW)
+  # Remove 'lib' prefix - Windows DLLs shouldn't have it
+  set_target_properties(StereoKitC PROPERTIES PREFIX "")
+  # Statically link C/C++ runtime into the DLL to avoid shipping extra DLLs
+  # Note: -static links all subsequent libraries statically
+  target_link_options(StereoKitC PRIVATE -static)
+endif()
 
 ###########################################
 ## Copy binaries to the distribute folder##
@@ -718,10 +730,12 @@ if(SK_DISTRIBUTE)
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
 
-  # Copy all shader compiler
-  add_custom_command(TARGET StereoKitC POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_BIN_OS_LOWER}_${SK_ARCH}"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:skshaderc>" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_BIN_OS_LOWER}_${SK_ARCH}")
+  # Copy shader compiler (Android uses pre-built binary, so no skshaderc target exists)
+  if(NOT ANDROID)
+    add_custom_command(TARGET StereoKitC POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_BIN_OS_LOWER}_${SK_ARCH}"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:skshaderc>" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_BIN_OS_LOWER}_${SK_ARCH}")
+  endif()
 
   if (SK_SEPARATE_DBG)
     add_custom_command(TARGET StereoKitC POST_BUILD
@@ -782,6 +796,13 @@ if (SK_BUILD_TESTS)
   target_link_libraries( StereoKitCTest
     StereoKitC
   )
+
+  # MinGW: Statically link C++ runtime. Both DLL and EXE get their own copy.
+  # --allow-multiple-definition: The DLL's import library has runtime symbols too,
+  # but we want our own static copy, so tell the linker to ignore the duplicates.
+  if (MINGW)
+    target_link_options(StereoKitCTest PRIVATE -static -Wl,--allow-multiple-definition)
+  endif()
 
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP8")

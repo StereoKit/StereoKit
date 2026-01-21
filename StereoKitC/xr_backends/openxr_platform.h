@@ -30,6 +30,12 @@
 
 #elif defined(SK_OS_WINDOWS)
 	#define XR_USE_PLATFORM_WIN32
+	// Windows headers needed for OpenXR platform types (LARGE_INTEGER, IUnknown, etc.)
+	#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+	#endif
+	#include <windows.h>
+	#include <unknwn.h>
 
 #endif
 
