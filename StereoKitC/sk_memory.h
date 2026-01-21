@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#if defined(_WIN32) || defined(WINDOWS_UWP)
+#if defined(_WIN32)
 #include <malloc.h> // alloca doesn't exist in stdlib on windows?
 #endif
 

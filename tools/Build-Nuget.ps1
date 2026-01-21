@@ -6,7 +6,6 @@ param(
     [string]$saveKey = '',
     [switch]$noLinux = $false,
     [switch]$noWin32 = $false,
-    [switch]$noUWP = $false,
     [switch]$noAndroid = $false
 )
 
@@ -15,7 +14,6 @@ function Get-ScriptName { return $MyInvocation.ScriptName }
 
 # In case we only want to build a subset of the package
 $buildWindows    = -not $noWin32 -and -not $noBuild
-$buildWindowsUWP = -not $noUWP -and -not $noBuild
 $buildLinux      = -not $noLinux -and -not $noBuild
 $buildAndroid    = -not $noAndroid -and -not $noBuild
 
@@ -102,11 +100,6 @@ __      __          _
 
     Build-Preset -preset Win32_x64_Release -presetName 'Win32 x64'
     Build-Preset -preset Win32_Arm64_Release -presetName 'Win32 Arm64'
-    if ($buildWindowsUWP) {
-        Build-Preset -preset Uwp_x64_Release   -presetName 'UWP x64'
-        Build-Preset -preset Uwp_Arm32_Release -presetName 'UWP ARM32'
-        Build-Preset -preset Uwp_Arm64_Release -presetName 'UWP ARM64'
-    }
 }
 
 #### Build Linux ##########################

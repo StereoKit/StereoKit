@@ -2610,7 +2610,7 @@ typedef enum backend_xr_type_ {
 typedef enum backend_platform_ {
 	/*This is running as a Windows app using the Win32 APIs.*/
 	backend_platform_win32,
-	/*This is running as a Windows app using the UWP APIs.*/
+	/*This is running as a Windows app using the UWP APIs. (No longer supported)*/
 	backend_platform_uwp,
 	/*This is running as a Linux app.*/
 	backend_platform_linux,
@@ -2625,21 +2625,23 @@ typedef enum backend_graphics_ {
 	/*An invalid default value.*/
 	backend_graphics_none,
 	/*DirectX's Direct3D11 is used for rendering! This is used by default on
-	  Windows.*/
+	  Windows. (No longer supported)*/
 	backend_graphics_d3d11,
 	/*OpenGL is used for rendering, using GLX (OpenGL Extension to the X Window
-	  System) for loading. This is used by default on Linux.*/
+	  System) for loading. This is used by default on Linux. (No longer supported)*/
 	backend_graphics_opengl_glx,
 	/*OpenGL is used for rendering, using WGL (Windows Extensions to OpenGL)
-	  for loading. Native developers can configure SK to use this on Windows.*/
+	  for loading. Native developers can configure SK to use this on Windows.
+	  (No longer supported)*/
 	backend_graphics_opengl_wgl,
 	/*OpenGL ES is used for rendering, using EGL (EGL Native Platform Graphics
 	  Interface) for loading. This is used by default on Android, and native
-	  developers can configure SK to use this on Linux.*/
+	  developers can configure SK to use this on Linux. (No longer supported)*/
 	backend_graphics_opengles_egl,
 	/*WebGL is used for rendering. This is used by default on Web.*/
 	backend_graphics_webgl,
-	/*Vulkan is used for rendering via sk_renderer.*/
+	/*Vulkan is used for rendering, this works basically on every platform, and
+	  is the only backend StereoKit currently supports!*/
 	backend_graphics_vulkan,
 } backend_graphics_;
 

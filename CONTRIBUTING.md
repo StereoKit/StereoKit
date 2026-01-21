@@ -15,7 +15,6 @@ StereoKit is Open Source, so if you have changes or improvements you'd like to a
   - [StereoKit](#stereokit)
   - [StereoKitCTest](#stereokitctest)
   - [StereoKitTest](#stereokittest)
-  - [_UWP Variants](#_uwp-variants)
 - [Coding Guidelines](#coding-guidelines)
   - [General Philosophy](#general-philosophy)
   - [GitHub Usage](#github-usage)
@@ -150,10 +149,6 @@ This project does quite a bit, and is important to be familiar with! It contains
 If you are adding a significant feature, it is strongly encouraged to add a demo as well as samples to this project!
 
 Reflection is used here to find all classes that implement the ITest interface. All ITest classes are run during testing (with the `-test` command-line arg), but when run like a normal app, it will present a list of all ITest classes where the name starts with `Demo` for the user to select. Long term, it is planned to upload this project as a showcase WASM build to the StereoKit docs website.
-
-### _UWP Variants
-
-Some projects have a _UWP appended to their name. These are Visual Studio projects that build to the UWP platform, but merely link to the code in the non-_UWP project. You shouldn't need to modify these projects directly, just "Set as Active". If you add or remove files from the non-_UWP project, you may need to unload and reload the project for it to discover the new files.
 
 ## Coding Guidelines
 

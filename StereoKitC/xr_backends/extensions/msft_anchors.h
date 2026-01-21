@@ -10,14 +10,13 @@
 
 namespace sk {
 
-void         xr_ext_msft_spatial_anchors_register   ();
-bool         xr_ext_msft_spatial_anchors_available  ();
+void         xr_ext_msft_spatial_anchors_register    ();
+bool         xr_ext_msft_spatial_anchors_available   ();
 
-anchor_t     xr_ext_msft_spatial_anchors_create               (pose_t pose, const char* name_utf8);
-void         xr_ext_msft_spatial_anchors_destroy              (anchor_t anchor);
-void         xr_ext_msft_spatial_anchors_clear_stored         ();
-bool32_t     xr_ext_msft_spatial_anchors_persist              (anchor_t anchor, bool32_t persist);
-anchor_caps_ xr_ext_msft_spatial_anchors_capabilities         ();
-bool32_t     xr_ext_msft_spatial_anchors_get_perception_anchor(anchor_t anchor, void** perception_spatial_anchor);
+anchor_t     xr_ext_msft_spatial_anchors_create      (pose_t pose, const char* name_utf8);
+void         xr_ext_msft_spatial_anchors_destroy     (anchor_t anchor);
+void         xr_ext_msft_spatial_anchors_clear_stored();
+bool32_t     xr_ext_msft_spatial_anchors_persist     (anchor_t anchor, bool32_t persist);
+anchor_caps_ xr_ext_msft_spatial_anchors_capabilities();
 
 }

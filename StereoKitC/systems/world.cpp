@@ -262,4 +262,21 @@ void world_set_origin_offset(pose_t offset) {
 	world_origin_offset = offset;
 }
 
+///////////////////////////////////////////
+
+// This function is for backwards compatibility.
+pose_t world_from_perception_anchor(void* perception_spatial_anchor) {
+	log_warnf("%s is no longer supported.", "world_from_perception_anchor");
+	return pose_identity;
+}
+
+///////////////////////////////////////////
+
+// This function is for backwards compatibility.
+bool32_t world_try_from_perception_anchor(void* perception_spatial_anchor, pose_t* out_pose) {
+	log_warnf("%s is no longer supported.", "world_try_from_perception_anchor");
+	*out_pose = pose_identity;
+	return false;
+}
+
 } // namespace sk

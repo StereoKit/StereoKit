@@ -6,6 +6,12 @@
 /// Here are a list of small demos that illustrate how
 /// certain parts of StereoKit works!
 ///
+/// ## [Anchors](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoAnchors.cs)
+/// 
+/// This demo uses StereoKit's Anchor API to add, remove, and load spatial anchors that are locked to local physical locations. These can be used for persisting locations across sessions, or increasing the stability of your experiences!
+///
+/// ![Anchors]({{site.screen_url}}/Demos/Anchors.jpg)
+///
 /// ## [Asset Enumeration](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoAssets.cs)
 /// 
 /// If you need to take a peek at what's currently loaded, StereoKit has a couple tools in the Assets class!
@@ -36,12 +42,6 @@
 ///
 /// ![Eye Tracking]({{site.screen_url}}/Demos/EyeTracking.jpg)
 ///
-/// ## [FB Passthrough Extension](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoFBPassthrough.cs)
-/// 
-/// Passthrough AR!
-///
-/// ![FB Passthrough Extension]({{site.screen_url}}/Demos/FBPassthroughExtension.jpg)
-///
 /// ## [Mesh Generation](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoGeo.cs)
 /// 
 /// Generating a Mesh or Model via code can be an important task, and StereoKit provides a number of tools to make this pretty easy! In addition to the Default meshes, you can also generate a number of shapes, seen here. (See the Mesh.Gen functions)
@@ -65,6 +65,18 @@
 /// This demo is the source for the 'Using Hands' guide, and is a collection of different options and examples of how to get, use, and visualize Hand data.
 ///
 /// ![Hand Input]({{site.screen_url}}/Demos/HandInput.jpg)
+///
+/// ## [Composition Layers](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoLayers.cs)
+/// 
+/// OpenXR allows for a variety of surfaces to be composed onto the screen. StereoKit by default manages just a single 'Projection Layer', but you can also submit additional layers with special shapes (quad layers), or special color buffers (like video)!
+///
+/// ![Composition Layers]({{site.screen_url}}/Demos/CompositionLayers.jpg)
+///
+/// ## [Lighting Editor](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoLighting.cs)
+/// 
+/// 
+///
+/// ![Lighting Editor]({{site.screen_url}}/Demos/LightingEditor.jpg)
 ///
 /// ## [Line Render](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoLineRender.cs)
 /// 
@@ -118,11 +130,25 @@
 ///
 /// ![Model Nodes]({{site.screen_url}}/Demos/ModelNodes.jpg)
 ///
+/// ## [Passthrough](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoPassthrough.cs)
+/// 
+/// You can set up AR with OpenXR by changing the environment blend mode! In StereoKit, this is modifiable via Device.DisplayBlend at runtime, and SKSettings.blendPreference during initialization.
+/// 
+/// Note that some devices may not support each blend mode! Like a HoloLens can't be Opaque, and some VR headsets can't be transparent!
+///
+/// ![Passthrough]({{site.screen_url}}/Demos/Passthrough.jpg)
+///
 /// ## [PBR Shaders](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoPBR.cs)
 /// 
 /// Shaders!
 ///
 /// ![PBR Shaders]({{site.screen_url}}/Demos/PBRShaders.jpg)
+///
+/// ## [Permissions](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoPermissions.cs)
+/// 
+/// StereoKit comes with APIs for managing cross-platform permissions. While on Desktop, permissions are almost not an issue, platforms like Android can get kinda complicated! Here, StereoKit provides an API that handles the more complicated permission issues of platforms like Android, and also can be a regular part of your desktop code!
+///
+/// ![Permissions]({{site.screen_url}}/Demos/Permissions.jpg)
 ///
 /// ## [File Picker](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoPicker.cs)
 /// 
@@ -150,6 +176,12 @@
 ///
 /// ![Record Mic]({{site.screen_url}}/Demos/RecordMic.jpg)
 ///
+/// ## [Render Lists](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoRenderList.cs)
+/// 
+/// All draw calls are stored in RenderList.Primary, but you can also store your draw calls to custom RenderLists! This allows you to draw more specific scenes to render textures with greater control, for use as icons, thumbnails, and all sorts of interesting things!
+///
+/// ![Render Lists]({{site.screen_url}}/Demos/RenderLists.jpg)
+///
 /// ## [Render Scaling](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoRenderScaling.cs)
 /// 
 /// Sometimes you need to boost the number of pixels your app renders, to reduce jaggies! Renderer.Scaling and Renderer.Multisample let you increase the size of the draw surface, and multisample each pixel.
@@ -158,17 +190,25 @@
 ///
 /// ![Render Scaling]({{site.screen_url}}/Demos/RenderScaling.jpg)
 ///
+/// ## [Rounded UI](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoRoundedUI.cs)
+/// 
+/// 
+///
+/// ![Rounded UI]({{site.screen_url}}/Demos/RoundedUI.jpg)
+///
+/// ## [Dynamic ShadowMaps](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoShadows.cs)
+/// 
+/// Using StereoKit's Renderer.RenderTo, SetGlobalTexture, MaterialBuffers, and a bit of ingenuity, you can also add shadow mapping to your app!
+/// 
+/// This is a very basic single cascade implementation of shadow mapping to illustrate the idea.
+///
+/// ![Dynamic ShadowMaps]({{site.screen_url}}/Demos/DynamicShadowMaps.jpg)
+///
 /// ## [Skeleton Estimation](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoSkeleton.cs)
 /// 
 /// With knowledge about where the head and hands are, you can make a decent guess about where some other parts of the body are! The StereoKit repository contains an AvatarSkeleton IStepper to show a basic example of how something like this can be done.
 ///
 /// ![Skeleton Estimation]({{site.screen_url}}/Demos/SkeletonEstimation.jpg)
-///
-/// ## [Sky Editor](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoSky.cs)
-/// 
-/// 
-///
-/// ![Sky Editor]({{site.screen_url}}/Demos/SkyEditor.jpg)
 ///
 /// ## [Sound](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoSound.cs)
 /// 
@@ -224,10 +264,6 @@
 /// 
 ///
 /// ![Unicode Text]({{site.screen_url}}/Demos/UnicodeText.jpg)
-///
-/// ## [World Anchor](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoWorldAnchor.cs)
-/// 
-/// This demo uses UWP's Spatial APIs to add, remove, and load World Anchors that are locked to local physical locations. These can be used for persisting locations across sessions, or increasing the stability of your experiences!
 ///
 /// ## [World Mesh](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoWorldMesh.cs)
 /// 

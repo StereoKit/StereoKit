@@ -105,8 +105,8 @@ xr_system_ xr_ext_hand_tracking_initialize(void*) {
 	//
 	// TODO: Remove this when the hand tracking data source extension is more
 	// generally available.
-#if defined(_M_X64) && (defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP))
 	xr_runtime_ runtime = openxr_get_known_runtime();
+#if defined(_M_X64) && defined(SK_OS_WINDOWS)
 	if (local.has_data_source == false && (runtime == xr_runtime_wmr || runtime == xr_runtime_steamvr)) {
 
 		// Check if we have the Ultraleap layer
@@ -162,7 +162,6 @@ xr_system_ xr_ext_hand_tracking_initialize(void*) {
 
 	// The Oculus runtime adds an offset position to the fingertips, so we
 	// apply a fix to put them in the right place.
-	xr_runtime_ runtime = openxr_get_known_runtime();
 	if (runtime == xr_runtime_meta || runtime == xr_runtime_android_xr) {
 		local.tip_fix = true;
 	}

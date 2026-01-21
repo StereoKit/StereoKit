@@ -147,6 +147,7 @@ namespace StereoKit
 		/// Windows.Perception.Spatial.SpatialAnchor.</param>
 		/// <returns>A Pose representing the current orientation of the
 		/// SpatialAnchor.</returns>
+		[Obsolete("UWP is no longer supported")]
 		public static Pose FromPerceptionAnchor(object perceptionSpatialAnchor)
 		{
 			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);
@@ -168,6 +169,7 @@ namespace StereoKit
 		/// orientation of the spatial node.</param>
 		/// <returns>A Pose representing the current orientation of the
 		/// SpatialAnchor.</returns>
+		[Obsolete("UWP is no longer supported")]
 		public static bool FromPerceptionAnchor(object perceptionSpatialAnchor, out Pose pose)
 		{
 			IntPtr unknown = Marshal.GetIUnknownForObject(perceptionSpatialAnchor);

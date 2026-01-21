@@ -119,15 +119,10 @@ bool32_t sk_init(sk_settings_t settings) {
 			? standby_mode_none
 			: standby_mode_slow;
 #endif
-	
-	// HoloLens (UWP) can't handle MSAA and a resolve, so we set MSAA to 1 by
-	// default there. Fortunately it looks great without it, so we don't really
-	// need MSAA there. This setting is still explicitly assignable.
-#if defined(SK_OS_WINDOWS_UWP)
-	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 1;
-#else
-	if (local.settings.render_multisample == 0      ) local.settings.render_multisample = 4;
-#endif
+
+	// Default to 4x MSAA! Near free on tiled renderers, and easily affordable
+	// on desktop.
+	if (local.settings.render_multisample == 0) local.settings.render_multisample = 4;
 
 #if defined(SK_OS_ANDROID)
 	// don't allow flatscreen fallback on Android
@@ -386,8 +381,6 @@ const char *sk_version_name() {
 		"Linux"
 #elif defined(SK_OS_WINDOWS)
 		"Win32"
-#elif defined(SK_OS_WINDOWS_UWP)
-		"UWP"
 #else
 		"MysteryPlatform"
 #endif

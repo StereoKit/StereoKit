@@ -402,7 +402,7 @@ char *assets_file(const char *file_name) {
 	if (file_name == nullptr || settings->assets_folder == nullptr || settings->assets_folder[0] == '\0')
 		return string_copy(file_name);
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 	const char *ch = file_name;
 	while (*ch != '\0') {
 		if (*ch == ':') {

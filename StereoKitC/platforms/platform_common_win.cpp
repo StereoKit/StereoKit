@@ -1,7 +1,7 @@
 ﻿/* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2024 Nick Klingensmith
- * Copyright (c) 2023-2024 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2026 Nick Klingensmith
+ * Copyright (c) 2023-2026 Qualcomm Technologies, Inc.
  */
 
 #ifndef _CRT_SECURE_NO_WARNINGS
@@ -9,7 +9,7 @@
 #endif
 
 #include "platform.h"
-#if defined (SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined (SK_OS_WINDOWS)
 
 #include "../stereokit.h"
 #include "../sk_memory.h"

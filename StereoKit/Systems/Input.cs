@@ -351,8 +351,7 @@ namespace StereoKit
 		/// whether the user is simulating eye input with the Alt key.
 		/// 
 		/// **Permissions**
-		/// - For UWP apps, permissions for eye tracking can be found in the project's .appxmanifest file under Capabilities->Gaze Input.
-		/// - For Xamarin apps, you may need to add an entry to your AndroidManifest.xml, refer to your device's documentation for specifics.
+		/// - On some platforms (like Android) explicit permission is required to access eye info. See the Permissions class for details.
 		/// </summary>
 		public static BtnState EyesTracked => NativeAPI.input_eyes_tracked();
 

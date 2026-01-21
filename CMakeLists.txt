@@ -158,12 +158,10 @@ elseif(WIN32)
   endif()
 endif()
 
-if (__MINGW32__)
-  add_compile_definitions(PAL_STDCPP_COMPAT="needed for mingw")
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-  add_definitions("-DWINDOWS_UWP")
+if (NOT MSVC)
+  # SAL macros (__in, __out, etc.) from include_no_win/sal.h conflict with
+  # C++ standard library internal identifiers. This disables them.
+  add_compile_definitions(PAL_STDCPP_COMPAT)
 endif()
 
 # On Android, shared lib SK has a JNI_OnLoad, which can conflict with dev
@@ -416,8 +414,6 @@ set(SK_SRC_PLATFORMS
   StereoKitC/platforms/platform_common_unix.cpp
   StereoKitC/platforms/web.h
   StereoKitC/platforms/web.cpp
-  StereoKitC/platforms/uwp.h
-  StereoKitC/platforms/uwp.cpp
   StereoKitC/platforms/win32.h
   StereoKitC/platforms/win32.cpp )
 
@@ -481,8 +477,6 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/oculus_audio.cpp
   StereoKitC/xr_backends/extensions/msft_anchors.h
   StereoKitC/xr_backends/extensions/msft_anchors.cpp
-  StereoKitC/xr_backends/extensions/msft_anchor_interop.h
-  StereoKitC/xr_backends/extensions/msft_anchor_interop.cpp
   StereoKitC/xr_backends/extensions/msft_bridge.h
   StereoKitC/xr_backends/extensions/msft_bridge.cpp
   StereoKitC/xr_backends/extensions/msft_observer.h
@@ -678,9 +672,7 @@ target_link_options   (StereoKitC PUBLIC ${SK_LINKER_FLAGS})
 ## Copy binaries to the distribute folder##
 ###########################################
 
-if (CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-  set(SK_BIN_OS "UWP")
-elseif (WIN32)
+if (WIN32)
   set(SK_BIN_OS "Win32")
 elseif(ANDROID)
   set(SK_BIN_OS "Android")
@@ -745,10 +737,6 @@ endif()
 ###########################################
 ## StereoKitCTest                        ##
 ###########################################
-
-if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-  set(SK_WIN32 WIN32)
-endif()
 
 if (SK_BUILD_TESTS)
   add_executable( StereoKitCTest ${SK_WIN32}

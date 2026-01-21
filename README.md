@@ -35,18 +35,17 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 
 ## Platform Support
 
-StereoKit supports Meta Quest, HoloLens 2, Windows Mixed Reality, Oculus Desktop, SteamVR, Varjo, Monado, and essentially everywhere OpenXR is!
+StereoKit supports Meta Quest, Android XR, Windows Mixed Reality, Oculus Desktop, SteamVR, Varjo, Monado, and essentially everywhere OpenXR is!
 
 These are the binaries that currently ship in the NuGet package. StereoKit developers working from C/C++ should be fine to build any architecture from this list of platforms.
 
-| Platform | x64 | ARM | ARM64 |
-|----------|-----|-----|-------|
-| Windows (Desktop/Win32) | X |   | X |
-| Windows (HoloLens/UWP)  | X | X | X |
-| Linux                   | X |   | X |
-| Android                 | X |   | X |
+| Platform | x64 | ARM64 |
+|----------|-----|-------|
+| Windows | X | X |
+| Linux   | X | X |
+| Android | X | X |
 
-Architecture support has focused on 64 bit architectures, with exceptions for certain platforms. (If you require an additional architecture in the NuGet, please propose it as an Issue!) Here, UWP's ARM builds much faster than UWP's ARM64, and WASM only comes in 32 bit flavors.
+If you require an additional architecture in the NuGet, please propose it as an Issue!
 
 ## Getting started
 

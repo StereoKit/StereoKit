@@ -188,15 +188,10 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 ///////////////////////////////////////////
 
 char* fontfile_folder() {
-#ifdef WINDOWS_UWP
-	// Hard code for now until UWP replacement for shlobj library.
-	return _strdup("C:\\Windows\\System32");
-#else
 	// We have a valid font name now, prefix the windows font folder to it.
 	wchar_t font_folder_path[MAX_PATH];
 	SHGetFolderPathW(nullptr, CSIDL_FONTS, nullptr, SHGFP_TYPE_CURRENT, font_folder_path);
 	return _wchar_to_utf8(font_folder_path);
-#endif
 }
 
 ///////////////////////////////////////////

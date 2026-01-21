@@ -19,14 +19,11 @@
 			<SKBuildPlatform Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'"                             >Android</SKBuildPlatform>
 			<SKBuildPlatform Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">Android</SKBuildPlatform>
 			<SKBuildPlatform Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='windows'">CoreWindows</SKBuildPlatform>
-			<SKBuildPlatform Condition="'$(TargetPlatformIdentifier)'=='UAP'"                                      >UWP</SKBuildPlatform>
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETCoreApp'"  >Core</SKBuildNET>
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'"  >Mono</SKBuildNET>
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETFramework'">Framework</SKBuildNET>
-			<SKBuildNET Condition="'$(TargetPlatformIdentifier)'=='UAP'"           >UWP</SKBuildNET>
 
-			<SKCopyAssets Condition="'$(SKCopyAssets)' == '' and ('$(UseUwp)'=='true' and !$(SKAssetFolder.StartsWith('..')))">false</SKCopyAssets>
-			<SKCopyAssets Condition="'$(SKCopyAssets)' == '' and ('$(UseUwp)'!='true' or   $(SKAssetFolder.StartsWith('..')))">true</SKCopyAssets>
+			<SKCopyAssets Condition="'$(SKCopyAssets)' == '' and $(SKAssetFolder.StartsWith('..'))">true</SKCopyAssets>
 
 			<SKOpenXRLoaderFolder    Condition="'$(SKOpenXRLoaderFolder)'   !=''">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKOpenXRLoaderFolder)'))))</SKOpenXRLoaderFolder>
 			<SKShaderStandardInclude Condition="'$(SKShaderStandardInclude)'!=''">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKShaderStandardInclude)'))))</SKShaderStandardInclude>

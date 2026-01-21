@@ -80,17 +80,11 @@ namespace StereoKit
 		/// if it is not, it'll create a fallback filepicker build using
 		/// StereoKit's UI.
 		/// 
-		/// Flatscreen apps will show traditional file pickers, and UWP has 
-		/// an OS provided file picker that works in MR. All others currently
-		/// use the fallback system.
-		/// 
-		/// A note for UWP apps, UWP generally does not have permission to 
-		/// access random files, unless the user has chosen them with the 
-		/// picker! This picker properly handles permissions for individual
-		/// files on UWP, but may have issues with files that reference other
-		/// files, such as .gltf files with external textures. See 
-		/// Platform.WriteFile and Platform.ReadFile for manually reading and
-		/// writing files in a cross-platfom manner.</summary>
+		/// Flatscreen apps will show traditional file pickers, but some
+		/// platforms may have an OS provided file picker that works in MR.
+		/// Some pickers will block the system and return right away, but
+		/// others will stick around and let users continue to interact with
+		/// the app. </summary>
 		/// <param name="mode">Are we trying to Open a file, or Save a file?
 		/// This changes the appearance and behavior of the picker to support
 		/// the specified action.</param>
@@ -116,19 +110,11 @@ namespace StereoKit
 		/// if it is not, it'll create a fallback filepicker build using
 		/// StereoKit's UI.
 		/// 
-		/// Flatscreen apps will show traditional file pickers, and UWP has 
-		/// an OS provided file picker that works in MR. All others currently
-		/// use the fallback system. Some pickers will block the system and
-		/// return right away, but others will stick around and let users
-		/// continue to interact with the app.
-		/// 
-		/// A note for UWP apps, UWP generally does not have permission to 
-		/// access random files, unless the user has chosen them with the 
-		/// picker! This picker properly handles permissions for individual
-		/// files on UWP, but may have issues with files that reference other
-		/// files, such as .gltf files with external textures. See 
-		/// Platform.WriteFile and Platform.ReadFile for manually reading and
-		/// writing files in a cross-platfom manner.</summary>
+		/// Flatscreen apps will show traditional file pickers, but some
+		/// platforms may have an OS provided file picker that works in MR.
+		/// Some pickers will block the system and return right away, but
+		/// others will stick around and let users continue to interact with
+		/// the app. </summary>
 		/// <param name="mode">Are we trying to Open a file, or Save a file?
 		/// This changes the appearance and behavior of the picker to support
 		/// the specified action.</param>

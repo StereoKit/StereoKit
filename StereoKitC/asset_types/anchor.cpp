@@ -251,9 +251,7 @@ button_state_ anchor_get_tracked(const anchor_t anchor) {
 ///////////////////////////////////////////
 
 bool32_t anchor_get_perception_anchor(const anchor_t anchor, void** perception_spatial_anchor) {
-	return anch_sys == anchor_system_openxr_msft
-		? xr_ext_msft_spatial_anchors_get_perception_anchor(anchor, perception_spatial_anchor)
-		: false;
+	return false;
 }
 
 ///////////////////////////////////////////

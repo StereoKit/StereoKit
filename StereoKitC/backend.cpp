@@ -140,8 +140,6 @@ backend_platform_ backend_platform_get() {
 	return backend_platform_android;
 #elif defined(SK_OS_LINUX)
 	return backend_platform_linux;
-#elif defined(SK_OS_WINDOWS_UWP)
-	return backend_platform_uwp;
 #elif defined(SK_OS_WINDOWS)
 	return backend_platform_win32;
 #elif defined(SK_OS_WEB)

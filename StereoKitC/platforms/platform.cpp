@@ -42,7 +42,7 @@
 
 #endif
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 
 	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
@@ -397,7 +397,7 @@ char *platform_pop_path_new(const char *path) {
 	if (last != -1) {
 		src_path = stref_substr(src_path, 0, last);
 	} else {
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 		return string_copy("");
 #else
 		return string_copy(platform_path_separator);
@@ -437,13 +437,6 @@ bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t
 	}
 
 	// Fall back to standard file io functions, they -can- work on Android
-#elif defined(SK_OS_WINDOWS_UWP)
-	// See if we have a Handle cached from the FilePicker that matches this
-	// file name.
-	if (file_picker_cache_read(slash_fix_filename, out_data, out_size)) {
-		sk_free(slash_fix_filename);
-		return true;
-	}
 #endif
 
 #if defined(SK_OS_LINUX)
@@ -458,7 +451,7 @@ bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t
 	}
 #endif
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 	wchar_t* wfilename = platform_to_wchar(slash_fix_filename);
 	FILE*    fp        = _wfopen(wfilename, L"rb");
 	if (fp == nullptr) {
@@ -538,7 +531,7 @@ bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t
 
 ///////////////////////////////////////////
 bool32_t platform_read_file(const char* filename, void** out_data, size_t* out_size) {
-	char* asset_filename = assets_file(filename);
+	char*    asset_filename   = assets_file(filename);
 	bool32_t read_file_result = platform_read_file_direct(asset_filename, out_data, out_size);
 	sk_free(asset_filename);
 	return read_file_result;
@@ -547,14 +540,7 @@ bool32_t platform_read_file(const char* filename, void** out_data, size_t* out_s
 ///////////////////////////////////////////
 
 bool32_t _platform_write_file(const char* filename, void* data, size_t size, bool32_t binary) {
-#if defined(SK_OS_WINDOWS_UWP)
-	// See if we have a Handle cached from the FilePicker that matches this
-	// file name.
-	if (file_picker_cache_save(filename, data, size))
-		return true;
-#endif
-
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 	wchar_t* wfilename = platform_to_wchar(filename);
 	FILE*    fp        = _wfopen(wfilename, binary?L"wb":L"w");
 	sk_free(wfilename);

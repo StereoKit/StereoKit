@@ -24,16 +24,10 @@
 	<!-- Exclude the subfolders for different platform projects -->
 	<ItemGroup>
 		<Compile Remove="StereoKitTest_NetAndroid\**" />
-		<Compile Remove="StereoKitTest_NetUWP\**" />
-		<Compile Remove="StereoKitTest_UWP\**" />
 		<Compile Remove="StereoKitTest_Xamarin\**" />
 		<EmbeddedResource Remove="StereoKitTest_NetAndroid\**" />
-		<EmbeddedResource Remove="StereoKitTest_NetUWP\**" />
-		<EmbeddedResource Remove="StereoKitTest_UWP\**" />
 		<EmbeddedResource Remove="StereoKitTest_Xamarin\**" />
 		<None Remove="StereoKitTest_NetAndroid\**" />
-		<None Remove="StereoKitTest_NetUWP\**" />
-		<None Remove="StereoKitTest_UWP\**" />
 		<None Remove="StereoKitTest_Xamarin\**" />
 	</ItemGroup>
 	

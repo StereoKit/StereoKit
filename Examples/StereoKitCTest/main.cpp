@@ -102,7 +102,7 @@ scene_t demos[] = {
 		demo_aliasing_update,
 		demo_aliasing_shutdown,
 	},
-#if defined(_WIN32) && !defined(WINDOWS_UWP)
+#if defined(_WIN32)
 	{
 		"Windows",
 		demo_windows_init,
@@ -153,11 +153,7 @@ void log_window() {
 	ui_window_end();
 }
 
-#ifndef WINDOWS_UWP
 int main() {
-#else
-int __stdcall wWinMain(void*, void*, wchar_t*, int) {
-#endif
 	log_subscribe(on_log);
 	log_set_filter(log_diagnostic);
 
@@ -170,7 +166,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demos[10]);
+	scene_set_active(demos[0]);
 
 	sk_run(common_update, common_shutdown);
 

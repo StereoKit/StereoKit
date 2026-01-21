@@ -9,7 +9,7 @@ class TestTextConstraint : ITest
 		Show("one\n\ntwo\nthree",     new Vec2(0.2f, 0), 0.03f);
 		Show("Vvardenfell",           new Vec2(0,    0), 0.01f);
 
-		Tests.Screenshot("Tests\\TextConstraint.jpg", 200, 400, 30, new Vec3(0.1f,-0.25f,-1.2f), new Vec3(0.1f,-0.25f,0));
+		Tests.Screenshot("Tests/TextConstraint.jpg", 200, 400, 30, new Vec3(0.1f,-0.25f,-1.2f), new Vec3(0.1f,-0.25f,0));
 	}
 
 	static void Show(string text, Vec2 at, float width)

@@ -30,7 +30,6 @@
 #include "msft_anchors.h"
 #include "msft_bridge.h"
 #include "msft_observer.h"
-#include "msft_anchor_interop.h"
 #include "msft_scene_understanding.h"
 
 ///////////////////////////////////////////
@@ -61,7 +60,6 @@ bool ext_registration() {
 	xr_ext_overlay_register();
 	xr_ext_oculus_audio_register();
 	xr_ext_msft_bridge_register();
-	xr_ext_msft_anchor_interop_register();
 	xr_ext_interaction_render_model_register();
 	xr_ext_render_model_register();
 

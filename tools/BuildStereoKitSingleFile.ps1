@@ -4,7 +4,6 @@ Push-Location "$PSScriptRoot\.."
 $SourceFolder = ".\StereoKitC"
 $OutputFile   = ".\tools\stereokit.merged.txt"
 $ExcludeDirs  = @(
-	"StereoKitC_UWP",
 	"lib\include"
 )
 $ExcludeFiles = @(
