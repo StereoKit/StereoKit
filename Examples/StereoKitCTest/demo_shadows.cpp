@@ -98,10 +98,10 @@ void demo_shadows_init() {
 
 	// Load environment map and update lighting when loaded
 	tex_t env_tex = tex_create_cubemap_file("old_depot.hdr");
-	tex_on_load(env_tex, [](tex_t t, void*) {
+	render_set_skytex(env_tex);
+	tex_on_load      (env_tex, [](tex_t t, void*) {
 		spherical_harmonics_t lighting = tex_get_cubemap_lighting(t);
 		render_set_skylight(lighting);
-		render_set_skytex(t);
 		// Update light direction from dominant light
 		light_dir = sh_dominant_dir(lighting);
 		light_dir = vec3_normalize(light_dir);
