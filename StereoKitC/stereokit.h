@@ -1770,12 +1770,9 @@ typedef enum projection_ {
 
 //TODO: for v0.4, rename render_set_clip and render_set_fov to indicate they are only for perspective
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
-SK_API void                  render_get_clip       (float* out_near_plane, float* out_far_plane);
-SK_API void                  render_set_fov        (float vertical_field_of_view_degrees sk_default(90.0f));
-SK_API float                 render_get_fov        (void);
+SK_API void                  render_set_fov        (float field_of_view_degrees sk_default(90.0f));
 SK_API void                  render_set_ortho_clip (float near_plane sk_default(0.0f), float far_plane sk_default(50));
 SK_API void                  render_set_ortho_size (float viewport_height_meters);
-SK_API float                 render_get_ortho_size (void);
 SK_API void                  render_set_projection (projection_ proj);
 SK_API projection_           render_get_projection (void);
 SK_API matrix                render_get_cam_root   (void);
@@ -2452,6 +2449,7 @@ SK_API const controller_t*   input_controller                (handed_ hand);
 SK_API button_state_         input_controller_menu           (void);
 SK_API void                  input_controller_model_set      (handed_ hand, model_t model);
 SK_API model_t               input_controller_model_get      (handed_ hand);
+SK_API pose_t                input_controller_detached       (handed_ hand);
 SK_API pose_t                input_head                      (void);
 SK_API pose_t                input_eyes                      (void);
 SK_API button_state_         input_eyes_tracked              (void);

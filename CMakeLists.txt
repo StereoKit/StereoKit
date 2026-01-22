@@ -452,6 +452,8 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/composition_depth.cpp
   StereoKitC/xr_backends/extensions/debug_utils.h
   StereoKitC/xr_backends/extensions/debug_utils.cpp
+  StereoKitC/xr_backends/extensions/meta_detached_controllers.h
+  StereoKitC/xr_backends/extensions/meta_detached_controllers.cpp
   StereoKitC/xr_backends/extensions/ext_interaction_render_model.h
   StereoKitC/xr_backends/extensions/ext_interaction_render_model.cpp
   StereoKitC/xr_backends/extensions/ext_render_model.h

@@ -378,22 +378,9 @@ void render_set_clip(float near_plane, float far_plane) {
 
 ///////////////////////////////////////////
 
-void render_get_clip(float* out_near_plane, float* out_far_plane) {
-	if (out_near_plane) *out_near_plane = local.clip_planes.x;
-	if (out_far_plane ) *out_far_plane  = local.clip_planes.y;
-}
-
-///////////////////////////////////////////
-
-void render_set_fov(float vertical_field_of_view_degrees) {
-	local.fov = vertical_field_of_view_degrees;
+void render_set_fov(float field_of_view_degrees) {
+	local.fov = field_of_view_degrees;
 	render_update_projection();
-}
-
-///////////////////////////////////////////
-
-float render_get_fov() {
-	return local.fov;
 }
 
 ///////////////////////////////////////////
@@ -401,12 +388,6 @@ float render_get_fov() {
 void render_set_ortho_size(float viewport_height_meters) {
 	local.ortho_viewport_height = viewport_height_meters;
 	render_update_projection();
-}
-
-///////////////////////////////////////////
-
-float render_get_ortho_size() {
-	return local.ortho_viewport_height;
 }
 
 ///////////////////////////////////////////
