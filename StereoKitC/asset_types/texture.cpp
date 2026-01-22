@@ -620,7 +620,7 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		tex_t    face           = tex_create(tex_type_rendertarget | tex_type_mips, equirect->format);
 		void    *face_data[6]   = {};
 		size_t   size           = tex_format_size(face->format, tex->width, tex->height);
-		uint32_t mip_count      = skg_mip_count(tex->width, tex->height);
+		int32_t  mip_count      = skg_mip_count(tex->width, tex->height);
 		uint32_t total_tex_size = 0;
 		for (int32_t mip_level = 0; mip_level < mip_count; mip_level++) {
 			int32_t  width  = 0;
@@ -649,7 +649,7 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 				render_blit (blit_data->face, blit_data->material);
 				tex_gen_mips(blit_data->face);
 
-				uint32_t mip_count = skg_mip_count(blit_data->face->width, blit_data->face->height);
+				int32_t  mip_count = skg_mip_count(blit_data->face->width, blit_data->face->height);
 				uint8_t* mip_data  = (uint8_t*)blit_data->face_data;
 				for(int32_t mip_level = 0; mip_level < mip_count; mip_level++) {
 					int32_t  width  = 0;
