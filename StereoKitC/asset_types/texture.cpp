@@ -350,7 +350,7 @@ bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_t
 // Texture creation functions            //
 ///////////////////////////////////////////
 
-asset_task_t tex_make_loading_task(tex_t texture, void *load_data, const asset_load_action_t *actions, int32_t action_count, int32_t priority, float complexity) {
+asset_task_t tex_make_loading_task(tex_t texture, void *load_data, const asset_load_action_t *actions, int32_t action_count, int32_t priority, int32_t complexity) {
 	asset_task_t task = {};
 	task.asset        = (asset_header_t*)texture;
 	task.free_data    = tex_load_free;
@@ -426,7 +426,7 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
 		asset_load_action_t {tex_load_arr_upload, backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu },
 	};
-	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, (float)(load_data->color_width * load_data->color_height)) );
+	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, load_data->color_width * load_data->color_height) );
 
 	return result;
 }
@@ -1089,7 +1089,7 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
 		asset_load_action_t {tex_load_arr_upload, backend_graphics_get() == backend_graphics_d3d11 ? asset_thread_asset : asset_thread_gpu  }, // DX can multithreaded upload, GL cannot
 	};
-	asset_task_t task = tex_make_loading_task(texture, load_data, actions, _countof(actions), priority, (float)(load_data->color_width * load_data->color_height));
+	asset_task_t task = tex_make_loading_task(texture, load_data, actions, _countof(actions), priority, load_data->color_width * load_data->color_height);
 	if (blocking) {
 		for (int32_t i = 0; i < 2; i++) {
 			if (!actions[i].action(&task, &texture->header, load_data))
