@@ -88,6 +88,11 @@ namespace StereoKit
 			get => NativeAPI.tex_get_sample(_inst);
 			set => NativeAPI.tex_set_sample(_inst, value); }
 
+		/// <summary>When sampling from a texture with comparison enabled, the
+		/// sampler compares the sampled texel value against a reference value
+		/// and returns a 0 or 1 based on the result. This is primarily useful
+		/// for shadow mapping techniques, where a depth texture is sampled to
+		/// determine if a surface is in shadow.</summary>
 		public TexSampleComp SampleComp {
 			get => NativeAPI.tex_get_sample_comp(_inst);
 			set => NativeAPI.tex_set_sample_comp(_inst, value);
@@ -160,6 +165,20 @@ namespace StereoKit
 		#endregion
 
 		#region Methods
+		
+		/// <summary>Copy the current texture into a new texture, with the
+		/// option to convert it to a different format or type! This is a GPU
+		/// blit operation, so the source texture does not need to be readable
+		/// from the CPU. If the source texture doesn't have mip-maps but the
+		/// destination type does, they'll be generated for you!</summary>
+		/// <param name="textureType">What type of texture should the new
+		/// texture be? Image types with mip-maps will have mips generated for
+		/// them if the source doesn't have them.</param>
+		/// <param name="textureFormat">What format should the new texture
+		/// be in? If None is specified, the new texture will use the same
+		/// format as the source.</param>
+		/// <returns>A new texture copied from this one, or null if the copy
+		/// failed.</returns>
 		public Tex Copy(TexType textureType = TexType.Image, TexFormat textureFormat = TexFormat.None)
 		{
 			IntPtr result = NativeAPI.tex_copy(_inst, textureType, textureFormat);

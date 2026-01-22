@@ -92,6 +92,11 @@ namespace StereoKit
 		public void Update(Vec3 capsuleStart, Vec3 capsuleEnd, Pose motion, Vec3 motionAnchor, Vec3 secondaryMotion, BtnState active, BtnState tracked)
 			=> NativeAPI.interactor_update(_inst, capsuleStart, capsuleEnd, motion, motionAnchor, secondaryMotion, active, tracked);
 
+		/// <summary>Interactors, unlike Assets, don't destroy themselves! You
+		/// must explicitly Destroy an Interactor if you're finished with it,
+		/// otherwise it will continue to interact with StereoKit's 
+		/// interactors. This function immediately removes the interactor from
+		/// the interactor list.</summary>
 		public void Destroy()
 			=> NativeAPI.interactor_destroy(_inst);
 

@@ -328,29 +328,75 @@ typedef enum tex_format_ {
 	  stencil. This is a more compact depth-stencil format.*/
 	tex_format_depth16s8,
 
+	/*BC1/DXT1 block compression with sRGB color. 4 bits per pixel,
+	  great for opaque textures on desktop/console GPUs.*/
 	tex_format_bc1_rgb_srgb,
+	/*BC1/DXT1 block compression, linear color. 4 bits per pixel,
+	  great for opaque textures on desktop/console GPUs.*/
 	tex_format_bc1_rgb,
+	/*BC3/DXT5 block compression with sRGB color. 8 bits per pixel,
+	  good for textures with alpha on desktop/console GPUs.*/
 	tex_format_bc3_rgba_srgb,
+	/*BC3/DXT5 block compression, linear color. 8 bits per pixel,
+	  good for textures with alpha on desktop/console GPUs.*/
 	tex_format_bc3_rgba,
+	/*BC4 single-channel block compression. 4 bits per pixel, ideal
+	  for grayscale textures like heightmaps on desktop/console GPUs.*/
 	tex_format_bc4_r,
+	/*BC5 two-channel block compression. 8 bits per pixel, commonly
+	  used for normal maps on desktop/console GPUs.*/
 	tex_format_bc5_rg,
+	/*BC7 high-quality block compression with sRGB color. 8 bits per
+	  pixel, best quality for color textures on desktop/console GPUs.*/
 	tex_format_bc7_rgba_srgb,
+	/*BC7 high-quality block compression, linear color. 8 bits per
+	  pixel, best quality for color textures on desktop/console GPUs.*/
 	tex_format_bc7_rgba,
 
+	/*ETC1 compression for RGB, widely supported on older Android
+	  devices. 4 bits per pixel, no alpha support.*/
 	tex_format_etc1_rgb,
+	/*ETC2 compression with sRGB color and alpha. 8 bits per pixel,
+	  standard on OpenGL ES 3.0+ mobile devices.*/
 	tex_format_etc2_rgba_srgb,
+	/*ETC2 compression with linear color and alpha. 8 bits per pixel,
+	  standard on OpenGL ES 3.0+ mobile devices.*/
 	tex_format_etc2_rgba,
+	/*ETC2 single-channel compression. 4 bits per pixel, good for
+	  grayscale data on mobile.*/
 	tex_format_etc2_r11,
+	/*ETC2 two-channel compression. 8 bits per pixel, useful for
+	  normal maps on mobile.*/
 	tex_format_etc2_rg11,
+	/*PVRTC1 RGB compression with sRGB color. 4 bits per pixel,
+	  supported on iOS and PowerVR GPUs.*/
 	tex_format_pvrtc1_rgb_srgb,
+	/*PVRTC1 RGB compression, linear color. 4 bits per pixel,
+	  supported on iOS and PowerVR GPUs.*/
 	tex_format_pvrtc1_rgb,
+	/*PVRTC1 RGBA compression with sRGB color. 4 bits per pixel,
+	  supported on iOS and PowerVR GPUs.*/
 	tex_format_pvrtc1_rgba_srgb,
+	/*PVRTC1 RGBA compression, linear color. 4 bits per pixel,
+	  supported on iOS and PowerVR GPUs.*/
 	tex_format_pvrtc1_rgba,
+	/*PVRTC2 RGBA compression with sRGB color. 4 bits per pixel,
+	  improved quality over PVRTC1 on PowerVR GPUs.*/
 	tex_format_pvrtc2_rgba_srgb,
+	/*PVRTC2 RGBA compression, linear color. 4 bits per pixel,
+	  improved quality over PVRTC1 on PowerVR GPUs.*/
 	tex_format_pvrtc2_rgba,
+	/*ASTC 4x4 block compression with sRGB color. 8 bits per pixel,
+	  high quality format supported on modern mobile GPUs.*/
 	tex_format_astc4x4_rgba_srgb,
+	/*ASTC 4x4 block compression, linear color. 8 bits per pixel,
+	  high quality format supported on modern mobile GPUs.*/
 	tex_format_astc4x4_rgba,
+	/*ATC RGB compression for Qualcomm Adreno GPUs. 4 bits per pixel,
+	  found on many Android devices.*/
 	tex_format_atc_rgb,
+	/*ATC RGBA compression for Qualcomm Adreno GPUs. 8 bits per pixel,
+	  found on many Android devices.*/
 	tex_format_atc_rgba,
 } tex_format_;
 
@@ -1207,15 +1253,36 @@ typedef enum tex_sample_ {
 	tex_sample_anisotropic
 } tex_sample_;
 
+/*When sampling from a texture with comparison enabled, the sampler
+  compares the sampled texel value against a reference value and returns
+  a 0 or 1 based on the result. This is primarily useful for shadow
+  mapping techniques, where a depth texture is sampled to determine if a
+  surface is in shadow.*/
 typedef enum tex_sample_comp_ {
+	/*No comparison is performed, the texture is sampled normally.
+	  This is the default behavior for most textures.*/
 	tex_sample_comp_none = 0,
+	/*Returns 1 if the reference value is less than the sampled
+	  texel value.*/
 	tex_sample_comp_less,
+	/*Returns 1 if the reference value is less than or equal to
+	  the sampled texel value.*/
 	tex_sample_comp_less_or_eq,
+	/*Returns 1 if the reference value is greater than the sampled
+	  texel value.*/
 	tex_sample_comp_greater,
+	/*Returns 1 if the reference value is greater than or equal to
+	  the sampled texel value.*/
 	tex_sample_comp_greater_or_eq,
+	/*Returns 1 if the reference value is equal to the sampled
+	  texel value.*/
 	tex_sample_comp_equal,
+	/*Returns 1 if the reference value is not equal to the sampled
+	  texel value.*/
 	tex_sample_comp_not_equal,
+	/*Always returns 1, regardless of values.*/
 	tex_sample_comp_always,
+	/*Always returns 0, regardless of values.*/
 	tex_sample_comp_never,
 } tex_sample_comp_;
 

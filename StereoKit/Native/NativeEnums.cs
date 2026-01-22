@@ -214,28 +214,74 @@ namespace StereoKit
 		/// <summary>A depth data format with 16 bits for depth and 8 bits for
 		/// stencil. This is a more compact depth-stencil format.</summary>
 		Depth16s8,
+		/// <summary>BC1/DXT1 block compression with sRGB color. 4 bits per pixel,
+		/// great for opaque textures on desktop/console GPUs.</summary>
 		Bc1RgbSrgb,
+		/// <summary>BC1/DXT1 block compression, linear color. 4 bits per pixel,
+		/// great for opaque textures on desktop/console GPUs.</summary>
 		Bc1Rgb,
+		/// <summary>BC3/DXT5 block compression with sRGB color. 8 bits per pixel,
+		/// good for textures with alpha on desktop/console GPUs.</summary>
 		Bc3RgbaSrgb,
+		/// <summary>BC3/DXT5 block compression, linear color. 8 bits per pixel,
+		/// good for textures with alpha on desktop/console GPUs.</summary>
 		Bc3Rgba,
+		/// <summary>BC4 single-channel block compression. 4 bits per pixel, ideal
+		/// for grayscale textures like heightmaps on desktop/console GPUs.</summary>
 		Bc4R,
+		/// <summary>BC5 two-channel block compression. 8 bits per pixel, commonly
+		/// used for normal maps on desktop/console GPUs.</summary>
 		Bc5Rg,
+		/// <summary>BC7 high-quality block compression with sRGB color. 8 bits per
+		/// pixel, best quality for color textures on desktop/console GPUs.</summary>
 		Bc7RgbaSrgb,
+		/// <summary>BC7 high-quality block compression, linear color. 8 bits per
+		/// pixel, best quality for color textures on desktop/console GPUs.</summary>
 		Bc7Rgba,
+		/// <summary>ETC1 compression for RGB, widely supported on older Android
+		/// devices. 4 bits per pixel, no alpha support.</summary>
 		Etc1Rgb,
+		/// <summary>ETC2 compression with sRGB color and alpha. 8 bits per pixel,
+		/// standard on OpenGL ES 3.0+ mobile devices.</summary>
 		Etc2RgbaSrgb,
+		/// <summary>ETC2 compression with linear color and alpha. 8 bits per pixel,
+		/// standard on OpenGL ES 3.0+ mobile devices.</summary>
 		Etc2Rgba,
+		/// <summary>ETC2 single-channel compression. 4 bits per pixel, good for
+		/// grayscale data on mobile.</summary>
 		Etc2R11,
+		/// <summary>ETC2 two-channel compression. 8 bits per pixel, useful for
+		/// normal maps on mobile.</summary>
 		Etc2Rg11,
+		/// <summary>PVRTC1 RGB compression with sRGB color. 4 bits per pixel,
+		/// supported on iOS and PowerVR GPUs.</summary>
 		Pvrtc1RgbSrgb,
+		/// <summary>PVRTC1 RGB compression, linear color. 4 bits per pixel,
+		/// supported on iOS and PowerVR GPUs.</summary>
 		Pvrtc1Rgb,
+		/// <summary>PVRTC1 RGBA compression with sRGB color. 4 bits per pixel,
+		/// supported on iOS and PowerVR GPUs.</summary>
 		Pvrtc1RgbaSrgb,
+		/// <summary>PVRTC1 RGBA compression, linear color. 4 bits per pixel,
+		/// supported on iOS and PowerVR GPUs.</summary>
 		Pvrtc1Rgba,
+		/// <summary>PVRTC2 RGBA compression with sRGB color. 4 bits per pixel,
+		/// improved quality over PVRTC1 on PowerVR GPUs.</summary>
 		Pvrtc2RgbaSrgb,
+		/// <summary>PVRTC2 RGBA compression, linear color. 4 bits per pixel,
+		/// improved quality over PVRTC1 on PowerVR GPUs.</summary>
 		Pvrtc2Rgba,
+		/// <summary>ASTC 4x4 block compression with sRGB color. 8 bits per pixel,
+		/// high quality format supported on modern mobile GPUs.</summary>
 		Astc4x4RgbaSrgb,
+		/// <summary>ASTC 4x4 block compression, linear color. 8 bits per pixel,
+		/// high quality format supported on modern mobile GPUs.</summary>
 		Astc4x4Rgba,
+		/// <summary>ATC RGB compression for Qualcomm Adreno GPUs. 4 bits per pixel,
+		/// found on many Android devices.</summary>
 		AtcRgb,
+		/// <summary>ATC RGBA compression for Qualcomm Adreno GPUs. 8 bits per pixel,
+		/// found on many Android devices.</summary>
 		AtcRgba,
 	}
 
@@ -640,15 +686,36 @@ namespace StereoKit
 		Anisotropic,
 	}
 
+	/// <summary>When sampling from a texture with comparison enabled, the sampler
+	/// compares the sampled texel value against a reference value and returns
+	/// a 0 or 1 based on the result. This is primarily useful for shadow
+	/// mapping techniques, where a depth texture is sampled to determine if a
+	/// surface is in shadow.</summary>
 	public enum TexSampleComp {
+		/// <summary>No comparison is performed, the texture is sampled normally.
+		/// This is the default behavior for most textures.</summary>
 		None         = 0,
+		/// <summary>Returns 1 if the reference value is less than the sampled
+		/// texel value.</summary>
 		Less,
+		/// <summary>Returns 1 if the reference value is less than or equal to
+		/// the sampled texel value.</summary>
 		LessOrEq,
+		/// <summary>Returns 1 if the reference value is greater than the sampled
+		/// texel value.</summary>
 		Greater,
+		/// <summary>Returns 1 if the reference value is greater than or equal to
+		/// the sampled texel value.</summary>
 		GreaterOrEq,
+		/// <summary>Returns 1 if the reference value is equal to the sampled
+		/// texel value.</summary>
 		Equal,
+		/// <summary>Returns 1 if the reference value is not equal to the sampled
+		/// texel value.</summary>
 		NotEqual,
+		/// <summary>Always returns 1, regardless of values.</summary>
 		Always,
+		/// <summary>Always returns 0, regardless of values.</summary>
 		Never,
 	}
 

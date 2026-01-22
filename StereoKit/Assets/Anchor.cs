@@ -61,6 +61,7 @@ namespace StereoKit {
 		public bool TryGetPerceptionAnchor<T>(out T spatialAnchor) where T : class
 		{
 			spatialAnchor = null;
+			if (!OperatingSystem.IsWindows()) return false;
 			bool result = NativeAPI.anchor_get_perception_anchor(_inst, out IntPtr pointer);
 			if (result)
 			{

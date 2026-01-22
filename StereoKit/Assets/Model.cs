@@ -661,7 +661,7 @@ namespace StereoKit
 		/// non-null value.</summary>
 		/// <param name="key">Identifying key.</param>
 		/// <returns>True if found, false if not.</returns>
-		public bool Contains(string key) => NativeAPI.model_node_info_get(_model, _nodeId, key) != null;
+		public bool Contains(string key) => NativeAPI.model_node_info_get(_model, _nodeId, key) != IntPtr.Zero;
 
 		/// <summary>Removes a specific key/value pair from the collection, if
 		/// present.</summary>
