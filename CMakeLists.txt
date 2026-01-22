@@ -19,13 +19,13 @@
 #     on desktop, but on Android you may need to dynamic link with other
 #     loaders.
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
 if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
   cmake_policy(SET CMP0135 NEW)
 endif()
 
-project(StereoKit VERSION "0.3.9" LANGUAGES CXX C)
+project(StereoKit VERSION "0.4.0" LANGUAGES CXX C)
 
 # Add this repository's cmake modules to CMAKE_MODULE_PATH
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_LIST_DIR}/cmake)
@@ -40,7 +40,7 @@ set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest pro
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
 set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
 set(SK_WINDOWS_GL                   OFF CACHE BOOL "Build Windows version using OpenGL as the renderer. This is primarily for debugging GL code while developing on Windows.")
-set(SK_LOCAL_SK_RENDERER            ON  CACHE BOOL "Build using a local version of sk_renderer, instead of the latest release. This is useful for testing in-progress changes to sk_renderer.")
+set(SK_LOCAL_SK_RENDERER            OFF CACHE BOOL "Build using a local version of sk_renderer, instead of the latest release. This is useful for testing in-progress changes to sk_renderer.")
 set(SK_PROFILE                      OFF CACHE BOOL "Build with Tracy profiler enabled.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
@@ -213,13 +213,24 @@ CPMAddPackage( # We're scraping the comment after the NAME for some other script
   GIT_SHALLOW       1
   DOWNLOAD_ONLY     YES # basis universal doesn't have a library in it, we include code from this library directly
 )
-add_compile_definitions(BASISD_SUPPORT_FXT1=0)
-add_compile_definitions(BASISD_SUPPORT_PVRTC1=0)
-add_compile_definitions(BASISD_SUPPORT_PVRTC2=0)
-add_compile_definitions(BASISD_SUPPORT_ATC=0)
-add_compile_definitions(BASISD_SUPPORT_ETC2_EAC_A8=0)
-add_compile_definitions(BASISD_SUPPORT_BC7=0)
-add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
+if (basis_universal_SOURCE_DIR)
+  # Create an object library for basisu to properly suppress warnings
+  add_library(basisu_transcoder OBJECT
+    ${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp
+    ${basis_universal_SOURCE_DIR}/zstd/zstd.c)
+  target_include_directories(basisu_transcoder SYSTEM PUBLIC ${basis_universal_SOURCE_DIR}/transcoder)
+  target_compile_options    (basisu_transcoder PRIVATE $<$<CXX_COMPILER_ID:GNU>:-w> $<$<CXX_COMPILER_ID:Clang>:-w> $<$<CXX_COMPILER_ID:MSVC>:/W0>)
+  target_compile_options    (basisu_transcoder PRIVATE $<$<C_COMPILER_ID:GNU>:-w> $<$<C_COMPILER_ID:Clang>:-w> $<$<C_COMPILER_ID:MSVC>:/W0>)
+  set_target_properties     (basisu_transcoder PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_compile_definitions(basisu_transcoder PRIVATE
+    BASISD_SUPPORT_FXT1=0
+    BASISD_SUPPORT_PVRTC1=0
+    BASISD_SUPPORT_PVRTC2=0
+    BASISD_SUPPORT_ATC=0
+    BASISD_SUPPORT_ETC2_EAC_A8=0
+    BASISD_SUPPORT_BC7=0
+    BASISD_SUPPORT_BC7_MODE5=0)
+endif()
 
 #### Tracy Profiler - https://github.com/wolfpld/tracy ####
 
@@ -227,7 +238,7 @@ if (SK_PROFILE)
   CPMAddPackage(
     NAME tracy
     GITHUB_REPOSITORY wolfpld/tracy
-    GIT_TAG v0.12.2
+    GIT_TAG a5e5e8a435daf36f9213d40e7e97efc6cbb13610
     GIT_SHALLOW 1
     OPTIONS
       "TRACY_ENABLE ON"
@@ -241,16 +252,16 @@ endif()
 set(SKR_ENABLE_STATIC_ANALYSIS OFF CACHE PATH "Faster build" FORCE)
 set(SKR_BUILD_EXAMPLES OFF CACHE PATH "Faster build" FORCE)
 if (NOT SK_LOCAL_SK_RENDERER)
-  CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME sk_renderer # 2025.9.7
+  CPMAddPackage(
+    NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
+    GIT_TAG v2026.1.22
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to your
   # local sk_renderer clone, and use it instead of CPM.
   add_subdirectory(../sk_renderer ../sk_renderer/build)
 endif()
-# Ensure sk_renderer is built with PIC for linking into shared library
 set_target_properties(sk_renderer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # Enable Win32 Vulkan surface support for Windows builds (needed by volk)
 if(WIN32)
@@ -509,13 +520,6 @@ set(SK_SRC_UI
   StereoKitC/ui/ui_theming.h
   StereoKitC/ui/ui_theming.cpp )
 
-if (basis_universal_ADDED)
-  set(SK_SRC_BASISU
-    ${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp
-    ${basis_universal_SOURCE_DIR}/zstd/zstd.c)
-  # Suppress warnings for basisu
-  set_source_files_properties(${SK_SRC_BASISU} PROPERTIES COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:GNU>:-w>$<$<CXX_COMPILER_ID:Clang>:-w>$<$<CXX_COMPILER_ID:MSVC>:/W0>")
-endif()
 
 set(SK_SRC_SHADERS_H
   StereoKitC/shaders_builtin/shader_builtin.h )
@@ -541,7 +545,6 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_XR_EXTS}
   ${SK_SRC_TOOLS}
   ${SK_SRC_UI}
-  ${SK_SRC_BASISU}
   ${SK_SRC_SHADERS_H} )
 
 if (ANDROID)
@@ -585,7 +588,6 @@ source_group("xr_backends"     FILES ${SK_SRC_XR_BACKENDS})
 source_group("xr_exts"         FILES ${SK_SRC_XR_EXTS})
 source_group("tools"           FILES ${SK_SRC_TOOLS})
 source_group("ui"              FILES ${SK_SRC_UI})
-source_group("basisu"          FILES ${SK_SRC_BASISU})
 source_group("shaders_builtin" FILES ${SK_SRC_SHADERS_H})
 
 if (NOT MSVC)
@@ -622,9 +624,6 @@ target_include_directories(StereoKitC
     ${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/
     ${LINUX_INCLUDES}
 )
-if (basis_universal_ADDED)
-  target_include_directories(StereoKitC PRIVATE ${basis_universal_SOURCE_DIR}/transcoder)
-endif()
 
 target_link_libraries( StereoKitC
   PRIVATE
@@ -633,6 +632,7 @@ target_link_libraries( StereoKitC
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
     meshoptimizer
+    basisu_transcoder
   PUBLIC
     sk_renderer
     ${OPENXR_LIB}

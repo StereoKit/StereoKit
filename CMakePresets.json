@@ -220,8 +220,7 @@
       "inherits":    "Linux",
       "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Release",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "SK_PROFILE":       "ON"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
@@ -239,8 +238,7 @@
       "inherits":    "Linux",
       "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Debug",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "SK_PROFILE":       "ON"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
