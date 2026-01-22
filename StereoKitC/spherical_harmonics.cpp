@@ -91,6 +91,7 @@ void sh_add(spherical_harmonics_t &to, vec3 light_dir, vec3 light_color) {
 ///////////////////////////////////////////
 
 spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int32_t face_size) {
+	// TODO: not used anymore, do we want to get rid of it?
 	spherical_harmonics_t result   = {};
 	size_t                col_size = 0;
 	vec3     (*convert)(uint8_t *) = nullptr;

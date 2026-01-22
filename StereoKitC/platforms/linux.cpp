@@ -36,6 +36,7 @@
 #include "../libraries/sokol_time.h"
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
+#include "../sk_memory.h"
 #include "string.h"
 #include "sys/stat.h"
 
@@ -596,14 +597,15 @@ void platform_iterate_dir(const char *directory_path, void *callback_data, void 
 			on_item(callback_data, dir_info->d_name, file_attr);
 		}
 		else if (dir_info->d_type == DT_REG) {
-			char* file_path = new char[strlen(directory_path) + strlen(dir_info->d_name) + 1];
+			char* file_path = sk_malloc_t(char, strlen(directory_path) + strlen(dir_info->d_name) + 2);
 			strcpy(file_path, directory_path);
 			strcat(file_path, "/");
 			strcat(file_path, dir_info->d_name);
 			struct stat file_stat;
 			stat(file_path, &file_stat);
-			free(file_path);
+			sk_free(file_path);
 			platform_file_attr_t file_attr;
+			file_attr.file = true;
 			file_attr.size = file_stat.st_size;
 			on_item(callback_data, dir_info->d_name, file_attr);
 		}

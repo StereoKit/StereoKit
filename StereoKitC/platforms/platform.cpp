@@ -378,7 +378,7 @@ char *platform_push_path_new(const char *path, const char *directory) {
 	if (!ends_with && !starts_with)
 		result = string_append(nullptr, 3, path, platform_path_separator, directory);
 	else if (ends_with && starts_with)
-		result = string_append(nullptr, 2, path, directory[1]);
+		result = string_append(nullptr, 2, path, &directory[1]);
 	else 
 		result = string_append(nullptr, 2, path, directory);
 

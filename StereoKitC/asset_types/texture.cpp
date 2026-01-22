@@ -1190,48 +1190,13 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 ///////////////////////////////////////////
 
 spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
-	profiler_zone();
-
 	assets_block_until(&cubemap_texture->header, asset_state_loaded);
 
-	skr_tex_t *tex = &cubemap_texture->gpu_tex;
-
-	if (cubemap_texture->light_info != nullptr)
-		return *cubemap_texture->light_info;
-
-	// If they want spherical harmonics, lets calculate it for them, or give
-	// them a good error message!
-	if (cubemap_texture->width != cubemap_texture->height || skr_tex_get_array_count(tex) != 6) {
-		log_warn("Invalid texture size for calculating spherical harmonics. Must be an equirect image, or have 6 images all same width and height.");
-		return {};
-	} else if (!(cubemap_texture->format == tex_format_rgba32_srgb || cubemap_texture->format == tex_format_rgba32_linear || cubemap_texture->format == tex_format_rgba64f || cubemap_texture->format == tex_format_rgba128 || cubemap_texture->format == tex_format_rg11b10)) {
-		log_warn("Invalid texture format for calculating spherical harmonics, must be rgba32, rg11b10, rgba64f or rgba128.");
-		return {};
-	} else {
-		skr_vec3i_t base_size       = { cubemap_texture->width, cubemap_texture->height, 1 };
-		int32_t     mip_level       = maxi((int32_t)0, (int32_t)skr_tex_calc_mip_count(base_size) - 6);
-		skr_vec3i_t mip_size        = skr_tex_calc_mip_dimensions(base_size, mip_level);
-		size_t      face_size       = skr_tex_calc_mip_size((skr_tex_fmt_)cubemap_texture->format, mip_size, 0);
-		size_t      cube_size       = face_size * 6;
-		uint8_t*    cube_color_data = (uint8_t*)sk_malloc(cube_size);
-		void*       data[6];
-
-		// Read back each face using async readback API
-		for (int32_t f = 0; f < 6; f++) {
-			data[f] = cube_color_data + face_size * f;
-			skr_tex_readback_t readback = {};
-			if (skr_tex_readback(tex, mip_level, f, &readback) == skr_err_success) {
-				skr_future_wait(&readback.future);
-				memcpy(data[f], readback.data, face_size);
-				skr_tex_readback_destroy(&readback);
-			}
-		}
-
-		cubemap_texture ->light_info = sk_malloc_t(spherical_harmonics_t, 1);
-		*cubemap_texture->light_info = sh_calculate(data, cubemap_texture->format, mip_size.x);
-		sk_free(cube_color_data);
-		return *cubemap_texture->light_info;
-	}
+	// SH data is calculated during asset loading, and will be available here
+	// if available at all.
+	return cubemap_texture->light_info
+		? *cubemap_texture->light_info
+		: spherical_harmonics_t{};
 }
 
 ///////////////////////////////////////////
