@@ -12,6 +12,9 @@ param(
 function Get-LineNumber { return $MyInvocation.ScriptLineNumber }
 function Get-ScriptName { return $MyInvocation.ScriptName }
 
+# Detect host OS
+$isLinuxHost = $IsLinux -or ($PSVersionTable.Platform -eq 'Unix')
+
 # In case we only want to build a subset of the package
 $buildWindows    = -not $noWin32 -and -not $noBuild
 $buildLinux      = -not $noLinux -and -not $noBuild
@@ -52,13 +55,13 @@ if ($upload) { Write-Host 'AND UPLOADING!' -ForegroundColor Green }
 else         { Write-Host 'local only.'    -ForegroundColor White }
 
 # Switch to the right folder
-Push-Location -Path "$PSScriptRoot\.."
+Push-Location -Path (Join-Path $PSScriptRoot "..")
 
 #### Update Version #######################
 
-$version = & $PSScriptRoot\Get-Version.ps1
+$version = & (Join-Path $PSScriptRoot "Get-Version.ps1")
 # Ensure all versions match the source of truth
-& $PSScriptRoot\Set-Version.ps1 -major $version.major -minor $version.minor -patch $version.patch -pre $version.pre
+& (Join-Path $PSScriptRoot "Set-Version.ps1") -major $version.major -minor $version.minor -patch $version.patch -pre $version.pre
 
 # Notify of build, and output the version
 Write-Host @"
@@ -76,11 +79,13 @@ Write-Host "v$($version.str)`n" -ForegroundColor Cyan
 # Clean out the old files, do a full build
 if ($clean) {
     Write-Host 'Cleaning old files...'
-    if (Test-Path 'bin\distribute') {
-        Remove-Item 'bin\distribute' -Recurse
+    $distributeDir = Join-Path "bin" "distribute"
+    $cmakeDir = Join-Path "bin" "intermediate" "cmake"
+    if (Test-Path $distributeDir) {
+        Remove-Item $distributeDir -Recurse
     }
-    if (Test-Path 'bin\intermediate\cmake') {
-        Remove-Item 'bin\intermediate\cmake' -Recurse -Force
+    if (Test-Path $cmakeDir) {
+        Remove-Item $cmakeDir -Recurse -Force
     }
     Write-Host 'Cleaned'
 } else {
@@ -91,29 +96,41 @@ if ($clean) {
 
 if ($buildWindows) {
     Write-Host @"
-__      __          _               
+__      __          _
 \ \    / ( )_ _  __| |_____ __ _____
  \ \/\/ /| | ' \/ _  / _ \ V  V (_-<
   \_/\_/ |_|_||_\__ _\___/\_/\_//__/
 
 "@ -ForegroundColor White
 
-    Build-Preset -preset Win32_x64_Release -presetName 'Win32 x64'
-    Build-Preset -preset Win32_Arm64_Release -presetName 'Win32 Arm64'
+    if ($isLinuxHost) {
+        # Use MinGW cross-compile presets on Linux
+        Build-Preset -preset MinGW_x64_Release -presetName 'Win32 x64 (MinGW)'
+        #Build-Preset -preset MinGW_Arm64_Release -presetName 'Win32 Arm64 (MinGW)'
+    } else {
+        # Use native MSVC presets on Windows
+        Build-Preset -preset Win32_x64_Release -presetName 'Win32 x64'
+        Build-Preset -preset Win32_Arm64_Release -presetName 'Win32 Arm64'
+    }
 }
 
 #### Build Linux ##########################
 if ($buildLinux) {
     Write-Host @"
-  _                   
+  _
  | |  (_)_ _ _  ___ __
  | |__| | ' \ || \ \ /
  |____|_|_||_\_,_/_\_\
-                      
+
 "@ -ForegroundColor White
 
-    # Build-Preset -preset LinuxArm64Release -presetName 'Linux ARM64' -wsl
-    Build-Preset -preset Linux_x64_Release -presetName 'Linux x64' -wsl
+    if ($isLinuxHost) {
+        # Native Linux build - no WSL needed
+        Build-Preset -preset Linux_x64_Release -presetName 'Linux x64'
+    } else {
+        # Windows host - use WSL for Linux builds
+        Build-Preset -preset Linux_x64_Release -presetName 'Linux x64' -wsl
+    }
 }
 
 #### Build Android ########################
@@ -135,7 +152,7 @@ if ($buildAndroid) {
 
 # Run tests!
 if ($noTest -eq $false) {
-    & $PSScriptRoot/Run-Tests.ps1
+    & (Join-Path $PSScriptRoot "Run-Tests.ps1")
     if ($LASTEXITCODE -ne 0) {
         Write-Host '--- Tests failed! Stopping build! ---' -ForegroundColor red
         Pop-Location
@@ -160,11 +177,12 @@ Write-Host "--- Beginning build: NuGet package ---" -ForegroundColor green
 # Turn on NuGet package generation, build, then turn it off again
 $packageOff  = '<GeneratePackageOnBuild>false</GeneratePackageOnBuild>'
 $packageOn   = '<GeneratePackageOnBuild>true</GeneratePackageOnBuild>'
-$packageFile = "$PSScriptRoot/../StereoKit/StereoKit.csproj"
+$packageFile = Join-Path $PSScriptRoot ".." "StereoKit" "StereoKit.csproj"
+$csprojPath  = Join-Path "StereoKit" "StereoKit.csproj"
 $partialBuild= '-p:SKIgnoreMissingBinaries=true'
 if ($upload) {$partialBuild = ''}
 [System.IO.File]::WriteAllText($packageFile, ((Get-Content -Path $packageFile -raw) -replace $packageOff, $packageOn))
-& dotnet build StereoKit\StereoKit.csproj $partialBuild -c Release
+& dotnet build $csprojPath $partialBuild -c Release
 [System.IO.File]::WriteAllText($packageFile, ((Get-Content -Path $packageFile -raw) -replace $packageOn, $packageOff))
 if ($LASTEXITCODE -ne 0) {
     Write-Host '--- NuGet build failed! Stopping build! ---' -ForegroundColor red
@@ -175,7 +193,7 @@ Write-Host "--- Finished building: NuGet package ---"-ForegroundColor green
 
 #### Create Build Info File ###############
 
-& $PSScriptRoot\Make-Bloat-Report.ps1
+& (Join-Path $PSScriptRoot "Make-Bloat-Report.ps1")
 
 #### Upload NuGet Package #################
 
@@ -201,7 +219,8 @@ if ($upload) {
     # Upload with our key!
     if ($key -ne '') {
         $key = $key.Trim()
-        & dotnet nuget push "$PSScriptRoot/../bin/StereoKit.$($version.str).nupkg" -k $key -s https://api.nuget.org/v3/index.json
+        $nupkgPath = Join-Path $PSScriptRoot ".." "bin" "StereoKit.$($version.str).nupkg"
+        & dotnet nuget push $nupkgPath -k $key -s https://api.nuget.org/v3/index.json
     } else {
         Write-Host 'No key, cancelling upload'
     }
