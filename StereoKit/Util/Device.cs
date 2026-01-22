@@ -29,7 +29,7 @@
 		/// Maybe it can't track at all!</summary>
 		public static DeviceTracking Tracking => NativeAPI.device_get_tracking();
 		/// <summary>This is the name of the active device! From OpenXR, this
-		/// is the same as systemName from XrSystemProperties. The simulator 
+		/// is the same as systemName from XrSystemProperties. The simulator
 		/// will say "Simulator".</summary>
 		public static string Name => NativeHelper.FromUtf8(NativeAPI.device_get_name());
 		/// <summary>This is the name of the OpenXR runtime that powers the

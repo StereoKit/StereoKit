@@ -481,7 +481,7 @@ namespace StereoKit
 		/// <param name="hand">Which hand are we clearing the override on?
 		/// </param>
 		public static void HandClearOverride(Handed hand)
-			=> NativeAPI.input_hand_override(hand, IntPtr.Zero);
+			=> NativeAPI.input_hand_override(hand, null);
 
 		/// <summary>StereoKit will use controller inputs to simulate an
 		/// articulated hand. This function allows you to add new simulated

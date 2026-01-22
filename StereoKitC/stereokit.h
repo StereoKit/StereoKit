@@ -85,10 +85,15 @@ typedef union matrix {
 	vec4 row[4];
 	float m[16];
 } matrix;
+/*A 2D rectangle, defined by position and dimensions.*/
 typedef struct rect_t {
+	/*The X position of the rectangle.*/
 	float x;
+	/*The Y position of the rectangle.*/
 	float y;
+	/*The width of the rectangle.*/
 	float w;
+	/*The height of the rectangle.*/
 	float h;
 } rect_t;
 typedef struct ray_t {
@@ -598,14 +603,38 @@ typedef struct sk_settings_t {
 } sk_settings_t;
 
 // TODO: v0.4, see if this can be removed
+/*Information about a system's capabilities and properties!*/
 typedef struct system_info_t {
+	/*Width of the display surface, in pixels! For a stereo display, this will
+	be the width of a single eye.*/
 	int32_t        display_width;
+	/*Height of the display surface, in pixels! For a stereo display, this will
+	be the height of a single eye.*/
 	int32_t        display_height;
+	/*Does the device we're currently on have the spatial graph bridge
+	extension? The extension is provided through the function
+	`World.FromSpatialNode`. This allows OpenXR to talk with certain windows
+	APIs, such as the QR code API that provides Graph Node GUIDs for the pose.*/
 	bool32_t       spatial_bridge_present;
+	/*Can the device work with externally provided spatial anchors, like UWP's
+	`Windows.Perception.Spatial.SpatialAnchor`*/
 	bool32_t       perception_bridge_present;
+	/*Does the device we're on have eye tracking support present for input
+	purposes? This is _not_ an indicator that the user has given the
+	application permission to access this information. See `Input.Gaze` for how
+	to use this data.*/
 	bool32_t       eye_tracking_present;
+	/*This tells if the app was successfully started as an overlay application.
+	If this is true, then expect this application to be composited with other
+	content below it!*/
 	bool32_t       overlay_app;
+	/*Does this device support world occlusion of digital objects? If this is
+	true, then World.OcclusionEnabled can be set to true, and
+	World.OcclusionMaterial can be modified.*/
 	bool32_t       world_occlusion_present;
+	/*Can this device get ray intersections from the environment? If this is
+	true, then World.RaycastEnabled can be set to true, and World.Raycast can
+	be used.*/
 	bool32_t       world_raycast_present;
 } system_info_t;
 
@@ -630,7 +659,7 @@ SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           (void);
 SK_API void          sk_shutdown_unsafe    (void);
-SK_API void          sk_quit               (quit_reason_ quitReason = quit_reason_user);
+SK_API void          sk_quit               (quit_reason_ quitReason sk_default(quit_reason_user));
 SK_API bool32_t      sk_step               (void (*app_step)(void));
 SK_API void          sk_run                (void (*app_step)(void), void (*app_shutdown)(void) sk_default(nullptr));
 SK_API void          sk_run_data           (void (*app_step)(void *step_data), void *step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data);
@@ -678,10 +707,15 @@ typedef enum display_type_ {
 	display_type_flatscreen,
 } display_type_;
 
+/*This describes the field of view of a display, in degrees.*/
 typedef struct fov_info_t {
+	/*The left edge of the field of view, in degrees.*/
 	float left;
+	/*The right edge of the field of view, in degrees.*/
 	float right;
+	/*The top edge of the field of view, in degrees.*/
 	float top;
+	/*The bottom edge of the field of view, in degrees.*/
 	float bottom;
 } fov_info_t;
 
@@ -1036,10 +1070,22 @@ SK_API vec3                  sh_dominant_dir(const sk_ref(spherical_harmonics_t)
 
 ///////////////////////////////////////////
 
+/*This represents a single vertex in a Mesh, all StereoKit Meshes
+currently use this exact layout!
+
+It's good to fill out all values of a Vertex explicitly, as default
+values for the normal (0,0,0) and color (0,0,0,0) will cause your
+mesh to appear completely black, or even transparent in most shaders!*/
 typedef struct vert_t {
+	/*Position of the vertex, in model space coordinates.*/
 	vec3    pos;
+	/*The normal of this vertex, or the direction the vertex is
+	facing. Preferably normalized.*/
 	vec3    norm;
+	/*The texture coordinates at this vertex.*/
 	vec2    uv;
+	/*The color of the vertex. If you aren't using it, set it to
+	white.*/
 	color32 col;
 } vert_t;
 
@@ -1223,7 +1269,7 @@ SK_API void         tex_set_mem             (tex_t texture, void* data, size_t d
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
 SK_API tex_t        tex_get_zbuffer         (tex_t texture);
-SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level sk_default(0));
+SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t data_size, int32_t mip_level sk_default(0));
 SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_gen_particle        (int32_t width, int32_t height, float roundness sk_default(1), gradient_t gradient_linear sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
@@ -1752,9 +1798,14 @@ SK_API void        sprite_draw       (sprite_t sprite, matrix transform, pivot_ 
 
 ///////////////////////////////////////////
 
+/*Used to represent lines for the line drawing functions! This is
+just a snapshot of information about each individual point on a line.*/
 typedef struct line_point_t {
+	/*Location of the line point.*/
 	vec3    pt;
+	/*Total thickness of the line, in meters.*/
 	float   thickness;
+	/*The vertex color for the line at this position.*/
 	color32 color;
 } line_point_t;
 
@@ -2108,15 +2159,20 @@ typedef enum input_source_ {
 	input_source_hand_left     = 1 << 1,
 	/*Matches with right hand input sources.*/
 	input_source_hand_right    = 1 << 2,
-	/*Matches with Gaze category input sources.*/
+	/*Matches with Gaze category input sources.
+	Obsolete: Use Input.Eyes*/
 	input_source_gaze          = 1 << 4,
-	/*Matches with the head gaze input source.*/
+	/*Matches with the head gaze input source.
+	Obsolete: Use Input.Eyes*/
 	input_source_gaze_head     = 1 << 5,
-	/*Matches with the eye gaze input source.*/
+	/*Matches with the eye gaze input source.
+	Obsolete: Use Input.Eyes*/
 	input_source_gaze_eyes     = 1 << 6,
-	/*Matches with mouse cursor simulated gaze as an input source.*/
+	/*Matches with mouse cursor simulated gaze as an input source.
+	Obsolete: Use Input.Eyes*/
 	input_source_gaze_cursor   = 1 << 7,
-	/*Matches with any input source that has an activation button!*/
+	/*Matches with any input source that has an activation button!
+	Obsolete*/
 	input_source_can_press     = 1 << 8,
 } input_source_;
 SK_MakeFlag(input_source_);
@@ -2176,13 +2232,53 @@ typedef enum hand_source_ {
 	hand_source_overridden,
 } hand_source_;
 
+/*Pointer is an abstraction of a number of different input sources,
+and a way to surface input events!*/
 typedef struct pointer_t {
+	/*What input source did this pointer come from? This is a bit-flag
+	that contains input family and capability information.*/
 	input_source_ source;
+	/*Is the pointer source being tracked right now?*/
 	button_state_ tracked;
+	/*What is the state of the input source's 'button', if it has one?*/
 	button_state_ state;
+	/*A ray in the direction of the pointer.*/
 	ray_t         ray;
+	/*Orientation of the pointer! Since a Ray has no concept of 'up',
+	this can be used to retrieve more orientation information.*/
 	quat          orientation;
 } pointer_t;
+
+/*Index values for each finger! From 0-4, from thumb to little finger.*/
+typedef enum finger_id_ {
+	/*Finger 0.*/
+	finger_id_thumb  = 0,
+	/*The primary index/pointer finger! Finger 1.*/
+	finger_id_index  = 1,
+	/*Finger 2, next to the index finger.*/
+	finger_id_middle = 2,
+	/*Finger 3! What does one do with this finger? I guess... wear rings on it?*/
+	finger_id_ring   = 3,
+	/*Finger 4, the smallest little finger! AKA, The Pinky.*/
+	finger_id_little = 4
+} finger_id_;
+
+/*Here's where hands get crazy! Technical terms, and watch out for the thumbs!*/
+typedef enum joint_id_ {
+	/*Joint 0. This is at the base of the hand, right above the wrist. For the
+	thumb, Root and KnuckleMajor have the same value.*/
+	joint_id_root          = 0,
+	/*Joint 1. These are the knuckles at the top of the palm! For the thumb,
+	Root and KnuckleMajor have the same value.*/
+	joint_id_knuckle_major = 1,
+	/*Joint 2. These are the knuckles in the middle of the finger! First joints
+	on the fingers themselves.*/
+	joint_id_knuckle_mid   = 2,
+	/*Joint 3. The joints right below the fingertip!*/
+	joint_id_knuckle_minor = 3,
+	/*Joint 4. The end/tip of each finger!*/
+	joint_id_tip           = 4
+} joint_id_;
 
 typedef struct hand_joint_t {
 	vec3          position;
@@ -2221,11 +2317,20 @@ typedef struct controller_t {
 	vec2          stick;
 } controller_t;
 
+/*This stores information about the mouse! What's its state, where's it
+pointed, do we even have one?*/
 typedef struct mouse_t {
+	/*Is the mouse available to use? Most MR systems likely won't have a mouse!*/
 	bool32_t      available;
+	/*Position of the mouse relative to the window it's in! This is the number
+	of pixels from the top left corner of the screen.*/
 	vec2          pos;
+	/*How much has the mouse's position changed in the current frame? Measured
+	in pixels.*/
 	vec2          pos_change;
+	/*What's the current scroll value for the mouse's scroll wheel?*/
 	float         scroll;
+	/*How much has the scroll wheel value changed during this frame?*/
 	float         scroll_change;
 } mouse_t;
 
@@ -2534,7 +2639,7 @@ SK_API pose_t                anchor_get_pose                 (const anchor_t anc
 SK_API bool32_t              anchor_get_changed              (const anchor_t anchor);
 SK_API const char*           anchor_get_name                 (const anchor_t anchor);
 SK_API button_state_         anchor_get_tracked              (const anchor_t anchor);
-SK_API bool32_t              anchor_get_perception_anchor    (const anchor_t anchor, void** perception_spatial_anchor);
+SK_API bool32_t              anchor_get_perception_anchor    (const anchor_t anchor, void** out_perception_spatial_anchor);
 
 SK_API void                  anchor_clear_stored             (void);
 SK_API anchor_caps_          anchor_get_capabilities         (void);

@@ -1,0 +1,89 @@
+# Zig type mappings for StereoKit bindings
+
+# Native types
+int8_t i8
+int16_t i16
+int32_t i32
+int64_t i64
+uint8_t u8
+uint16_t u16
+uint32_t u32
+uint64_t u64
+bool32_t bool32
+float f32
+double f64
+void void
+char32_t u32
+char16_t u16
+char8_t u8
+char u8
+size_t usize
+
+# Keyboard keys
+key_0 N0
+key_1 N1
+key_2 N2
+key_3 N3
+key_4 N4
+key_5 N5
+key_6 N6
+key_7 N7
+key_8 N8
+key_9 N9
+key_lcmd LCmd
+key_rcmd RCmd
+
+# Render layers
+render_layer_0 Layer0
+render_layer_1 Layer1
+render_layer_2 Layer2
+render_layer_3 Layer3
+render_layer_4 Layer4
+render_layer_5 Layer5
+render_layer_6 Layer6
+render_layer_7 Layer7
+render_layer_8 Layer8
+render_layer_9 Layer9
+
+# Material params
+material_param_uint UInt
+material_param_uint2 UInt2
+material_param_uint3 UInt3
+material_param_uint4 UInt4
+
+# Log levels
+log_ LogLevel
+log_inform Info
+
+# Backend types
+backend_xr_type_ BackendXRType
+backend_xr_type_webxr WebXR
+backend_xr_type_openxr OpenXR
+backend_graphics_d3d11 D3D11
+backend_graphics_opengl_glx OpenGLGLX
+backend_graphics_opengl_wgl OpenGLWGL
+backend_graphics_opengles_egl OpenGLESEGL
+backend_graphics_webgl WebGL
+backend_graphics_vulkan Vulkan
+
+# Device tracking
+device_tracking_3dof DoF3
+device_tracking_6dof DoF6
+
+# Type overrides
+display_mode_mixedreality MixedReality
+tex_format_depthstencil DepthStencil
+button_state_ BtnState
+color128 Color
+
+# Typedefs
+vind_t u32
+vert_t Vert
+model_node_id i32
+openxr_handle_t u64
+asset_t anyopaque
+
+# Zig reserved keywords
+align alignment
+type typ
+error err

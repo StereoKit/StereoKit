@@ -1,0 +1,12 @@
+# Module prefix overrides for multi-word module names
+# Format: module_name prefix_
+
+# These modules have prefixes that can't be auto-detected from function names
+model_node model_node_
+text_style text_style_
+backend_openxr backend_openxr_
+backend_android backend_android_
+backend_d3d11 backend_d3d11_
+backend_opengl backend_opengl_
+render_list render_list_
+material_buffer material_buffer_

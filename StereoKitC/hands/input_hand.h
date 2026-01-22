@@ -10,20 +10,6 @@
 
 namespace sk {
 
-enum hand_finger_ {
-	hand_finger_thumb = 0,
-	hand_finger_index,
-	hand_finger_middle,
-	hand_finger_ring,
-	hand_finger_pinky,
-};
-enum hand_joint_ {
-	hand_joint_root = 0,
-	hand_joint_knuckle_major,
-	hand_joint_knuckle_mid,
-	hand_joint_knuckle_minor,
-	hand_joint_tip,
-};
 enum hand_system_ {
 	hand_system_none = 0,
 	hand_system_mouse,

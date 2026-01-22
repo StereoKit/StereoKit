@@ -1,0 +1,143 @@
+# Start with the native types that don't follow our rules
+int int
+int8_t sbyte
+int16_t short
+int32_t int
+int64_t long
+uint8_t byte
+uint16_t ushort
+uint32_t uint
+uint64_t ulong
+# bool32_t is handled specially in the binder (MarshalAs)
+# bool32_t int
+float float
+double double
+void void
+char32_t uint
+
+# Keyboard keys by default resolve to just numbers, no bueno
+key_0 N0
+key_1 N1
+key_2 N2
+key_3 N3
+key_4 N4
+key_5 N5
+key_6 N6
+key_7 N7
+key_8 N8
+key_9 N9
+
+key_lcmd LCmd
+key_rcmd RCmd
+
+# Same with render_layer_!
+render_layer_0 Layer0
+render_layer_1 Layer1
+render_layer_2 Layer2
+render_layer_3 Layer3
+render_layer_4 Layer4
+render_layer_5 Layer5
+render_layer_6 Layer6
+render_layer_7 Layer7
+render_layer_8 Layer8
+render_layer_9 Layer9
+
+material_param_uint UInt
+material_param_uint2 UInt2
+material_param_uint3 UInt3
+material_param_uint4 UInt4
+
+log_ LogLevel
+log_inform Info
+
+backend_xr_type_ BackendXRType
+backend_xr_type_webxr WebXR
+backend_xr_type_openxr OpenXR
+backend_graphics_d3d11 D3D11
+
+app_mode_xr XR
+
+backend_graphics_opengl_glx OpenGL_GLX
+backend_graphics_opengl_wgl OpenGL_WGL
+backend_graphics_opengles_egl OpenGLES_EGL
+backend_graphics_webgl WebGL
+backend_graphics_vulkan Vulkan
+
+device_tracking_3dof DoF3
+device_tracking_6dof DoF6
+
+display_mode_mixedreality MixedReality
+tex_format_depthstencil DepthStencil
+button_state_ BtnState
+color128 Color
+transparency_msaa MSAA
+
+sk_settings_t SKSettings
+vind_t uint
+vert_t Vertex
+model_node_id int
+interactor_t int
+sh_light_t SHLight
+openxr_handle_t ulong
+asset_t IntPtr
+
+size_t UIntPtr
+
+# UI types - need correct names for function parameters (hand-written structs)
+ui_lathe_pt_t UILathePt
+ui_settings_t UISettings
+ui_slider_data_t UISliderData
+
+# UI enum naming - use uppercase UI prefix to match existing code
+ui_move_ UIMove
+ui_win_ UIWin
+ui_confirm_ UIConfirm
+ui_gesture_ UIGesture
+ui_notify_ UINotify
+ui_vis_ UIVisual
+ui_color_ UIColor
+ui_color_state_ UIColorState
+ui_pad_ UIPad
+ui_btn_layout_ UIBtnLayout
+ui_cut_ UICut
+ui_dir_ UIDir
+ui_corner_ UICorner
+ui_scroll_ UIScroll
+
+# Skip code generation for hand-written types (use @noimpl directive)
+# Math types with operators, constructors, helpers
+@noimpl vec2 vec3 vec4 color32 color128 quat matrix
+@noimpl pose_t bounds_t ray_t plane_t sphere_t
+
+# Complex structs in NativeTypes.cs with special handling
+@noimpl sk_settings_t rect_t
+@noimpl hand_sim_id_t id_hash_t
+
+# UI types with special handling
+# (none currently)
+
+# Structs with existing hand-written versions elsewhere
+@noimpl hand_joint_t sound_inst_t gradient_key_t sh_light_t
+@noimpl spherical_harmonics_t hand_t controller_t file_filter_t
+
+# Enums with hand-written struct implementations
+@noimpl text_align_
+
+# Delegate naming overrides (to match existing wrapper code naming conventions)
+xr_poll_event_callback XRPollEventCallback
+xr_pre_session_create_callback XRPreSessionCreateCallback
+picker_callback PickerCallback
+
+# Delegates with hand-written public API versions that have DIFFERENT signatures
+# (e.g., no context param for user convenience). Skip these, keep hand-written.
+@noimpl LogCallback ScreenshotCallback
+
+# Delegates that need different parameter types than generator produces
+# (e.g., Color32* should be IntPtr, bool32_t should be int for some callbacks)
+@noimpl RenderOnScreenshotCallback PickerCallback PickerCallbackSz
+
+# Delegates that are defined in NativeTypes.cs with hand-written wrappers
+@noimpl XRPollEventCallback XRPreSessionCreateCallback
+
+# Public API delegates that need XML documentation (hand-written in NativeTypes.cs)
+@noimpl AppStep AppShutdown AssetOnLoadCallback AudioGenerator InputEventCallback

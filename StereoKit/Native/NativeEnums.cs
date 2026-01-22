@@ -59,16 +59,184 @@ namespace StereoKit
 		/// depth based reprojection. Far view distances will suffer here
 		/// though, so keep your clipping far plane as close as possible.</summary>
 		D16,
-		/// <summary>32 bit depth buffer, should look great at any distance! 
+		/// <summary>32 bit depth buffer, should look great at any distance!
 		/// If you must have the best, then this is the best. If you're
 		/// interested in this one, Stencil may also be plenty for you, as 24
 		/// bit depth is also pretty peachy.</summary>
 		D32,
 		/// <summary>24 bit depth buffer with 8 bits of stencil data. 24 bits
-		/// is generally plenty for a depth buffer, so using the rest for 
+		/// is generally plenty for a depth buffer, so using the rest for
 		/// stencil can open up some nice options! StereoKit has limited
 		/// stencil support right now though (v0.3).</summary>
 		Stencil,
+	}
+
+	/// <summary>What type of color information will the texture contain? A
+	/// good default here is Rgba32.</summary>
+	public enum TexFormat {
+		/// <summary>A default zero value for TexFormat! Uninitialized formats
+		/// will get this value and **** **** up so you know to assign it
+		/// properly :)</summary>
+		None         = 0,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
+		/// per-channel in sRGB color space. This is what you'll want most of
+		/// the time you're dealing with color images! Matches well with the
+		/// Color32 struct! If you're storing normals, rough/metal, or
+		/// anything else, use Rgba32Linear.</summary>
+		Rgba32Srgb   = 1,
+		/// <summary>Alias for tex_format_rgba32_srgb for backwards compatibility.</summary>
+		Rgba32       = Rgba32Srgb,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
+		/// per-channel in linear color space. This is what you'll want most
+		/// of the time you're dealing with color data! Matches well with the
+		/// Color32 struct.</summary>
+		Rgba32Linear = 2,
+		/// <summary>Blue/Green/Red/Transparency data channels, at 8 bits
+		/// per-channel in sRGB color space. This is a common swapchain format
+		/// on Windows.</summary>
+		Bgra32Srgb   = 3,
+		/// <summary>Alias for tex_format_bgra32_srgb for backwards compatibility.</summary>
+		Bgra32       = Bgra32Srgb,
+		/// <summary>Blue/Green/Red/Transparency data channels, at 8 bits
+		/// per-channel in linear color space. This is a common swapchain
+		/// format on Windows.</summary>
+		Bgra32Linear = 4,
+		/// <summary>Red/Green/Blue data channels, with 11 bits for R and G,
+		/// and 10 bits for blue. This is a great presentation format for high
+		/// bit depth displays that still fits in 32 bits! This format has no
+		/// alpha channel.</summary>
+		Rg11b10      = 5,
+		/// <summary>Red/Green/Blue/Transparency data channels, with 10
+		/// bits for R, G, and B, and 2 for alpha. This is a great presentation
+		/// format for high bit depth displays that still fits in 32 bits, and
+		/// also includes at least a bit of transparency!</summary>
+		Rgb10a2      = 6,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. TODO: remove during major version
+		/// update, prefer s, f, or u postfixed versions of this format.</summary>
+		Rgba64       = 7,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. The u postfix indicates that the raw
+		/// color data is stored as an unsigned 16 bit integer, which is then
+		/// normalized into the 0, 1 floating point range on the GPU.</summary>
+		Rgba64u      = Rgba64,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. The s postfix indicates that the raw
+		/// color data is stored as a signed 16 bit integer, which is then
+		/// normalized into the -1, +1 floating point range on the GPU.</summary>
+		Rgba64s      = 8,
+		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
+		/// per-channel! This is not common, but you might encounter it with
+		/// raw photos, or HDR images. The f postfix indicates that the raw
+		/// color data is stored as 16 bit floats, which may be tricky to work
+		/// with in most languages.</summary>
+		Rgba64f      = 9,
+		/// <summary>Red/Green/Blue/Transparency data channels at 32 bits
+		/// per-channel! Basically 4 floats per color, which is bonkers
+		/// expensive. Don't use this unless you know -exactly- what you're
+		/// doing.</summary>
+		Rgba128      = 10,
+		/// <summary>A single channel of data, with 8 bits per-pixel! This
+		/// can be great when you're only using one channel, and want to
+		/// reduce memory usage. Values in the shader are always 0.0-1.0.</summary>
+		R8           = 11,
+		/// <summary>A single channel of data, with 16 bits per-pixel! This
+		/// is a good format for height maps, since it stores a fair bit of
+		/// information in it. The "un" postfix indicates "unsigned normalized",
+		/// where the raw color data is stored as an unsigned 16 bit integer,
+		/// which is then normalized into the 0, 1 floating point range on the
+		/// GPU.</summary>
+		R16un        = 12,
+		/// <summary>A single channel of data, with 16 bits per-pixel! This
+		/// is a good format for height maps, since it stores a fair bit of
+		/// information in it. The "sn" postfix indicates "signed normalized",
+		/// where the raw color data is stored as a signed 16 bit integer, which
+		/// is then normalized into the -1, +1 floating point range on the GPU.</summary>
+		R16sn        = 13,
+		/// <summary>A single channel of data, with 16 bits per-pixel! This
+		/// is a good format for index or id data, since it stores values as
+		/// raw unsigned integers. The "ui" postfix indicates "unsigned integer",
+		/// where the data is stored and accessed as an unsigned 16 bit integer
+		/// without any normalization.</summary>
+		R16ui        = 14,
+		/// <summary>A single channel of data, with 16 bits per-pixel! This
+		/// is a good format for index or id data, since it stores values as
+		/// raw signed integers. The "si" postfix indicates "signed integer",
+		/// where the data is stored and accessed as a signed 16 bit integer
+		/// without any normalization.</summary>
+		R16si        = 15,
+		/// <summary>A single channel of data, with 16 bits per-pixel! This
+		/// is a good format for height maps, since it stores a fair bit of
+		/// information in it. The f postfix indicates that the raw color
+		/// data is stored as 16 bit floats, which may be tricky to work with
+		/// in most languages.</summary>
+		R16f         = 16,
+		/// <summary>Alias for R16un for backwards compatibility.</summary>
+		R16          = R16un,
+		/// <summary>Alias for R16un for backwards compatibility.</summary>
+		R16u         = R16un,
+		/// <summary>Alias for R16sn for backwards compatibility.</summary>
+		R16s         = R16sn,
+		/// <summary>A single channel of data, with 32 bits per-pixel! This
+		/// basically treats each pixel as a generic float, so you can do all
+		/// sorts of strange and interesting things with this.</summary>
+		R32f         = 17,
+		/// <summary>Alias for tex_format_r32f for backwards compatibility.</summary>
+		R32          = R32f,
+		/// <summary>A depth data format, 24 bits for depth data, and 8 bits
+		/// to store stencil information! Stencil data can be used for things
+		/// like clipping effects, deferred rendering, or shadow effects.</summary>
+		Depth24s8    = 18,
+		/// <summary>Alias for tex_format_depth24s8 for backwards compatibility.</summary>
+		DepthStencil = Depth24s8,
+		/// <summary>32 bits of data per depth value! This is pretty detailed,
+		/// and is excellent for experiences that have a very far view
+		/// distance.</summary>
+		Depth32      = 19,
+		/// <summary>16 bits of depth is not a lot, but it can be enough if
+		/// your far clipping plane is pretty close. If you're seeing lots of
+		/// flickering where two objects overlap, you either need to bring
+		/// your far clip in, or switch to 32/24 bit depth.</summary>
+		Depth16      = 20,
+		/// <summary>A double channel of data that supports 8 bits for the red
+		/// channel and 8 bits for the green channel.</summary>
+		R8g8         = 21,
+		/// <summary>A shared exponent format with 9 bits each for R, G, B, and
+		/// 5 bits for the shared exponent. This is a compact HDR format.</summary>
+		Rgb9e5       = 22,
+		/// <summary>A depth data format with 32 bits for depth and 8 bits for
+		/// stencil. The extra stencil bits provide more precision than
+		/// depth24s8 while still offering stencil support.</summary>
+		Depth32s8,
+		/// <summary>A depth data format with 16 bits for depth and 8 bits for
+		/// stencil. This is a more compact depth-stencil format.</summary>
+		Depth16s8,
+		Bc1RgbSrgb,
+		Bc1Rgb,
+		Bc3RgbaSrgb,
+		Bc3Rgba,
+		Bc4R,
+		Bc5Rg,
+		Bc7RgbaSrgb,
+		Bc7Rgba,
+		Etc1Rgb,
+		Etc2RgbaSrgb,
+		Etc2Rgba,
+		Etc2R11,
+		Etc2Rg11,
+		Pvrtc1RgbSrgb,
+		Pvrtc1Rgb,
+		Pvrtc1RgbaSrgb,
+		Pvrtc1Rgba,
+		Pvrtc2RgbaSrgb,
+		Pvrtc2Rgba,
+		Astc4x4RgbaSrgb,
+		Astc4x4Rgba,
+		AtcRgb,
+		AtcRgba,
 	}
 
 	/// <summary>This describes the way the display's content blends with
@@ -116,7 +284,7 @@ namespace StereoKit
 		Floor,
 		/// <summary>The origin will be at the center of a safe play area or stage that the
 		/// user or OS has defined, and will face one of the edges of the play
-		/// area. If this mode is not natively supported, StereoKit will use the 
+		/// area. If this mode is not natively supported, StereoKit will use the
 		/// floor origin mode. If floor mode is unavailable, it will fall back to
 		/// local mode with a -1.5 Y axis offset.</summary>
 		Stage,
@@ -147,7 +315,8 @@ namespace StereoKit
 	/// are visible in one render, but not another. For example, you may wish
 	/// to draw a player's avatar in a 'mirror' rendertarget, but not in
 	/// the primary display. See `Renderer.LayerFilter` for configuring what
-	/// the primary display renders.</summary>
+	/// the primary display renders.
+	/// Render layers can also be mixed and matched like bit-flags!</summary>
 	[Flags]
 	public enum RenderLayer {
 		/// <summary>The default render layer. All Draw use this layer unless
@@ -216,7 +385,9 @@ namespace StereoKit
 	/// <summary>StereoKit uses an asynchronous loading system to prevent assets from
 	/// blocking execution! This means that asset loading systems will return
 	/// an asset to you right away, even though it is still being processed
-	/// in the background.</summary>
+	/// in the background.
+	/// This enum will tell you about what state the asset is currently in,
+	/// so you know what sort of behavior to expect from it.</summary>
 	public enum AssetState {
 		/// <summary>This asset encountered an issue when parsing the source data. Either
 		/// the format is unrecognized by StereoKit, or the data may be corrupt.
@@ -305,7 +476,7 @@ namespace StereoKit
 	/// <summary>What type of user motion is the device capable of tracking? For the normal
 	/// fully capable XR headset, this should be 6dof (rotation and translation), but
 	/// more limited headsets may be restricted to 3dof (rotation) and flatscreen
-	/// computers with the simulator off would be none. </summary>
+	/// computers with the simulator off would be none.</summary>
 	public enum DeviceTracking {
 		/// <summary>No tracking is available! This is likely a flatscreen application, not an
 		/// XR applicaion.</summary>
@@ -339,24 +510,34 @@ namespace StereoKit
 	/// certain features.</summary>
 	public enum PermissionType {
 		/// <summary>For access to microphone data, this is typically an interactive
-		/// permission that the user will need to explicitly approve.</summary>
+		/// permission that the user will need to explicitly approve.
+		/// This maps to android.permission.RECORD_AUDIO on Android.</summary>
 		Microphone,
 		/// <summary>For access to camera data, this is typically an interactive permission
 		/// that the user will need to explicitly approve. SK doesn't use this
-		/// permission internally yet, but is often a useful permission for XR apps.</summary>
+		/// permission internally yet, but is often a useful permission for XR apps.
+		/// This maps to android.permission.CAMERA on Android.</summary>
 		Camera,
 		/// <summary>For access to input quality eye tracking data, this is typically an
-		/// interactive permission that the user will need to explicitly approve.</summary>
+		/// interactive permission that the user will need to explicitly approve.
+		/// This maps to android.permission.EYE_TRACKING_FINE on Android XR, but
+		/// varies per-runtime.</summary>
 		EyeInput,
 		/// <summary>For access to per-joint hand tracking data. Some runtimes may have this
-		/// permission interactive, but many do not.</summary>
+		/// permission interactive, but many do not.
+		/// This maps to android.permission.HAND_TRACKING on Android XR, but
+		/// varies per-runtime.</summary>
 		HandTracking,
 		/// <summary>For access to facial expression data, this is typically an
-		/// interactive permission that the user will need to explicitly approve.</summary>
+		/// interactive permission that the user will need to explicitly approve.
+		/// This maps to android.permission.FACE_TRACKING on Android XR, but
+		/// varies per-runtime.</summary>
 		FaceTracking,
 		/// <summary>For access to data in the user's space, this can be for things like
 		/// spatial anchors, plane detection, hit testing, etc. This is typically an
-		/// interactive permission that the user will need to explicitly approve.</summary>
+		/// interactive permission that the user will need to explicitly approve.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
+		/// but varies per-runtime.</summary>
 		Scene,
 		/// <summary>This enum is for tracking the number of value in this enum.</summary>
 		Max,
@@ -442,125 +623,6 @@ namespace StereoKit
 		Image        = ImageNomips | Mips,
 	}
 
-	/// <summary>What type of color information will the texture contain? A
-	/// good default here is Rgba32.</summary>
-	public enum TexFormat {
-		/// <summary>A default zero value for TexFormat! Uninitialized formats
-		/// will get this value and **** **** up so you know to assign it
-		/// properly :)</summary>
-		None         = 0,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in sRGB color space. This is what you'll want most of
-		/// the time you're dealing with color images! Matches well with the
-		/// Color32 struct! If you're storing normals, rough/metal, or
-		/// anything else, use Rgba32Linear.</summary>
-		Rgba32       = 1,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is what you'll want most
-		/// of the time you're dealing with color data! Matches well with the
-		/// Color32 struct.</summary>
-		Rgba32Linear = 2,
-		/// <summary>Blue/Green/Red/Transparency data channels, at 8 bits
-		/// per-channel in sRGB color space. This is a common swapchain format
-		/// on Windows.</summary>
-		Bgra32       = 3,
-		/// <summary>Blue/Green/Red/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is a common swapchain
-		/// format on Windows.</summary>
-		Bgra32Linear = 4,
-		/// <summary>Red/Green/Blue data channels, with 11 bits for R and G,
-		/// and 10 bits for blue. This is a great presentation format for high
-		/// bit depth displays that still fits in 32 bits! This format has no
-		/// alpha channel.</summary>
-		Rg11b10      = 5,
-		/// <summary>Red/Green/Blue/Transparency data channels, with 10 
-		/// bits for R, G, and B, and 2 for alpha. This is a great presentation
-		/// format for high bit depth displays that still fits in 32 bits, and
-		/// also includes at least a bit of transparency!</summary>
-		Rgb10a2      = 6,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
-		/// per-channel! This is not common, but you might encounter it with
-		/// raw photos, or HDR images. TODO: remove during major version
-		/// update, prefer s, f, or u postfixed versions of this format.</summary>
-		Rgba64       = 7,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
-		/// per-channel! This is not common, but you might encounter it with
-		/// raw photos, or HDR images. The u postfix indicates that the raw
-		/// color data is stored as an unsigned 16 bit integer, which is then
-		/// normalized into the 0, 1 floating point range on the GPU.</summary>
-		Rgba64u      = Rgba64,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
-		/// per-channel! This is not common, but you might encounter it with
-		/// raw photos, or HDR images. The s postfix indicates that the raw
-		/// color data is stored as a signed 16 bit integer, which is then
-		/// normalized into the -1, +1 floating point range on the GPU.</summary>
-		Rgba64s      = 8,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
-		/// per-channel! This is not common, but you might encounter it with
-		/// raw photos, or HDR images. The f postfix indicates that the raw
-		/// color data is stored as 16 bit floats, which may be tricky to work
-		/// with in most languages.</summary>
-		Rgba64f      = 9,
-		/// <summary>Red/Green/Blue/Transparency data channels at 32 bits
-		/// per-channel! Basically 4 floats per color, which is bonkers
-		/// expensive. Don't use this unless you know -exactly- what you're
-		/// doing.</summary>
-		Rgba128      = 10,
-		/// <summary>A single channel of data, with 8 bits per-pixel! This
-		/// can be great when you're only using one channel, and want to
-		/// reduce memory usage. Values in the shader are always 0.0-1.0.</summary>
-		R8           = 11,
-		R16un = 12,
-		R16sn = 13,
-		R16ui = 14,
-		R16si = 15,
-		/// <summary>A single channel of data, with 16 bits per-pixel! This
-		/// is a good format for height maps, since it stores a fair bit of
-		/// information in it. Values in the shader are always 0.0-1.0.
-		/// TODO: remove during major version update, prefer s, f, or u
-		/// postfixed versions of this format, this item is the same as
-		/// r16u.</summary>
-		R16          = R16un,
-		/// <summary>A single channel of data, with 16 bits per-pixel! This
-		/// is a good format for height maps, since it stores a fair bit of
-		/// information in it. The u postfix indicates that the raw color data
-		/// is stored as an unsigned 16 bit integer, which is then normalized
-		/// into the 0, 1 floating point range on the GPU.</summary>
-		R16u         = R16un,
-		/// <summary>A single channel of data, with 16 bits per-pixel! This
-		/// is a good format for height maps, since it stores a fair bit of
-		/// information in it. The s postfix indicates that the raw color
-		/// data is stored as a signed 16 bit integer, which is then
-		/// normalized into the -1, +1 floating point range on the GPU.</summary>
-		R16s         = R16sn,
-		/// <summary>A single channel of data, with 16 bits per-pixel! This
-		/// is a good format for height maps, since it stores a fair bit of
-		/// information in it. The f postfix indicates that the raw color
-		/// data is stored as 16 bit floats, which may be tricky to work with
-		/// in most languages.</summary>
-		R16f         = 16,
-		/// <summary>A single channel of data, with 32 bits per-pixel! This
-		/// basically treats each pixel as a generic float, so you can do all
-		/// sorts of strange and interesting things with this.</summary>
-		R32          = 17,
-		/// <summary>A depth data format, 24 bits for depth data, and 8 bits
-		/// to store stencil information! Stencil data can be used for things
-		/// like clipping effects, deferred rendering, or shadow effects.</summary>
-		DepthStencil = 18,
-		/// <summary>32 bits of data per depth value! This is pretty detailed,
-		/// and is excellent for experiences that have a very far view
-		/// distance.</summary>
-		Depth32      = 19,
-		/// <summary>16 bits of depth is not a lot, but it can be enough if
-		/// your far clipping plane is pretty close. If you're seeing lots of
-		/// flickering where two objects overlap, you either need to bring
-		/// your far clip in, or switch to 32/24 bit depth.</summary>
-		Depth16      = 20,
-		/// <summary>A double channel of data that supports 8 bits for the red
-		/// channel and 8 bits for the green channel.</summary>
-		R8g8         = 21,
-	}
-
 	/// <summary>How does the shader grab pixels from the texture? Or more
 	/// specifically, how does the shader grab colors between the provided
 	/// pixels? If you'd like an in-depth explanation of these topics, check
@@ -626,13 +688,13 @@ namespace StereoKit
 		/// create transparency. This works with a z-buffer and therefore
 		/// functionally behaves more like an opaque material, but has a
 		/// quantized number of "transparent values" it supports rather than
-		/// a full range of  0-255 or 0-1. For 4x MSAA, this will give only
+		/// a full range of 0-255 or 0-1. For 4x MSAA, this will give only
 		/// 4 different transparent values, 8x MSAA only 8, etc.
 		/// From a performance perspective, MSAA usually is only costly
 		/// around triangle edges, but using this mode, MSAA is used for the
 		/// whole triangle.</summary>
 		MSAA         = 2,
-		/// <summary>This will blend with the pixels behind it. This is 
+		/// <summary>This will blend with the pixels behind it. This is
 		/// transparent! You may not want to write to the z-buffer, and it's
 		/// slower than opaque materials.</summary>
 		Blend        = 3,
@@ -676,7 +738,7 @@ namespace StereoKit
 		NotEqual,
 		/// <summary>Don't look at the zbuffer at all, just draw everything,
 		/// always, all the time! At this point, the order at which the mesh
-		/// gets drawn will be  super important, so don't forget about
+		/// gets drawn will be super important, so don't forget about
 		/// `Material.QueueOffset`!</summary>
 		Always,
 		/// <summary>Never draw a pixel, regardless of what's in the zbuffer.
@@ -685,8 +747,7 @@ namespace StereoKit
 		Never,
 	}
 
-	/// <summary>TODO: v0.4 This may need significant revision?
-	/// What type of data does this material parameter need? This is
+	/// <summary>What type of data does this material parameter need? This is
 	/// used to tell the shader how large the data is, and where to attach it
 	/// to on the shader.</summary>
 	public enum MaterialParam {
@@ -745,13 +806,14 @@ namespace StereoKit
 		/// <summary>If the text is too large to fit in the space provided,
 		/// it will be scaled down to fit inside. This will not scale up.</summary>
 		Squeeze      = 1 << 2,
-		/// <summary>If the text is larger, or smaller than the space 
+		/// <summary>If the text is larger, or smaller than the space
 		/// provided, it will scale down or up to fill the space.</summary>
 		Exact        = 1 << 3,
 		/// <summary>The text will ignore the containing space, and just keep
 		/// on going.</summary>
 		Overflow     = 1 << 4,
 	}
+
 
 	/// <summary>A bit-flag enum for describing alignment or positioning.
 	/// Items can be combined using the '|' operator, like so:
@@ -945,6 +1007,7 @@ namespace StereoKit
 	/// <summary>Soft keyboard layouts are often specific to the type of text that they're
 	/// editing! This enum is a collection of common text contexts that SK can pass
 	/// along to the OS's soft keyboard for a more optimal layout.</summary>
+	[Flags]
 	public enum TextContext {
 		/// <summary>General text editing, this is the most common type of text, and would
 		/// result in a 'standard' keyboard layout.</summary>
@@ -961,12 +1024,12 @@ namespace StereoKit
 	/// elements? Or should it behave more like an intangible line? Hit detection is
 	/// still capsule shaped, but behavior may change a little to reflect the primary
 	/// position of the point interactor. This can also be thought of as direct
-	/// interaction vs indirect interaction. </summary>
+	/// interaction vs indirect interaction.</summary>
 	public enum InteractorType {
 		/// <summary>The interactor represents a physical point in space, such as a fingertip
 		/// or the point of a pencil. Points do not use directionality for their
 		/// interactions, nor do they take into account the distance of an element
-		/// along the 'ray' of the capsule. </summary>
+		/// along the 'ray' of the capsule.</summary>
 		Point,
 		/// <summary>The interactor represents a less tangible line or ray of interaction,
 		/// such as a laser pointer or eye gaze. Lines will occasionally consider the
@@ -997,8 +1060,7 @@ namespace StereoKit
 		Pinch        = 1 << 3,
 	}
 
-	/// <summary>TODO: is this redundant with interactor_type_?
-	/// This describes how an interactor activates elements. Does it use the physical
+	/// <summary>This describes how an interactor activates elements. Does it use the physical
 	/// position of the interactor, or the activation state?</summary>
 	public enum InteractorActivation {
 		/// <summary>This interactor uses its `active` state to determine element
@@ -1108,7 +1170,7 @@ namespace StereoKit
 		None         = 0,
 		/// <summary>The current hand data is a simulation of hand data rather than true hand
 		/// data. It is backed by either a controller, or a mouse, and may have a
-		/// more limited range of motion. </summary>
+		/// more limited range of motion.</summary>
 		Simulated,
 		/// <summary>This is true hand data which exhibits the full range of motion of a
 		/// normal hand. It is backed by something like a Leap Motion Controller, or
@@ -1118,6 +1180,37 @@ namespace StereoKit
 		/// What properties it exhibits depends on what override data you're sending
 		/// to StereoKit!</summary>
 		Overridden,
+	}
+
+	/// <summary>Index values for each finger! From 0-4, from thumb to little finger.</summary>
+	public enum FingerId {
+		/// <summary>Finger 0.</summary>
+		Thumb        = 0,
+		/// <summary>The primary index/pointer finger! Finger 1.</summary>
+		Index        = 1,
+		/// <summary>Finger 2, next to the index finger.</summary>
+		Middle       = 2,
+		/// <summary>Finger 3! What does one do with this finger? I guess... wear rings on it?</summary>
+		Ring         = 3,
+		/// <summary>Finger 4, the smallest little finger! AKA, The Pinky.</summary>
+		Little       = 4,
+	}
+
+	/// <summary>Here's where hands get crazy! Technical terms, and watch out for the thumbs!</summary>
+	public enum JointId {
+		/// <summary>Joint 0. This is at the base of the hand, right above the wrist. For the
+		/// thumb, Root and KnuckleMajor have the same value.</summary>
+		Root         = 0,
+		/// <summary>Joint 1. These are the knuckles at the top of the palm! For the thumb,
+		/// Root and KnuckleMajor have the same value.</summary>
+		KnuckleMajor = 1,
+		/// <summary>Joint 2. These are the knuckles in the middle of the finger! First joints
+		/// on the fingers themselves.</summary>
+		KnuckleMid   = 2,
+		/// <summary>Joint 3. The joints right below the fingertip!</summary>
+		KnuckleMinor = 3,
+		/// <summary>Joint 4. The end/tip of each finger!</summary>
+		Tip          = 4,
 	}
 
 	/// <summary>A collection of system key codes, representing keyboard
@@ -1293,9 +1386,9 @@ namespace StereoKit
 		F11          = 0x7A,
 		/// <summary>Function key F12.</summary>
 		F12          = 0x7B,
-		/// <summary>,/&lt;</summary>
+		/// <summary>,/&amp;lt;</summary>
 		Comma        = 0xBC,
-		/// <summary>./&gt;</summary>
+		/// <summary>./&amp;gt;</summary>
 		Period       = 0xBE,
 		/// <summary>/</summary>
 		SlashFwd     = 0xBF,
@@ -1345,10 +1438,10 @@ namespace StereoKit
 		/// the index finger sit.</summary>
 		Grip,
 		/// <summary>This is the lower of the two primary thumb buttons, sometimes labelled X,
-		/// and sometimes A. </summary>
+		/// and sometimes A.</summary>
 		X1,
 		/// <summary>This is the upper of the two primary thumb buttons, sometimes labelled Y,
-		/// and sometimes B. </summary>
+		/// and sometimes B.</summary>
 		X2,
 		/// <summary>This is when the thumbstick on the controller is actually pressed. This
 		/// has nothing to do with the horizontal or vertical movement of the stick.</summary>
@@ -1409,7 +1502,7 @@ namespace StereoKit
 	public enum BackendPlatform {
 		/// <summary>This is running as a Windows app using the Win32 APIs.</summary>
 		Win32,
-		/// <summary>This is running as a Windows app using the UWP APIs.</summary>
+		/// <summary>This is running as a Windows app using the UWP APIs. (No longer supported)</summary>
 		Uwp,
 		/// <summary>This is running as a Linux app.</summary>
 		Linux,
@@ -1424,22 +1517,23 @@ namespace StereoKit
 		/// <summary>An invalid default value.</summary>
 		None,
 		/// <summary>DirectX's Direct3D11 is used for rendering! This is used by default on
-		/// Windows.</summary>
+		/// Windows. (No longer supported)</summary>
 		D3D11,
 		/// <summary>OpenGL is used for rendering, using GLX (OpenGL Extension to the X Window
-		/// System) for loading. This is used by default on Linux.</summary>
+		/// System) for loading. This is used by default on Linux. (No longer supported)</summary>
 		OpenGL_GLX,
 		/// <summary>OpenGL is used for rendering, using WGL (Windows Extensions to OpenGL)
-		/// for loading. Native developers can configure SK to use this on Windows.</summary>
+		/// for loading. Native developers can configure SK to use this on Windows.
+		/// (No longer supported)</summary>
 		OpenGL_WGL,
 		/// <summary>OpenGL ES is used for rendering, using EGL (EGL Native Platform Graphics
 		/// Interface) for loading. This is used by default on Android, and native
-		/// developers can configure SK to use this on Linux.</summary>
+		/// developers can configure SK to use this on Linux. (No longer supported)</summary>
 		OpenGLES_EGL,
 		/// <summary>WebGL is used for rendering. This is used by default on Web.</summary>
 		WebGL,
-		/// <summary>Vulkan is used for rendering via sk_renderer. This is used by
-		/// default on Android.</summary>
+		/// <summary>Vulkan is used for rendering, this works basically on every platform, and
+		/// is the only backend StereoKit currently supports!</summary>
 		Vulkan,
 	}
 
@@ -1480,6 +1574,263 @@ namespace StereoKit
 		Anchor,
 		/// <summary>A RenderList</summary>
 		RenderList,
+	}
+
+	/// <summary>This describes how a UI element moves when being dragged around by a user!</summary>
+	public enum UIMove {
+		/// <summary>The element follows the position and orientation of the user's hand exactly.</summary>
+		Exact        = 0,
+		/// <summary>The element follows the position of the user's hand, but orients to face the
+		/// user's head instead of just using the hand's rotation.</summary>
+		FaceUser,
+		/// <summary>This element follows the hand's position only, completely discarding any
+		/// rotation information.</summary>
+		PosOnly,
+		/// <summary>Do not allow user input to change the element's pose at all! You may also be
+		/// interested in UI.Push/PopSurface.</summary>
+		None,
+	}
+
+	/// <summary>A description of what type of window to draw! This is a bit flag, so it can
+	/// contain multiple elements.</summary>
+	[Flags]
+	public enum UIWin {
+		/// <summary>No body, no head. Not really a flag, just set to this value. The Window will
+		/// still be grab/movable. To prevent it from being grabbable, combine with the
+		/// UIMove.None option, or switch to UI.Push/PopSurface.</summary>
+		Empty        = 1 << 0,
+		/// <summary>Flag to include a head on the window.</summary>
+		Head         = 1 << 1,
+		/// <summary>Flag to include a body on the window.</summary>
+		Body         = 1 << 2,
+		/// <summary>A normal window has a head and a body to it. Both can be grabbed.</summary>
+		Normal       = Head | Body,
+	}
+
+	/// <summary>Used with StereoKit's UI, and determines the interaction confirmation behavior
+	/// for certain elements, such as the UI.HSlider!</summary>
+	public enum UIConfirm {
+		/// <summary>The user must push a button with their finger to confirm interaction with
+		/// this element. This is simpler to activate as it requires no learned gestures,
+		/// but may result in more false positives.</summary>
+		Push,
+		/// <summary>The user must use a pinch gesture to interact with this element. This is much
+		/// harder to activate by accident, but does require the user to make a precise
+		/// pinch gesture. You can pretty much be sure that's what the user meant to do!</summary>
+		Pinch,
+		/// <summary>HSlider specific. Same as Pinch, but pulling out from the slider creates a
+		/// scaled slider that lets you adjust the slider at a more granular resolution.</summary>
+		VariablePinch,
+	}
+
+	/// <summary>This is a bit flag that describes different types and combinations of gestures
+	/// used within the UI system.</summary>
+	[Flags]
+	public enum UIGesture {
+		/// <summary>Default zero state, no gesture at all.</summary>
+		None         = 0,
+		/// <summary>A pinching action, calculated by taking the distance between the tip of the
+		/// thumb and the index finger.</summary>
+		Pinch        = 1 << 0,
+		/// <summary>A gripping or grasping motion meant to represent a full hand grab. This is
+		/// calculated using the distance between the root and the tip of the ring finger.</summary>
+		Grip         = 1 << 1,
+		/// <summary>This is a bit flag combination of both Pinch and Grip.</summary>
+		PinchGrip    = Pinch | Grip,
+	}
+
+	/// <summary>Determines when this UI function returns true.</summary>
+	public enum UINotify {
+		/// <summary>This function returns true any time the values has changed!</summary>
+		Change,
+		/// <summary>This function returns true when the user has finished interacting with it.
+		/// This does not guarantee the value has changed.</summary>
+		Finalize,
+	}
+
+	/// <summary>Used with StereoKit's UI to indicate a particular type of UI element visual.</summary>
+	public enum UIVisual {
+		/// <summary>Default state, no UI element at all.</summary>
+		None         = 0,
+		/// <summary>A default root UI element. Not a particular element, but other elements may
+		/// refer to this if there is nothing more specific present.</summary>
+		Default,
+		/// <summary>Refers to UI.Button elements.</summary>
+		Button,
+		/// <summary>Refers to UI.Toggle elements.</summary>
+		Toggle,
+		/// <summary>Refers to UI.Input elements.</summary>
+		Input,
+		/// <summary>Refers to UI.Handle/HandleBegin elements.</summary>
+		Handle,
+		/// <summary>Refers to UI.Window/WindowBegin body panel element, this element is used when
+		/// a Window head is also present.</summary>
+		WindowBody,
+		/// <summary>Refers to UI.Window/WindowBegin body element, this element is used when a
+		/// Window only has the body panel, without a head.</summary>
+		WindowBodyOnly,
+		/// <summary>Refers to UI.Window/WindowBegin head panel element, this element is used when
+		/// a Window body is also present.</summary>
+		WindowHead,
+		/// <summary>Refers to UI.Window/WindowBegin head element, this element is used when a
+		/// Window only has the head panel, without a body.</summary>
+		WindowHeadOnly,
+		/// <summary>Refers to UI.HSeparator element.</summary>
+		Separator,
+		/// <summary>Refers to the back line component of the UI.HSlider element for full lines.</summary>
+		SliderLine,
+		/// <summary>Refers to the back line component of the UI.HSlider element for the active or
+		/// "full" half of the line.</summary>
+		SliderLineActive,
+		/// <summary>Refers to the back line component of the UI.HSlider element for the inactive
+		/// or "empty" half of the line.</summary>
+		SliderLineInactive,
+		/// <summary>Refers to the push button component of the UI.HSlider element when using
+		/// UIConfirm.Push.</summary>
+		SliderPush,
+		/// <summary>Refers to the pinch button component of the UI.HSlider element when using
+		/// UIConfirm.Pinch.</summary>
+		SliderPinch,
+		/// <summary>Refers to UI.ButtonRound elements.</summary>
+		ButtonRound,
+		/// <summary>Refers to UI.PanelBegin/End elements.</summary>
+		Panel,
+		/// <summary>Refers to the text position indicator carat on text input elements.</summary>
+		Carat,
+		/// <summary>Refers to the grabbable area indicator outside a window.</summary>
+		Aura,
+		/// <summary>A maximum enum value to allow for iterating through enum values.</summary>
+		Max,
+	}
+
+	/// <summary>Theme color categories to pair with `UI.SetThemeColor`.</summary>
+	public enum UIColor {
+		/// <summary>The default category, used to indicate that no category has been selected.</summary>
+		None         = 0,
+		/// <summary>This is the main accent color used by window headers, separators, etc.</summary>
+		Primary,
+		/// <summary>This is a background sort of color that should generally be dark. Used by
+		/// window bodies and backgrounds of certain elements.</summary>
+		Background,
+		/// <summary>A normal UI element color, for elements like buttons and sliders.</summary>
+		Common,
+		/// <summary>Not really used anywhere at the moment, maybe for the UI.Panel.</summary>
+		Complement,
+		/// <summary>Text color! This should generally be really bright, and at the very least
+		/// contrast-ey.</summary>
+		Text,
+		/// <summary>A maximum enum value to allow for iterating through enum values.</summary>
+		Max,
+	}
+
+	/// <summary>Indicates the state of a UI theme color.</summary>
+	public enum UIColorState {
+		/// <summary>The UI element is in its normal resting state.</summary>
+		Normal,
+		/// <summary>The UI element has been activated fully by some type of interaction.</summary>
+		Active,
+		/// <summary>The UI element is currently disabled, and cannot be used.</summary>
+		Disabled,
+	}
+
+	/// <summary>This specifies a particular padding mode for certain UI elements, such as the
+	/// UI.Panel! This describes where padding is applied and how it affects the layout
+	/// of elements.</summary>
+	public enum UIPad {
+		/// <summary>No padding, this matches the element's layout bounds exactly!</summary>
+		None,
+		/// <summary>This applies padding inside the element's layout bounds, and will inflate the
+		/// layout bounds to fit the extra padding.</summary>
+		Inside,
+		/// <summary>This will apply the padding outside of the layout bounds! This will maintain
+		/// the size and position of the layout volume, but the visual padding will go
+		/// outside of the volume.</summary>
+		Outside,
+	}
+
+	/// <summary>Describes the layout of a button with image/text contents! You can think of the
+	/// naming here as being the location of the image, with the text filling the
+	/// remaining space.</summary>
+	public enum UIBtnLayout {
+		/// <summary>Hide the image, and only show text.</summary>
+		None,
+		/// <summary>Image to the left, text to the right. Image will take up no more than half
+		/// the width.</summary>
+		Left,
+		/// <summary>Image to the right, text to the left. Image will take up no more than half
+		/// the width.</summary>
+		Right,
+		/// <summary>Image will be centered in the button, and fill up the button as though it was
+		/// the only element. Text will cram itself under the padding below the image.</summary>
+		Center,
+		/// <summary>Same as `Center`, but omitting the text.</summary>
+		CenterNoText,
+	}
+
+	/// <summary>This describes how a layout should be cut up! Used with `UI.LayoutPushCut`.</summary>
+	public enum UICut {
+		/// <summary>This cuts a chunk from the left side of the current layout. This will work
+		/// for layouts that are auto-sizing, and fixed sized.</summary>
+		Left,
+		/// <summary>This cuts a chunk from the right side of the current layout. This will work
+		/// for layouts that are fixed sized, but not layouts that auto-size on the X axis!</summary>
+		Right,
+		/// <summary>This cuts a chunk from the top side of the current layout. This will work for
+		/// layouts that are auto-sizing, and fixed sized.</summary>
+		Top,
+		/// <summary>This cuts a chunk from the bottom side of the current layout. This will work
+		/// for layouts that are fixed sized, but not layouts that auto-size on the Y axis!</summary>
+		Bottom,
+	}
+
+	/// <summary>For UI elements that can be oriented horizontally or vertically, this specifies
+	/// that orientation.</summary>
+	public enum UIDir {
+		/// <summary>The element should be layed out along the horizontal axis.</summary>
+		Horizontal,
+		/// <summary>The element should be layed out along the vertical axis.</summary>
+		Vertical,
+	}
+
+	/// <summary>For elements that contain corners, this bit flag allows you to specify which
+	/// corners.</summary>
+	[Flags]
+	public enum UICorner {
+		/// <summary>No corners at all.</summary>
+		None         = 0,
+		/// <summary>The top left corner.</summary>
+		TopLeft      = 1 << 0,
+		/// <summary>The top right corner.</summary>
+		TopRight     = 1 << 1,
+		/// <summary>The bottom right corner.</summary>
+		BottomRight  = 1 << 2,
+		/// <summary>The bottom left corner.</summary>
+		BottomLeft   = 1 << 3,
+		/// <summary>All corners.</summary>
+		All          = TopLeft    | TopRight | BottomLeft | BottomRight,
+		/// <summary>The top left and top right corners.</summary>
+		Top          = TopLeft    | TopRight,
+		/// <summary>The bottom left and bottom right corners.</summary>
+		Bottom       = BottomLeft | BottomRight,
+		/// <summary>The top left and bottom left corners.</summary>
+		Left         = TopLeft    | BottomLeft,
+		/// <summary>The top right and bottom right corners.</summary>
+		Right        = TopRight   | BottomRight,
+	}
+
+	/// <summary>This describes how UI elements with scrollable regions scroll around or use
+	/// scroll bars! This allows you to enable or disable vertical and horizontal
+	/// scrolling.</summary>
+	[Flags]
+	public enum UIScroll {
+		/// <summary>No scroll bars or scrolling.</summary>
+		None         = 0,
+		/// <summary>This will enable vertical scroll bars or scrolling.</summary>
+		Vertical     = 1 << 0,
+		/// <summary>This will enable horizontal scroll bars or scrolling.</summary>
+		Horizontal   = 1 << 1,
+		/// <summary>This will enable both vertical and horizontal scroll bars or scrolling.</summary>
+		Both         = Vertical | Horizontal,
 	}
 
 }

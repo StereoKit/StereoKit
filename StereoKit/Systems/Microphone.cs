@@ -40,7 +40,7 @@ namespace StereoKit
 			int      count  = NativeAPI.mic_device_count();
 			string[] result = new string[count];
 			for (int i = 0; i < count; i++)
-				result[i] = Marshal.PtrToStringAnsi(NativeAPI.mic_device_name(i));
+				result[i] = NativeHelper.FromUtf8(NativeAPI.mic_device_name(i));
 
 			return result;
 		}

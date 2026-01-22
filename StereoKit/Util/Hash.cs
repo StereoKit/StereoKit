@@ -20,7 +20,7 @@ namespace StereoKit
 		/// then hashed.</param>
 		/// <returns>A StereoKit hash representing the provided string.</returns>
 		public static IdHash String(string str)
-			=> NativeAPI.hash_string (NativeHelper.ToUtf8(str));
+			=> NativeAPI.hash_string(str);
 
 		/// <summary>This will hash the UTF8 representation of the given string
 		/// into a hash value that StereoKit can use. This overload allows you
@@ -32,7 +32,7 @@ namespace StereoKit
 		/// <returns>A StereoKit hash representing a combination of the
 		/// provided string and the root hash.</returns>
 		public static IdHash String(string str, IdHash root)
-			=> NativeAPI.hash_string_with(NativeHelper.ToUtf8(str), root);
+			=> NativeAPI.hash_string_with(str, root);
 
 		/// <summary>This will hash an integer into a hash value that StereoKit
 		/// can use. This is helpful for adding in some uniqueness using

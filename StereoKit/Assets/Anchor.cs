@@ -32,7 +32,7 @@ namespace StereoKit {
 		public string Id
 		{
 			get => NativeHelper.FromUtf8(NativeAPI.anchor_get_id(_inst));
-			set => NativeAPI.anchor_set_id(_inst, NativeHelper.ToUtf8(value));
+			set => NativeAPI.anchor_set_id(_inst, value);
 		}
 		/// <summary>The most recently identified Pose of the Anchor. While an
 		/// Anchor will generally be in the same position once discovered, it

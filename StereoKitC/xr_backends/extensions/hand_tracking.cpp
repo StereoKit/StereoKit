@@ -297,7 +297,7 @@ void xr_ext_hand_tracking_update_joints() {
 		// long when adding the radius, so we add this offset manually here.
 		if (local.tip_fix) {
 			for (int32_t t = 0; t < 5; t++) {
-				int32_t idx = 1 + t * 5 + hand_joint_tip;
+				int32_t idx = 1 + t * 5 + joint_id_tip;
 				local.hand_joints[h][idx].position += local.hand_joints[h][idx].orientation * vec3{ 0,0,local.hand_joints[h][idx].radius };
 			}
 		}
@@ -340,11 +340,11 @@ void xr_ext_hand_tracking_update_states() {
 			inp_hand->pinch_activation = input_controller((handed_)h)->trigger;
 			inp_hand->pinch_state      = button_make_state((inp_hand->pinch_state & button_state_active) > 0, inp_hand->pinch_activation >= 1);
 		} else {
-			input_hand_sim_trigger(inp_hand->pinch_state, inp_hand->fingers[hand_finger_index][hand_joint_tip], inp_hand->fingers[hand_finger_thumb][hand_joint_tip],
+			input_hand_sim_trigger(inp_hand->pinch_state, inp_hand->fingers[finger_id_index][joint_id_tip], inp_hand->fingers[finger_id_thumb][joint_id_tip],
 				PINCH_ACTIVATION_DIST, PINCH_DEACTIVATION_DIST, PINCH_MAX_DIST,
 				&inp_hand->pinch_state, &inp_hand->pinch_activation);
 		}
-		input_hand_sim_trigger(inp_hand->grip_state, inp_hand->fingers[hand_finger_ring][hand_joint_tip], inp_hand->fingers[hand_finger_ring][hand_joint_root],
+		input_hand_sim_trigger(inp_hand->grip_state, inp_hand->fingers[finger_id_ring][joint_id_tip], inp_hand->fingers[finger_id_ring][joint_id_root],
 			GRIP_ACTIVATION_DIST, GRIP_DEACTIVATION_DIST, GRIP_MAX_DIST,
 			&inp_hand->grip_state, &inp_hand->grip_activation);
 
