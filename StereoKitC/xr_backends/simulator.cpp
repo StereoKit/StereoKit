@@ -93,10 +93,11 @@ bool simulator_init() {
 	default: return false;
 	}
 
-	sim_surface = render_pipeline_surface_create(pipeline_render_strategy_sequential, tex_format_rgba32, render_preferred_depth_fmt(), 1, 1, 1);
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
-	if (swapchain)
-		sim_surface_resize(sim_surface, swapchain->width, swapchain->height);
+	// Use BGRA to match typical swapchain format
+	sim_surface = render_pipeline_surface_create(pipeline_render_strategy_sequential, tex_format_bgra32, render_preferred_depth_fmt(), 1, 1, 1);
+	skr_surface_t* surface = platform_win_get_surface(sim_window);
+	if (surface)
+		sim_surface_resize(sim_surface, surface->size.x, surface->size.y);
 
 	anchors_init();
 	return true;
@@ -206,6 +207,10 @@ void simulator_step_begin() {
 	render_set_sim_origin(world_origin_offset);
 	render_set_sim_head  (pose_t{ sim_head_pos, quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z) });
 	anchors_step_begin(NULL);
+
+	// Begin the render frame early so that any graphics operations the
+	// application performs during step are captured.
+	render_pipeline_begin_frame();
 }
 
 ///////////////////////////////////////////
@@ -220,11 +225,14 @@ void simulator_step_end() {
 	render_pipeline_surface_set_layer      (sim_surface, render_get_filter());
 	render_pipeline_surface_set_perspective(sim_surface, &view, &proj, 1);
 
+	// Acquire swapchain image before rendering - it becomes the MSAA resolve target
+	skr_surface_t* surface = platform_win_get_surface(sim_window);
+	render_pipeline_surface_acquire_swapchain(sim_surface, surface);
+
 	render_pipeline_draw();
 
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(sim_window);
 	sim_render_sys->profile_frame_duration = stm_since(sim_render_sys->profile_frame_start);
-	render_pipeline_surface_to_swapchain(sim_surface, swapchain);
+	render_pipeline_surface_present_swapchain(sim_surface, surface);
 }
 
 ///////////////////////////////////////////

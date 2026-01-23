@@ -31,7 +31,7 @@ bool              au_paused         = false;
 
 ///////////////////////////////////////////
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -364,7 +364,7 @@ bool32_t mic_start(const char *device_name) {
 		}
 	}
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 	if (id == nullptr && au_default_device_in_id.wasapi[0] != '\0')
 		id = &au_default_device_in_id;
 #endif
@@ -458,7 +458,7 @@ bool audio_init() {
 
 	// If we've requested a specific output device, like Oculus requires,
 	// we set that up here.
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 	if (au_default_device_out_id.wasapi[0] != '\0') {
 		au_config.playback.pDeviceID = &au_default_device_out_id;
 	}

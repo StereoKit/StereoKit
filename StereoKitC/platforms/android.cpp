@@ -10,16 +10,22 @@
 #include "../log.h"
 #include "../device.h"
 #include "../sk_math.h"
-#include "../xr_backends/openxr.h"
 #include "../systems/render.h"
 #include "../systems/system.h"
 #include "../_stereokit.h"
 #include "../libraries/sokol_time.h"
 
-#include <sk_gpu.h>
-
+// JNI types must be available before Vulkan Android / OpenXR Android headers
+#include <jni.h>
 #include <android/native_activity.h>
 #include <android/native_window_jni.h>
+
+#define VK_USE_PLATFORM_ANDROID_KHR
+#include <sk_renderer.h>
+#include <vulkan/vulkan_android.h>
+
+#include "../xr_backends/openxr.h"
+
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 #include <android/font_matcher.h>
@@ -38,9 +44,9 @@ struct window_event_t {
 struct window_t {
 	array_t<window_event_t> events;
 	ANativeWindow*          window;
-	skg_swapchain_t         swapchain;
-	bool                    has_swapchain;
-	bool                    uses_swapchain;
+	skr_surface_t           surface;
+	bool                    has_surface;
+	bool                    uses_surface;
 };
 
 // These are variables that are set outside of the normal initialization cycle,
@@ -66,7 +72,8 @@ static platform_android_persistent_state_t local_persist = {};
 
 ///////////////////////////////////////////
 
-void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height);
+void platform_win_resize       (platform_win_t window_id, int32_t width, int32_t height);
+bool platform_win_create_surface(window_t* win);
 
 ///////////////////////////////////////////
 
@@ -180,11 +187,11 @@ void platform_impl_step() {
 		int32_t height = ANativeWindow_getHeight(local.window.window);
 		platform_win_resize(1, width, height);
 	} else {
-		// Completely new window! Destroy the old swapchain, and make a
+		// Completely new window! Destroy the old surface, and make a
 		// new one.
-		if (local.window.has_swapchain) {
-			local.window.has_swapchain = false;
-			skg_swapchain_destroy(&local.window.swapchain);
+		if (local.window.has_surface) {
+			local.window.has_surface = false;
+			skr_surface_destroy(&local.window.surface);
 		}
 		local.window.window = (ANativeWindow*)local_persist.next_window;
 
@@ -200,6 +207,49 @@ void platform_impl_step() {
 
 ///////////////////////////////////////////
 
+bool platform_win_create_surface(window_t* win) {
+	if (win->window == nullptr) return false;
+
+	// Load vkCreateAndroidSurfaceKHR dynamically (same pattern as Linux)
+	void* vk_module = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
+	if (!vk_module) {
+		log_err("Failed to load libvulkan.so");
+		return false;
+	}
+
+	PFN_vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr =
+		(PFN_vkGetInstanceProcAddr)dlsym(vk_module, "vkGetInstanceProcAddr");
+	if (pfn_vkGetInstanceProcAddr == nullptr) {
+		log_err("Failed to load vkGetInstanceProcAddr");
+		return false;
+	}
+
+	PFN_vkCreateAndroidSurfaceKHR pfn_vkCreateAndroidSurfaceKHR =
+		(PFN_vkCreateAndroidSurfaceKHR)pfn_vkGetInstanceProcAddr(skr_get_vk_instance(), "vkCreateAndroidSurfaceKHR");
+	if (pfn_vkCreateAndroidSurfaceKHR == nullptr) {
+		log_err("Failed to load vkCreateAndroidSurfaceKHR");
+		return false;
+	}
+
+	// Create Vulkan surface from ANativeWindow
+	VkAndroidSurfaceCreateInfoKHR surface_info = { VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR };
+	surface_info.window = win->window;
+
+	VkSurfaceKHR vk_surface;
+	if (pfn_vkCreateAndroidSurfaceKHR(skr_get_vk_instance(), &surface_info, nullptr, &vk_surface) != VK_SUCCESS) {
+		log_err("Failed to create Vulkan surface for window");
+		return false;
+	}
+
+	skr_surface_create(vk_surface, &win->surface);
+	win->has_surface = true;
+
+	log_diagf("Created surface: %dx%d", win->surface.size.x, win->surface.size.y);
+	return true;
+}
+
+///////////////////////////////////////////
+
 void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height) {
 	if (window_id != 1) return;
 	window_t * win = &local.window;
@@ -211,18 +261,13 @@ void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height
 	e.data.resize = { width, height };
 	win->events.add(e);
 
-	if (win->uses_swapchain == false) return;
+	if (win->uses_surface == false) return;
 
-	if (win->has_swapchain == false) {
-		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-		win->swapchain     = skg_swapchain_create(win->window, color_fmt, skg_tex_fmt_none, width, height);
-		win->has_swapchain = true;
-
-		log_diagf("Created swapchain: %dx%d color:%s depth:%s", win->swapchain.width, win->swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+	if (win->has_surface == false) {
+		platform_win_create_surface(win);
 	}
-	else if (width == win->swapchain.width && height == win->swapchain.height) {
-		skg_swapchain_resize(&win->swapchain, width, height);
+	else if (width != win->surface.size.x || height != win->surface.size.y) {
+		skr_surface_resize(&win->surface);
 	}
 }
 
@@ -280,14 +325,12 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 platform_win_t platform_win_get_existing(platform_surface_ surface_type) {
 	window_t* win = &local.window;
 
-	// Not all windows need a swapchain, but here's where we make 'em for those
+	// Not all windows need a surface, but here's where we make 'em for those
 	// that do.
 	if (surface_type == platform_surface_swapchain) {
-		win->uses_swapchain = true;
+		win->uses_surface = true;
 		if (win->window) {
-			int32_t width  = ANativeWindow_getWidth (win->window);
-			int32_t height = ANativeWindow_getHeight(win->window);
-			platform_win_resize(1, width, height);
+			platform_win_create_surface(win);
 		}
 	}
 	return 1;
@@ -299,8 +342,8 @@ void platform_win_destroy(platform_win_t window) {
 	if (window != 1) return;
 	window_t* win = &local.window;
 
-	if (win->has_swapchain) {
-		skg_swapchain_destroy(&win->swapchain);
+	if (win->has_surface) {
+		skr_surface_destroy(&win->surface);
 	}
 
 	win->events.free();
@@ -328,11 +371,11 @@ bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event,
 
 ///////////////////////////////////////////
 
-skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) {
+skr_surface_t* platform_win_get_surface(platform_win_t window) {
 	if (window != 1) return nullptr;
 	window_t* win = &local.window;
 
-	return win->has_swapchain ? &win->swapchain : nullptr;
+	return win->has_surface ? &win->surface : nullptr;
 }
 
 ///////////////////////////////////////////
@@ -341,9 +384,9 @@ recti_t platform_win_rect(platform_win_t window_id) {
 	if (window_id != 1) return {};
 	window_t* win = &local.window;
 
-	return recti_t{ 0, 0,
-		win->swapchain.width,
-		win->swapchain.height };
+	return win->has_surface
+		? recti_t{ 0, 0, win->surface.size.x, win->surface.size.y }
+		: recti_t{ 0, 0, 0, 0 };
 }
 
 ///////////////////////////////////////////

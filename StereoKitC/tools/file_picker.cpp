@@ -22,24 +22,6 @@
 	#include <windows.h>
 	#include <commdlg.h>
 
-#elif defined(SK_OS_WINDOWS_UWP)
-
-	#ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
-	#endif
-	#include <windows.h>
-	#include <winrt/Windows.UI.Core.h>
-	#include <winrt/Windows.ApplicationModel.Core.h>
-	#include <winrt/Windows.Foundation.Collections.h>
-	#include <winrt/Windows.Storage.Pickers.h>
-	#include <winrt/Windows.Storage.Streams.h>
-
-	using namespace winrt::Windows::UI::Core;
-	using namespace winrt::Windows::ApplicationModel::Core;
-	using namespace winrt::Windows::Storage;
-	using namespace winrt::Windows::Foundation;
-	using namespace winrt::Windows::Storage::Streams;
-
 #endif
 
 #include <stdio.h>
@@ -62,15 +44,6 @@ enum fp_sort_by_ {
 	fp_sort_by_name,
 	fp_sort_by_size
 };
-
-#if defined(SK_OS_WINDOWS_UWP)
-struct fp_file_cache_t {
-public:
-	id_hash_t   name_hash;
-	StorageFile file = nullptr;
-};
-std::vector<fp_file_cache_t> fp_file_cache;
-#endif
 
 char                         fp_filename [1024];
 wchar_t                      fp_wfilename[1024];
@@ -106,9 +79,6 @@ sprite_t                     spr_list                 = nullptr;
 
 void file_picker_finish     ();
 void file_picker_open_folder(const char *folder);
-#if defined(SK_OS_WINDOWS_UWP)
-void file_picker_uwp_picked (IAsyncOperation<StorageFile> result, AsyncStatus status);
-#endif
 
 ///////////////////////////////////////////
 
@@ -194,50 +164,8 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*pick
 		sk_free(filter);
 		return;
 	}
-#elif defined(SK_OS_WINDOWS_UWP)
-	fp_callback  = picker_callback_sz;
-	fp_call_data = callback_data;
-
-	CoreDispatcher dispatcher = CoreApplication::MainView().CoreWindow().Dispatcher();
-	wchar_t        wext[32];
-	if (mode == picker_mode_open) {
-		Pickers::FileOpenPicker picker;
-		for (int32_t i = 0; i < filter_count; i++) {
-			const char *ext = in_arr_filters[i].ext;
-			while (*ext == '*') ext++;
-
-			char *ext_mem = nullptr;
-			if (*ext != '.') {
-				ext_mem = string_append(nullptr, 2, ".", ext);
-				ext = ext_mem;
-			}
-
-			MultiByteToWideChar(CP_UTF8, 0, ext, (int)strlen(ext)+1, wext, 32);
-			picker.FileTypeFilter().Append(wext);
-
-			sk_free(ext_mem);
-		}
-		picker.SuggestedStartLocation(Pickers::PickerLocationId::DocumentsLibrary);
-		dispatcher.RunAsync(CoreDispatcherPriority::Normal, [picker]() {
-			picker.PickSingleFileAsync().Completed(file_picker_uwp_picked);
-		});
-	} else if (mode == picker_mode_save) {
-		Pickers::FileSavePicker picker;
-		auto exts{ winrt::single_threaded_vector<winrt::hstring>() };
-		for (int32_t i = 0; i < filter_count; i++) {
-			MultiByteToWideChar(CP_UTF8, 0, in_arr_filters[i].ext, (int)strlen(in_arr_filters[i].ext)+1, wext, 32);
-			exts.Append(wext);
-		}
-		picker.FileTypeChoices().Insert(L"File Type", exts);
-		picker.SuggestedStartLocation(Pickers::PickerLocationId::DocumentsLibrary);
-		dispatcher.RunAsync(CoreDispatcherPriority::Normal, [picker]() {
-			picker.PickSaveFileAsync().Completed(file_picker_uwp_picked);
-		});
-	}
-	return;
 #endif
 
-#if !defined(SK_OS_WINDOWS_UWP)
 	// Set up the fallback file picker
 
 	// Make the title text for the window
@@ -272,7 +200,6 @@ void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*pick
 		spr_grid   = sprite_find(ui_default_id_spr_grid);
 		spr_list   = sprite_find(ui_default_id_spr_list);
 	}
-#endif
 }
 
 ///////////////////////////////////////////
@@ -288,28 +215,6 @@ void platform_file_picker_close() {
 bool32_t platform_file_picker_visible() {
 	return fp_show;
 }
-
-///////////////////////////////////////////
-
-#if defined(SK_OS_WINDOWS_UWP)
-void file_picker_uwp_picked(IAsyncOperation<StorageFile> result, AsyncStatus status) {
-	StorageFile file = result.get();
-
-	if (status == AsyncStatus::Completed && file != nullptr) {
-		WideCharToMultiByte(CP_UTF8, 0, file.Path().c_str(), file.Path().size()+1, fp_filename, sizeof(fp_filename), nullptr, nullptr);
-
-		fp_file_cache_t item;
-		item.file      = file;
-		item.name_hash = hash_string(fp_filename);
-		fp_file_cache.push_back(item);
-		fp_call        = true;
-		fp_call_status = true;
-	} else {
-		fp_call        = true;
-		fp_call_status = false;
-	}
-}
-#endif
 
 ///////////////////////////////////////////
 
@@ -617,59 +522,6 @@ void file_picker_shutdown() {
 	fp_path.fragments.free();
 	fp_path = {};
 	fp_items.free();
-
-#if defined(SK_OS_WINDOWS_UWP)
-	//fp_file_cache.free();
-#endif
-}
-
-///////////////////////////////////////////
-
-bool file_picker_cache_read(const char *filename, void **out_data, size_t *out_size) {
-#if defined(SK_OS_WINDOWS_UWP)
-	id_hash_t hash = hash_string(filename);
-	for (size_t i = 0; i < fp_file_cache.size(); i++) {
-		if (fp_file_cache[i].name_hash == hash) {
-			IRandomAccessStreamWithContentType stream = fp_file_cache[i].file.OpenReadAsync().get();
-			Buffer buffer((uint32_t)stream.Size());
-			winrt::Windows::Foundation::IAsyncOperationWithProgress<IBuffer, uint32_t> progress = stream.ReadAsync(buffer, (uint32_t)stream.Size(), InputStreamOptions::None);
-			IBuffer result = progress.get();
-
-			*out_size = result.Length();
-			*out_data = sk_malloc(*out_size + 1);
-			memcpy(*out_data, result.data(), *out_size);
-
-			stream.Close();
-			fp_file_cache[i].file = nullptr;
-			fp_file_cache.erase(fp_file_cache.begin() + i);
-			i--;
-
-			return true;
-		}
-	}
-#endif
-	return false;
-}
-
-///////////////////////////////////////////
-
-bool file_picker_cache_save(const char *filename, void *data, size_t size) {
-#if defined(SK_OS_WINDOWS_UWP)
-	id_hash_t hash = hash_string(filename);
-	for (size_t i = 0; i < fp_file_cache.size(); i++) {
-		if (fp_file_cache[i].name_hash == hash) {
-			winrt::array_view<uint8_t const> view{ (uint8_t *)data, (uint8_t *)data + size };
-			FileIO::WriteBytesAsync(fp_file_cache[i].file, view);
-
-			fp_file_cache[i].file = nullptr;
-			fp_file_cache.erase(fp_file_cache.begin() + i);
-			i--;
-
-			return true;
-		}
-	}
-#endif
-	return false;
 }
 
 ///////////////////////////////////////////

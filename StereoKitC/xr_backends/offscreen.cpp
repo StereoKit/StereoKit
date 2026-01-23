@@ -45,6 +45,10 @@ bool offscreen_init() {
 
 void offscreen_step_begin() {
 	input_step();
+
+	// Begin the render frame early so that any graphics operations the
+	// application performs during step are captured.
+	render_pipeline_begin_frame();
 }
 
 ///////////////////////////////////////////
@@ -53,6 +57,7 @@ void offscreen_step_end() {
 	input_step_late();
 
 	render_pipeline_draw();
+	render_pipeline_skip_present();
 }
 
 ///////////////////////////////////////////

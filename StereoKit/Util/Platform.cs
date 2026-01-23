@@ -80,17 +80,11 @@ namespace StereoKit
 		/// if it is not, it'll create a fallback filepicker build using
 		/// StereoKit's UI.
 		/// 
-		/// Flatscreen apps will show traditional file pickers, and UWP has 
-		/// an OS provided file picker that works in MR. All others currently
-		/// use the fallback system.
-		/// 
-		/// A note for UWP apps, UWP generally does not have permission to 
-		/// access random files, unless the user has chosen them with the 
-		/// picker! This picker properly handles permissions for individual
-		/// files on UWP, but may have issues with files that reference other
-		/// files, such as .gltf files with external textures. See 
-		/// Platform.WriteFile and Platform.ReadFile for manually reading and
-		/// writing files in a cross-platfom manner.</summary>
+		/// Flatscreen apps will show traditional file pickers, but some
+		/// platforms may have an OS provided file picker that works in MR.
+		/// Some pickers will block the system and return right away, but
+		/// others will stick around and let users continue to interact with
+		/// the app. </summary>
 		/// <param name="mode">Are we trying to Open a file, or Save a file?
 		/// This changes the appearance and behavior of the picker to support
 		/// the specified action.</param>
@@ -116,19 +110,11 @@ namespace StereoKit
 		/// if it is not, it'll create a fallback filepicker build using
 		/// StereoKit's UI.
 		/// 
-		/// Flatscreen apps will show traditional file pickers, and UWP has 
-		/// an OS provided file picker that works in MR. All others currently
-		/// use the fallback system. Some pickers will block the system and
-		/// return right away, but others will stick around and let users
-		/// continue to interact with the app.
-		/// 
-		/// A note for UWP apps, UWP generally does not have permission to 
-		/// access random files, unless the user has chosen them with the 
-		/// picker! This picker properly handles permissions for individual
-		/// files on UWP, but may have issues with files that reference other
-		/// files, such as .gltf files with external textures. See 
-		/// Platform.WriteFile and Platform.ReadFile for manually reading and
-		/// writing files in a cross-platfom manner.</summary>
+		/// Flatscreen apps will show traditional file pickers, but some
+		/// platforms may have an OS provided file picker that works in MR.
+		/// Some pickers will block the system and return right away, but
+		/// others will stick around and let users continue to interact with
+		/// the app. </summary>
 		/// <param name="mode">Are we trying to Open a file, or Save a file?
 		/// This changes the appearance and behavior of the picker to support
 		/// the specified action.</param>
@@ -167,7 +153,7 @@ namespace StereoKit
 		/// converted to a UTF-8 encoding.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool WriteFile(string filename, string data)
-			=> NativeAPI.platform_write_file_text(NativeHelper.ToUtf8(filename), NativeHelper.ToUtf8(data));
+			=> NativeAPI.platform_write_file_text(filename, data);
 
 		/// <summary>Writes an array of bytes to the filesystem, taking
 		/// advantage of any permissions that may have been granted by
@@ -177,7 +163,14 @@ namespace StereoKit
 		/// <param name="data">An array of bytes to write to the file.</param>
 		/// <returns>True on success, False on failure.</returns>
 		public static bool WriteFile(string filename, byte[] data)
-			=> NativeAPI.platform_write_file(NativeHelper.ToUtf8(filename), data, (UIntPtr)data.Length);
+		{
+			var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+			try {
+				return NativeAPI.platform_write_file(filename, handle.AddrOfPinnedObject(), (UIntPtr)data.Length);
+			} finally {
+				handle.Free();
+			}
+		}
 
 		/// <summary>Reads the entire contents of the file as a UTF-8 string,
 		/// taking advantage of any permissions that may have been granted by
@@ -189,7 +182,7 @@ namespace StereoKit
 		/// <returns>True on success, False on failure.</returns>
 		public static bool ReadFile (string filename, out string data) {
 			data = null;
-			if (!NativeAPI.platform_read_file(NativeHelper.ToUtf8(filename), out IntPtr fileData, out UIntPtr length))
+			if (!NativeAPI.platform_read_file(filename, out IntPtr fileData, out UIntPtr length))
 				return false;
 
 			data = NativeHelper.FromUtf8(fileData, (int)length);
@@ -217,7 +210,7 @@ namespace StereoKit
 		public static bool ReadFile (string filename, out byte[] data)
 		{
 			data = null;
-			if (!NativeAPI.platform_read_file(NativeHelper.ToUtf8(filename), out IntPtr fileData, out UIntPtr length))
+			if (!NativeAPI.platform_read_file(filename, out IntPtr fileData, out UIntPtr length))
 				return false;
 
 			data = new byte[(uint)length];

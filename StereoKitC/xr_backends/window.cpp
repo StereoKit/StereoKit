@@ -84,10 +84,11 @@ bool window_init() {
 	default: return false;
 	}
 
-	local->surface = render_pipeline_surface_create(pipeline_render_strategy_sequential, tex_format_rgba32, render_preferred_depth_fmt(), 1, 1, 1);
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(local->window);
-	if (swapchain)
-		window_surface_resize(local->surface, swapchain->width, swapchain->height);
+	// Use BGRA to match typical swapchain format
+	local->surface = render_pipeline_surface_create(pipeline_render_strategy_sequential, tex_format_bgra32, render_preferred_depth_fmt(), 1, 1, 1);
+	skr_surface_t* skr_surface = platform_win_get_surface(local->window);
+	if (skr_surface)
+		window_surface_resize(local->surface, skr_surface->size.x, skr_surface->size.y);
 
 	return true;
 }
@@ -118,7 +119,7 @@ void window_shutdown() {
 	render_pipeline_shutdown();
 	platform_win_destroy(local->window);
 
-	local = {};
+	*local = {};
 	sk_free(local);
 }
 
@@ -143,6 +144,10 @@ void window_step_begin() {
 		}
 	}
 	input_step();
+
+	// Begin the render frame early so that any graphics operations the
+	// application performs during step are captured.
+	render_pipeline_begin_frame();
 }
 
 ///////////////////////////////////////////
@@ -156,11 +161,14 @@ void window_step_end() {
 	render_pipeline_surface_set_layer      (local->surface, render_get_filter());
 	render_pipeline_surface_set_perspective(local->surface, &view, &proj, 1);
 
+	// Acquire swapchain image before rendering - it becomes the MSAA resolve target
+	skr_surface_t* surface = platform_win_get_surface(local->window);
+	render_pipeline_surface_acquire_swapchain(local->surface, surface);
+
 	render_pipeline_draw();
 
-	skg_swapchain_t* swapchain = platform_win_get_swapchain(local->window);
 	local->render_sys->profile_frame_duration = stm_since(local->render_sys->profile_frame_start);
-	render_pipeline_surface_to_swapchain(local->surface, swapchain);
+	render_pipeline_surface_present_swapchain(local->surface, surface);
 }
 
 }

@@ -40,7 +40,7 @@ xr_system_ xr_ext_palm_pose_initialize(void*) {
 
 	// Snapdragon Spaces advertises the palm pose extension, but provides bad
 	// data for it. Only enable it if it's explicitly requested.
-	if (strstr(device_get_runtime(), "Snapdragon") != nullptr && ext_management_is_user_requested("XR_EXT_palm_pose") == false) {
+	if (openxr_get_known_runtime() == xr_runtime_snapdragon && ext_management_is_user_requested("XR_EXT_palm_pose") == false) {
 		log_diag("XR_EXT_palm_pose - Rejected - Not fully implemented on Snapdragon Spaces.");
 		return xr_system_fail;
 	}

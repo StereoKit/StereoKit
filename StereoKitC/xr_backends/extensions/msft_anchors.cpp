@@ -10,7 +10,6 @@
 
 #include "msft_anchors.h"
 #include "ext_management.h"
-#include "msft_anchor_interop.h"
 
 #include "../../stereokit.h"
 #include "../../asset_types/anchor.h"
@@ -279,13 +278,6 @@ bool32_t xr_ext_msft_spatial_anchors_persist(anchor_t anchor, bool32_t persist) 
 	}
 	anchor->persisted = persist;
 	return true;
-}
-
-///////////////////////////////////////////
-
-bool32_t xr_ext_msft_spatial_anchors_get_perception_anchor(anchor_t anchor, void **perception_spatial_anchor) {
-	oxr_msft_world_anchor_t* anchor_data = (oxr_msft_world_anchor_t*)anchor->data;
-	return xr_ext_msft_anchor_interop_try_get_perception_anchor(anchor_data->anchor, perception_spatial_anchor);
 }
 
 ///////////////////////////////////////////

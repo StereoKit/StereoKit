@@ -121,7 +121,6 @@ namespace StereoKit.Framework
 
 		void DrawGraphs()
 		{
-			#if !WINDOWS_UWP
 			ulong memPollIdx = (ulong)(Time.Total * 2);
 			if (lastMemPoll != memPollIdx)
 			{
@@ -129,7 +128,6 @@ namespace StereoKit.Framework
 				long managedMem = GC.GetTotalMemory(false);
 				managedRamGraph.Add(managedMem / (1024.0f * 1024.0f));
 			}
-			#endif
 
 			float halfWidth = (UI.LayoutRemaining.x - UI.Settings.gutter*2) / 2.0f;
 			Vec2  graphSize  = V.XY(halfWidth, UI.LineHeight);

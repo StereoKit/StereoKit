@@ -35,9 +35,10 @@ class Program
 	{
 		// CLI arguments
 		bool headless            =  ParamPresent(args, "-headless");
+		bool xr                  =  ParamPresent(args, "-xr"); // Force XR in testing mode
 		Tests.IsTesting          =  ParamPresent(args, "-test");
 		Tests.MakeScreenshots    = !ParamPresent(args, "-noscreens");
-		Tests.ScreenshotRoot     =  ParamVal    (args, "-screenfolder",     "../../../docs/img/screenshots");
+		Tests.ScreenshotRoot     =  ParamVal    (args, "-screenfolder",     "../../../tools/screenshots");
 		Tests.GltfFolders        =  ParamVal    (args, "-gltf",             null); // "C:\\Tools\\glTF-Sample-Models-master\\2.0";
 		Tests.GltfScreenshotRoot =  ParamVal    (args, "-gltfscreenfolder", null);
 		Tests.TestSingle         =  ParamPresent(args, "-start");
@@ -45,7 +46,7 @@ class Program
 
 		if (Tests.IsTesting)
 		{
-			settings.mode        = headless ? AppMode.Offscreen : AppMode.Simulator;
+			settings.mode        = headless ? AppMode.Offscreen : xr ? AppMode.XR : AppMode.Simulator;
 			settings.standbyMode = StandbyMode.None;
 		}
 

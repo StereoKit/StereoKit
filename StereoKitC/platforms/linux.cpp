@@ -17,14 +17,17 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <libgen.h>
+#include <dlfcn.h>
 #include <fontconfig/fontconfig.h>
 
-#include <sk_gpu.h>
+#define VK_USE_PLATFORM_XLIB_KHR
+#include <sk_renderer.h>
+#include <vulkan/vulkan_xlib.h>
 
 #include "../xr_backends/openxr.h"
-#include "../systems/render.h"
 #include "../systems/input_keyboard.h"
 #include "../systems/system.h"
+#include "../libraries/array.h"
 #include "../_stereokit.h"
 #include "../device.h"
 #include "../log.h"
@@ -33,6 +36,7 @@
 #include "../libraries/sokol_time.h"
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
+#include "../sk_memory.h"
 #include "string.h"
 #include "sys/stat.h"
 
@@ -52,8 +56,8 @@ struct window_t {
 
 	Window                  x_window;
 
-	skg_swapchain_t         swapchain;
-	bool                    has_swapchain;
+	skr_surface_t           surface;
+	bool                    has_surface;
 };
 
 ///////////////////////////////////////////
@@ -189,12 +193,50 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 	XSetWMProtocols(linux_display, win.x_window, &wm_delete, 1);
 
 	if (surface_type == platform_surface_swapchain) {
-		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-		win.swapchain     = skg_swapchain_create((void *)win.x_window, color_fmt, depth_fmt, win_rect.w, win_rect.h);
-		win.has_swapchain = true;
+		// Load vkCreateXlibSurfaceKHR dynamically from libvulkan.so
+		// (volk doesn't export platform-specific functions directly)
+		void* vk_module = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
+		if (!vk_module) vk_module = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
+		if (!vk_module) {
+			log_err("Failed to load libvulkan.so");
+			XDestroyWindow(linux_display, win.x_window);
+			return -1;
+		}
 
-		log_diagf("Created swapchain: %dx%d color:%s depth:%s", win.swapchain.width, win.swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+		PFN_vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr =
+			(PFN_vkGetInstanceProcAddr)dlsym(vk_module, "vkGetInstanceProcAddr");
+		if (pfn_vkGetInstanceProcAddr == nullptr) {
+			log_err("Failed to load vkGetInstanceProcAddr");
+			dlclose(vk_module);
+			XDestroyWindow(linux_display, win.x_window);
+			return -1;
+		}
+
+		PFN_vkCreateXlibSurfaceKHR pfn_vkCreateXlibSurfaceKHR =
+			(PFN_vkCreateXlibSurfaceKHR)pfn_vkGetInstanceProcAddr(skr_get_vk_instance(), "vkCreateXlibSurfaceKHR");
+		if (pfn_vkCreateXlibSurfaceKHR == nullptr) {
+			log_err("Failed to load vkCreateXlibSurfaceKHR");
+			dlclose(vk_module);
+			XDestroyWindow(linux_display, win.x_window);
+			return -1;
+		}
+
+		// Create Vulkan surface from X11 window
+		VkXlibSurfaceCreateInfoKHR surface_info = { VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR };
+		surface_info.dpy    = linux_display;
+		surface_info.window = win.x_window;
+
+		VkSurfaceKHR vk_surface;
+		if (pfn_vkCreateXlibSurfaceKHR(skr_get_vk_instance(), &surface_info, nullptr, &vk_surface) != VK_SUCCESS) {
+			log_err("Failed to create Vulkan surface for window");
+			XDestroyWindow(linux_display, win.x_window);
+			return -1;
+		}
+
+		skr_surface_create(vk_surface, &win.surface);
+		win.has_surface = true;
+
+		log_diagf("Created surface: %dx%d", win.surface.size.x, win.surface.size.y);
 	}
 
 	linux_windows.add(win);
@@ -206,8 +248,8 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 void platform_win_destroy(platform_win_t window_id) {
 	window_t* win = &linux_windows[window_id];
 
-	if (win->has_swapchain) {
-		skg_swapchain_destroy(&win->swapchain);
+	if (win->has_surface) {
+		skr_surface_destroy(&win->surface);
 	}
 	XDestroyWindow(linux_display, win->x_window);
 	win->events.free();
@@ -223,10 +265,10 @@ void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height
 	width  = maxi(1, width);
 	height = maxi(1, height);
 
-	if (win->has_swapchain == false || (width == win->swapchain.width && height == win->swapchain.height))
+	if (win->has_surface == false || (width == win->surface.size.x && height == win->surface.size.y))
 		return;
 
-	skg_swapchain_resize(&win->swapchain, width, height);
+	skr_surface_resize(&win->surface);
 }
 
 ///////////////////////////////////////////
@@ -456,7 +498,7 @@ bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event,
 
 ///////////////////////////////////////////
 
-skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) { return linux_windows[window].has_swapchain ? &linux_windows[window].swapchain : nullptr; }
+skr_surface_t* platform_win_get_surface(platform_win_t window) { return linux_windows[window].has_surface ? &linux_windows[window].surface : nullptr; }
 
 ///////////////////////////////////////////
 
@@ -499,8 +541,8 @@ float platform_get_scroll() {
 
 recti_t platform_win_rect(platform_win_t window_id) {
 	window_t* win = &linux_windows[window_id];
-	return win->has_swapchain
-		? recti_t{ 0,0, win->swapchain.width, win->swapchain.height }
+	return win->has_surface
+		? recti_t{ 0, 0, win->surface.size.x, win->surface.size.y }
 		: recti_t{ 0, 0, 0, 0 };
 }
 
@@ -555,14 +597,15 @@ void platform_iterate_dir(const char *directory_path, void *callback_data, void 
 			on_item(callback_data, dir_info->d_name, file_attr);
 		}
 		else if (dir_info->d_type == DT_REG) {
-			char* file_path = new char[strlen(directory_path) + strlen(dir_info->d_name) + 1];
+			char* file_path = sk_malloc_t(char, strlen(directory_path) + strlen(dir_info->d_name) + 2);
 			strcpy(file_path, directory_path);
 			strcat(file_path, "/");
 			strcat(file_path, dir_info->d_name);
 			struct stat file_stat;
 			stat(file_path, &file_stat);
-			free(file_path);
+			sk_free(file_path);
 			platform_file_attr_t file_attr;
+			file_attr.file = true;
 			file_attr.size = file_stat.st_size;
 			on_item(callback_data, dir_info->d_name, file_attr);
 		}

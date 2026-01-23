@@ -28,10 +28,11 @@ struct vsIn {
 	float2 uv   : TEXCOORD0;
 	float4 col  : COLOR;
 };
-struct psIn : sk_ps_input_t {
+struct psIn {
 	float4 pos   : SV_Position;
 	float4 color : COLOR0;
 	float2 uv    : TEXCOORD0;
+	uint view_id : SV_RenderTargetArrayIndex;
 };
 
 // y = 1/(x^2+1) * (1-x/6)
@@ -44,20 +45,20 @@ float3 sample_light(float3 world_pos, float3 world_norm, float4 light_pos, float
 	return light_col.rgb * light_col.w * atten * NdotL;
 }
 float3 sample_lights(float3 world_pos, float3 world_norm) {
-	float3 result;
+	float3 result = float3(0,0,0);
 	for (int i = 0; i < 6; i++) {
 		result += sample_light(world_pos, world_norm, lights[i].pos, lights[i].col);
 	}
 	return result;
 }
 
-psIn vs(vsIn input, sk_vs_input_t sk_in) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn output;
-	uint view_id = sk_view_init(sk_in, output);
-	uint id      = sk_inst_id  (sk_in);
+	output.view_id = id % sk_view_count;
+	id             = id / sk_view_count;
 
 	float4 world = mul(input.pos, sk_inst[id].world);
-	output.pos   = mul(world,     sk_viewproj[view_id]);
+	output.pos   = mul(world,     sk_viewproj[output.view_id]);
 
 	float3 normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 

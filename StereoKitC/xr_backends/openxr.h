@@ -19,7 +19,8 @@ typedef struct XR_MAY_ALIAS XrBaseHeader {
 	const void* XR_MAY_ALIAS    next;
 } XrBaseHeader;
 
-#define xr_check(xResult, message) {XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) {log_infof("%s [%s]", message, openxr_string(xr_call_result)); return false;}}
+#define xr_check_ret(xResult, message, ret_val) do { XrResult xr_call_result = xResult; if (XR_FAILED(xr_call_result)) { log_errf("%s [%s]", message, openxr_string(xr_call_result)); return ret_val; } } while(0)
+#define xr_check(xResult, message) xr_check_ret(xResult, message, false)
 inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_next->next = xr_base->next; xr_base->next = xr_next; }
 
 // Some "X Macros" to simplify function loading. Otherwise, function loading
@@ -41,6 +42,19 @@ typedef enum xr_system_ {
 	xr_system_fail          = 0,
 	xr_system_fail_critical = -1,
 } xr_system_;
+
+enum xr_runtime_ {
+	xr_runtime_none,
+	xr_runtime_unknown,
+	xr_runtime_meta,
+	xr_runtime_android_xr,
+	xr_runtime_vive,
+	xr_runtime_pico,
+	xr_runtime_monado,
+	xr_runtime_steamvr,
+	xr_runtime_wmr, // Windows Mixed Reality
+	xr_runtime_snapdragon, // Snapdragon Spaces
+};
 
 typedef struct context_callback_t {
 	void       (*callback)(void* context);
@@ -87,6 +101,7 @@ typedef struct xr_system_t {
 	poll_event_callback_t     evt_poll;
 } xr_system_t;
 
+bool openxr_create_system();  // Idempotent: creates XrInstance and XrSystemId
 bool openxr_init        ();
 void openxr_cleanup     ();
 void openxr_shutdown    ();
@@ -95,12 +110,12 @@ void openxr_step_end    ();
 bool openxr_poll_events ();
 bool openxr_render_frame();
 
-void*         openxr_get_luid         ();
 bool32_t      openxr_get_space        (XrSpace space, pose_t *out_pose, XrTime time = 0);
 const char*   openxr_string           (XrResult result);
 void          openxr_set_origin_offset(pose_t offset);
 bool          openxr_get_stage_bounds (vec2* out_size, pose_t* out_pose, XrTime time);
 button_state_ openxr_space_tracked    ();
+xr_runtime_   openxr_get_known_runtime(void);
 
 extern XrSpace    xr_app_space;
 extern XrSpace    xr_head_space;

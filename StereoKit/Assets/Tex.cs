@@ -88,6 +88,11 @@ namespace StereoKit
 			get => NativeAPI.tex_get_sample(_inst);
 			set => NativeAPI.tex_set_sample(_inst, value); }
 
+		/// <summary>When sampling from a texture with comparison enabled, the
+		/// sampler compares the sampled texel value against a reference value
+		/// and returns a 0 or 1 based on the result. This is primarily useful
+		/// for shadow mapping techniques, where a depth texture is sampled to
+		/// determine if a surface is in shadow.</summary>
 		public TexSampleComp SampleComp {
 			get => NativeAPI.tex_get_sample_comp(_inst);
 			set => NativeAPI.tex_set_sample_comp(_inst, value);
@@ -160,6 +165,20 @@ namespace StereoKit
 		#endregion
 
 		#region Methods
+		
+		/// <summary>Copy the current texture into a new texture, with the
+		/// option to convert it to a different format or type! This is a GPU
+		/// blit operation, so the source texture does not need to be readable
+		/// from the CPU. If the source texture doesn't have mip-maps but the
+		/// destination type does, they'll be generated for you!</summary>
+		/// <param name="textureType">What type of texture should the new
+		/// texture be? Image types with mip-maps will have mips generated for
+		/// them if the source doesn't have them.</param>
+		/// <param name="textureFormat">What format should the new texture
+		/// be in? If None is specified, the new texture will use the same
+		/// format as the source.</param>
+		/// <returns>A new texture copied from this one, or null if the copy
+		/// failed.</returns>
 		public Tex Copy(TexType textureType = TexType.Image, TexFormat textureFormat = TexFormat.None)
 		{
 			IntPtr result = NativeAPI.tex_copy(_inst, textureType, textureFormat);
@@ -346,7 +365,7 @@ namespace StereoKit
 		/// passed on to StereoKit? If so, StereoKit may delete it when it's
 		/// finished with it. If this is not desired, pass in false.</param>
 		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1, bool owned=true)
-			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, 1, 1, owned);
+			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, 1, owned);
 
 		/// <summary>This will return the texture's native resource for use
 		/// with external libraries. For D3D, this will be an ID3D11Texture2D*,
@@ -510,7 +529,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		public static Tex FromCubemap(string cubemapFile, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(cubemapFile), sRGBData, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(cubemapFile, sRGBData, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
@@ -536,7 +555,7 @@ namespace StereoKit
 		[Obsolete("Use overload without lightingInfo, then use Tex.CubemapLighting, preferably after async tex loading has finished")]
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex    = NativeAPI.tex_create_cubemap_file(NativeHelper.ToUtf8(equirectangularCubemap), sRGBData, loadPriority);
+			IntPtr tex    = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData, loadPriority);
 			Tex    result = tex == IntPtr.Zero ? null : new Tex(tex);
 			lightingInfo = result == null ? default : result.CubemapLighting;
 			return result;
@@ -560,7 +579,7 @@ namespace StereoKit
 		/// load.</returns>
 		public static Tex FromFile(string file, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_file(NativeHelper.ToUtf8(file), sRGBData, 10);
+			IntPtr inst = NativeAPI.tex_create_file(file, sRGBData, loadPriority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 

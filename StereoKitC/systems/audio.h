@@ -27,7 +27,7 @@ void audio_shutdown();
 void audio_pause ();
 void audio_resume();
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 void audio_set_default_device_in (const wchar_t *id);
 void audio_set_default_device_out(const wchar_t *id);
 #endif

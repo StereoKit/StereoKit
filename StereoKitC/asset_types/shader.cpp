@@ -38,9 +38,9 @@ const char* shader_get_id(const shader_t shader) {
 ///////////////////////////////////////////
 
 void shader_update_label(shader_t shader) {
-#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
+#if defined(_DEBUG) || defined(SK_GPU_LABELS)
 	if (shader->header.id_text != nullptr)
-		skg_shader_name(&shader->shader, shader->header.id_text);
+		skr_shader_set_name(&shader->gpu_shader, shader->header.id_text);
 #else
 	(void)shader;
 #endif
@@ -49,42 +49,27 @@ void shader_update_label(shader_t shader) {
 ///////////////////////////////////////////
 
 const char *shader_get_name(shader_t shader) {
-	return shader->shader.meta->name;
+	return shader->gpu_shader.meta->name;
 }
 
 ///////////////////////////////////////////
 
 shader_t shader_create_mem(void *data, size_t data_size) {
 	char name[256];
-	if (!skg_shader_file_verify(data, data_size, nullptr, name, sizeof(name)))
+	if (!sksc_shader_file_verify(data, (uint32_t)data_size, nullptr, name, sizeof(name)))
 		return nullptr;
 
-	skg_shader_t shader = {};
-
-#if defined(SKG_OPENGL)
-	struct shader_upload_job_t {
-		void*         data;
-		size_t        data_size;
-		skg_shader_t* shader;
-	};
-	shader_upload_job_t job_data = { data, data_size, &shader };
-
-	assets_execute_gpu([](void* data) {
-		shader_upload_job_t* job_data = (shader_upload_job_t*)data;
-		*job_data->shader = skg_shader_create_memory(job_data->data, job_data->data_size);
-
-		return (bool32_t)skg_shader_is_valid(job_data->shader);
-	}, &job_data);
-#else
-	shader = skg_shader_create_memory(data, data_size);
-#endif
-	if (!skg_shader_is_valid(&shader)) {
-		skg_shader_destroy(&shader);
+	skr_shader_t shader = {};
+	if (skr_shader_create(data, (uint32_t)data_size, &shader) != skr_err_success) {
+		return nullptr;
+	}
+	if (!skr_shader_is_valid(&shader)) {
+		skr_shader_destroy(&shader);
 		return nullptr;
 	}
 
 	shader_t result = (shader_t)assets_allocate(asset_type_shader);
-	result->shader = shader;
+	result->gpu_shader = shader;
 
 	return result;
 }
@@ -136,7 +121,7 @@ void shader_release(shader_t shader) {
 ///////////////////////////////////////////
 
 void shader_destroy(shader_t shader) {
-	skg_shader_destroy(&shader->shader);
+	skr_shader_destroy(&shader->gpu_shader);
 	*shader = {};
 }
 

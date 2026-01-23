@@ -22,13 +22,8 @@ class DocRenderList : ITest
 
 		list.Add(model, Matrix.TS(-model.Bounds.center*scale, scale), Color.White);
 
-		// OpenGL renders upside-down to rendertargets, so this is a simple fix
-		// for our case here, we just flip the camera upside down.
-		Vec3 up = Backend.Graphics == BackendGraphics.D3D11
-			?  Vec3.Up
-			: -Vec3.Up;
 		list.DrawNow(result,
-			Matrix.LookAt(V.XYZ(0,0,-1), Vec3.Zero, up),
+			Matrix.LookAt(V.XYZ(0,0,-1), Vec3.Zero, Vec3.Up),
 			Matrix.Perspective(45, 1, 0.01f, 10));
 
 		// Clearing isn't _necessary_ here, but DrawNow does not clear the list

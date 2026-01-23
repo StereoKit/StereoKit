@@ -25,8 +25,8 @@ internal class TestTextures : ITest
 		ulong  off64 = 0x3C00000000000000;
 		ushort on16  = 0x3C00;
 		ushort off16 = 0x0000;
-		ushort onRG  = 0xFF00;
-		ushort offRG = 0x00FF;
+		ushort onRG  = 0x00FF;
+		ushort offRG = 0x0000;
 		uint   onRGB10A2    = 0xC00003FF;
 		uint   offRGB10A2   = 0xC0000000;
 		uint   onRG11B10    = 0x3C0;
@@ -212,6 +212,7 @@ internal class TestTextures : ITest
 			tex = new Tex(TexType.Image, format),
 			mat = Material.Default.Copy()
 		};
+		result.tex.Id = $"test/tex/{format}{w}x{h}";
 
 		int    size  = Marshal.SizeOf<T>();
 		IntPtr ptr   = Marshal.AllocHGlobal(size * w * h);

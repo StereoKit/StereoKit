@@ -16,7 +16,7 @@
 #include "ext_render_model.h"
 #include "eye_interaction.h"
 #include "fb_colorspace.h"
-#include "graphics.h"
+#include "vulkan_enable.h"
 #include "hand_tracking.h"
 #include "hand_mesh.h"
 #include "input_profiles.h"
@@ -30,7 +30,6 @@
 #include "msft_anchors.h"
 #include "msft_bridge.h"
 #include "msft_observer.h"
-#include "msft_anchor_interop.h"
 #include "msft_scene_understanding.h"
 
 ///////////////////////////////////////////
@@ -40,9 +39,6 @@ namespace sk {
 ///////////////////////////////////////////
 
 bool ext_registration() {
-	if (xr_ext_loader_init_register() == xr_system_fail_critical)
-		return false;
-
 	// These extensions require deep integration, so we just request them here.
 	if (ext_management_get_use_min() == false) {
 		ext_management_request_ext(XR_EXT_LOCAL_FLOOR_EXTENSION_NAME);
@@ -53,7 +49,7 @@ bool ext_registration() {
 	xr_ext_time_register();
 	xr_ext_android_create_instance_register();
 	xr_ext_android_thread_register();
-	xr_ext_graphics_register();
+	xr_ext_vulkan_enable_register();
 	xr_ext_hand_tracking_register();
 	xr_ext_msft_hand_mesh_register();
 	xr_ext_msft_scene_understanding_register();
@@ -64,7 +60,6 @@ bool ext_registration() {
 	xr_ext_overlay_register();
 	xr_ext_oculus_audio_register();
 	xr_ext_msft_bridge_register();
-	xr_ext_msft_anchor_interop_register();
 	xr_ext_interaction_render_model_register();
 	xr_ext_render_model_register();
 

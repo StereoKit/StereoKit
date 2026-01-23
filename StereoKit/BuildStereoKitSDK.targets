@@ -15,8 +15,6 @@
 		<!-- Get a nice name for the OS/Platform we're building for. -->
 		<SKSDKBuildOS Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'"                             >Android</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">Android</SKSDKBuildOS>
-		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(TargetPlatformIdentifier)'=='UAP'"            >Uwp</SKSDKBuildOS>
-		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(UseUwp)'=='true'"                             >Uwp</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(OS)'=='Windows_NT'"                           >Win32</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(OS)'!='Windows_NT'"                           >Linux</SKSDKBuildOS>
 
@@ -36,8 +34,8 @@
 		<SKSDKBuildAbi Condition="'$(SKSDKBuildOS)'=='Android' and '$(SKSDKBuildMode)'=='ARM64'">arm64-v8a</SKSDKBuildAbi>
 
 		<!-- Get the SK native binary names, which is different per-platform. -->
-		<SKSDKLibFile Condition="'$(SKSDKBuildOS)'=='Win32' or '$(SKSDKBuildOS)'=='Uwp'"    >StereoKitC.dll</SKSDKLibFile>
-		<SKSDKDbgFile Condition="'$(SKSDKBuildOS)'=='Win32' or '$(SKSDKBuildOS)'=='Uwp'"    >StereoKitC.pdb</SKSDKDbgFile>
+		<SKSDKLibFile Condition="'$(SKSDKBuildOS)'=='Win32'">StereoKitC.dll</SKSDKLibFile>
+		<SKSDKDbgFile Condition="'$(SKSDKBuildOS)'=='Win32'">StereoKitC.pdb</SKSDKDbgFile>
 		<SKSDKLibFile Condition="'$(SKSDKBuildOS)'=='Linux' or '$(SKSDKBuildOS)'=='Android'">libStereoKitC.so</SKSDKLibFile>
 		<SKSDKDbgFile Condition="'$(SKSDKBuildOS)'=='Linux' or '$(SKSDKBuildOS)'=='Android'">libStereoKitC.so.dbg</SKSDKDbgFile>
 
@@ -48,7 +46,6 @@
 
 		<!-- Make a Runtime Id for the binary file. -->
 		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='Win32'"  >win-$(SKSDKBuildMode.ToLower())</SKSDKRID>
-		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='Uwp'"    >win10-$(SKSDKBuildMode.ToLower())</SKSDKRID>
 		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='Linux'"  >linux-$(SKSDKBuildMode.ToLower())</SKSDKRID>
 		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='Android'">android-$(SKSDKBuildAbi)</SKSDKRID>
 	</PropertyGroup>
@@ -70,44 +67,39 @@
 	     run unless the consuming project has dirty code.-->
 	<Target Name="StereoKit_BuildNative" BeforeTargets="BeforeBuild;StereoKit_Properties">
 		<PropertyGroup>
-			<SKSDKPreset>$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)_Fast</SKSDKPreset>
-			<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32' or '$(SKSDKBuildOS)'=='Uwp'">$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_Fast\CMakeCache.txt</SKSDKCacheFile>
-			<SKSDKCacheFile Condition="'$(SKSDKCacheFile)'==''"                               >$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)_Fast\CMakeCache.txt</SKSDKCacheFile>
+			<SKSDKPresetFast Condition="'$(Configuration)'=='Debug'">_Fast</SKSDKPresetFast>
+			<SKSDKPreset>$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)$(SKSDKPresetFast)</SKSDKPreset>
+			<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32'">$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)$(SKSDKPresetFast)\CMakeCache.txt</SKSDKCacheFile>
+			<SKSDKCacheFile Condition="'$(SKSDKCacheFile)'==''"   >$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)$(SKSDKPresetFast)\CMakeCache.txt</SKSDKCacheFile>
 
 			<SKBuildCommand                                         >cd $(SKSDKFolder)</SKBuildCommand>
 			<SKBuildCommand Condition="!Exists('$(SKSDKCacheFile)')">$(SKBuildCommand) &amp;&amp; cmake --preset $(SKSDKPreset) -DSK_BUILD_TESTS=OFF</SKBuildCommand>
 			<SKBuildCommand                                         >$(SKBuildCommand) &amp;&amp; cmake --build --preset $(SKSDKPreset)</SKBuildCommand>
 		</PropertyGroup>
-		
+
 		<Message Condition="!Exists('$(SKSDKCacheFile)')" Importance="high" Text="[StereoKit SDK] Configuring StereoKitC"/>
 		<Exec Command="$(SKBuildCommand)" />
 	</Target>
 	
 	<!-- Attach the native library binaries. -->
 	<ItemGroup>
-		<None    Condition="'$(SKSDKBuildOS)'!='Uwp'"                               Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKLibFile)" Include="$(SKSDKLibPath)" />
-		<None    Condition="'$(SKSDKBuildOS)'!='Uwp' and Exists('$(SKSDKDbgPath)')" Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKDbgFile)" Include="$(SKSDKDbgPath)" />
-		<Content Condition="'$(SKSDKBuildOS)'=='Uwp'"                               Visible="false" CopyToOutputDirectory="PreserveNewest" Include="$(SKSDKLibPath)" />
-		<Content Condition="'$(SKSDKBuildOS)'=='Uwp' and Exists('$(SKSDKDbgPath)')" Visible="false" CopyToOutputDirectory="PreserveNewest" Include="$(SKSDKDbgPath)" />
+		<None                                       Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKLibFile)" Include="$(SKSDKLibPath)" />
+		<None Condition="Exists('$(SKSDKDbgPath)')" Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKDbgFile)" Include="$(SKSDKDbgPath)" />
+		
 	</ItemGroup>
 
 	<!-- Android binaries are included differently. -->
 	<ItemGroup Condition="'$(SKSDKBuildOS)'=='Android'">
 		<!-- <None                 Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKDbgPath)" /> -->
 		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKLibPath)" />
-		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKBinDir)$(SKOpenXRLoader.ToLower())\*.so" />
-		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKOpenXRLoaderFolder)\$(SKOpenXRLoader)\$(SKSDKBuildMode.ToLower())\*.so" />
-	</ItemGroup>
-
-	<ItemGroup Condition="'$(SKSDKBuildOS)'=='Uwp'">
-		<!-- Needed for ucrtbased.dll when running a debug build. -->
-		<SDKReference Condition="'$(Configuration)' == 'Debug'" Include="Microsoft.VCLibs, Version=14.0" />
+		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKBinDir)$(SKOpenXRLoader.ToLower())/*.so" />
+		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKOpenXRLoaderFolder)/$(SKOpenXRLoader)/$(SKSDKBuildMode.ToLower())/*.so" />
 	</ItemGroup>
 
 	<!-- Full rebuilds of this project should also be full rebuilds of StereoKit. -->
 	<Target Name="SKSDKRebuild" AfterTargets="Clean">
-		<RemoveDir Condition="'$(SKSDKBuildOS)'=='Win32' or  '$(SKSDKBuildOS)'=='Uwp'" Directories="$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildMode)" />
-		<RemoveDir Condition="'$(SKSDKBuildOS)'!='Win32' and '$(SKSDKBuildOS)'!='Uwp'" Directories="$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildMode)_$(Configuration)" />
+		<RemoveDir Condition="'$(SKSDKBuildOS)'=='Win32'" Directories="$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildMode)" />
+		<RemoveDir Condition="'$(SKSDKBuildOS)'!='Win32'" Directories="$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildMode)_$(Configuration)" />
 	</Target>
 	
 	<!-- Error out if StereoKitC hasn't successfully built! -->

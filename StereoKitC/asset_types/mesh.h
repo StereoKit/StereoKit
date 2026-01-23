@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include <sk_gpu.h>
+#include <sk_renderer.h>
 
 #include "../stereokit.h"
 #include "../systems/bvh.h"
@@ -21,20 +21,16 @@ struct mesh_weights_t {
 
 struct _mesh_t {
 	asset_header_t   header;
-	uint32_t         vert_count;
-	uint32_t         vert_capacity;
-	bool32_t         vert_dynamic;
-	skg_buffer_t     vert_buffer;
-	uint32_t         ind_count;
-	uint32_t         ind_capacity;
-	bool32_t         ind_dynamic;
-	skg_buffer_t     ind_buffer;
+	skr_mesh_t       gpu_mesh;
 	uint32_t         ind_draw;
-	skg_mesh_t       gpu_mesh;
 	bounds_t         bounds;
 	bool32_t         discard_data;
 	vert_t*          verts;
 	vind_t*          inds;
+	uint32_t         vert_count;
+	uint32_t         vert_capacity;
+	uint32_t         ind_count;
+	uint32_t         ind_capacity;
 	mesh_collision_t collision_data;
 	mesh_bvh_t*      bvh_data;
 	mesh_weights_t   skin_data;

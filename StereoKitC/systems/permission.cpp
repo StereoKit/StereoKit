@@ -7,6 +7,7 @@
 #include "../platforms/platform.h"
 #include "../libraries/stref.h"
 #include "../sk_memory.h"
+#include "../xr_backends/openxr.h"
 
 namespace sk {
 
@@ -17,16 +18,6 @@ namespace sk {
 ///////////////////////////////////////////
 
 #include <android/native_activity.h>
-
-enum xr_runtime_ {
-	xr_runtime_none,
-	xr_runtime_unknown,
-	xr_runtime_meta,
-	xr_runtime_android_xr,
-	xr_runtime_vive,
-	xr_runtime_pico,
-	xr_runtime_monado,
-};
 
 struct permission_state_t {
 	permission_state_ present             [permission_type_max];
@@ -49,7 +40,6 @@ const int32_t PROTECTION_MASK_BASE = 0x0000000f;
 bool        _permission_check_app_permission      (const char* permission);
 void        _permission_check_manifest_permissions(void);
 void        _permission_request_permission        (const char* permission);
-xr_runtime_ _permission_check_runtime             (void);
 bool        _permission_manifest_has              (JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals, const char* permission_str);
 const char* _permission_check_string              (permission_type_ type, xr_runtime_ runtime, JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals);
 
@@ -122,22 +112,6 @@ const char* _permission_check_string(permission_type_ type, xr_runtime_ runtime,
 
 	#undef PERMISSION_CHECK
 	#undef PERMISSION_SET
-
-	return result;
-}
-
-///////////////////////////////////////////
-
-xr_runtime_ _permission_check_runtime() {
-	const char* runtime_name = device_get_runtime();
-	xr_runtime_ result       = xr_runtime_unknown;
-
-	// This is an incomplete list of runtimes
-	if      (string_startswith(runtime_name, "Meta"  )) result = xr_runtime_meta;
-	else if (string_startswith(runtime_name, "Oculus")) result = xr_runtime_meta;
-	else if (string_startswith(runtime_name, "Monado")) result = xr_runtime_monado;
-	else if (string_startswith(runtime_name, "Moohan")) result = xr_runtime_android_xr;
-	else if (string_startswith(runtime_name, "Vive"  )) result = xr_runtime_vive;
 
 	return result;
 }
@@ -264,7 +238,7 @@ void _permission_check_manifest_permissions() {
 	// look through all permissions in the manifest, and match them up to ones
 	// StereoKit knows about.
 	jsize       length  = jobj_requestedPermissions ? env->GetArrayLength(jobj_requestedPermissions) : 0;
-	xr_runtime_ runtime = _permission_check_runtime();
+	xr_runtime_ runtime = openxr_get_known_runtime();
 	for (int32_t p = 0; p < permission_type_max; p++) {
 
 		local.permission_str[p] = _permission_check_string((permission_type_)p, runtime, env, jobj_requestedPermissions, length, string_equals);

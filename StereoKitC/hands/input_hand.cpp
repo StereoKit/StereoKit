@@ -255,13 +255,13 @@ void input_hand_update() {
 				continue;
 
 			hand_state[h].info.size = 0;
-			for (int32_t j = 0; j < hand_joint_tip-1; j++) {
+			for (int32_t j = 0; j < joint_id_tip-1; j++) {
 				hand_state[h].info.size += vec3_magnitude(
-					hand_state[h].info.fingers[hand_finger_middle][j  ].position -
-					hand_state[h].info.fingers[hand_finger_middle][j+1].position);
+					hand_state[h].info.fingers[finger_id_middle][j  ].position -
+					hand_state[h].info.fingers[finger_id_middle][j+1].position);
 			}
-			hand_state[h].info.size += hand_state[h].info.fingers[hand_finger_middle][hand_joint_root].radius;
-			hand_state[h].info.size += hand_state[h].info.fingers[hand_finger_middle][hand_joint_tip].radius;
+			hand_state[h].info.size += hand_state[h].info.fingers[finger_id_middle][joint_id_root].radius;
+			hand_state[h].info.size += hand_state[h].info.fingers[finger_id_middle][joint_id_tip].radius;
 		}
 	}
 

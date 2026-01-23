@@ -9,14 +9,54 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 namespace sk {
 
 
 ///////////////////////////////////////////
 
-void material_copy_pipeline(material_t dest, const material_t src);
-void material_update_label (material_t material);
+skr_material_info_t material_build_info(material_t material) {
+	skr_material_info_t info = {};
+	info.shader = &material->shader->gpu_shader;
+
+	// Read pipeline state directly from gpu_mat.key (single source of truth)
+	info.cull        = material->gpu_mat.key.cull;
+	info.depth_test  = material->gpu_mat.key.depth_test;
+	info.write_mask  = material->gpu_mat.key.write_mask;
+	info.depth_clamp = material->gpu_mat.key.depth_clamp;
+
+	// alpha_mode is cached since it's a higher-level abstraction
+	switch (material->alpha_mode) {
+	case transparency_none:  info.blend_state = skr_blend_off;      break;
+	case transparency_blend: info.blend_state = skr_blend_alpha;    break;
+	case transparency_add:   info.blend_state = skr_blend_additive; break;
+	default:                 info.blend_state = skr_blend_off;      break;
+	}
+
+	info.alpha_to_coverage = material->alpha_mode == transparency_msaa;
+	info.queue_offset      = material->gpu_mat.queue_offset;
+	return info;
+}
+
+///////////////////////////////////////////
+
+void material_recreate_gpu(material_t material) {
+	// Create new material first (allows pipeline reuse if identical)
+	skr_material_t      new_mat = {};
+	skr_material_info_t info    = material_build_info(material);
+	if (skr_material_create(info, &new_mat) != skr_err_success) {
+		log_err("Failed to recreate GPU material");
+		return;
+	}
+
+	// Destroy old material
+	if (skr_material_is_valid(&material->gpu_mat)) {
+		skr_material_destroy(&material->gpu_mat);
+	}
+
+	material->gpu_mat = new_mat;
+}
 
 ///////////////////////////////////////////
 
@@ -33,26 +73,12 @@ material_t material_find(const char *id) {
 
 void material_set_id(material_t material, const char *id) {
 	assets_set_id(&material->header, id);
-	material_update_label(material);
 }
 
 ///////////////////////////////////////////
 
 const char* material_get_id(const material_t material) {
 	return material->header.id_text;
-}
-
-///////////////////////////////////////////
-
-void material_update_label(material_t material) {
-#if !defined(SKG_OPENGL) && (defined(_DEBUG) || defined(SK_GPU_LABELS))
-	if (material->header.id_text != nullptr) {
-		skg_pipeline_name(&material->pipeline, material->header.id_text);
-		skg_buffer_name  (&material->args.buffer_gpu, material->header.id_text);
-	}
-#else
-	(void)material;
-#endif
 }
 
 ///////////////////////////////////////////
@@ -72,43 +98,23 @@ inline size_t material_param_size(material_param_ type) {
 
 ///////////////////////////////////////////
 
-void material_create_arg_defaults(material_t material, shader_t shader) {
-	const skg_shader_meta_t   *meta      = shader->shader.meta;
-	const skg_shader_buffer_t *buff_info = meta->global_buffer_id != -1
-		? &meta->buffers[meta->global_buffer_id]
-		: nullptr;
-	uint32_t buff_size = buff_info ? (uint32_t)buff_info->size : 0;
+void material_alloc_textures(material_t material) {
+	const sksc_shader_meta_t *meta = material->shader->gpu_shader.meta;
+	material->texture_count       = (int32_t)meta->resource_count;
+	material->textures            = material->texture_count > 0 ? sk_malloc_t(tex_t,    material->texture_count) : nullptr;
+	material->texture_meta_hashes = material->texture_count > 0 ? sk_malloc_t(uint64_t, material->texture_count) : nullptr;
+	memset(material->textures,            0, sizeof(tex_t)    * material->texture_count);
+	memset(material->texture_meta_hashes, 0, sizeof(uint64_t) * material->texture_count);
+}
 
-	material->args.buffer       = buff_size > 0 ? sk_malloc(buff_size) : nullptr;
-	material->args.buffer_size  = buff_size;
-	material->args.buffer_bind  = buff_info ? buff_info->bind : skg_bind_t{};
-	material->args.buffer_dirty = false;
-	if (buff_info && buff_info->defaults != nullptr) memcpy(material->args.buffer, buff_info->defaults, buff_size);
-	else                                             memset(material->args.buffer, 0, buff_size);
-	if (buff_size != 0) {
-		// Construct a material parameters buffer on the GPU, and do it
-		// threadsafe
-		struct material_job_t {
-			material_t material;
-			uint32_t   buff_size;
-			void*      buff_data;
-		};
-		material_job_t job_data = {material, buff_size, sk_malloc(buff_size)};
-		memcpy(job_data.buff_data, material->args.buffer, buff_size);
-		assets_execute_gpu([](void *data) {
-			material_job_t *job_data = (material_job_t *)data;
-			job_data->material->args.buffer_gpu = skg_buffer_create(job_data->buff_data, 1, job_data->buff_size, skg_buffer_type_constant, skg_use_dynamic);
-			sk_free(job_data->buff_data);
-			return (bool32_t)true;
-		}, &job_data);
-	}
+///////////////////////////////////////////
 
-	material->args.texture_count = meta->resource_count;
-	material->args.textures      = meta->resource_count > 0 ? sk_malloc_t(shaderargs_tex_t, meta->resource_count) : nullptr;
-	memset(material->args.textures, 0, sizeof(tex_t) * meta->resource_count);
+void material_set_default_textures(material_t material) {
+	const sksc_shader_meta_t *meta = material->shader->gpu_shader.meta;
+
+	// Set default textures for all resources declared in the shader
 	for (uint32_t i = 0; i < meta->resource_count; i++) {
-		shaderargs_tex_t *tex_arg     = &material->args.textures[i];
-		tex_t             default_tex = nullptr;
+		tex_t default_tex = nullptr;
 
 		if      (string_eq(meta->resources[i].value, "white")) default_tex = tex_find(default_id_tex);
 		else if (string_eq(meta->resources[i].value, "black")) default_tex = tex_find(default_id_tex_black);
@@ -116,9 +122,15 @@ void material_create_arg_defaults(material_t material, shader_t shader) {
 		else if (string_eq(meta->resources[i].value, "flat" )) default_tex = tex_find(default_id_tex_flat);
 		else if (string_eq(meta->resources[i].value, "rough")) default_tex = tex_find(default_id_tex_rough);
 		else                                                   default_tex = tex_find(default_id_tex);
-		tex_arg->tex       = default_tex;
-		tex_arg->meta_hash = 0;
-		tex_arg->bind      = meta->resources[i].bind;
+
+		// Release old texture if present, store new one
+		if (material->textures[i] != nullptr)
+			tex_release(material->textures[i]);
+		material->textures[i] = default_tex; // tex_find already adds a ref
+
+		// Update sk_renderer binding
+		tex_t physical_tex = default_tex->fallback ? default_tex->fallback : default_tex;
+		skr_material_set_tex(&material->gpu_mat, meta->resources[i].name, &physical_tex->gpu_tex);
 	}
 }
 
@@ -134,12 +146,20 @@ material_t material_create(shader_t shader) {
 	shader_addref(material_shader);
 	result->alpha_mode = transparency_none;
 	result->shader     = material_shader;
-	result->depth_test = depth_test_less;
-	result->depth_write= true;
-	result->pipeline   = skg_pipeline_create(&result->shader->shader);
 
-	material_set_cull(result, cull_back);
-	material_create_arg_defaults(result, material_shader);
+	// Create the sk_renderer material with defaults
+	skr_material_info_t info = {};
+	info.shader      = &material_shader->gpu_shader;
+	info.cull        = skr_cull_back;
+	info.depth_test  = skr_compare_less;
+	info.write_mask  = skr_write_default; // Includes depth write
+	info.depth_clamp = false;             // Default: clip, don't clamp
+	if (skr_material_create(info, &result->gpu_mat) != skr_err_success) {
+		log_err("Failed to create GPU material");
+	}
+
+	material_alloc_textures      (result);
+	material_set_default_textures(result);
 
 	if (shader == nullptr) {
 		shader_release(material_shader);
@@ -153,55 +173,62 @@ material_t material_create(shader_t shader) {
 material_t material_copy(material_t material) {
 	if (material == nullptr) return nullptr;
 
-	// Make a new empty material
-	material_t result = material_create(material->shader);
-	// release any of the default textures for the material.
-	for (int32_t i = 0; i < result->args.texture_count; i++) {
-		if (result->args.textures[i].tex != nullptr)
-			tex_release(result->args.textures[i].tex);
-	}
-	// Store allocated memory temporarily
-	void             *tmp_buffer        = result->args.buffer;
-	skg_buffer_t      tmp_buffer_gpu    = result->args.buffer_gpu;
-	shaderargs_tex_t *tmp_textures      = result->args.textures;
-	asset_header_t    tmp_header        = result->header;
+	// Get the material info from source first
+	skr_material_info_t info = material_build_info(material);
 
-	// Copy everything over from the old one, and then re-write with our own custom memory. Then copy that over too!
-	memcpy(result, material, sizeof(_material_t));
-	result->header             = tmp_header;
-	result->args.buffer        = tmp_buffer;
-	result->args.buffer_gpu    = tmp_buffer_gpu;
-	result->args.textures      = tmp_textures;
-	result->args.buffer_dirty  = true;
-	memcpy(result->args.buffer,   material->args.buffer,   material->args.buffer_size);
-	memcpy(result->args.textures, material->args.textures, sizeof(shaderargs_tex_t) * material->args.texture_count);
-
-	// Add references to all the other material's assets
-	for (int32_t i = 0; i < result->args.texture_count; i++) {
-		if (result->args.textures[i].tex != nullptr)
-			tex_addref(result->args.textures[i].tex);
+	// Allocate new material and create the gpu_mat from source state
+	material_t result = (material_t)assets_allocate(asset_type_material);
+	if (skr_material_create(info, &result->gpu_mat) != skr_err_success) {
+		log_err("Failed to create GPU material during copy");
 	}
+
+	// Copy cached state (cull/depth_test/depth_write/depth_clamp are in gpu_mat.key now)
+	result->alpha_mode = material->alpha_mode;
+	result->chain      = material->chain;
+	memcpy(result->variants, material->variants, sizeof(result->variants));
+
+	// Add references to shared assets
+	shader_addref(material->shader);
+	result->shader = material->shader;
 	if (result->chain != nullptr) material_addref(result->chain);
-	for (int32_t i = 0; i < _countof(result->variants); i++) {
+	for (int32_t i = 0; i < (int32_t)_countof(result->variants); i++) {
 		if (result->variants[i] != nullptr)
 			material_addref(result->variants[i]);
 	}
 
-	// Copy over the material's pipeline
-	result->pipeline = skg_pipeline_create(&material->shader->shader);
-	material_copy_pipeline(result, material);
+	// Allocate texture array for result
+	material_alloc_textures(result);
+
+	// Copy parameter values from source material
+	const sksc_shader_meta_t   *meta      = material->shader->gpu_shader.meta;
+	const sksc_shader_buffer_t *buff_info = meta->global_buffer_id != -1
+		? &meta->buffers[meta->global_buffer_id]
+		: nullptr;
+	if (buff_info && buff_info->size > 0) {
+		// Get param values from source and set on dest
+		for (uint32_t i = 0; i < buff_info->var_count; i++) {
+			const sksc_shader_var_t *var = &buff_info->vars[i];
+			void *tmp = sk_malloc(var->size);
+			skr_material_get_param(&material->gpu_mat, var->name, (sksc_shader_var_)var->type, (uint32_t)var->type_count, tmp);
+			skr_material_set_param(&result  ->gpu_mat, var->name, (sksc_shader_var_)var->type, (uint32_t)var->type_count, tmp);
+			sk_free(tmp);
+		}
+	}
+
+	// Copy texture bindings from source material
+	for (int32_t i = 0; i < material->texture_count; i++) {
+		if (material->textures[i] != nullptr) {
+			tex_addref(material->textures[i]);
+			result->textures[i] = material->textures[i];
+
+			tex_t physical_tex = material->textures[i]->fallback
+				? material->textures[i]->fallback
+				: material->textures[i];
+			skr_material_set_tex(&result->gpu_mat, meta->resources[i].name, &physical_tex->gpu_tex);
+		}
+	}
 
 	return result;
-}
-
-///////////////////////////////////////////
-
-void material_copy_pipeline(material_t dest, const material_t src) {
-	material_set_cull        (dest, src->cull);
-	material_set_depth_test  (dest, src->depth_test);
-	material_set_depth_write (dest, src->depth_write);
-	material_set_transparency(dest, src->alpha_mode);
-	material_set_wireframe   (dest, src->wireframe);
 }
 
 ///////////////////////////////////////////
@@ -235,14 +262,17 @@ void material_destroy(material_t material) {
 			material_release(material->variants[i]);
 	}
 	if (material->chain) material_release(material->chain);
-	for (int32_t i = 0; i < material->args.texture_count; i++) {
-		if (material->args.textures[i].tex != nullptr)
-			tex_release(material->args.textures[i].tex);
-	}
 	shader_release(material->shader);
-	skg_pipeline_destroy(&material->pipeline);
-	sk_free(material->args.buffer);
-	sk_free(material->args.textures);
+
+	// Release all texture references
+	for (int32_t i = 0; i < material->texture_count; i++) {
+		if (material->textures[i] != nullptr)
+			tex_release(material->textures[i]);
+	}
+	sk_free(material->textures);
+	sk_free(material->texture_meta_hashes);
+
+	skr_material_destroy(&material->gpu_mat);
 	*material = {};
 }
 
@@ -258,42 +288,86 @@ void material_set_shader(material_t material, shader_t shader) {
 
 	// Update references
 	shader_addref(shader);
+	shader_t old_shader = material->shader;
 
-	// Copy over any relevant values that are attached to the old shader
-	if (material->shader != nullptr) {
-		shader_t          old_shader   = material->shader;
-		void             *old_buffer   = material->args.buffer;
-		shaderargs_tex_t *old_textures = material->args.textures;
-		material_create_arg_defaults(material, shader);
-		material->shader = shader;
+	// Copy param values from old shader to temp storage
+	const sksc_shader_meta_t*   old_meta = old_shader                                   ? old_shader->gpu_shader.meta                    : nullptr;
+	const sksc_shader_buffer_t* old_buff = old_meta && old_meta->global_buffer_id != -1 ? &old_meta->buffers[old_meta->global_buffer_id] : nullptr;
 
-		// Copy old param values
-		int32_t count = skg_shader_get_var_count(&old_shader->shader);
-		for (int32_t i = 0; i < count; i++) {
-			const skg_shader_var_t *item     = skg_shader_get_var_info(&old_shader->shader, i);
-			const skg_shader_var_t *new_slot = skg_shader_get_var_info(&material->shader->shader, skg_shader_get_var_index_h(&material->shader->shader, item->name_hash));
-			if (new_slot != nullptr)
-				memcpy( (uint8_t *)material->args.buffer + new_slot->offset, 
-						(uint8_t *)old_buffer            + item->offset, new_slot->size);
+	// Store old param values temporarily
+	struct param_copy_t { char name[64]; void *data; uint32_t size; sksc_shader_var_ type; uint32_t count; };
+	param_copy_t *old_params      = nullptr;
+	int32_t       old_param_count = 0;
+	if (old_buff && old_buff->var_count > 0) {
+		old_params      = sk_malloc_t(param_copy_t, old_buff->var_count);
+		old_param_count = old_buff->var_count;
+
+		for (uint32_t i = 0; i < old_buff->var_count; i++) {
+			const sksc_shader_var_t *var = &old_buff->vars[i];
+			strncpy(old_params[i].name, var->name, sizeof(old_params[i].name) - 1);
+			old_params[i].name[sizeof(old_params[i].name) - 1] = '\0';
+			old_params[i].size  = var->size;
+			old_params[i].type  = (sksc_shader_var_)var->type;
+			old_params[i].count = var->type_count;
+			old_params[i].data  = sk_malloc(var->size);
+			skr_material_get_param(&material->gpu_mat, var->name, (sksc_shader_var_)var->type, var->type_count, old_params[i].data);
 		}
+	}
 
-		// Do the same for textures
-		for (uint32_t i = 0; i < old_shader->shader.meta->resource_count; i++) {
-			material_set_texture(material, old_shader->shader.meta->resources[i].name, old_textures[i].tex);
-			tex_release(old_textures[i].tex);
+	// Store old textures with their name hashes (keep refs for now)
+	struct tex_copy_t { id_hash_t name_hash; tex_t tex; };
+	tex_copy_t *old_textures  = nullptr;
+	int32_t     old_tex_count = material->texture_count;
+	if (old_meta && old_tex_count > 0) {
+		old_textures = sk_malloc_t(tex_copy_t, old_tex_count);
+		for (int32_t i = 0; i < old_tex_count; i++) {
+			old_textures[i].name_hash = old_meta->resources[i].name_hash;
+			old_textures[i].tex       = material->textures[i]; // Transfer ref ownership
 		}
+	}
 
-		// And release the old shader content
-		if (old_shader != nullptr)
-			shader_release(old_shader);
-		skg_pipeline_destroy(&material->pipeline);
-		sk_free(old_buffer);
+	// Free arrays (refs transferred to old_textures)
+	sk_free(material->textures);
+	sk_free(material->texture_meta_hashes);
+	material->textures            = nullptr;
+	material->texture_meta_hashes = nullptr;
+	material->texture_count       = 0;
+
+	// Update shader and recreate gpu material
+	material->shader = shader;
+	material_recreate_gpu(material);
+
+	// Allocate new texture array and set defaults
+	material_alloc_textures      (material);
+	material_set_default_textures(material);
+
+	// Re-bind matching textures from old shader
+	if (old_textures) {
+		for (int32_t i = 0; i < old_tex_count; i++) {
+			if (old_textures[i].tex != nullptr) {
+				// Try to find matching texture slot in new shader by name hash
+				material_set_texture_id(material, old_textures[i].name_hash, old_textures[i].tex);
+				tex_release(old_textures[i].tex);
+			}
+		}
 		sk_free(old_textures);
 	}
 
-	material->shader   = shader;
-	material->pipeline = skg_pipeline_create(&material->shader->shader);
-	material_copy_pipeline(material, material);
+	// Copy matching params to new shader
+	if (old_params) {
+		for (int32_t i = 0; i < old_param_count; i++) {
+			// Only set the param if it exists in the new shader
+			if (sksc_shader_meta_get_var_index(material->shader->gpu_shader.meta, old_params[i].name) != -1) {
+				skr_material_set_param(&material->gpu_mat, old_params[i].name, old_params[i].type, old_params[i].count, old_params[i].data);
+			}
+			sk_free(old_params[i].data);
+		}
+		sk_free(old_params);
+	}
+
+	// Release old shader
+	if (old_shader != nullptr)
+		shader_release(old_shader);
 }
 
 ///////////////////////////////////////////
@@ -306,55 +380,80 @@ shader_t material_get_shader(material_t material) {
 ///////////////////////////////////////////
 
 void material_set_transparency(material_t material, transparency_ mode) {
+	if (material->alpha_mode == mode) return;
 	material->alpha_mode = mode;
-	skg_pipeline_set_transparency(&material->pipeline, (skg_transparency_)mode);
-	material_update_label(material);
+	material_recreate_gpu(material);
 }
 
 ///////////////////////////////////////////
 
 void material_set_cull(material_t material, cull_ mode) {
-	material->cull = mode;
-	skg_pipeline_set_cull(&material->pipeline, (skg_cull_)mode);
-	material_update_label(material);
+	skr_cull_ skr_mode;
+	switch (mode) {
+	case cull_back:  skr_mode = skr_cull_back;  break;
+	case cull_front: skr_mode = skr_cull_front; break;
+	case cull_none:  skr_mode = skr_cull_none;  break;
+	default:         skr_mode = skr_cull_back;  break;
+	}
+	if (material->gpu_mat.key.cull == skr_mode) return;
+	material->gpu_mat.key.cull = skr_mode;
+	material_recreate_gpu(material);
 }
 
 ///////////////////////////////////////////
 
 void material_set_wireframe(material_t material, bool32_t wireframe) {
-	material->wireframe = wireframe;
-	skg_pipeline_set_wireframe(&material->pipeline, wireframe);
-	material_update_label(material);
+	// sk_renderer doesn't support wireframe, so we just ignore this
+	// Keep the API for compatibility but don't store the value
+	(void)material;
+	(void)wireframe;
 }
 
 ///////////////////////////////////////////
 
 void material_set_depth_test(material_t material, depth_test_ depth_test_mode) {
-	material->depth_test = depth_test_mode;
-	skg_pipeline_set_depth_test(&material->pipeline, (skg_depth_test_)depth_test_mode);
-	material_update_label(material);
+	skr_compare_ skr_mode;
+	switch (depth_test_mode) {
+	case depth_test_less:          skr_mode = skr_compare_less;          break;
+	case depth_test_less_or_eq:    skr_mode = skr_compare_less_or_eq;    break;
+	case depth_test_greater:       skr_mode = skr_compare_greater;       break;
+	case depth_test_greater_or_eq: skr_mode = skr_compare_greater_or_eq; break;
+	case depth_test_equal:         skr_mode = skr_compare_equal;         break;
+	case depth_test_not_equal:     skr_mode = skr_compare_not_equal;     break;
+	case depth_test_always:        skr_mode = skr_compare_always;        break;
+	case depth_test_never:         skr_mode = skr_compare_never;         break;
+	default:                       skr_mode = skr_compare_less;          break;
+	}
+	if (material->gpu_mat.key.depth_test == skr_mode) return;
+	material->gpu_mat.key.depth_test = skr_mode;
+	material_recreate_gpu(material);
 }
 
 ///////////////////////////////////////////
 
 void material_set_depth_write(material_t material, bool32_t write_enabled) {
-	material->depth_write = write_enabled;
-	skg_pipeline_set_depth_write(&material->pipeline, write_enabled);
-	material_update_label(material);
+	bool current = (material->gpu_mat.key.write_mask & skr_write_depth) != 0;
+	if (current == (bool)write_enabled) return;
+	if (write_enabled) {
+		material->gpu_mat.key.write_mask = (skr_write_)(material->gpu_mat.key.write_mask | skr_write_depth);
+	} else {
+		material->gpu_mat.key.write_mask = (skr_write_)(material->gpu_mat.key.write_mask & ~skr_write_depth);
+	}
+	material_recreate_gpu(material);
 }
 
 ///////////////////////////////////////////
 
-void material_set_depth_clip(material_t material, bool32_t clip_enabled) {
-	material->depth_clip = clip_enabled;
-	skg_pipeline_set_depth_clip(&material->pipeline, clip_enabled);
-	material_update_label(material);
+void material_set_depth_clamp(material_t material, bool32_t clamp_enabled) {
+	if (material->gpu_mat.key.depth_clamp == (bool)clamp_enabled) return;
+	material->gpu_mat.key.depth_clamp = clamp_enabled;
+	material_recreate_gpu(material);
 }
 
 ///////////////////////////////////////////
 
 void material_set_queue_offset(material_t material, int32_t offset) {
-	material->queue_offset = offset;
+	material->gpu_mat.queue_offset = offset;
 }
 
 ///////////////////////////////////////////
@@ -396,37 +495,54 @@ transparency_ material_get_transparency(material_t material) {
 ///////////////////////////////////////////
 
 cull_ material_get_cull(material_t material) {
-	return material->cull;
+	switch (material->gpu_mat.key.cull) {
+	case skr_cull_back:  return cull_back;
+	case skr_cull_front: return cull_front;
+	case skr_cull_none:  return cull_none;
+	default:             return cull_back;
+	}
 }
 
 ///////////////////////////////////////////
 
 bool32_t material_get_wireframe(material_t material) {
-	return material->wireframe;
+	// sk_renderer doesn't support wireframe
+	(void)material;
+	return false;
 }
 
 ///////////////////////////////////////////
 
 depth_test_ material_get_depth_test(material_t material) {
-	return material->depth_test;
+	switch (material->gpu_mat.key.depth_test) {
+	case skr_compare_less:          return depth_test_less;
+	case skr_compare_less_or_eq:    return depth_test_less_or_eq;
+	case skr_compare_greater:       return depth_test_greater;
+	case skr_compare_greater_or_eq: return depth_test_greater_or_eq;
+	case skr_compare_equal:         return depth_test_equal;
+	case skr_compare_not_equal:     return depth_test_not_equal;
+	case skr_compare_always:        return depth_test_always;
+	case skr_compare_never:         return depth_test_never;
+	default:                        return depth_test_less;
+	}
 }
 
 ///////////////////////////////////////////
 
 bool32_t material_get_depth_write(material_t material) {
-	return material->depth_write;
+	return (material->gpu_mat.key.write_mask & skr_write_depth) != 0;
 }
 
 ///////////////////////////////////////////
 
-bool32_t material_get_depth_clip(material_t material) {
-	return material->depth_clip;
+bool32_t material_get_depth_clamp(material_t material) {
+	return material->gpu_mat.key.depth_clamp;
 }
 
 ///////////////////////////////////////////
 
 int32_t material_get_queue_offset(material_t material) {
-	return material->queue_offset;
+	return material->gpu_mat.queue_offset;
 }
 
 ///////////////////////////////////////////
@@ -453,226 +569,141 @@ material_t material_get_variant(material_t material, int32_t variant_idx) {
 
 ///////////////////////////////////////////
 
-void *_material_get_ptr(material_t material, const char *name, uint32_t size) {
-	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
-	if (i == -1) return nullptr;
-
-	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-	if (size == 0 || info->size != size) {
-		log_errf("material_set_: '%s' mismatched type (for shader %s)",  info->name, material->shader->shader.meta->name);
-		return nullptr;
-	}
-	return ((uint8_t*)material->args.buffer + info->offset);
-}
-
-///////////////////////////////////////////
-
 void material_set_float(material_t material, const char *name, float value) {
-	float *matparam = (float*)_material_get_ptr(material, name, sizeof(float));
-	if (matparam != nullptr) {
-		*matparam = value;
-		material->args.buffer_dirty = true;
-	}
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_float, 1, &value);
 }
 
 ///////////////////////////////////////////
 
 void material_set_color32(material_t material, const char *name, color32 value) {
-	color128 *matparam = (color128*)_material_get_ptr(material, name, sizeof(color128));
-	if (matparam != nullptr) {
-		*matparam = color_to_linear(color32_to_128(value));
-		material->args.buffer_dirty = true;
-	}
+	color128 linear = color_to_linear(color32_to_128(value));
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_float, 4, &linear);
 }
 
 ///////////////////////////////////////////
 
 void material_set_color(material_t material, const char *name, color128 value) {
-	color128 *matparam = (color128*)_material_get_ptr(material, name, sizeof(color128));
-	if (matparam != nullptr) {
-		*matparam = color_to_linear(value);
-		material->args.buffer_dirty = true;
-	}
+	color128 linear = color_to_linear(value);
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_float, 4, &linear);
 }
 
 ///////////////////////////////////////////
 
 void material_set_vector4(material_t material, const char *name, vec4 value) {
-	vec4 *matparam = (vec4*)_material_get_ptr(material, name, sizeof(vec4));
-	if (matparam != nullptr) {
-		*matparam = value;
-		material->args.buffer_dirty = true;
-	}
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_float, 4, &value);
 }
 
 ///////////////////////////////////////////
 
 void material_set_vector3(material_t material, const char *name, vec3 value) {
-	vec3 *matparam = (vec3*)_material_get_ptr(material, name, sizeof(vec3));
-	if (matparam != nullptr) {
-		*matparam = value;
-		material->args.buffer_dirty = true;
-	}
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_float, 3, &value);
 }
 
 ///////////////////////////////////////////
 
 void material_set_vector2(material_t material, const char *name, vec2 value) {
-	vec2 *matparam = (vec2*)_material_get_ptr(material, name, sizeof(vec2));
-	if (matparam != nullptr) {
-		*matparam = value;
-		material->args.buffer_dirty = true;
-	}
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_float, 2, &value);
 }
 
 ///////////////////////////////////////////
 
 void material_set_int(material_t material, const char *name, int32_t value) {
-	int32_t *matparam = (int32_t*)_material_get_ptr(material, name, sizeof(int32_t));
-	if (matparam != nullptr) {
-		*matparam = value;
-		material->args.buffer_dirty = true;
-	}
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_int, 1, &value);
 }
 
 ///////////////////////////////////////////
 
-void material_set_int2(material_t material, const char *name, int32_t  value1, int32_t value2) {
-	int32_t *matparam = (int32_t*)_material_get_ptr(material, name, sizeof(int32_t)*2);
-	if (matparam != nullptr) {
-		matparam[0] = value1;
-		matparam[1] = value2;
-		material->args.buffer_dirty = true;
-	}
+void material_set_int2(material_t material, const char *name, int32_t value1, int32_t value2) {
+	int32_t values[2] = { value1, value2 };
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_int, 2, values);
 }
 
 ///////////////////////////////////////////
 
-void material_set_int3(material_t material, const char *name, int32_t  value1, int32_t value2, int32_t value3) {
-	int32_t *matparam = (int32_t*)_material_get_ptr(material, name, sizeof(int32_t)*3);
-	if (matparam != nullptr) {
-		matparam[0] = value1;
-		matparam[1] = value2;
-		matparam[2] = value3;
-		material->args.buffer_dirty = true;
-	}
+void material_set_int3(material_t material, const char *name, int32_t value1, int32_t value2, int32_t value3) {
+	int32_t values[3] = { value1, value2, value3 };
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_int, 3, values);
 }
 
 ///////////////////////////////////////////
 
-void material_set_int4(material_t material, const char *name, int32_t  value1, int32_t value2, int32_t value3, int32_t value4) {
-	int32_t *matparam = (int32_t*)_material_get_ptr(material, name, sizeof(int32_t)*4);
-	if (matparam != nullptr) {
-		matparam[0] = value1;
-		matparam[1] = value2;
-		matparam[2] = value3;
-		matparam[3] = value4;
-		material->args.buffer_dirty = true;
-	}
+void material_set_int4(material_t material, const char *name, int32_t value1, int32_t value2, int32_t value3, int32_t value4) {
+	int32_t values[4] = { value1, value2, value3, value4 };
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_int, 4, values);
 }
 
 ///////////////////////////////////////////
 
 void material_set_bool(material_t material, const char *name, bool32_t value) {
-	uint32_t *matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t));
-	if (matparam != nullptr) {
-		*matparam = value>0?1:0;
-		material->args.buffer_dirty = true;
-	}
+	uint32_t v = value > 0 ? 1 : 0;
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_uint, 1, &v);
 }
 
 ///////////////////////////////////////////
 
 void material_set_uint(material_t material, const char *name, uint32_t value) {
-	uint32_t *matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t));
-	if (matparam != nullptr) {
-		*matparam = value;
-		material->args.buffer_dirty = true;
-	}
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_uint, 1, &value);
 }
 
 ///////////////////////////////////////////
 
 void material_set_uint2(material_t material, const char *name, uint32_t value1, uint32_t value2) {
-	uint32_t *matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t)*2);
-	if (matparam != nullptr) {
-		matparam[0] = value1;
-		matparam[1] = value2;
-		material->args.buffer_dirty = true;
-	}
+	uint32_t values[2] = { value1, value2 };
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_uint, 2, values);
 }
 
 ///////////////////////////////////////////
 
 void material_set_uint3(material_t material, const char *name, uint32_t value1, uint32_t value2, uint32_t value3) {
-	uint32_t *matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t)*3);
-	if (matparam != nullptr) {
-		matparam[0] = value1;
-		matparam[1] = value2;
-		matparam[2] = value3;
-		material->args.buffer_dirty = true;
-	}
+	uint32_t values[3] = { value1, value2, value3 };
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_uint, 3, values);
 }
 
 ///////////////////////////////////////////
 
 void material_set_uint4(material_t material, const char *name, uint32_t value1, uint32_t value2, uint32_t value3, uint32_t value4) {
-	uint32_t *matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t)*4);
-	if (matparam != nullptr) {
-		matparam[0] = value1;
-		matparam[1] = value2;
-		matparam[2] = value3;
-		matparam[3] = value4;
-		material->args.buffer_dirty = true;
-	}
+	uint32_t values[4] = { value1, value2, value3, value4 };
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_uint, 4, values);
 }
 
 ///////////////////////////////////////////
 
 void material_set_matrix(material_t material, const char *name, matrix value) {
-	int32_t i = skg_shader_get_var_index(&material->shader->shader, name);
-	if (i == -1) return;
-
-	const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-	if (info->size != sizeof(matrix)) {
-		log_errf("material_set_: '%s' mismatched type (for shader %s)",  info->name, material->shader->shader.meta->name);
-		return;
-	}
-	*(matrix *)((uint8_t*)material->args.buffer + info->offset) = value;
-	material->args.buffer_dirty = true;
+	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_float, 16, &value);
 }
 
 ///////////////////////////////////////////
 
 bool32_t material_set_texture_id(material_t material, id_hash_t id, tex_t value) {
+	const sksc_shader_meta_t *meta = material->shader->gpu_shader.meta;
 
-	for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
-		const skg_shader_resource_t *resource = &material->shader->shader.meta->resources[i];
+	for (uint32_t i = 0; i < meta->resource_count; i++) {
+		const sksc_shader_resource_t *resource = &meta->resources[i];
 		if (resource->name_hash == id) {
 
 			// Assigning a null texture will crash the renderer, so we want to
 			// instead find the default texture for the material parameter.
-			if (value == nullptr) {
-				if      (string_eq(resource->value, "white")) value = sk_default_tex;
-				else if (string_eq(resource->value, "black")) value = sk_default_tex_black;
-				else if (string_eq(resource->value, "gray" )) value = sk_default_tex_gray;
-				else if (string_eq(resource->value, "flat" )) value = sk_default_tex_flat;
-				else if (string_eq(resource->value, "rough")) value = sk_default_tex_rough;
-				else                                          value = sk_default_tex;
+			tex_t tex_to_set = value;
+			if (tex_to_set == nullptr) {
+				if      (string_eq(resource->value, "white")) tex_to_set = sk_default_tex;
+				else if (string_eq(resource->value, "black")) tex_to_set = sk_default_tex_black;
+				else if (string_eq(resource->value, "gray" )) tex_to_set = sk_default_tex_gray;
+				else if (string_eq(resource->value, "flat" )) tex_to_set = sk_default_tex_flat;
+				else if (string_eq(resource->value, "rough")) tex_to_set = sk_default_tex_rough;
+				else                                          tex_to_set = sk_default_tex;
 			}
 
-			if (material->args.textures[i].tex != value) {
-				// No need for safe swap, since we know these textures aren't
-				// the same texture.
-				if (material->args.textures[i].tex != nullptr)
-					tex_release(material->args.textures[i].tex);
-				material->args.textures[i].tex = value;
-				tex_addref(value);
-
-				// Information about the texture needs updated as well, but
-				// this is done when checking the material before rendering,
-				// since the texture's internal contents can change at any time
+			// Update texture reference tracking
+			if (material->textures[i] != tex_to_set) {
+				tex_addref(tex_to_set);
+				if (material->textures[i] != nullptr)
+					tex_release(material->textures[i]);
+				material->textures[i] = tex_to_set;
 			}
+
+			// Set the GPU texture binding (use fallback if present)
+			tex_t physical_tex = tex_to_set->fallback ? tex_to_set->fallback : tex_to_set;
+			skr_material_set_tex(&material->gpu_mat, resource->name, &physical_tex->gpu_tex);
 			return true;
 		}
 	}
@@ -688,75 +719,86 @@ bool32_t material_set_texture(material_t material, const char *name, tex_t value
 ///////////////////////////////////////////
 
 float material_get_float(material_t material, const char* name) {
-	float* matparam = (float*)_material_get_ptr(material, name, sizeof(float));
-	return matparam != nullptr ? *matparam : 0.0f;
+	float result = 0.0f;
+	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_float, 1, &result);
+	return result;
 }
 
 ///////////////////////////////////////////
 
 vec2 material_get_vector2(material_t material, const char* name) {
-	vec2* matparam = (vec2*)_material_get_ptr(material, name, sizeof(vec2));
-	return matparam != nullptr ? *matparam : vec2{};
+	vec2 result = {};
+	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_float, 2, &result);
+	return result;
 }
 
 ///////////////////////////////////////////
 
 vec3 material_get_vector3(material_t material, const char* name) {
-	vec3* matparam = (vec3*)_material_get_ptr(material, name, sizeof(vec3));
-	return matparam != nullptr ? *matparam : vec3{};
+	vec3 result = {};
+	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_float, 3, &result);
+	return result;
 }
 
 ///////////////////////////////////////////
 
 color128 material_get_color(material_t material, const char* name) {
-	color128* matparam = (color128*)_material_get_ptr(material, name, sizeof(color128));
-	return matparam != nullptr ? *matparam : color128{1,1,1,1};
+	color128 result = {1,1,1,1};
+	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_float, 4, &result);
+	return result;
 }
 
 ///////////////////////////////////////////
 
 vec4 material_get_vector4(material_t material, const char* name) {
-	vec4* matparam = (vec4*)_material_get_ptr(material, name, sizeof(vec4));
-	return matparam != nullptr ? *matparam : vec4{};
+	vec4 result = {};
+	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_float, 4, &result);
+	return result;
 }
 
 ///////////////////////////////////////////
 
 int32_t material_get_int(material_t material, const char* name) {
-	int32_t* matparam = (int32_t*)_material_get_ptr(material, name, sizeof(int32_t));
-	return matparam != nullptr ? *matparam : 0;
+	int32_t result = 0;
+	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_int, 1, &result);
+	return result;
 }
 
 ///////////////////////////////////////////
 
 bool32_t material_get_bool(material_t material, const char* name) {
-	uint32_t* matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t));
-	return matparam != nullptr ? *matparam : false;
+	uint32_t result = 0;
+	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_uint, 1, &result);
+	return result != 0;
 }
 
 ///////////////////////////////////////////
 
 uint32_t material_get_uint(material_t material, const char* name) {
-	uint32_t* matparam = (uint32_t*)_material_get_ptr(material, name, sizeof(uint32_t));
-	return matparam != nullptr ? *matparam : 0;
+	uint32_t result = 0;
+	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_uint, 1, &result);
+	return result;
 }
 
 ///////////////////////////////////////////
 
 matrix material_get_matrix(material_t material, const char* name) {
-	matrix* matparam = (matrix*)_material_get_ptr(material, name, sizeof(matrix));
-	return matparam != nullptr ? *matparam : matrix_identity;
+	matrix result = matrix_identity;
+	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_float, 16, &result);
+	return result;
 }
 
 ///////////////////////////////////////////
 
 tex_t material_get_texture(material_t material, const char* name) {
+	const sksc_shader_meta_t *meta = material->shader->gpu_shader.meta;
 	id_hash_t id = hash_string(name);
-	for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
-		const skg_shader_resource_t* resource = &material->shader->shader.meta->resources[i];
-		if (resource->name_hash == id) {
-			tex_t result = material->args.textures[i].tex;
-			tex_addref(result);
+
+	for (uint32_t i = 0; i < meta->resource_count; i++) {
+		if (meta->resources[i].name_hash == id) {
+			tex_t result = material->textures[i];
+			if (result != nullptr)
+				tex_addref(result);
 			return result;
 		}
 	}
@@ -769,12 +811,12 @@ bool32_t material_has_param(material_t material, const char *name, material_para
 	id_hash_t id = hash_string(name);
 
 	if (type == material_param_texture) {
-		for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
-			if (material->shader->shader.meta->resources[i].name_hash == id)
+		for (uint32_t i = 0; i < material->shader->gpu_shader.meta->resource_count; i++) {
+			if (material->shader->gpu_shader.meta->resources[i].name_hash == id)
 				return true;
 		}
 	} else {
-		if (skg_shader_get_var_index(&material->shader->shader, name) != -1)
+		if (sksc_shader_meta_get_var_index(material->shader->gpu_shader.meta, name) != -1)
 			return true;
 	}
 	return false;
@@ -792,11 +834,10 @@ void material_set_param_id(material_t material, id_hash_t id, material_param_ ty
 	if (type == material_param_texture) {
 		material_set_texture_id(material, id, (tex_t)value);
 	} else {
-		int32_t i = skg_shader_get_var_index_h(&material->shader->shader, id);
+		int32_t i = sksc_shader_meta_get_var_index_h(material->shader->gpu_shader.meta, id);
 		if (i != -1) {
-			const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-			memcpy(((uint8_t *)material->args.buffer + info->offset), value, info->size);
-			material->args.buffer_dirty = true;
+			const sksc_shader_var_t *info = sksc_shader_meta_get_var_info(material->shader->gpu_shader.meta, i);
+			skr_material_set_param(&material->gpu_mat, info->name, (sksc_shader_var_)info->type, info->type_count, value);
 		}
 	}
 }
@@ -811,17 +852,23 @@ bool32_t material_get_param(material_t material, const char *name, material_para
 
 bool32_t material_get_param_id(material_t material, id_hash_t id, material_param_ type, void *out_value) {
 	if (type == material_param_texture) {
-		for (uint32_t i = 0; i < material->shader->shader.meta->resource_count; i++) {
-			if (material->shader->shader.meta->resources[i].name_hash == id) {
-				memcpy(out_value, &material->args.textures[i], sizeof(tex_t));
+		const sksc_shader_meta_t *meta = material->shader->gpu_shader.meta;
+		for (uint32_t i = 0; i < meta->resource_count; i++) {
+			if (meta->resources[i].name_hash == id) {
+				tex_t result = material->textures[i];
+				if (result != nullptr)
+					tex_addref(result);
+				*(tex_t*)out_value = result;
 				return true;
 			}
 		}
+		*(tex_t*)out_value = nullptr;
+		return false;
 	} else {
-		int32_t i = skg_shader_get_var_index_h(&material->shader->shader, id);
+		int32_t i = sksc_shader_meta_get_var_index_h(material->shader->gpu_shader.meta, id);
 		if (i != -1) {
-			const skg_shader_var_t *info = skg_shader_get_var_info(&material->shader->shader, i);
-			memcpy(out_value, ((uint8_t *)material->args.buffer + info->offset), info->size);
+			const sksc_shader_var_t *info = sksc_shader_meta_get_var_info(material->shader->gpu_shader.meta, i);
+			skr_material_get_param(&material->gpu_mat, info->name, (sksc_shader_var_)info->type, info->type_count, out_value);
 			return true;
 		}
 	}
@@ -831,7 +878,7 @@ bool32_t material_get_param_id(material_t material, id_hash_t id, material_param
 ///////////////////////////////////////////
 
 void material_get_param_info(material_t material, int32_t index, char **out_name, material_param_ *out_type) {
-	const skg_shader_meta_t *meta = material->shader->shader.meta;
+	const sksc_shader_meta_t *meta = material->shader->gpu_shader.meta;
 
 	int32_t buffer_id = meta->global_buffer_id;
 	int32_t buffer_ct = buffer_id >= 0
@@ -839,10 +886,10 @@ void material_get_param_info(material_t material, int32_t index, char **out_name
 		: 0;
 
 	if (index < buffer_ct) {
-		skg_shader_var_t *info = &meta->buffers[buffer_id].vars[index];
+		sksc_shader_var_t *info = &meta->buffers[buffer_id].vars[index];
 		if (out_type != nullptr) {
 			*out_type = material_param_unknown;
-			if (info->type == skg_shader_var_float) {
+			if (info->type == sksc_shader_var_float) {
 				if      (info->type_count == 16) *out_type = material_param_matrix;
 				else if (info->type_count == 1 ) *out_type = material_param_float;
 				else if (info->type_count == 2 ) *out_type = material_param_vector2;
@@ -853,12 +900,12 @@ void material_get_param_info(material_t material, int32_t index, char **out_name
 					else
 						*out_type = material_param_vector4;
 				}
-			} else if (info->type == skg_shader_var_int) {
+			} else if (info->type == sksc_shader_var_int) {
 				if      (info->type_count == 1 ) *out_type = material_param_int;
 				else if (info->type_count == 2 ) *out_type = material_param_int2;
 				else if (info->type_count == 3 ) *out_type = material_param_int3;
 				else if (info->type_count == 4 ) *out_type = material_param_int4;
-			} else if (info->type == skg_shader_var_uint) {
+			} else if (info->type == sksc_shader_var_uint) {
 				if      (info->type_count == 1 ) *out_type = material_param_uint;
 				else if (info->type_count == 2 ) *out_type = material_param_uint2;
 				else if (info->type_count == 3 ) *out_type = material_param_uint3;
@@ -875,23 +922,25 @@ void material_get_param_info(material_t material, int32_t index, char **out_name
 ///////////////////////////////////////////
 
 int material_get_param_count(material_t material) {
-	int32_t buffer_id = material->shader->shader.meta->global_buffer_id;
+	int32_t buffer_id = material->shader->gpu_shader.meta->global_buffer_id;
 	if (buffer_id == -1)
-		return material->shader->shader.meta->resource_count;
+		return material->shader->gpu_shader.meta->resource_count;
 
 	return
-		material->shader->shader.meta->buffers[buffer_id].var_count +
-		material->shader->shader.meta->resource_count;
+		material->shader->gpu_shader.meta->buffers[buffer_id].var_count +
+		material->shader->gpu_shader.meta->resource_count;
 }
 
 ///////////////////////////////////////////
 
 material_buffer_t material_buffer_create(int32_t size) {
 	_material_buffer_t* buffer = sk_malloc_t(_material_buffer_t, 1);
-	buffer->size   = size;
-	buffer->refs   = 1;
-	void* data = sk_calloc(size); // GLES can sometime interpret nullptr for data as an opportunity to optimize away the buffer, so we give it some empty data.
-	buffer->buffer = skg_buffer_create(data, 1, size, skg_buffer_type_constant, skg_use_dynamic);
+	buffer->size = size;
+	buffer->refs = 1;
+	void* data = sk_calloc(size);
+	if (skr_buffer_create(data, (uint32_t)size, 1, skr_buffer_type_constant, skr_use_dynamic, &buffer->buffer) != skr_err_success) {
+		log_err("Failed to create material buffer");
+	}
 	sk_free(data);
 	return buffer;
 }
@@ -905,7 +954,7 @@ void material_buffer_addref(material_buffer_t buffer) {
 ///////////////////////////////////////////
 
 void material_buffer_destroy(material_buffer_t buffer) {
-	skg_buffer_destroy(&buffer->buffer);
+	skr_buffer_destroy(&buffer->buffer);
 	*buffer = {};
 	sk_free(buffer);
 }
@@ -921,39 +970,38 @@ void material_buffer_release(material_buffer_t buffer) {
 ///////////////////////////////////////////
 
 void material_buffer_set_data(material_buffer_t buffer, const void *data) {
-	skg_buffer_set_contents(&buffer->buffer, data, buffer->size);
-}
-
-///////////////////////////////////////////
-
-void material_check_tex_changes(material_t material) {
-	// Textures that progressively load or swap from fallbacks will change
-	// their dimensions. SK provides dimensions via the texname_i variable, so
-	// we're making sure that stays in sync here.
-	for (int32_t i = 0; i < material->args.texture_count; i++) {
-		shaderargs_tex_t *curr = &material->args.textures[i];
-		if (curr->meta_hash != curr->tex->meta_hash) {
-			tex_t physical_tex = curr->tex->fallback == nullptr
-				? curr->tex
-				: curr->tex->fallback;
-			curr->meta_hash = curr->tex->meta_hash;
-
-			id_hash_t tex_info_hash = hash_string_with("_i", material->shader->shader.meta->resources[i].name_hash);
-			vec4      info = { (float)physical_tex->width, (float)physical_tex->height, (float)(uint32_t)log2(physical_tex->width), 0 };
-			material_set_param_id(material, tex_info_hash, material_param_vector4, &info);
-		}
-	}
+	skr_buffer_set(&buffer->buffer, data, (uint32_t)buffer->size);
 }
 
 ///////////////////////////////////////////
 
 void material_check_dirty(material_t material) {
-	material_check_tex_changes(material);
+	// Textures that progressively load or swap from fallbacks will change
+	// their dimensions. SK provides dimensions via the texname_i variable, so
+	// we're making sure that stays in sync here.
+	const sksc_shader_meta_t *meta = material->shader->gpu_shader.meta;
 
-	if (material->args.buffer_dirty == false || material->args.buffer == nullptr) return;
+	for (int32_t i = 0; i < material->texture_count; i++) {
+		tex_t tex = material->textures[i];
+		if (tex == nullptr) continue;
 
-	skg_buffer_set_contents(&material->args.buffer_gpu, material->args.buffer, (uint32_t)material->args.buffer_size);
-	material->args.buffer_dirty = false;
+		// Compare cached hash against current texture's hash
+		if (material->texture_meta_hashes[i] != tex->meta_hash) {
+			material->texture_meta_hashes[i] = tex->meta_hash;
+
+			tex_t physical_tex = tex->fallback != nullptr
+				? tex->fallback
+				: tex;
+
+			// Update sk_renderer texture binding
+			skr_material_set_tex(&material->gpu_mat, meta->resources[i].name, &physical_tex->gpu_tex);
+
+			// Update the _i info param with texture dimensions
+			id_hash_t tex_info_hash = hash_string_with("_i", meta->resources[i].name_hash);
+			vec4      info          = { (float)physical_tex->width, (float)physical_tex->height, (float)(uint32_t)log2(physical_tex->width), 0 };
+			material_set_param_id(material, tex_info_hash, material_param_vector4, &info);
+		}
+	}
 }
 
 } // namespace sk

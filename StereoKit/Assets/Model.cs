@@ -268,7 +268,7 @@ namespace StereoKit
 		{
 			return new ModelNode(
 				this,
-				NativeAPI.model_node_add(_inst, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1 : 0));
+				NativeAPI.model_node_add(_inst, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid));
 		}
 
 		/// <summary>Searches the entire list of Nodes, and will return the
@@ -355,7 +355,7 @@ namespace StereoKit
 		public static Model FromFile(string file, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_file(NativeHelper.ToUtf8(file), final);
+			IntPtr inst = NativeAPI.model_create_file(file, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -377,7 +377,7 @@ namespace StereoKit
 		public static Model FromMemory(string filename, in byte[] data, Shader shader = null)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_mem(NativeHelper.ToUtf8(filename), data, (UIntPtr)data.Length, final);
+			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -513,7 +513,7 @@ namespace StereoKit
 		/// otherwise.</returns>
 		public string GetInfo(string key)
 		{
-			IntPtr result = NativeAPI.model_node_info_get(_model._inst, _nodeId, NativeHelper.ToUtf8(key));
+			IntPtr result = NativeAPI.model_node_info_get(_model._inst, _nodeId, key);
 			return result == IntPtr.Zero
 				? null
 				: NativeHelper.FromUtf8(result);
@@ -525,7 +525,7 @@ namespace StereoKit
 		/// <param name="key">The dictionary key to look up.</param>
 		/// <param name="value"></param>
 		public void SetInfo(string key, string value)
-			=> NativeAPI.model_node_info_set(_model._inst, _nodeId, NativeHelper.ToUtf8(key), NativeHelper.ToUtf8(value));
+			=> NativeAPI.model_node_info_set(_model._inst, _nodeId, key, value);
 
 		/// <summary>Advances this ModelNode class to the next Sibling in the
 		/// hierarchy tree. If it cannot, then it remains the same. </summary>
@@ -591,7 +591,7 @@ namespace StereoKit
 		{
 			return new ModelNode(
 				_model,
-				NativeAPI.model_node_add_child(_model._inst, _nodeId, name, localTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1 : 0));
+				NativeAPI.model_node_add_child(_model._inst, _nodeId, name, localTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid));
 		}
 
 		private ModelNode From(int nodeId) => nodeId >= 0 ? new ModelNode(_model, nodeId) : null;
@@ -615,8 +615,8 @@ namespace StereoKit
 		/// <param name="key">Identifying key.</param>
 		/// <returns>Associated value, or null if not found.</returns>
 		public string this[string key] {
-			get => NativeHelper.FromUtf8(NativeAPI.model_node_info_get(_model, _nodeId, NativeHelper.ToUtf8(key)));
-			set => NativeAPI.model_node_info_set(_model, _nodeId, NativeHelper.ToUtf8(key), NativeHelper.ToUtf8(value));
+			get => NativeHelper.FromUtf8(NativeAPI.model_node_info_get(_model, _nodeId, key));
+			set => NativeAPI.model_node_info_set(_model, _nodeId, key, value);
 		}
 
 		/// <summary>An enumerable for the keys in this collection.</summary>
@@ -661,13 +661,13 @@ namespace StereoKit
 		/// non-null value.</summary>
 		/// <param name="key">Identifying key.</param>
 		/// <returns>True if found, false if not.</returns>
-		public bool Contains(string key) => NativeAPI.model_node_info_get(_model, _nodeId, NativeHelper.ToUtf8(key)) != IntPtr.Zero;
+		public bool Contains(string key) => NativeAPI.model_node_info_get(_model, _nodeId, key) != IntPtr.Zero;
 
 		/// <summary>Removes a specific key/value pair from the collection, if
 		/// present.</summary>
 		/// <param name="key">Identifying key.</param>
 		/// <returns>True if found and removed, false if not.</returns>
-		public bool Remove(string key) => NativeAPI.model_node_info_remove(_model, _nodeId, NativeHelper.ToUtf8(key));
+		public bool Remove(string key) => NativeAPI.model_node_info_remove(_model, _nodeId, key);
 
 		/// <summary>The enumerator for the collection's KeyValuePairs.</summary>
 		/// <returns>Each consecutive pair in the collection.</returns>
@@ -727,7 +727,7 @@ namespace StereoKit
 		public ModelNode Add(string name, Matrix modelTransform, Mesh mesh = null, Material material = null, bool solid = true)
 		{
 			return new ModelNode(_model,
-				NativeAPI.model_node_add(_model._inst, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid ? 1 : 0));
+				NativeAPI.model_node_add(_model._inst, name, modelTransform, mesh != null ? mesh._inst : IntPtr.Zero, material != null ? material._inst : IntPtr.Zero, solid));
 		}
 	}
 

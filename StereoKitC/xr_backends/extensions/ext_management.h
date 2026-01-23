@@ -13,6 +13,8 @@ namespace sk {
 
 bool ext_management_is_user_requested      (const char* extension_name);
 void ext_management_request_ext            (const char* extension_name);
+bool ext_management_enumerate_available    ();
+bool ext_management_ext_available          (const char* extension_name);
 bool ext_management_select_exts            (bool minimum_exts, array_t<char*>* ref_all_available_exts, array_t<const char*>* ref_request_exts);
 void ext_management_sys_register           (xr_system_t system);
 bool ext_management_get_use_min            ();

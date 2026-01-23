@@ -59,6 +59,19 @@ namespace StereoKit.Framework
 					default: throw new NotImplementedException();
 				}
 			}
+			else if (Backend.Graphics == BackendGraphics.Vulkan)
+			{
+				switch (format)
+				{
+					case TexFormat.Rgba32:       nativeFormat = 43;  break; // VK_FORMAT_R8G8B8A8_SRGB
+					case TexFormat.Rgba32Linear: nativeFormat = 37;  break; // VK_FORMAT_R8G8B8A8_UNORM
+					case TexFormat.Bgra32:       nativeFormat = 50;  break; // VK_FORMAT_B8G8R8A8_SRGB
+					case TexFormat.Bgra32Linear: nativeFormat = 44;  break; // VK_FORMAT_B8G8R8A8_UNORM
+					case TexFormat.Rgb10a2:      nativeFormat = 64;  break; // VK_FORMAT_A2B10G10R10_UNORM_PACK32
+					case TexFormat.Rg11b10:      nativeFormat = 122; break; // VK_FORMAT_B10G11R11_UFLOAT_PACK32
+					default: throw new NotImplementedException();
+				}
+			}
 			else throw new NotImplementedException();
 			return nativeFormat;
 		}
@@ -190,6 +203,7 @@ namespace StereoKit.Framework
 			SWAPCHAIN_IMAGE_RELEASE_INFO = 57,
 			SWAPCHAIN_IMAGE_OPENGL_ES_KHR = 1000024002,
 			SWAPCHAIN_IMAGE_D3D11_KHR = 1000027001,
+			SWAPCHAIN_IMAGE_VULKAN_KHR = 1000025001,
 		}
 
 #pragma warning disable 0169
@@ -268,6 +282,14 @@ namespace StereoKit.Framework
 		}
 
 		[StructLayout(LayoutKind.Sequential)]
+		struct XrSwapchainImageVulkanKHR
+		{
+			public XrStructureType type;
+			public IntPtr next;
+			public IntPtr VkImage;
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
 		struct XrSwapchainImageD3D11KHR
 		{
 			public XrStructureType type;
@@ -296,12 +318,12 @@ namespace StereoKit.Framework
 			public XrExtent2Df size;
 		}
 
-		delegate XrResult del_xrCreateSwapchainAndroidSurfaceKHR(ulong session, [In] XrSwapchainCreateInfo createInfo, out XrSwapchain swapchain, out IntPtr surfaceJObject);
-		delegate XrResult del_xrCreateSwapchain                 (ulong session, [In] XrSwapchainCreateInfo createInfo, out XrSwapchain swapchain);
+		delegate XrResult del_xrCreateSwapchainAndroidSurfaceKHR(ulong session, in XrSwapchainCreateInfo createInfo, out XrSwapchain swapchain, out IntPtr surfaceJObject);
+		delegate XrResult del_xrCreateSwapchain                 (ulong session, in XrSwapchainCreateInfo createInfo, out XrSwapchain swapchain);
 		delegate XrResult del_xrDestroySwapchain        (XrSwapchain swapchain);
 		delegate XrResult del_xrEnumerateSwapchainImages(XrSwapchain swapchain, uint imageCapacityInput, out uint imageCountOutput, IntPtr images);
 		delegate XrResult del_xrAcquireSwapchainImage   (XrSwapchain swapchain, IntPtr acquireInfo, out uint index);
-		delegate XrResult del_xrWaitSwapchainImage      (XrSwapchain swapchain, [In] XrSwapchainImageWaitInfo waitInfo);
+		delegate XrResult del_xrWaitSwapchainImage      (XrSwapchain swapchain, in XrSwapchainImageWaitInfo waitInfo);
 		delegate XrResult del_xrReleaseSwapchainImage   (XrSwapchain swapchain, IntPtr releaseInfo);
 
 		del_xrCreateSwapchainAndroidSurfaceKHR xrCreateSwapchainAndroidSurfaceKHR;
@@ -380,6 +402,19 @@ namespace StereoKit.Framework
 					{
 						_images[i] = new Tex(TexType.Rendertarget, format);
 						_images[i].SetNativeSurface((IntPtr)glesImages[i].image, TexType.Rendertarget, ToNativeFormat(format), width, height);
+					}
+				}
+				else if (Backend.Graphics == BackendGraphics.Vulkan)
+				{
+					XrSwapchainImageVulkanKHR[] vkImages = new XrSwapchainImageVulkanKHR[imageCount];
+					for (int i = 0; i < vkImages.Length; i++) vkImages[i].type = XrStructureType.SWAPCHAIN_IMAGE_VULKAN_KHR;
+					mem = GCHandle.Alloc(vkImages, GCHandleType.Pinned);
+					if (_inst.xrEnumerateSwapchainImages(handle, imageCount, out uint finalCount, mem.AddrOfPinnedObject()) != XrResult.Success) throw new Exception();
+
+					for (uint i = 0; i < vkImages.Length; i++)
+					{
+						_images[i] = new Tex(TexType.Rendertarget, format);
+						_images[i].SetNativeSurface(vkImages[i].VkImage, TexType.Rendertarget, ToNativeFormat(format), width, height);
 					}
 				}
 				else throw new NotImplementedException();

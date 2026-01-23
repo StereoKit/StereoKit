@@ -21,50 +21,9 @@ struct inst_t {
 	float4x4 world;
 	float4   color;
 };
-cbuffer transform_buffer : register(b2) {
-	inst_t sk_inst[819]; // 819 is UINT16_MAX / sizeof(inst_t)
-};
+StructuredBuffer<inst_t> sk_inst : register(t12);
 TextureCube  sk_cubemap   : register(t11);
 SamplerState sk_cubemap_s : register(s11);
-
-///////////////////////////////////////////
-// Multiview / Array texture abstraction //
-///////////////////////////////////////////
-
-struct sk_ps_input_t {
-#ifndef SK_OPENGL
-	uint _dest_view_id : SV_RenderTargetArrayIndex;
-#endif
-};
-
-///////////////////////////////////////////
-
-struct sk_vs_input_t {
-	uint id : SV_InstanceID;
-#ifdef SK_OPENGL
-	uint _view_id : SV_ViewID;
-#endif
-};
-
-///////////////////////////////////////////
-
-#ifdef SK_OPENGL
-#define sk_view_init(_input, _output) (_input._view_id)
-#else
-uint _sk_view_init(uint inst_id, inout uint dest_view_id) {
-	dest_view_id = inst_id % sk_view_count;
-	return dest_view_id;
-}
-#define sk_view_init(_input, _output) _sk_view_init(_input.id, _output._dest_view_id)
-#endif
-
-///////////////////////////////////////////
-
-#ifdef SK_OPENGL
-#define sk_inst_id(_input) (_input.id);
-#else
-#define sk_inst_id(_input) (_input.id / sk_view_count);
-#endif
 
 ///////////////////////////////////////////
 

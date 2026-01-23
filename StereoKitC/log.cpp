@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -392,7 +392,7 @@ void log_platform_output(log_ level, const char *text) {
 	else if (level == log_warning   ) priority = LOG_WARNING;
 	else if (level == log_error     ) priority = LOG_ERR;
 	syslog(priority, "%s", text);
-#elif defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#elif defined(SK_OS_WINDOWS)
 	const char* tag = "";
 	switch (level) {
 	case log_diagnostic: tag = "diagnostic"; break;

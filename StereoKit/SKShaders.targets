@@ -52,7 +52,7 @@
 		<!-- Setup metadata for custom build tool -->
 		<ItemGroup>
 			<SKShader Condition="'%(SKShader.RelFile)'!=''">
-				<Command>$(SKShadercPath) $(SKOpt) -e -t xe -i "$(IncludeFolderNormalized)" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
+				<Command>$(SKShadercPath) $(SKOpt) -e -i "$(IncludeFolderNormalized)" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
 				<Outputs>$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks</Outputs>
 				<RelativeName>%(SKShader.RelFile).sks</RelativeName>
 			</SKShader>
@@ -96,7 +96,7 @@
 	<Target Name="StereoKit_Shader_Code" BeforeTargets="BeforeCompile" Inputs="@(SKShaderCode->'%(FullPath)')" Outputs="@(SKShaderCode->'$(IntermediateOutputPath)%(RecursiveDir)Material%(Filename).gen.cs')">
 		<Message Text="[StereoKit NuGet] Generating C# for %(SKShaderCode.Identity) -> $(IntermediateOutputPath)%(SKShaderCode.RecursiveDir)Material%(SKShaderCode.Filename).gen.cs" Importance="high" />
 
-		<Exec Command='$(SKShadercPath) $(SKOpt) -e -sk -t xe -i "$(IncludeFolderNormalized)" "%(SKShaderCode.Identity)" -o "$(IntermediateOutputPath)%(SKShaderCode.RecursiveDir)Material%(SKShaderCode.Filename).gen.cs"'></Exec>
+		<Exec Command='$(SKShadercPath) $(SKOpt) -e -sk -i "$(IncludeFolderNormalized)" "%(SKShaderCode.Identity)" -o "$(IntermediateOutputPath)%(SKShaderCode.RecursiveDir)Material%(SKShaderCode.Filename).gen.cs"'></Exec>
 
 		<ItemGroup>
 			<Compile Remove ="@(SKShaderCode->'$(IntermediateOutputPath)%(RecursiveDir)Material%(Filename).gen.cs')"/>

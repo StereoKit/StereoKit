@@ -1,7 +1,7 @@
 #include "texture_compression.h"
 #include "../sk_memory.h"
 
-#include <sk_gpu.h>
+#include <sk_renderer.h>
 #include <basisu_transcoder.h>
 
 using namespace basist;
@@ -16,30 +16,7 @@ void texture_compression_init() {
 
 ///////////////////////////////////////////
 
-skg_tex_fmt_ texture_preferred_compressed_format(int32_t channels, bool is_srgb) {
-#if defined(SKG_DIRECT3D11)
-	// D3D's block compression formats are generally pretty clear about what
-	// formats are good for which purposes. Here we're skipping BC7 in favor of
-	// the older BC1/BC3 format. The quality isn't as good, but the size is
-	// smaller, and the complexity is lower.
-	if (channels == 1) {
-		return skg_tex_fmt_supported(skg_tex_fmt_bc4_r)
-			? skg_tex_fmt_bc4_r
-			: skg_tex_fmt_r8;
-	} else if (channels == 2) {
-		return skg_tex_fmt_supported(skg_tex_fmt_bc5_rg)
-			? skg_tex_fmt_bc5_rg
-			: skg_tex_fmt_r8g8;
-	} else if (channels == 3) {
-		return skg_tex_fmt_supported(skg_tex_fmt_bc1_rgb)
-			? (is_srgb ? skg_tex_fmt_bc1_rgb_srgb : skg_tex_fmt_bc1_rgb)
-			: (is_srgb ? skg_tex_fmt_rgba32       : skg_tex_fmt_rgba32_linear);
-	} else if (channels == 4) {
-		return skg_tex_fmt_supported(skg_tex_fmt_bc3_rgba)
-			? (is_srgb ? skg_tex_fmt_bc3_rgba_srgb : skg_tex_fmt_bc3_rgba)
-			: (is_srgb ? skg_tex_fmt_rgba32        : skg_tex_fmt_rgba32_linear);
-	}
-#else
+skr_tex_fmt_ texture_preferred_compressed_format(int32_t channels, bool is_srgb) {
 	// The Adreno docs say this:
 	// https://developer.qualcomm.com/sites/default/files/docs/adreno-gpu/snapdragon-game-toolkit/gdg/gpu/best_practices_texture.html#compression-strategies
 	//
@@ -50,53 +27,52 @@ skg_tex_fmt_ texture_preferred_compressed_format(int32_t channels, bool is_srgb)
 	//   - ETC if not using alpha
 
 	if (channels == 1) {
-		if      (skg_tex_fmt_supported(skg_tex_fmt_etc2_r11   ))  return skg_tex_fmt_etc2_r11;
-		else if (skg_tex_fmt_supported(skg_tex_fmt_bc4_r      ))  return skg_tex_fmt_bc4_r;
-		else                                                      return skg_tex_fmt_r8;
+		if      (skr_tex_fmt_is_supported(skr_tex_fmt_etc2_r11, (skr_tex_flags_)0, 1))  return skr_tex_fmt_etc2_r11;
+		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc4_r,    (skr_tex_flags_)0, 1))  return skr_tex_fmt_bc4_r;
+		else                                                                            return skr_tex_fmt_r8;
 	} else if (channels == 2) {
-		if      (skg_tex_fmt_supported(skg_tex_fmt_etc2_rg11   )) return skg_tex_fmt_etc2_rg11;
-		else if (skg_tex_fmt_supported(skg_tex_fmt_bc5_rg      )) return skg_tex_fmt_bc5_rg;
-		else                                                      return skg_tex_fmt_r8g8;
+		if      (skr_tex_fmt_is_supported(skr_tex_fmt_etc2_rg11, (skr_tex_flags_)0, 1)) return skr_tex_fmt_etc2_rg11;
+		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc5_rg,    (skr_tex_flags_)0, 1)) return skr_tex_fmt_bc5_rg;
+		else                                                                            return skr_tex_fmt_r8g8;
 	} else if (channels == 3) {
-		if      (skg_tex_fmt_supported(skg_tex_fmt_astc4x4_rgba)) return (is_srgb ? skg_tex_fmt_astc4x4_rgba_srgb : skg_tex_fmt_astc4x4_rgba);
-		//else if (skg_tex_fmt_supported(skg_tex_fmt_atc_rgb     )) return skg_tex_fmt_atc_rgb;
-		else if (skg_tex_fmt_supported(skg_tex_fmt_bc1_rgb     )) return (is_srgb ? skg_tex_fmt_bc1_rgb_srgb      : skg_tex_fmt_bc1_rgb);
-		else                                                      return (is_srgb ? skg_tex_fmt_rgba32            : skg_tex_fmt_rgba32_linear);
+		if      (skr_tex_fmt_is_supported(skr_tex_fmt_astc4x4_rgba, (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_astc4x4_rgba_srgb : skr_tex_fmt_astc4x4_rgba);
+		//else if (skr_tex_fmt_is_supported(skr_tex_fmt_atc_rgb,      (skr_tex_flags_)0, 1)) return skr_tex_fmt_atc_rgb;
+		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc1_rgb,      (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_bc1_rgb_srgb      : skr_tex_fmt_bc1_rgb);
+		else                                                                               return (is_srgb ? skr_tex_fmt_rgba32_srgb       : skr_tex_fmt_rgba32_linear);
 	} else if (channels == 4) {
-		if      (skg_tex_fmt_supported(skg_tex_fmt_astc4x4_rgba)) return (is_srgb ? skg_tex_fmt_astc4x4_rgba_srgb : skg_tex_fmt_astc4x4_rgba);
-		//else if (skg_tex_fmt_supported(skg_tex_fmt_atc_rgba    )) return skg_tex_fmt_atc_rgba;
-		else if (skg_tex_fmt_supported(skg_tex_fmt_bc3_rgba    )) return (is_srgb ? skg_tex_fmt_bc3_rgba_srgb     : skg_tex_fmt_bc3_rgba);
-		else                                                      return (is_srgb ? skg_tex_fmt_rgba32            : skg_tex_fmt_rgba32_linear);
+		if      (skr_tex_fmt_is_supported(skr_tex_fmt_astc4x4_rgba, (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_astc4x4_rgba_srgb : skr_tex_fmt_astc4x4_rgba);
+		//else if (skr_tex_fmt_is_supported(skr_tex_fmt_atc_rgba,     (skr_tex_flags_)0, 1)) return skr_tex_fmt_atc_rgba;
+		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc3_rgba,     (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_bc3_rgba_srgb     : skr_tex_fmt_bc3_rgba);
+		else                                                                               return (is_srgb ? skr_tex_fmt_rgba32_srgb       : skr_tex_fmt_rgba32_linear);
 	}
-#endif
 	log_err("Shouldn't get here!");
-	return skg_tex_fmt_none;
+	return skr_tex_fmt_none;
 }
 
 ///////////////////////////////////////////
 
-transcoder_texture_format texture_transcode_format(skg_tex_fmt_ format) {
+transcoder_texture_format texture_transcode_format(skr_tex_fmt_ format) {
 	switch (format) {
-	case skg_tex_fmt_rgba32:
-	case skg_tex_fmt_rgba32_linear:    return transcoder_texture_format::cTFRGBA32;
-	case skg_tex_fmt_bc1_rgb:
-	case skg_tex_fmt_bc1_rgb_srgb:     return transcoder_texture_format::cTFBC1_RGB;
-	case skg_tex_fmt_bc3_rgba:
-	case skg_tex_fmt_bc3_rgba_srgb:    return transcoder_texture_format::cTFBC3_RGBA;
-	case skg_tex_fmt_bc4_r:            return transcoder_texture_format::cTFBC4_R;
-	case skg_tex_fmt_bc5_rg:           return transcoder_texture_format::cTFBC5_RG;
-	case skg_tex_fmt_bc7_rgba:
-	case skg_tex_fmt_bc7_rgba_srgb:    return transcoder_texture_format::cTFBC7_RGBA;
-	case skg_tex_fmt_atc_rgb:          return transcoder_texture_format::cTFATC_RGB;
-	case skg_tex_fmt_atc_rgba:         return transcoder_texture_format::cTFATC_RGBA;
-	case skg_tex_fmt_astc4x4_rgba:
-	case skg_tex_fmt_astc4x4_rgba_srgb:return transcoder_texture_format::cTFASTC_4x4_RGBA;
-	//case skg_tex_fmt_pvrtc2_rgb:   return transcoder_texture_format::cTFPVRTC2_4_RGB;
-	case skg_tex_fmt_pvrtc2_rgba:      return transcoder_texture_format::cTFPVRTC2_4_RGBA;
-	case skg_tex_fmt_etc2_r11:         return transcoder_texture_format::cTFETC2_EAC_R11;
-	case skg_tex_fmt_etc2_rg11:        return transcoder_texture_format::cTFETC2_EAC_RG11;
-	case skg_tex_fmt_etc2_rgba:
-	case skg_tex_fmt_etc2_rgba_srgb:   return transcoder_texture_format::cTFETC2_RGBA;
+	case skr_tex_fmt_rgba32_srgb:
+	case skr_tex_fmt_rgba32_linear:    return transcoder_texture_format::cTFRGBA32;
+	case skr_tex_fmt_bc1_rgb:
+	case skr_tex_fmt_bc1_rgb_srgb:     return transcoder_texture_format::cTFBC1_RGB;
+	case skr_tex_fmt_bc3_rgba:
+	case skr_tex_fmt_bc3_rgba_srgb:    return transcoder_texture_format::cTFBC3_RGBA;
+	case skr_tex_fmt_bc4_r:            return transcoder_texture_format::cTFBC4_R;
+	case skr_tex_fmt_bc5_rg:           return transcoder_texture_format::cTFBC5_RG;
+	case skr_tex_fmt_bc7_rgba:
+	case skr_tex_fmt_bc7_rgba_srgb:    return transcoder_texture_format::cTFBC7_RGBA;
+	case skr_tex_fmt_atc_rgb:          return transcoder_texture_format::cTFATC_RGB;
+	case skr_tex_fmt_atc_rgba:         return transcoder_texture_format::cTFATC_RGBA;
+	case skr_tex_fmt_astc4x4_rgba:
+	case skr_tex_fmt_astc4x4_rgba_srgb:return transcoder_texture_format::cTFASTC_4x4_RGBA;
+	//case skr_tex_fmt_pvrtc2_rgb:   return transcoder_texture_format::cTFPVRTC2_4_RGB;
+	case skr_tex_fmt_pvrtc2_rgba:      return transcoder_texture_format::cTFPVRTC2_4_RGBA;
+	case skr_tex_fmt_etc2_r11:         return transcoder_texture_format::cTFETC2_EAC_R11;
+	case skr_tex_fmt_etc2_rg11:        return transcoder_texture_format::cTFETC2_EAC_RG11;
+	case skr_tex_fmt_etc2_rgba:
+	case skr_tex_fmt_etc2_rgba_srgb:   return transcoder_texture_format::cTFETC2_RGBA;
 	default:
 		log_err("Shouldn't get here!");
 		return transcoder_texture_format::cTFRGBA32;
@@ -145,14 +121,15 @@ bool ktx2_decode(void* data, size_t data_size, tex_type_ *ref_image_type, tex_fo
 	int32_t channels = ktx_transcoder.get_has_alpha() ? 4 : 3;
 	bool    is_srgb  = ktx_transcoder.get_dfd_transfer_func() == KTX2_KHR_DF_TRANSFER_SRGB;
 	*out_format = (tex_format_)texture_preferred_compressed_format(channels, is_srgb);
-	transcoder_texture_format tc_fmt = texture_transcode_format((skg_tex_fmt_)*out_format);
+	transcoder_texture_format tc_fmt = texture_transcode_format((skr_tex_fmt_)*out_format);
 
-	int32_t block_px   = skg_tex_fmt_block_px((skg_tex_fmt_)*out_format);
-	int32_t layer_size = 0;
+	uint32_t block_width, block_height, bytes_per_block;
+	skr_tex_fmt_block_info((skr_tex_fmt_)*out_format, &block_width, &block_height, &bytes_per_block);
+
+	skr_vec3i_t base_size  = { *out_width, *out_height, 1 };
+	uint64_t    layer_size = 0;
 	for (int32_t mip = 0; mip < *out_mip_count; mip++) {
-		int32_t mip_width, mip_height;
-		skg_mip_dimensions(*out_width, *out_height, mip, &mip_width, &mip_height);
-		layer_size += skg_tex_fmt_memory((skg_tex_fmt_)*out_format, mip_width, mip_height);
+		layer_size += skr_tex_calc_mip_size((skr_tex_fmt_)*out_format, base_size, mip);
 	}
 	for (int32_t i = 0; i < *out_array_count; i++) {
 		out_data_arr[i] = sk_malloc(layer_size);
@@ -161,13 +138,12 @@ bool ktx2_decode(void* data, size_t data_size, tex_type_ *ref_image_type, tex_fo
 	ktx2_transcoder_state state;
 	state.clear();
 	ktx_transcoder.start_transcoding();
-	bool    success    = true;
-	int32_t mip_offset = 0;
+	bool     success    = true;
+	uint64_t mip_offset = 0;
 	for (uint32_t mip = 0; success && mip < ktx_transcoder.get_levels(); mip++) {
-		int32_t mip_width, mip_height;
-		skg_mip_dimensions(*out_width, *out_height, mip, &mip_width, &mip_height);
-		int32_t mip_block_width  = (mip_width +(block_px-1)) / block_px;
-		int32_t mip_block_height = (mip_height+(block_px-1)) / block_px;
+		skr_vec3i_t mip_dims         = skr_tex_calc_mip_dimensions(base_size, mip);
+		int32_t     mip_block_width  = (mip_dims.x + (block_width -1)) / block_width;
+		int32_t     mip_block_height = (mip_dims.y + (block_height-1)) / block_height;
 
 		int32_t layer_count = ktx_transcoder.get_layers() == 0 ? 1 : ktx_transcoder.get_layers();
 		for (int32_t layer = 0; success && layer < layer_count; layer++) {
@@ -177,7 +153,7 @@ bool ktx2_decode(void* data, size_t data_size, tex_type_ *ref_image_type, tex_fo
 				success = ktx_transcoder.transcode_image_level(mip, layer, face, ((uint8_t*)out_data_arr[layer_idx]) + mip_offset, mip_block_width * mip_block_height, tc_fmt, 0, mip_block_width, mip_block_height, 0, 0, &state);
 			}
 		}
-		mip_offset += skg_tex_fmt_memory((skg_tex_fmt_)*out_format, mip_width, mip_height);
+		mip_offset += skr_tex_calc_mip_size((skr_tex_fmt_)*out_format, base_size, mip);
 	}
 	ktx_transcoder.clear();
 	if (!success) {

@@ -1,12 +1,15 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
+// profiler.h must be included before sk_math.h to avoid SAL macro pollution
+// (sal.h defines __valid, __in, etc. which break STL headers Tracy uses)
+#include "../libraries/profiler.h"
+
 #include "../sk_math.h"
 #include "../sk_math_dx.h"
 #include "../sk_memory.h"
 #include "model.h"
 #include "mesh.h"
 #include "../libraries/stref.h"
-#include "../libraries/profiler.h"
 #include "../platforms/platform.h"
 
 using namespace DirectX;

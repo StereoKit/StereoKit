@@ -6,6 +6,8 @@
 
 #include "_platform.h"
 
+#include <sk_renderer.h>
+
 #include "../device.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
@@ -14,7 +16,9 @@
 #include "../libraries/stref.h"
 #include "../libraries/ferr_thread.h"
 #include "../libraries/profiler.h"
+#include "../libraries/array.h"
 #include "../xr_backends/openxr.h"
+#include "../xr_backends/extensions/vulkan_enable.h"
 #include "../xr_backends/simulator.h"
 #include "../xr_backends/window.h"
 #include "../xr_backends/offscreen.h"
@@ -38,7 +42,7 @@
 
 #endif
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 
 	#ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
@@ -84,24 +88,64 @@ bool platform_init() {
 		return false;
 	}
 
-	// Initialize graphics
-	void* luid = nullptr;
-#if defined(SK_XR_OPENXR)
-	if (settings->mode == app_mode_xr)
-		luid = openxr_get_luid();
-#endif
-	skg_callback_log([](skg_log_ level, const char *text) {
+	// Initialize graphics with sk_renderer
+	skr_callback_log([](skr_log_ level, const char *text) {
 		switch (level) {
-		case skg_log_info:     log_diagf("[<~ylw>sk_gpu<~clr>] %s", text); break;
-		case skg_log_warning:  log_warnf("[<~ylw>sk_gpu<~clr>] %s", text); break;
-		case skg_log_critical: log_errf ("[<~ylw>sk_gpu<~clr>] %s", text); break;
+		case skr_log_info:     log_diagf("[<~ylw>sk_renderer<~clr>] %s", text); break;
+		case skr_log_warning:  log_warnf("[<~ylw>sk_renderer<~clr>] %s", text); break;
+		case skr_log_critical: log_errf ("[<~ylw>sk_renderer<~clr>] %s", text); break;
 		}
 	});
-	if (skg_init(settings->app_name, luid) <= 0) {
-		log_fail_reason(95, log_error, "Failed to initialize sk_gpu!");
+
+
+	skr_bind_settings_t skr_binds = {};
+	skr_binds.instance_slot = 12; // Instance data binds to slot t12
+	skr_binds.material_slot = 0;  // Material data binds to $Globals, which is slot b0
+	skr_binds.system_slot   = 1;  // StereoKit's system data goes in slot b1
+	skr_settings_t skr_settings = {};
+	skr_settings.app_name          = settings->app_name;
+	skr_settings.app_version       = 1;
+	skr_settings.enable_validation = true;// settings->log_filter == log_diagnostic;
+	skr_settings.bind_settings     = &skr_binds;
+
+	// Build extension array - start with platform-specific surface extensions
+	array_t<const char*> vk_extensions = {};
+#if defined(SK_OS_LINUX)
+	vk_extensions.add("VK_KHR_surface");
+	vk_extensions.add("VK_KHR_xlib_surface");
+#elif defined(SK_OS_WINDOWS)
+	vk_extensions.add("VK_KHR_surface");
+	vk_extensions.add("VK_KHR_win32_surface");
+#elif defined(SK_OS_ANDROID)
+	vk_extensions.add("VK_KHR_surface");
+	vk_extensions.add("VK_KHR_android_surface");
+#endif
+
+	// For XR modes, initialize OpenXR early to get Vulkan requirements
+#if defined(SK_XR_OPENXR)
+	if (settings->mode == app_mode_xr) {
+		const char** xr_exts      = nullptr;
+		uint32_t     xr_ext_count = 0;
+		if (openxr_create_system() && xr_ext_vulkan_enable_setup_skr(&skr_settings, &xr_exts, &xr_ext_count)) {
+			vk_extensions.add_range(xr_exts, xr_ext_count);
+		}
+	}
+#endif
+
+	skr_settings.required_extensions      = vk_extensions.data;
+	skr_settings.required_extension_count = (uint32_t)vk_extensions.count;
+
+	bool skr_result = skr_init(skr_settings);
+	vk_extensions.free();
+	if (!skr_result) {
+		log_fail_reason(95, log_error, "Failed to initialize sk_renderer!");
 		return false;
 	}
-	device_data.gpu = string_copy(skg_adapter_name());
+
+	// Get GPU name from Vulkan physical device properties
+	VkPhysicalDeviceProperties props;
+	vkGetPhysicalDeviceProperties(skr_get_vk_physical_device(), &props);
+	device_data.gpu = string_copy(props.deviceName);
 
 	// Start up the current mode!
 	bool result = platform_set_mode(settings->mode);
@@ -119,7 +163,6 @@ bool platform_init() {
 
 void platform_shutdown() {
 	platform_stop_mode();
-	skg_shutdown();
 
 	platform_impl_shutdown();
 
@@ -335,7 +378,7 @@ char *platform_push_path_new(const char *path, const char *directory) {
 	if (!ends_with && !starts_with)
 		result = string_append(nullptr, 3, path, platform_path_separator, directory);
 	else if (ends_with && starts_with)
-		result = string_append(nullptr, 2, path, directory[1]);
+		result = string_append(nullptr, 2, path, &directory[1]);
 	else 
 		result = string_append(nullptr, 2, path, directory);
 
@@ -354,7 +397,7 @@ char *platform_pop_path_new(const char *path) {
 	if (last != -1) {
 		src_path = stref_substr(src_path, 0, last);
 	} else {
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 		return string_copy("");
 #else
 		return string_copy(platform_path_separator);
@@ -394,13 +437,6 @@ bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t
 	}
 
 	// Fall back to standard file io functions, they -can- work on Android
-#elif defined(SK_OS_WINDOWS_UWP)
-	// See if we have a Handle cached from the FilePicker that matches this
-	// file name.
-	if (file_picker_cache_read(slash_fix_filename, out_data, out_size)) {
-		sk_free(slash_fix_filename);
-		return true;
-	}
 #endif
 
 #if defined(SK_OS_LINUX)
@@ -415,7 +451,7 @@ bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t
 	}
 #endif
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 	wchar_t* wfilename = platform_to_wchar(slash_fix_filename);
 	FILE*    fp        = _wfopen(wfilename, L"rb");
 	if (fp == nullptr) {
@@ -495,7 +531,7 @@ bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t
 
 ///////////////////////////////////////////
 bool32_t platform_read_file(const char* filename, void** out_data, size_t* out_size) {
-	char* asset_filename = assets_file(filename);
+	char*    asset_filename   = assets_file(filename);
 	bool32_t read_file_result = platform_read_file_direct(asset_filename, out_data, out_size);
 	sk_free(asset_filename);
 	return read_file_result;
@@ -504,14 +540,7 @@ bool32_t platform_read_file(const char* filename, void** out_data, size_t* out_s
 ///////////////////////////////////////////
 
 bool32_t _platform_write_file(const char* filename, void* data, size_t size, bool32_t binary) {
-#if defined(SK_OS_WINDOWS_UWP)
-	// See if we have a Handle cached from the FilePicker that matches this
-	// file name.
-	if (file_picker_cache_save(filename, data, size))
-		return true;
-#endif
-
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 	wchar_t* wfilename = platform_to_wchar(filename);
 	FILE*    fp        = _wfopen(wfilename, binary?L"wb":L"w");
 	sk_free(wfilename);

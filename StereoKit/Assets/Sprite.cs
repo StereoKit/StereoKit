@@ -118,7 +118,7 @@ namespace StereoKit
 		/// </returns>
 		public static Sprite FromFile(string file, SpriteType type = SpriteType.Atlased, string atlasId = "default")
 		{
-			IntPtr inst = NativeAPI.sprite_create_file(NativeHelper.ToUtf8(file), type, atlasId);
+			IntPtr inst = NativeAPI.sprite_create_file(file, type, atlasId);
 			return inst == IntPtr.Zero ? null : new Sprite(inst);
 		}
 

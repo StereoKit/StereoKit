@@ -15,6 +15,7 @@ using namespace sk;
 #include "demo_lighting.h"
 #include "demo_draw.h"
 #include "demo_envmap.h"
+#include "demo_shadows.h"
 #include "demo_windows.h"
 #include "demo_desktop.h"
 #include "demo_bvh.h"
@@ -86,6 +87,11 @@ scene_t demos[] = {
 		demo_envmap_update,
 		demo_envmap_shutdown,
 	}, {
+		"Shadows",
+		demo_shadows_init,
+		demo_shadows_update,
+		demo_shadows_shutdown,
+	}, {
 		"BVH",
 		demo_bvh_init,
 		demo_bvh_update,
@@ -96,7 +102,7 @@ scene_t demos[] = {
 		demo_aliasing_update,
 		demo_aliasing_shutdown,
 	},
-#if defined(_WIN32) && !defined(WINDOWS_UWP)
+#if defined(_WIN32)
 	{
 		"Windows",
 		demo_windows_init,
@@ -147,11 +153,7 @@ void log_window() {
 	ui_window_end();
 }
 
-#ifndef WINDOWS_UWP
 int main() {
-#else
-int __stdcall wWinMain(void*, void*, wchar_t*, int) {
-#endif
 	log_subscribe(on_log);
 	log_set_filter(log_diagnostic);
 
@@ -164,7 +166,7 @@ int __stdcall wWinMain(void*, void*, wchar_t*, int) {
 
 	common_init();
 
-	scene_set_active(demos[8]);
+	scene_set_active(demos[0]);
 
 	sk_run(common_update, common_shutdown);
 
@@ -177,10 +179,7 @@ void common_init() {
 	//tex_t tex_norm  = tex_create_file("test_normal.png");
 	floor_mat = material_copy_id(default_id_material);
 	material_set_texture(floor_mat, "diffuse",   tex_color);
-	//material_set_texture(floor_mat, "normal",    tex_norm);
-	material_set_float  (floor_mat, "tex_scale", 6);
-	material_set_float  (floor_mat, "roughness", 1.0f);
-	material_set_float  (floor_mat, "metallic",  0.5f);
+	material_set_vector4(floor_mat, "tex_trans", vec4{0,0,6,6});
 	material_set_queue_offset(floor_mat, 1);
 	if (tex_color != nullptr) tex_release(tex_color);
 	//if (tex_norm  != nullptr) tex_release(tex_norm);

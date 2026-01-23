@@ -57,6 +57,8 @@ array_t<asset_header_t *>      assets_multithread_destroy = {};
 ft_mutex_t                     assets_multithread_destroy_lock = {};
 ft_mutex_t                     assets_job_lock = {};
 array_t<asset_job_t *>         assets_gpu_jobs = {};
+array_t<asset_job_t *>         assets_blocking_jobs = {};
+ft_condition_t                 assets_blocking_available = {};
 ft_mutex_t                     assets_load_event_lock = {};
 array_t<asset_load_callback_t> assets_load_callbacks = {};
 array_t<asset_header_t *>      assets_load_events = {};
@@ -73,9 +75,11 @@ int32_t                asset_tasks_priority  = INT_MAX;
 ft_condition_t         asset_tasks_available = {};
 array_t<asset_task_t*> asset_active_tasks    = {};
 
-int32_t         asset_thread          (void *);
-void            asset_step_task       ();
-asset_header_t* assets_allocate_no_add(asset_type_ type, const char** out_type_str);
+int32_t         asset_thread                    (void *);
+void            asset_step_task                 ();
+void            asset_step_blocking_job         ();
+int32_t         assets_calculate_current_priority();
+asset_header_t* assets_allocate_no_add          (asset_type_ type, const char** out_type_str);
 
 ///////////////////////////////////////////
 
@@ -218,6 +222,11 @@ void assets_addref(asset_header_t *asset) {
 ///////////////////////////////////////////
 
 void assets_releaseref(asset_header_t *asset) {
+	// Check if we've shut down the asset system and have already destroyed any
+	// lingering assets (or haven't started the asset system yet).
+	if (asset_thread_enabled == false)
+		return;
+
 	// Manage the reference count
 	if (atomic_decrement(&asset->refs) == 0) {
 		assets_destroy(asset);
@@ -234,6 +243,11 @@ void assets_releaseref(asset_header_t *asset) {
 
 void assets_releaseref_threadsafe(void *asset) {
 	asset_header_t *asset_header = (asset_header_t *)asset;
+
+	// Check if we've shut down the asset system and have already destroyed any
+	// lingering assets (or haven't started the asset system yet).
+	if (asset_thread_enabled == false)
+		return;
 
 	if (!asset_thread_enabled)
 		return;
@@ -261,6 +275,10 @@ void assets_destroy(asset_header_t *asset) {
 		// break out of here.
 		return;
 	}
+
+	// Remove any on_load callbacks associated with this asset to prevent stale
+	// callbacks from firing if memory is reused for a new asset.
+	assets_on_load_remove_all(asset);
 
 	// destroy functions will often zero out their contents for safety, but we
 	// still need to free the id text. It's nice for debugging to have the name
@@ -339,6 +357,16 @@ void assets_on_load_remove(asset_header_t *asset, void (*on_load)(asset_header_t
 
 ///////////////////////////////////////////
 
+void assets_on_load_remove_all(asset_header_t *asset) {
+	for (int32_t i = assets_load_callbacks.count - 1; i >= 0; i--) {
+		if (assets_load_callbacks[i].asset == asset) {
+			assets_load_callbacks.remove(i);
+		}
+	}
+}
+
+///////////////////////////////////////////
+
 void  assets_shutdown_check() {
 	if (assets.count > 0) {
 		log_errf("%d unreleased assets still found in the asset manager!", assets.count);
@@ -374,7 +402,7 @@ char *assets_file(const char *file_name) {
 	if (file_name == nullptr || settings->assets_folder == nullptr || settings->assets_folder[0] == '\0')
 		return string_copy(file_name);
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 	const char *ch = file_name;
 	while (*ch != '\0') {
 		if (*ch == ':') {
@@ -406,6 +434,7 @@ bool assets_init() {
 	asset_thread_task_mtx           = ft_mutex_create();
 	assets_load_event_lock          = ft_mutex_create();
 	asset_tasks_available           = ft_condition_create();
+	assets_blocking_available       = ft_condition_create();
 
 	texture_compression_init();
 
@@ -494,17 +523,29 @@ void assets_shutdown() {
 	assets_shutdown_check();
 #endif
 
+	// Explicitly destroy any assets that are remaining. C# will often have a
+	// lot of these due to GC based asset releases.
+	// Destroy in reverse, as assets_destroy will _remove_ the item from the
+	// assets array on destroy!
+	for (int32_t i = assets.count-1; i >= 0; i--) {
+		// mark as no refs, or assets_destroy will not be pleased.
+		assets[i]->refs = 0; 
+		assets_destroy(assets[i]);
+	}
+
 	ft_mutex_destroy(&asset_thread_task_mtx);
 	asset_thread_tasks.free();
 	asset_active_tasks.free();
 
 	assets_multithread_destroy.free();
 	assets_gpu_jobs           .free();
+	assets_blocking_jobs      .free();
 	ft_mutex_destroy(&assets_multithread_destroy_lock);
 	ft_mutex_destroy(&assets_job_lock);
 	ft_mutex_destroy(&assets_load_event_lock);
 	ft_mutex_destroy(&assets_lock);
 	ft_condition_destroy(&asset_tasks_available);
+	ft_condition_destroy(&assets_blocking_available);
 
 	assets_load_call_list.free();
 	assets_load_callbacks.free();
@@ -518,8 +559,10 @@ void assets_shutdown() {
 
 ///////////////////////////////////////////
 
-bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
-	if (ft_id_matches(sk_main_thread())) {
+bool32_t assets_execute_blocking(bool32_t(*asset_job)(void *data), void *data) {
+	// If we're on any GPU-initialized thread (main thread, asset threads),
+	// we can run directly. Otherwise, queue to an asset thread and wait.
+	if (skr_thread_is_initialized()) {
 		return asset_job(data);
 	} else {
 		asset_job_t *job = sk_malloc_t(asset_job_t, 1);
@@ -528,21 +571,15 @@ bool32_t assets_execute_gpu(bool32_t(*asset_job)(void *data), void *data) {
 		job->data      = data;
 
 		ft_mutex_lock(assets_job_lock);
-		assets_gpu_jobs.add(job);
+		assets_blocking_jobs.add(job);
 		ft_mutex_unlock(assets_job_lock);
 
-		// Block until the GPU thread has had a chance to take care of the job.
-		uint64_t start      = stm_now();
-		bool     has_warned = false;
+		// Wake up asset threads to process the job
+		ft_condition_signal(asset_tasks_available);
+
+		// Block until an asset thread has processed the job
 		while (job->finished == false) {
 			ft_yield();
-
-			// if the app hasn't started stepping yet and this takes too long,
-			// the application may be off the gpu thread unintentionally.
-			if (sk_has_stepped() == false && has_warned == false && stm_ms(stm_since(start)) > 4000) {
-				log_warn("A GPU asset is blocking its thread until the main thread is available, has async code accidentally shifted execution to a different thread since SK.Initialize?");
-				has_warned = true;
-			}
 		}
 
 		bool32_t result = job->success;
@@ -651,6 +688,7 @@ void assets_add_task(asset_task_t src_task) {
 	if (idx < 0) idx = ~idx;
 	asset_thread_tasks.insert(idx, task);
 	asset_tasks_processing += 1;
+	asset_tasks_priority    = assets_calculate_current_priority();
 	ft_mutex_unlock(asset_thread_task_mtx);
 
 	if (asset_thread_tasks.count > 1) ft_condition_broadcast(asset_tasks_available);
@@ -806,6 +844,27 @@ void asset_step_task() {
 
 ///////////////////////////////////////////
 
+void asset_step_blocking_job() {
+	// Process all blocking jobs - these are synchronous waits so prioritize them
+	while (true) {
+		// Acquire a blocking job if one is available
+		ft_mutex_lock(assets_job_lock);
+		if (assets_blocking_jobs.count <= 0) {
+			ft_mutex_unlock(assets_job_lock);
+			return;
+		}
+		asset_job_t *job = assets_blocking_jobs[0];
+		assets_blocking_jobs.remove(0);
+		ft_mutex_unlock(assets_job_lock);
+
+		// Process the job outside the lock
+		job->success  = job->asset_job(job->data);
+		job->finished = true;
+	}
+}
+
+///////////////////////////////////////////
+
 int32_t asset_thread(void *thread_inst_obj) {
 	asset_thread_t* thread = (asset_thread_t*)thread_inst_obj;
 	thread->id      = ft_id_current();
@@ -819,14 +878,19 @@ int32_t asset_thread(void *thread_inst_obj) {
 	while (asset_thread_enabled && !sk_is_initialized())
 		platform_sleep(1);
 
+	skr_thread_init();
+
 	ft_mutex_t wait_mtx = ft_mutex_create();
 
-	while (asset_thread_enabled || asset_thread_tasks.count>0) {
+	while (asset_thread_enabled || asset_thread_tasks.count>0 || assets_blocking_jobs.count>0) {
+		asset_step_blocking_job();
 		asset_step_task();
 
-		if (asset_thread_enabled && asset_thread_tasks.count == 0)
+		if (asset_thread_enabled && asset_thread_tasks.count == 0 && assets_blocking_jobs.count == 0)
 			ft_condition_wait(asset_tasks_available, wait_mtx);
 	}
+
+	skr_thread_shutdown();
 
 	ft_mutex_destroy(&wait_mtx);
 	thread->running = false;

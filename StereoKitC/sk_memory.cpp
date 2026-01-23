@@ -51,8 +51,9 @@ void *sk_realloc(void *memory, size_t bytes) {
 ///////////////////////////////////////////
 
 void _sk_free(void* memory) {
-	if (memory)
+	if (memory) {
 		profiler_free(memory);
+	}
 	free(memory);
 }
 

@@ -38,7 +38,7 @@ namespace StereoKit
 
 		/// <summary>Human-readable version name embedded in the StereoKitC
 		/// DLL.</summary>
-		public static string VersionName => Marshal.PtrToStringAnsi( NativeAPI.sk_version_name() );
+		public static string VersionName => NativeHelper.FromUtf8(NativeAPI.sk_version_name());
 		/// <summary>An integer version Id! This is defined using a hex value
 		/// with this format: `0xMMMMiiiiPPPPrrrr` in order of 
 		/// Major.mInor.Patch.pre-Release</summary>

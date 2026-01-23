@@ -72,9 +72,9 @@ xr_system_ xr_ext_msft_hand_mesh_initialize(void*) {
 
 	// If hand tracking data source is missing, we don't want to use this ext
 	// on systems that provide bad quality controller based hand sims.
-#if defined(_M_X64) && (defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP))
-	if (!backend_openxr_ext_enabled(XR_EXT_HAND_TRACKING_DATA_SOURCE_EXTENSION_NAME) &&
-		(strcmp(device_get_runtime(), "Windows Mixed Reality Runtime") == 0 || strcmp(device_get_runtime(), "SteamVR/OpenXR") == 0)) {
+#if defined(_M_X64) && defined(SK_OS_WINDOWS)
+	xr_runtime_ runtime = openxr_get_known_runtime();
+	if (!backend_openxr_ext_enabled(XR_EXT_HAND_TRACKING_DATA_SOURCE_EXTENSION_NAME) && (runtime == xr_runtime_wmr || runtime == xr_runtime_steamvr)) {
 
 		// Allow users to explicitly request this extension to bypass our
 		// exception.

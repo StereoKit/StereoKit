@@ -15,13 +15,9 @@ class DocPlatformFile : ITest
 			/// :CodeSample: Platform.FilePicker Platform.ReadFile
 			/// ### Read Custom Files
 			Platform.FilePicker(PickerMode.Open, file => {
-				// On some platforms (like UWP), you may encounter permission
-				// issues when trying to read or write to an arbitrary file.
-				//
-				// StereoKit's `Platform.FilePicker` and `Platform.ReadFile`
-				// work together to avoid this permission issue, where the
-				// FilePicker will grant permission to the ReadFile method.
-				// C#'s built-in `File.ReadAllText` would fail on UWP here.
+				// On some platforms, using StereoKit's Platform.ReadFile
+				// instead of C#'s File IO functions may help bypass permission
+				// issues.
 				if (Platform.ReadFile(file, out string text))
 					Log.Info(text);
 			}, null, ".txt");
@@ -33,13 +29,9 @@ class DocPlatformFile : ITest
 			/// :CodeSample: Platform.FilePicker Platform.WriteFile
 			/// ### Write Custom Files
 			Platform.FilePicker(PickerMode.Save, file => {
-				// On some platforms (like UWP), you may encounter permission
-				// issues when trying to read or write to an arbitrary file.
-				//
-				// StereoKit's `Platform.FilePicker` and `Platform.WriteFile`
-				// work together to avoid this permission issue, where the
-				// FilePicker will grant permission to the WriteFile method.
-				// C#'s built-in `File.WriteAllText` would fail on UWP here.
+				// On some platforms, using StereoKit's Platform.WriteFile
+				// instead of C#'s File IO functions may help bypass permission
+				// issues.
 				Platform.WriteFile(file, "Text for the file.\n- Thanks!");
 			}, null, ".txt");
 			/// :End:

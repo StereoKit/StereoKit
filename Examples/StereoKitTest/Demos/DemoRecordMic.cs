@@ -3,7 +3,6 @@
 // Copyright (c) 2019-2023 Nick Klingensmith
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
 
-#if !WINDOWS_UWP
 using System.Collections.Generic;
 using StereoKit;
 
@@ -120,4 +119,3 @@ class DemoRecordMic : ITest
 		UI.WindowEnd();
 	}
 }
-#endif

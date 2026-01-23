@@ -19,13 +19,13 @@
 #     on desktop, but on Android you may need to dynamic link with other
 #     loaders.
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
 if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
   cmake_policy(SET CMP0135 NEW)
 endif()
 
-project(StereoKit VERSION "0.3.9" LANGUAGES CXX C)
+project(StereoKit VERSION "0.4.0" LANGUAGES CXX C)
 
 # Add this repository's cmake modules to CMAKE_MODULE_PATH
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_LIST_DIR}/cmake)
@@ -40,7 +40,7 @@ set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest pro
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
 set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
 set(SK_WINDOWS_GL                   OFF CACHE BOOL "Build Windows version using OpenGL as the renderer. This is primarily for debugging GL code while developing on Windows.")
-set(SK_LOCAL_SK_GPU                 OFF CACHE BOOL "Build using a local version of sk_gpu, instead of the latest release. This is useful for testing in-progress changes to sk_gpu.")
+set(SK_LOCAL_SK_RENDERER            OFF CACHE BOOL "Build using a local version of sk_renderer, instead of the latest release. This is useful for testing in-progress changes to sk_renderer.")
 set(SK_PROFILE                      OFF CACHE BOOL "Build with Tracy profiler enabled.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
@@ -102,10 +102,8 @@ endif()
 ###########################################
 
 if (ANDROID)
-  set(SK_SHADER_TARGETS "e")
   set(ANDROID_LIBS
-    android
-    EGL)
+    android)
   if (SK_DYNAMIC_OPENXR)
     add_definitions("-DSK_DYNAMIC_OPENXR")
   endif()
@@ -119,7 +117,6 @@ elseif(EMSCRIPTEN)
   #set(EMSCRIPTEN_LIBS)
   set(SK_BUILD_OPENXR_LOADER OFF)
   set(SK_BUILD_SHARED_LIBS OFF)
-  set(SK_SHADER_TARGETS "w")
   add_definitions("-D_XM_NO_INTRINSICS_")
   set(SK_LINKER_FLAGS 
     -sFULL_ES3
@@ -130,16 +127,13 @@ elseif(EMSCRIPTEN)
     -g
     -gsource-map )
 elseif (UNIX)
-  set(SK_SHADER_TARGETS "e")
   set(LINUX_LIBS
     Threads::Threads
-    EGL
     gbm
     X11
     Xfixes
     fontconfig )
 
-  add_definitions("-DSKG_LINUX_EGL")
   # Add pthreads
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
@@ -149,30 +143,24 @@ elseif (UNIX)
   endif()
 
 elseif(WIN32)
-  if (SK_WINDOWS_GL)
-    set(SK_SHADER_TARGETS "g")
-    add_definitions("-DSKG_FORCE_OPENGL")
-    add_definitions("-DSK_GPU_LABELS")
-  else()
-    set(SK_SHADER_TARGETS "x")
-  endif()
   add_definitions("-D_CRT_SECURE_NO_WARNINGS")
   if (MSVC)
     set(WINDOWS_LIBS
-    Comdlg32
-    DXGI
-    D3D11)
+    Comdlg32)
 
     list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
+  else()
+    # MinGW/GCC cross-compile settings
+    add_compile_options(-mavx -mf16c)
+    # Static runtime linking is applied per-target to StereoKitC only (see below)
+    # Executables use the runtime from the DLL to avoid duplicate symbol errors
   endif()
 endif()
 
-if (__MINGW32__)
-  add_compile_definitions(PAL_STDCPP_COMPAT="needed for mingw")
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-  add_definitions("-DWINDOWS_UWP")
+if (NOT MSVC)
+  # SAL macros (__in, __out, etc.) from include_no_win/sal.h conflict with
+  # C++ standard library internal identifiers. This disables them.
+  add_compile_definitions(PAL_STDCPP_COMPAT)
 endif()
 
 # On Android, shared lib SK has a JNI_OnLoad, which can conflict with dev
@@ -225,13 +213,24 @@ CPMAddPackage( # We're scraping the comment after the NAME for some other script
   GIT_SHALLOW       1
   DOWNLOAD_ONLY     YES # basis universal doesn't have a library in it, we include code from this library directly
 )
-add_compile_definitions(BASISD_SUPPORT_FXT1=0)
-add_compile_definitions(BASISD_SUPPORT_PVRTC1=0)
-add_compile_definitions(BASISD_SUPPORT_PVRTC2=0)
-add_compile_definitions(BASISD_SUPPORT_ATC=0)
-add_compile_definitions(BASISD_SUPPORT_ETC2_EAC_A8=0)
-add_compile_definitions(BASISD_SUPPORT_BC7=0)
-add_compile_definitions(BASISD_SUPPORT_BC7_MODE5=0)
+if (basis_universal_SOURCE_DIR)
+  # Create an object library for basisu to properly suppress warnings
+  add_library(basisu_transcoder OBJECT
+    ${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp
+    ${basis_universal_SOURCE_DIR}/zstd/zstd.c)
+  target_include_directories(basisu_transcoder SYSTEM PUBLIC ${basis_universal_SOURCE_DIR}/transcoder)
+  target_compile_options    (basisu_transcoder PRIVATE $<$<CXX_COMPILER_ID:GNU>:-w> $<$<CXX_COMPILER_ID:Clang>:-w> $<$<CXX_COMPILER_ID:MSVC>:/W0>)
+  target_compile_options    (basisu_transcoder PRIVATE $<$<C_COMPILER_ID:GNU>:-w> $<$<C_COMPILER_ID:Clang>:-w> $<$<C_COMPILER_ID:MSVC>:/W0>)
+  set_target_properties     (basisu_transcoder PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_compile_definitions(basisu_transcoder PRIVATE
+    BASISD_SUPPORT_FXT1=0
+    BASISD_SUPPORT_PVRTC1=0
+    BASISD_SUPPORT_PVRTC2=0
+    BASISD_SUPPORT_ATC=0
+    BASISD_SUPPORT_ETC2_EAC_A8=0
+    BASISD_SUPPORT_BC7=0
+    BASISD_SUPPORT_BC7_MODE5=0)
+endif()
 
 #### Tracy Profiler - https://github.com/wolfpld/tracy ####
 
@@ -239,7 +238,7 @@ if (SK_PROFILE)
   CPMAddPackage(
     NAME tracy
     GITHUB_REPOSITORY wolfpld/tracy
-    GIT_TAG v0.12.2
+    GIT_TAG a5e5e8a435daf36f9213d40e7e97efc6cbb13610
     GIT_SHALLOW 1
     OPTIONS
       "TRACY_ENABLE ON"
@@ -249,17 +248,26 @@ if (SK_PROFILE)
   set_target_properties(TracyClient PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
-#### sk_gpu - https://github.com/StereoKit/sk_gpu ####
-if (NOT SK_LOCAL_SK_GPU)
-  CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME sk_gpu # 2025.9.7
-    URL https://github.com/StereoKit/sk_gpu/releases/download/v2025.9.7/sk_gpu.v2025.9.7.zip
+#### sk_gpu - https://github.com/StereoKit/sk_renderer ####
+set(SKR_ENABLE_STATIC_ANALYSIS OFF CACHE PATH "Faster build" FORCE)
+set(SKR_BUILD_EXAMPLES OFF CACHE PATH "Faster build" FORCE)
+if (NOT SK_LOCAL_SK_RENDERER)
+  CPMAddPackage(
+    NAME sk_renderer
+    GITHUB_REPOSITORY StereoKit/sk_renderer
+    GIT_TAG v2026.1.22
   )
 else()
-  # For building directly with in-progress sk_gpu changes, point this to your
-  # local sk_gpu clone, and use it instead of CPM.
-  add_subdirectory(../sk_gpu/bin/distribute ../sk_gpu/bin/distribute/bin)
+  # For building directly with in-progress sk_renderer changes, point this to your
+  # local sk_renderer clone, and use it instead of CPM.
+  add_subdirectory(../sk_renderer ../sk_renderer/build)
 endif()
+set_target_properties(sk_renderer PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# Enable Win32 Vulkan surface support for Windows builds (needed by volk)
+if(WIN32)
+  target_compile_definitions(volk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
+endif()
+
 
 ###########################################
 ## StereoKitC                            ##
@@ -339,7 +347,6 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/miniaudio.cpp
   StereoKitC/libraries/qoi.h
   StereoKitC/libraries/qoi.cpp
-  StereoKitC/libraries/sk_gpu.cpp
   StereoKitC/libraries/sk_fontfile.h
   StereoKitC/libraries/sk_fontfile.cpp
   StereoKitC/libraries/sokol_time.h
@@ -387,6 +394,8 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/render.cpp
   StereoKitC/systems/render_pipeline.h
   StereoKitC/systems/render_pipeline.cpp
+  StereoKitC/systems/lighting.h
+  StereoKitC/systems/lighting.cpp
   StereoKitC/systems/sprite_drawer.h
   StereoKitC/systems/sprite_drawer.cpp
   StereoKitC/systems/system.h
@@ -419,8 +428,6 @@ set(SK_SRC_PLATFORMS
   StereoKitC/platforms/platform_common_unix.cpp
   StereoKitC/platforms/web.h
   StereoKitC/platforms/web.cpp
-  StereoKitC/platforms/uwp.h
-  StereoKitC/platforms/uwp.cpp
   StereoKitC/platforms/win32.h
   StereoKitC/platforms/win32.cpp )
 
@@ -460,8 +467,8 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/eye_interaction.cpp
   StereoKitC/xr_backends/extensions/fb_colorspace.h
   StereoKitC/xr_backends/extensions/fb_colorspace.cpp
-  StereoKitC/xr_backends/extensions/graphics.h
-  StereoKitC/xr_backends/extensions/graphics.cpp
+  StereoKitC/xr_backends/extensions/vulkan_enable.h
+  StereoKitC/xr_backends/extensions/vulkan_enable.cpp
   StereoKitC/xr_backends/extensions/hand_mesh.h
   StereoKitC/xr_backends/extensions/hand_mesh.cpp
   StereoKitC/xr_backends/extensions/hand_tracking.h
@@ -484,8 +491,6 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/oculus_audio.cpp
   StereoKitC/xr_backends/extensions/msft_anchors.h
   StereoKitC/xr_backends/extensions/msft_anchors.cpp
-  StereoKitC/xr_backends/extensions/msft_anchor_interop.h
-  StereoKitC/xr_backends/extensions/msft_anchor_interop.cpp
   StereoKitC/xr_backends/extensions/msft_bridge.h
   StereoKitC/xr_backends/extensions/msft_bridge.cpp
   StereoKitC/xr_backends/extensions/msft_observer.h
@@ -515,11 +520,6 @@ set(SK_SRC_UI
   StereoKitC/ui/ui_theming.h
   StereoKitC/ui/ui_theming.cpp )
 
-if (basis_universal_ADDED)
-  set(SK_SRC_BASISU
-    ${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp
-    ${basis_universal_SOURCE_DIR}/zstd/zstd.c)
-endif()
 
 set(SK_SRC_SHADERS_H
   StereoKitC/shaders_builtin/shader_builtin.h )
@@ -545,7 +545,6 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_XR_EXTS}
   ${SK_SRC_TOOLS}
   ${SK_SRC_UI}
-  ${SK_SRC_BASISU}
   ${SK_SRC_SHADERS_H} )
 
 if (ANDROID)
@@ -558,7 +557,7 @@ endif()
 
 skshaderc_compile_headers(StereoKitC
   ${CMAKE_BINARY_DIR}/shaders/
-  "-O3 -f -z ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+  "-e -O3 -f -z ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
   StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_default.hlsl
   StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
@@ -566,6 +565,7 @@ skshaderc_compile_headers(StereoKitC
   StereoKitC/shaders_builtin/shader_builtin_lines.hlsl
   StereoKitC/shaders_builtin/shader_builtin_pbr.hlsl
   StereoKitC/shaders_builtin/shader_builtin_pbr_clip.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_sh_compute.hlsl
   StereoKitC/shaders_builtin/shader_builtin_skybox.hlsl
   StereoKitC/shaders_builtin/shader_builtin_ui.hlsl
   StereoKitC/shaders_builtin/shader_builtin_ui_box.hlsl
@@ -588,7 +588,6 @@ source_group("xr_backends"     FILES ${SK_SRC_XR_BACKENDS})
 source_group("xr_exts"         FILES ${SK_SRC_XR_EXTS})
 source_group("tools"           FILES ${SK_SRC_TOOLS})
 source_group("ui"              FILES ${SK_SRC_UI})
-source_group("basisu"          FILES ${SK_SRC_BASISU})
 source_group("shaders_builtin" FILES ${SK_SRC_SHADERS_H})
 
 if (NOT MSVC)
@@ -625,9 +624,6 @@ target_include_directories(StereoKitC
     ${CMAKE_CURRENT_BINARY_DIR}/StereoKitC/
     ${LINUX_INCLUDES}
 )
-if (basis_universal_ADDED)
-  target_include_directories(StereoKitC PRIVATE ${basis_universal_SOURCE_DIR}/transcoder)
-endif()
 
 target_link_libraries( StereoKitC
   PRIVATE
@@ -636,8 +632,9 @@ target_link_libraries( StereoKitC
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
     meshoptimizer
+    basisu_transcoder
   PUBLIC
-    sk_gpu
+    sk_renderer
     ${OPENXR_LIB}
     ${ANDROID_LIBS}
 )
@@ -648,9 +645,9 @@ endif()
 
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-  if (__MINGW32__)
+  if (MINGW)
     set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections )
-    set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id )
+    set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id)
     set(SK_WARNING_FLAG    -w)
   else()
     set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
@@ -674,13 +671,20 @@ target_compile_options(StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMP
 target_link_options   (StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
 target_link_options   (StereoKitC PUBLIC ${SK_LINKER_FLAGS})
 
+# MinGW-specific settings
+if (MINGW)
+  # Remove 'lib' prefix - Windows DLLs shouldn't have it
+  set_target_properties(StereoKitC PROPERTIES PREFIX "")
+  # Statically link C/C++ runtime into the DLL to avoid shipping extra DLLs
+  # Note: -static links all subsequent libraries statically
+  target_link_options(StereoKitC PRIVATE -static)
+endif()
+
 ###########################################
 ## Copy binaries to the distribute folder##
 ###########################################
 
-if (CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-  set(SK_BIN_OS "UWP")
-elseif (WIN32)
+if (WIN32)
   set(SK_BIN_OS "Win32")
 elseif(ANDROID)
   set(SK_BIN_OS "Android")
@@ -691,6 +695,7 @@ elseif(EMSCRIPTEN)
 else()
   set(SK_BIN_OS "Unknown")
 endif()
+string(TOLOWER "${SK_BIN_OS}" SK_BIN_OS_LOWER)
 
 if(ANDROID)
   set(SK_ARCH ${ANDROID_ABI})
@@ -725,15 +730,12 @@ if(SK_DISTRIBUTE)
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
 
-  # Copy all shader build tools, but only if they're newer
-  file(GLOB_RECURSE SOURCE_FILES "${sk_gpu_SOURCE_DIR}/tools/*")
-  foreach(SOURCE_FILE ${SOURCE_FILES})
-    file(RELATIVE_PATH REL_PATH "${sk_gpu_SOURCE_DIR}/tools" ${SOURCE_FILE})
-    get_filename_component(DEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${REL_PATH}" DIRECTORY)
+  # Copy shader compiler (Android uses pre-built binary, so no skshaderc target exists)
+  if(NOT ANDROID)
     add_custom_command(TARGET StereoKitC POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E make_directory "${DEST_DIR}"
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SOURCE_FILE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${REL_PATH}")
-  endforeach()
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_BIN_OS_LOWER}_${SK_ARCH}"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:skshaderc>" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_BIN_OS_LOWER}_${SK_ARCH}")
+  endif()
 
   if (SK_SEPARATE_DBG)
     add_custom_command(TARGET StereoKitC POST_BUILD
@@ -750,15 +752,13 @@ endif()
 ## StereoKitCTest                        ##
 ###########################################
 
-if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-  set(SK_WIN32 WIN32)
-endif()
-
 if (SK_BUILD_TESTS)
   add_executable( StereoKitCTest ${SK_WIN32}
     Examples/StereoKitCTest/main.cpp
     Examples/StereoKitCTest/demo_envmap.h
     Examples/StereoKitCTest/demo_envmap.cpp
+    Examples/StereoKitCTest/demo_shadows.h
+    Examples/StereoKitCTest/demo_shadows.cpp
     Examples/StereoKitCTest/demo_draw.h
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_aliasing.h
@@ -797,16 +797,25 @@ if (SK_BUILD_TESTS)
     StereoKitC
   )
 
+  # MinGW: Statically link C++ runtime. Both DLL and EXE get their own copy.
+  # --allow-multiple-definition: The DLL's import library has runtime symbols too,
+  # but we want our own static copy, so tell the linker to ignore the duplicates.
+  if (MINGW)
+    target_link_options(StereoKitCTest PRIVATE -static -Wl,--allow-multiple-definition)
+  endif()
+
   if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
     target_compile_options(StereoKitCTest PRIVATE "/MP8")
   endif()
 
   skshaderc_compile_headers( StereoKitCTest
     ${CMAKE_BINARY_DIR}/test_shaders/
-    "-O3 -f ${SK_SHADER_VERBOSITY} -t ${SK_SHADER_TARGETS} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+    "-e -O3 -f ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
     Examples/StereoKitCTest/Shaders/blit.hlsl
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
-    Examples/StereoKitCTest/Shaders/skt_light_only.hlsl)
+    Examples/StereoKitCTest/Shaders/skt_light_only.hlsl
+    Examples/StereoKitCTest/Shaders/skt_shadow.hlsl
+    Examples/StereoKitCTest/Shaders/skt_shadow_caster.hlsl)
 
   #target_link_options   (StereoKitCTest PRIVATE ${SK_LINKER_FLAGS})
 

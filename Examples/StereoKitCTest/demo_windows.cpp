@@ -1,4 +1,4 @@
-#if defined(_WIN32) && !defined(WINDOWS_UWP)
+#if defined(_WIN32)
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif

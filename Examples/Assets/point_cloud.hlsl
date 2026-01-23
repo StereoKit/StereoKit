@@ -13,27 +13,28 @@ struct vsIn {
 	float2 off  : TEXCOORD0;
 	float4 color: COLOR0;
 };
-struct psIn : sk_ps_input_t {
+struct psIn {
 	float4 pos   : SV_POSITION;
 	float2 uv    : TEXCOORD0;
 	float4 color : COLOR0;
+	uint   view_id : SV_RenderTargetArrayIndex;
 };
 
-psIn vs(vsIn input, sk_vs_input_t sk_in) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn o;
-	uint view_id = sk_view_init(sk_in, o);
-	uint id      = sk_inst_id  (sk_in);
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
 
 	float4 world = mul(input.pos, sk_inst[id].world);
-	float4 view  = mul(world, sk_view[view_id]);
+	float4 view  = mul(world, sk_view[o.view_id]);
 	if (screen_size <= 0.1)
 		view.xy = point_size * input.off + view.xy;
-	o.pos        = mul(view, sk_proj[view_id]); 
+	o.pos        = mul(view, sk_proj[o.view_id]);
 	o.uv         = input.off + 0.5;
 	o.color      = input.color;
 
 	if (screen_size > 0.1) {
-		float  aspect = sk_proj[view_id]._m11 / sk_proj[view_id]._m00;
+		float  aspect = sk_proj[o.view_id]._m11 / sk_proj[o.view_id]._m00;
 		o.pos.xy = ( point_size * input.off / float2(aspect,1) ) *o.pos.w + o.pos.xy;
 	}
 

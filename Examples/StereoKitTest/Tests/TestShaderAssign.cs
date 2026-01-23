@@ -12,7 +12,7 @@ class TestShaderAssign : ITest
 		mat1 = Material.Default.Copy();
 		mat1.Shader = Shader.PBR;
 
-		mat2 = Material.Find("sk/render/skybox_material").Copy();
+		mat2 = Material.Find("sk/lighting/skybox_material").Copy();
 		mat2.Shader = Shader.UIBox;
 
 		mat3 = mat2.Copy();

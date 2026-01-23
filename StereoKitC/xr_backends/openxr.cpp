@@ -20,14 +20,16 @@
 #include "../device.h"
 #include "../libraries/stref.h"
 #include "../systems/render.h"
+#include "../systems/render_pipeline.h"
 #include "../systems/audio.h"
 #include "../systems/input.h"
 #include "../systems/world.h"
 
 #include "extensions/ext_management.h"
 #include "extensions/_registration.h"
-#include "extensions/graphics.h"
+#include "extensions/vulkan_enable.h"
 #include "extensions/android_thread.h"
+#include "extensions/loader_init.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
@@ -62,6 +64,7 @@ XrTime               xr_time              = 0;
 XrTime               xr_eyes_sample_time  = 0;
 bool                 xr_system_created    = false;
 bool                 xr_system_success    = false;
+xr_runtime_          xr_known_runtime     = xr_runtime_none;
 
 bool                 xr_has_bounds        = false;
 vec2                 xr_bounds_size       = {};
@@ -148,6 +151,21 @@ bool openxr_create_system() {
 	xr_system_success = false;
 	xr_system_created = true;
 
+	// Loader initialization must come before even instance data is enumerated
+	if (xr_ext_loader_init() == xr_system_fail_critical) {
+		log_warnf("OpenXR initialization failed during event: %s", "Loader Initialization");
+		openxr_cleanup();
+		return false;
+	}
+
+	// Enumerate available extensions first, so ext_management_ext_available
+	// can be used during registration
+	if (!ext_management_enumerate_available()) {
+		log_warnf("OpenXR initialization failed during event: %s", "Extension Enumeration");
+		openxr_cleanup();
+		return false;
+	}
+
 	if (!ext_registration()) {
 		log_warnf("OpenXR initialization failed during event: %s", "Extension Registration");
 		openxr_cleanup();
@@ -208,6 +226,18 @@ bool openxr_create_system() {
 			XR_VERSION_MAJOR(inst_properties.runtimeVersion),
 			XR_VERSION_MINOR(inst_properties.runtimeVersion),
 			XR_VERSION_PATCH(inst_properties.runtimeVersion));
+
+		// This is an incomplete list of runtimes, we sometimes use these
+		// internally for runtime compatibility fixes.
+		xr_known_runtime = xr_runtime_unknown;
+		if      (string_startswith(inst_properties.runtimeName, "Meta"                 )) xr_known_runtime = xr_runtime_meta;
+		else if (string_startswith(inst_properties.runtimeName, "Oculus"               )) xr_known_runtime = xr_runtime_meta;
+		else if (string_startswith(inst_properties.runtimeName, "Monado"               )) xr_known_runtime = xr_runtime_monado;
+		else if (string_startswith(inst_properties.runtimeName, "Android XR"           )) xr_known_runtime = xr_runtime_android_xr;
+		else if (string_startswith(inst_properties.runtimeName, "Vive"                 )) xr_known_runtime = xr_runtime_vive;
+		else if (string_startswith(inst_properties.runtimeName, "SteamVR/OpenXR"       )) xr_known_runtime = xr_runtime_steamvr;
+		else if (string_startswith(inst_properties.runtimeName, "Windows Mixed Reality")) xr_known_runtime = xr_runtime_wmr;
+		else if (strstr           (inst_properties.runtimeName, "Snapdragon"           )) xr_known_runtime = xr_runtime_snapdragon;
 	}
 
 	// Always log the extension table, this may contain information about why
@@ -240,17 +270,6 @@ bool openxr_create_system() {
 
 	xr_system_success = true;
 	return xr_system_success;
-}
-
-///////////////////////////////////////////
-
-void *openxr_get_luid() {
-#if defined(XR_USE_GRAPHICS_API_D3D11)
-	if (!openxr_create_system()) return nullptr;
-	return xr_ext_graphics_get_luid();
-#else
-	return nullptr;
-#endif
 }
 
 ///////////////////////////////////////////
@@ -625,6 +644,10 @@ void openxr_step_begin() {
 	openxr_poll_events();
 	ext_management_evt_step_begin();
 	input_step();
+
+	// Begin the render frame early so that any graphics operations the
+	// application performs during step are captured.
+	render_pipeline_begin_frame();
 }
 
 ///////////////////////////////////////////
@@ -633,7 +656,7 @@ void openxr_step_end() {
 	ext_management_evt_step_end();
 
 	if (xr_has_session) { openxr_render_frame(); }
-	else                { render_clear(); platform_sleep(33); }
+	else                { render_clear(); render_pipeline_skip_present(); platform_sleep(33); }
 
 	xr_extension_structs_clear();
 
@@ -783,6 +806,12 @@ bool32_t openxr_get_space(XrSpace space, pose_t *out_pose, XrTime time) {
 		return true;
 	}
 	return false;
+}
+
+///////////////////////////////////////////
+
+xr_runtime_ openxr_get_known_runtime() {
+	return xr_known_runtime;
 }
 
 ///////////////////////////////////////////

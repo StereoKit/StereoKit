@@ -11,6 +11,12 @@
 #include <windows.h>
 #include <shellapi.h>
 
+#ifndef VK_USE_PLATFORM_WIN32_KHR
+#define VK_USE_PLATFORM_WIN32_KHR
+#endif
+#include <sk_renderer.h>
+#include <vulkan/vulkan_win32.h>
+
 #include "../stereokit.h"
 #include "../sk_math.h"
 #include "../systems/render.h"
@@ -30,8 +36,8 @@ struct window_t {
 	HWND                    handle;
 	array_t<window_event_t> events;
 
-	skg_swapchain_t         swapchain;
-	bool                    has_swapchain;
+	skr_surface_t           surface;
+	bool                    has_surface;
 
 	bool                    check_resize;
 	int32_t                 resize_x, resize_y;
@@ -150,18 +156,26 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 	win.resize_x = final_width;
 	win.resize_y = final_height;
 
-	// Not all windows need a swapchain, but here's where we make 'em for those
+	// Not all windows need a surface, but here's where we make 'em for those
 	// that do.
 	if (surface_type == platform_surface_swapchain) {
-		skg_tex_fmt_ color_fmt = skg_tex_fmt_rgba32_linear;
-		skg_tex_fmt_ depth_fmt = (skg_tex_fmt_)render_preferred_depth_fmt();
-#if defined(SKG_OPENGL)
-		depth_fmt = skg_tex_fmt_depthstencil;
-#endif
-		win.swapchain     = skg_swapchain_create(win.handle, color_fmt, skg_tex_fmt_none, final_width, final_height);
-		win.has_swapchain = true;
+		// Create Vulkan surface from Win32 window
+		VkWin32SurfaceCreateInfoKHR surface_info = { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
+		surface_info.hinstance = win32_hinst;
+		surface_info.hwnd      = win.handle;
 
-		log_diagf("Created swapchain: <~grn>%d<~clr>x<~grn>%d<~clr> color:<~grn>%s<~clr> depth:<~grn>%s<~clr>", win.swapchain.width, win.swapchain.height, render_fmt_name((tex_format_)color_fmt), render_fmt_name((tex_format_)depth_fmt));
+		VkSurfaceKHR vk_surface;
+		if (vkCreateWin32SurfaceKHR(skr_get_vk_instance(), &surface_info, nullptr, &vk_surface) != VK_SUCCESS) {
+			log_err("Failed to create Vulkan surface for window");
+			sk_free(win.title);
+			DestroyWindow(win.handle);
+			return -1;
+		}
+
+		skr_surface_create(vk_surface, &win.surface);
+		win.has_surface = true;
+
+		log_diagf("Created surface: <~grn>%d<~clr>x<~grn>%d<~clr>", win.surface.size.x, win.surface.size.y);
 	}
 
 	win32_windows.add(win);
@@ -173,8 +187,8 @@ platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_s
 void platform_win_destroy(platform_win_t window) {
 	window_t* win = &win32_windows[window];
 
-	if (win->has_swapchain) {
-		skg_swapchain_destroy(&win->swapchain);
+	if (win->has_surface) {
+		skr_surface_destroy(&win->surface);
 	}
 
 	if (win->title) UnregisterClassW(win->title, win32_hinst);
@@ -192,7 +206,7 @@ void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height
 	width  = maxi(1, width);
 	height = maxi(1, height);
 
-	if (win->has_swapchain == false || (width == win->swapchain.width && height == win->swapchain.height))
+	if (win->has_surface == false || (width == win->surface.size.x && height == win->surface.size.y))
 		return;
 
 	// Save the window position when it changes
@@ -200,7 +214,7 @@ void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height
 	if (GetWindowRect(win->handle, &r))
 		win->save_rect = r;
 
-	skg_swapchain_resize(&win->swapchain, width, height);
+	skr_surface_resize(&win->surface);
 }
 
 ///////////////////////////////////////////
@@ -311,7 +325,7 @@ bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event,
 
 ///////////////////////////////////////////
 
-skg_swapchain_t* platform_win_get_swapchain(platform_win_t window) { return win32_windows[window].has_swapchain ? &win32_windows[window].swapchain : nullptr; }
+skr_surface_t* platform_win_get_surface(platform_win_t window) { return win32_windows[window].has_surface ? &win32_windows[window].surface : nullptr; }
 
 ///////////////////////////////////////////
 

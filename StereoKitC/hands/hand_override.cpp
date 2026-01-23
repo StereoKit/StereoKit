@@ -49,10 +49,10 @@ void hand_override_update_frame() {
 		inp_hand->wrist = pose_t{ override_joints[h][26].position, override_joints[h][26].orientation };
 		inp_hand->aim_ready = button_state_inactive;
 
-		input_hand_sim_trigger(inp_hand->pinch_state, inp_hand->fingers[hand_finger_index][hand_joint_tip], inp_hand->fingers[hand_finger_thumb][hand_joint_tip],
+		input_hand_sim_trigger(inp_hand->pinch_state, inp_hand->fingers[finger_id_index][joint_id_tip], inp_hand->fingers[finger_id_thumb][joint_id_tip],
 			PINCH_ACTIVATION_DIST, PINCH_DEACTIVATION_DIST, PINCH_MAX_DIST,
 			&inp_hand->pinch_state, &inp_hand->pinch_activation);
-		input_hand_sim_trigger(inp_hand->grip_state, inp_hand->fingers[hand_finger_ring][hand_joint_tip], inp_hand->fingers[hand_finger_ring][hand_joint_root],
+		input_hand_sim_trigger(inp_hand->grip_state, inp_hand->fingers[finger_id_ring][joint_id_tip], inp_hand->fingers[finger_id_ring][joint_id_root],
 			GRIP_ACTIVATION_DIST, GRIP_DEACTIVATION_DIST, GRIP_MAX_DIST,
 			&inp_hand->grip_state, &inp_hand->grip_activation);
 	}

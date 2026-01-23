@@ -10,6 +10,6 @@
 
 namespace sk {
 
-xr_system_ xr_ext_loader_init_register();
+xr_system_ xr_ext_loader_init();
 
 }

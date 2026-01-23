@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sk_gpu.h>
+#include <sk_renderer.h>
 #include "../stereokit.h"
 #include "assets.h"
 
@@ -10,7 +10,7 @@ extern const size_t shaderarg_sz[];
 
 struct _shader_t {
 	asset_header_t header;
-	skg_shader_t   shader;
+	skr_shader_t   gpu_shader;
 };
 
 void shader_destroy(shader_t shader);

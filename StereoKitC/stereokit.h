@@ -85,10 +85,15 @@ typedef union matrix {
 	vec4 row[4];
 	float m[16];
 } matrix;
+/*A 2D rectangle, defined by position and dimensions.*/
 typedef struct rect_t {
+	/*The X position of the rectangle.*/
 	float x;
+	/*The Y position of the rectangle.*/
 	float y;
+	/*The width of the rectangle.*/
 	float w;
+	/*The height of the rectangle.*/
 	float h;
 } rect_t;
 typedef struct ray_t {
@@ -191,7 +196,9 @@ typedef enum tex_format_ {
 	  the time you're dealing with color images! Matches well with the
 	  Color32 struct! If you're storing normals, rough/metal, or
 	  anything else, use Rgba32Linear.*/
-	tex_format_rgba32 = 1,
+	tex_format_rgba32_srgb = 1,
+	/*Alias for tex_format_rgba32_srgb for backwards compatibility.*/
+	tex_format_rgba32 = tex_format_rgba32_srgb,
 	/*Red/Green/Blue/Transparency data channels, at 8 bits
 	  per-channel in linear color space. This is what you'll want most
 	  of the time you're dealing with color data! Matches well with the
@@ -200,7 +207,9 @@ typedef enum tex_format_ {
 	/*Blue/Green/Red/Transparency data channels, at 8 bits
 	  per-channel in sRGB color space. This is a common swapchain format
 	  on Windows.*/
-	tex_format_bgra32 = 3,
+	tex_format_bgra32_srgb = 3,
+	/*Alias for tex_format_bgra32_srgb for backwards compatibility.*/
+	tex_format_bgra32 = tex_format_bgra32_srgb,
 	/*Blue/Green/Red/Transparency data channels, at 8 bits
 	  per-channel in linear color space. This is a common swapchain
 	  format on Windows.*/
@@ -249,73 +258,145 @@ typedef enum tex_format_ {
 	tex_format_r8 = 11,
 	/*A single channel of data, with 16 bits per-pixel! This
 	  is a good format for height maps, since it stores a fair bit of
-	  information in it. Values in the shader are always 0.0-1.0.
-	  TODO: remove during major version update, prefer s, f, or u
-	  postfixed versions of this format, this item is the same as
-	  r16u.*/
-	tex_format_r16 = 12,
+	  information in it. The "un" postfix indicates "unsigned normalized",
+	  where the raw color data is stored as an unsigned 16 bit integer,
+	  which is then normalized into the 0, 1 floating point range on the
+	  GPU.*/
+	tex_format_r16un = 12,
 	/*A single channel of data, with 16 bits per-pixel! This
 	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The u postfix indicates that the raw color data
-	  is stored as an unsigned 16 bit integer, which is then normalized
-	  into the 0, 1 floating point range on the GPU.*/
-	tex_format_r16u = tex_format_r16,
+	  information in it. The "sn" postfix indicates "signed normalized",
+	  where the raw color data is stored as a signed 16 bit integer, which
+	  is then normalized into the -1, +1 floating point range on the GPU.*/
+	tex_format_r16sn = 13,
 	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The s postfix indicates that the raw color
-	  data is stored as a signed 16 bit integer, which is then
-	  normalized into the -1, +1 floating point range on the GPU.*/
-	tex_format_r16s = 13,
+	  is a good format for index or id data, since it stores values as
+	  raw unsigned integers. The "ui" postfix indicates "unsigned integer",
+	  where the data is stored and accessed as an unsigned 16 bit integer
+	  without any normalization.*/
+	tex_format_r16ui = 14,
+	/*A single channel of data, with 16 bits per-pixel! This
+	  is a good format for index or id data, since it stores values as
+	  raw signed integers. The "si" postfix indicates "signed integer",
+	  where the data is stored and accessed as a signed 16 bit integer
+	  without any normalization.*/
+	tex_format_r16si = 15,
 	/*A single channel of data, with 16 bits per-pixel! This
 	  is a good format for height maps, since it stores a fair bit of
 	  information in it. The f postfix indicates that the raw color
 	  data is stored as 16 bit floats, which may be tricky to work with
 	  in most languages.*/
-	tex_format_r16f = 14,
+	tex_format_r16f = 16,
+	/*Alias for R16un for backwards compatibility.*/
+	tex_format_r16  = tex_format_r16un,
+	/*Alias for R16un for backwards compatibility.*/
+	tex_format_r16u = tex_format_r16un,
+	/*Alias for R16sn for backwards compatibility.*/
+	tex_format_r16s = tex_format_r16sn,
 	/*A single channel of data, with 32 bits per-pixel! This
 	  basically treats each pixel as a generic float, so you can do all
 	  sorts of strange and interesting things with this.*/
-	tex_format_r32 = 15,
+	tex_format_r32f = 17,
+	/*Alias for tex_format_r32f for backwards compatibility.*/
+	tex_format_r32 = tex_format_r32f,
 	/*A depth data format, 24 bits for depth data, and 8 bits
 	  to store stencil information! Stencil data can be used for things
 	  like clipping effects, deferred rendering, or shadow effects.*/
-	tex_format_depthstencil = 16,
+	tex_format_depth24s8 = 18,
+	/*Alias for tex_format_depth24s8 for backwards compatibility.*/
+	tex_format_depthstencil = tex_format_depth24s8,
 	/*32 bits of data per depth value! This is pretty detailed,
 	  and is excellent for experiences that have a very far view
 	  distance.*/
-	tex_format_depth32 = 17,
+	tex_format_depth32 = 19,
 	/*16 bits of depth is not a lot, but it can be enough if
 	  your far clipping plane is pretty close. If you're seeing lots of
 	  flickering where two objects overlap, you either need to bring
 	  your far clip in, or switch to 32/24 bit depth.*/
-	tex_format_depth16 = 18,
+	tex_format_depth16 = 20,
 	/*A double channel of data that supports 8 bits for the red
 	  channel and 8 bits for the green channel.*/
-	tex_format_r8g8 = 19,
+	tex_format_r8g8 = 21,
+	/*A shared exponent format with 9 bits each for R, G, B, and
+	  5 bits for the shared exponent. This is a compact HDR format.*/
+	tex_format_rgb9e5 = 22,
+	/*A depth data format with 32 bits for depth and 8 bits for
+	  stencil. The extra stencil bits provide more precision than
+	  depth24s8 while still offering stencil support.*/
+	tex_format_depth32s8,
+	/*A depth data format with 16 bits for depth and 8 bits for
+	  stencil. This is a more compact depth-stencil format.*/
+	tex_format_depth16s8,
 
+	/*BC1/DXT1 block compression with sRGB color. 4 bits per pixel,
+	  great for opaque textures on desktop/console GPUs.*/
 	tex_format_bc1_rgb_srgb,
+	/*BC1/DXT1 block compression, linear color. 4 bits per pixel,
+	  great for opaque textures on desktop/console GPUs.*/
 	tex_format_bc1_rgb,
+	/*BC3/DXT5 block compression with sRGB color. 8 bits per pixel,
+	  good for textures with alpha on desktop/console GPUs.*/
 	tex_format_bc3_rgba_srgb,
+	/*BC3/DXT5 block compression, linear color. 8 bits per pixel,
+	  good for textures with alpha on desktop/console GPUs.*/
 	tex_format_bc3_rgba,
+	/*BC4 single-channel block compression. 4 bits per pixel, ideal
+	  for grayscale textures like heightmaps on desktop/console GPUs.*/
 	tex_format_bc4_r,
+	/*BC5 two-channel block compression. 8 bits per pixel, commonly
+	  used for normal maps on desktop/console GPUs.*/
 	tex_format_bc5_rg,
+	/*BC7 high-quality block compression with sRGB color. 8 bits per
+	  pixel, best quality for color textures on desktop/console GPUs.*/
 	tex_format_bc7_rgba_srgb,
+	/*BC7 high-quality block compression, linear color. 8 bits per
+	  pixel, best quality for color textures on desktop/console GPUs.*/
 	tex_format_bc7_rgba,
 
+	/*ETC1 compression for RGB, widely supported on older Android
+	  devices. 4 bits per pixel, no alpha support.*/
 	tex_format_etc1_rgb,
+	/*ETC2 compression with sRGB color and alpha. 8 bits per pixel,
+	  standard on OpenGL ES 3.0+ mobile devices.*/
 	tex_format_etc2_rgba_srgb,
+	/*ETC2 compression with linear color and alpha. 8 bits per pixel,
+	  standard on OpenGL ES 3.0+ mobile devices.*/
 	tex_format_etc2_rgba,
+	/*ETC2 single-channel compression. 4 bits per pixel, good for
+	  grayscale data on mobile.*/
 	tex_format_etc2_r11,
+	/*ETC2 two-channel compression. 8 bits per pixel, useful for
+	  normal maps on mobile.*/
 	tex_format_etc2_rg11,
+	/*PVRTC1 RGB compression with sRGB color. 4 bits per pixel,
+	  supported on iOS and PowerVR GPUs.*/
 	tex_format_pvrtc1_rgb_srgb,
+	/*PVRTC1 RGB compression, linear color. 4 bits per pixel,
+	  supported on iOS and PowerVR GPUs.*/
 	tex_format_pvrtc1_rgb,
+	/*PVRTC1 RGBA compression with sRGB color. 4 bits per pixel,
+	  supported on iOS and PowerVR GPUs.*/
 	tex_format_pvrtc1_rgba_srgb,
+	/*PVRTC1 RGBA compression, linear color. 4 bits per pixel,
+	  supported on iOS and PowerVR GPUs.*/
 	tex_format_pvrtc1_rgba,
+	/*PVRTC2 RGBA compression with sRGB color. 4 bits per pixel,
+	  improved quality over PVRTC1 on PowerVR GPUs.*/
 	tex_format_pvrtc2_rgba_srgb,
+	/*PVRTC2 RGBA compression, linear color. 4 bits per pixel,
+	  improved quality over PVRTC1 on PowerVR GPUs.*/
 	tex_format_pvrtc2_rgba,
+	/*ASTC 4x4 block compression with sRGB color. 8 bits per pixel,
+	  high quality format supported on modern mobile GPUs.*/
 	tex_format_astc4x4_rgba_srgb,
+	/*ASTC 4x4 block compression, linear color. 8 bits per pixel,
+	  high quality format supported on modern mobile GPUs.*/
 	tex_format_astc4x4_rgba,
+	/*ATC RGB compression for Qualcomm Adreno GPUs. 4 bits per pixel,
+	  found on many Android devices.*/
 	tex_format_atc_rgb,
+	/*ATC RGBA compression for Qualcomm Adreno GPUs. 8 bits per pixel,
+	  found on many Android devices.*/
 	tex_format_atc_rgba,
 } tex_format_;
 
@@ -568,14 +649,38 @@ typedef struct sk_settings_t {
 } sk_settings_t;
 
 // TODO: v0.4, see if this can be removed
+/*Information about a system's capabilities and properties!*/
 typedef struct system_info_t {
+	/*Width of the display surface, in pixels! For a stereo display, this will
+	be the width of a single eye.*/
 	int32_t        display_width;
+	/*Height of the display surface, in pixels! For a stereo display, this will
+	be the height of a single eye.*/
 	int32_t        display_height;
+	/*Does the device we're currently on have the spatial graph bridge
+	extension? The extension is provided through the function
+	`World.FromSpatialNode`. This allows OpenXR to talk with certain windows
+	APIs, such as the QR code API that provides Graph Node GUIDs for the pose.*/
 	bool32_t       spatial_bridge_present;
+	/*Can the device work with externally provided spatial anchors, like UWP's
+	`Windows.Perception.Spatial.SpatialAnchor`*/
 	bool32_t       perception_bridge_present;
+	/*Does the device we're on have eye tracking support present for input
+	purposes? This is _not_ an indicator that the user has given the
+	application permission to access this information. See `Input.Gaze` for how
+	to use this data.*/
 	bool32_t       eye_tracking_present;
+	/*This tells if the app was successfully started as an overlay application.
+	If this is true, then expect this application to be composited with other
+	content below it!*/
 	bool32_t       overlay_app;
+	/*Does this device support world occlusion of digital objects? If this is
+	true, then World.OcclusionEnabled can be set to true, and
+	World.OcclusionMaterial can be modified.*/
 	bool32_t       world_occlusion_present;
+	/*Can this device get ray intersections from the environment? If this is
+	true, then World.RaycastEnabled can be set to true, and World.Raycast can
+	be used.*/
 	bool32_t       world_raycast_present;
 } system_info_t;
 
@@ -600,7 +705,7 @@ SK_API void          sk_set_window         (void *window);
 SK_API void          sk_set_window_xam     (void *window);
 SK_API void          sk_shutdown           (void);
 SK_API void          sk_shutdown_unsafe    (void);
-SK_API void          sk_quit               (quit_reason_ quitReason = quit_reason_user);
+SK_API void          sk_quit               (quit_reason_ quitReason sk_default(quit_reason_user));
 SK_API bool32_t      sk_step               (void (*app_step)(void));
 SK_API void          sk_run                (void (*app_step)(void), void (*app_shutdown)(void) sk_default(nullptr));
 SK_API void          sk_run_data           (void (*app_step)(void *step_data), void *step_data, void (*app_shutdown)(void *shutdown_data), void *shutdown_data);
@@ -648,10 +753,15 @@ typedef enum display_type_ {
 	display_type_flatscreen,
 } display_type_;
 
+/*This describes the field of view of a display, in degrees.*/
 typedef struct fov_info_t {
+	/*The left edge of the field of view, in degrees.*/
 	float left;
+	/*The right edge of the field of view, in degrees.*/
 	float right;
+	/*The top edge of the field of view, in degrees.*/
 	float top;
+	/*The bottom edge of the field of view, in degrees.*/
 	float bottom;
 } fov_info_t;
 
@@ -1006,10 +1116,22 @@ SK_API vec3                  sh_dominant_dir(const sk_ref(spherical_harmonics_t)
 
 ///////////////////////////////////////////
 
+/*This represents a single vertex in a Mesh, all StereoKit Meshes
+currently use this exact layout!
+
+It's good to fill out all values of a Vertex explicitly, as default
+values for the normal (0,0,0) and color (0,0,0,0) will cause your
+mesh to appear completely black, or even transparent in most shaders!*/
 typedef struct vert_t {
+	/*Position of the vertex, in model space coordinates.*/
 	vec3    pos;
+	/*The normal of this vertex, or the direction the vertex is
+	facing. Preferably normalized.*/
 	vec3    norm;
+	/*The texture coordinates at this vertex.*/
 	vec2    uv;
+	/*The color of the vertex. If you aren't using it, set it to
+	white.*/
 	color32 col;
 } vert_t;
 
@@ -1131,15 +1253,36 @@ typedef enum tex_sample_ {
 	tex_sample_anisotropic
 } tex_sample_;
 
+/*When sampling from a texture with comparison enabled, the sampler
+  compares the sampled texel value against a reference value and returns
+  a 0 or 1 based on the result. This is primarily useful for shadow
+  mapping techniques, where a depth texture is sampled to determine if a
+  surface is in shadow.*/
 typedef enum tex_sample_comp_ {
+	/*No comparison is performed, the texture is sampled normally.
+	  This is the default behavior for most textures.*/
 	tex_sample_comp_none = 0,
+	/*Returns 1 if the reference value is less than the sampled
+	  texel value.*/
 	tex_sample_comp_less,
+	/*Returns 1 if the reference value is less than or equal to
+	  the sampled texel value.*/
 	tex_sample_comp_less_or_eq,
+	/*Returns 1 if the reference value is greater than the sampled
+	  texel value.*/
 	tex_sample_comp_greater,
+	/*Returns 1 if the reference value is greater than or equal to
+	  the sampled texel value.*/
 	tex_sample_comp_greater_or_eq,
+	/*Returns 1 if the reference value is equal to the sampled
+	  texel value.*/
 	tex_sample_comp_equal,
+	/*Returns 1 if the reference value is not equal to the sampled
+	  texel value.*/
 	tex_sample_comp_not_equal,
+	/*Always returns 1, regardless of values.*/
 	tex_sample_comp_always,
+	/*Always returns 0, regardless of values.*/
 	tex_sample_comp_never,
 } tex_sample_comp_;
 
@@ -1179,7 +1322,7 @@ SK_API bool32_t     tex_gen_mips            (tex_t texture);
 SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API const char*  tex_get_id              (const tex_t texture);
 SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
-SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample sk_default(1), int32_t framebuffer_multisample sk_default(1), bool32_t owned sk_default(true));
+SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample sk_default(1), bool32_t owned sk_default(true));
 SK_API void*        tex_get_surface         (tex_t texture);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
@@ -1193,7 +1336,7 @@ SK_API void         tex_set_mem             (tex_t texture, void* data, size_t d
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
 SK_API tex_t        tex_get_zbuffer         (tex_t texture);
-SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t out_data_size, int32_t mip_level sk_default(0));
+SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t data_size, int32_t mip_level sk_default(0));
 SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_gen_particle        (int32_t width, int32_t height, float roundness sk_default(1), gradient_t gradient_linear sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
@@ -1372,7 +1515,7 @@ SK_API void              material_set_cull        (material_t material, cull_ mo
 SK_API void              material_set_wireframe   (material_t material, bool32_t wireframe);
 SK_API void              material_set_depth_test  (material_t material, depth_test_ depth_test_mode);
 SK_API void              material_set_depth_write (material_t material, bool32_t write_enabled);
-SK_API void              material_set_depth_clip  (material_t material, bool32_t clip_enabled);
+SK_API void              material_set_depth_clamp (material_t material, bool32_t clamp_enabled);
 SK_API void              material_set_queue_offset(material_t material, int32_t offset);
 SK_API void              material_set_chain       (material_t material, material_t chain_material);
 SK_API void              material_set_variant     (material_t material, int32_t variant_idx, material_t variant_material);
@@ -1381,7 +1524,7 @@ SK_API cull_             material_get_cull        (material_t material);
 SK_API bool32_t          material_get_wireframe   (material_t material);
 SK_API depth_test_       material_get_depth_test  (material_t material);
 SK_API bool32_t          material_get_depth_write (material_t material);
-SK_API bool32_t          material_get_depth_clip  (material_t material);
+SK_API bool32_t          material_get_depth_clamp (material_t material);
 SK_API int32_t           material_get_queue_offset(material_t material);
 SK_API material_t        material_get_chain       (material_t material);
 SK_API material_t        material_get_variant     (material_t material, int32_t variant_idx);
@@ -1722,9 +1865,14 @@ SK_API void        sprite_draw       (sprite_t sprite, matrix transform, pivot_ 
 
 ///////////////////////////////////////////
 
+/*Used to represent lines for the line drawing functions! This is
+just a snapshot of information about each individual point on a line.*/
 typedef struct line_point_t {
+	/*Location of the line point.*/
 	vec3    pt;
+	/*Total thickness of the line, in meters.*/
 	float   thickness;
+	/*The vertex color for the line at this position.*/
 	color32 color;
 } line_point_t;
 
@@ -1801,8 +1949,9 @@ SK_API void                  render_set_clear_color(color128 color_gamma);
 SK_API color128              render_get_clear_color(void);
 SK_API void                  render_enable_skytex  (bool32_t show_sky);
 SK_API bool32_t              render_enabled_skytex (void);
-SK_API void                  render_global_texture (int32_t register_slot, tex_t texture);
-SK_API void                  render_global_buffer  (int32_t register_slot, material_buffer_t buffer);
+SK_API void                  render_global_texture     (int32_t register_slot, tex_t texture);
+SK_API tex_t                 render_get_global_texture (int32_t register_slot);
+SK_API void                  render_global_buffer      (int32_t register_slot, material_buffer_t buffer);
 SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t material,          const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
@@ -2077,15 +2226,20 @@ typedef enum input_source_ {
 	input_source_hand_left     = 1 << 1,
 	/*Matches with right hand input sources.*/
 	input_source_hand_right    = 1 << 2,
-	/*Matches with Gaze category input sources.*/
+	/*Matches with Gaze category input sources.
+	Obsolete: Use Input.Eyes*/
 	input_source_gaze          = 1 << 4,
-	/*Matches with the head gaze input source.*/
+	/*Matches with the head gaze input source.
+	Obsolete: Use Input.Eyes*/
 	input_source_gaze_head     = 1 << 5,
-	/*Matches with the eye gaze input source.*/
+	/*Matches with the eye gaze input source.
+	Obsolete: Use Input.Eyes*/
 	input_source_gaze_eyes     = 1 << 6,
-	/*Matches with mouse cursor simulated gaze as an input source.*/
+	/*Matches with mouse cursor simulated gaze as an input source.
+	Obsolete: Use Input.Eyes*/
 	input_source_gaze_cursor   = 1 << 7,
-	/*Matches with any input source that has an activation button!*/
+	/*Matches with any input source that has an activation button!
+	Obsolete*/
 	input_source_can_press     = 1 << 8,
 } input_source_;
 SK_MakeFlag(input_source_);
@@ -2145,13 +2299,53 @@ typedef enum hand_source_ {
 	hand_source_overridden,
 } hand_source_;
 
+/*Pointer is an abstraction of a number of different input sources,
+and a way to surface input events!*/
 typedef struct pointer_t {
+	/*What input source did this pointer come from? This is a bit-flag
+	that contains input family and capability information.*/
 	input_source_ source;
+	/*Is the pointer source being tracked right now?*/
 	button_state_ tracked;
+	/*What is the state of the input source's 'button', if it has one?*/
 	button_state_ state;
+	/*A ray in the direction of the pointer.*/
 	ray_t         ray;
+	/*Orientation of the pointer! Since a Ray has no concept of 'up',
+	this can be used to retrieve more orientation information.*/
 	quat          orientation;
 } pointer_t;
+
+/*Index values for each finger! From 0-4, from thumb to little finger.*/
+typedef enum finger_id_ {
+	/*Finger 0.*/
+	finger_id_thumb  = 0,
+	/*The primary index/pointer finger! Finger 1.*/
+	finger_id_index  = 1,
+	/*Finger 2, next to the index finger.*/
+	finger_id_middle = 2,
+	/*Finger 3! What does one do with this finger? I guess... wear rings on it?*/
+	finger_id_ring   = 3,
+	/*Finger 4, the smallest little finger! AKA, The Pinky.*/
+	finger_id_little = 4
+} finger_id_;
+
+/*Here's where hands get crazy! Technical terms, and watch out for the thumbs!*/
+typedef enum joint_id_ {
+	/*Joint 0. This is at the base of the hand, right above the wrist. For the
+	thumb, Root and KnuckleMajor have the same value.*/
+	joint_id_root          = 0,
+	/*Joint 1. These are the knuckles at the top of the palm! For the thumb,
+	Root and KnuckleMajor have the same value.*/
+	joint_id_knuckle_major = 1,
+	/*Joint 2. These are the knuckles in the middle of the finger! First joints
+	on the fingers themselves.*/
+	joint_id_knuckle_mid   = 2,
+	/*Joint 3. The joints right below the fingertip!*/
+	joint_id_knuckle_minor = 3,
+	/*Joint 4. The end/tip of each finger!*/
+	joint_id_tip           = 4
+} joint_id_;
 
 typedef struct hand_joint_t {
 	vec3          position;
@@ -2190,11 +2384,20 @@ typedef struct controller_t {
 	vec2          stick;
 } controller_t;
 
+/*This stores information about the mouse! What's its state, where's it
+pointed, do we even have one?*/
 typedef struct mouse_t {
+	/*Is the mouse available to use? Most MR systems likely won't have a mouse!*/
 	bool32_t      available;
+	/*Position of the mouse relative to the window it's in! This is the number
+	of pixels from the top left corner of the screen.*/
 	vec2          pos;
+	/*How much has the mouse's position changed in the current frame? Measured
+	in pixels.*/
 	vec2          pos_change;
+	/*What's the current scroll value for the mouse's scroll wheel?*/
 	float         scroll;
+	/*How much has the scroll wheel value changed during this frame?*/
 	float         scroll_change;
 } mouse_t;
 
@@ -2503,7 +2706,7 @@ SK_API pose_t                anchor_get_pose                 (const anchor_t anc
 SK_API bool32_t              anchor_get_changed              (const anchor_t anchor);
 SK_API const char*           anchor_get_name                 (const anchor_t anchor);
 SK_API button_state_         anchor_get_tracked              (const anchor_t anchor);
-SK_API bool32_t              anchor_get_perception_anchor    (const anchor_t anchor, void** perception_spatial_anchor);
+SK_API bool32_t              anchor_get_perception_anchor    (const anchor_t anchor, void** out_perception_spatial_anchor);
 
 SK_API void                  anchor_clear_stored             (void);
 SK_API anchor_caps_          anchor_get_capabilities         (void);
@@ -2579,7 +2782,7 @@ typedef enum backend_xr_type_ {
 typedef enum backend_platform_ {
 	/*This is running as a Windows app using the Win32 APIs.*/
 	backend_platform_win32,
-	/*This is running as a Windows app using the UWP APIs.*/
+	/*This is running as a Windows app using the UWP APIs. (No longer supported)*/
 	backend_platform_uwp,
 	/*This is running as a Linux app.*/
 	backend_platform_linux,
@@ -2594,20 +2797,24 @@ typedef enum backend_graphics_ {
 	/*An invalid default value.*/
 	backend_graphics_none,
 	/*DirectX's Direct3D11 is used for rendering! This is used by default on
-	  Windows.*/
+	  Windows. (No longer supported)*/
 	backend_graphics_d3d11,
 	/*OpenGL is used for rendering, using GLX (OpenGL Extension to the X Window
-	  System) for loading. This is used by default on Linux.*/
+	  System) for loading. This is used by default on Linux. (No longer supported)*/
 	backend_graphics_opengl_glx,
 	/*OpenGL is used for rendering, using WGL (Windows Extensions to OpenGL)
-	  for loading. Native developers can configure SK to use this on Windows.*/
+	  for loading. Native developers can configure SK to use this on Windows.
+	  (No longer supported)*/
 	backend_graphics_opengl_wgl,
 	/*OpenGL ES is used for rendering, using EGL (EGL Native Platform Graphics
 	  Interface) for loading. This is used by default on Android, and native
-	  developers can configure SK to use this on Linux.*/
+	  developers can configure SK to use this on Linux. (No longer supported)*/
 	backend_graphics_opengles_egl,
 	/*WebGL is used for rendering. This is used by default on Web.*/
 	backend_graphics_webgl,
+	/*Vulkan is used for rendering, this works basically on every platform, and
+	  is the only backend StereoKit currently supports!*/
+	backend_graphics_vulkan,
 } backend_graphics_;
 
 typedef uint64_t openxr_handle_t;
@@ -2772,6 +2979,7 @@ SK_CONST char *default_id_shader_ui_quadrant   = "default/shader_ui_quadrant";
 SK_CONST char *default_id_shader_ui_aura       = "default/shader_ui_aura";
 SK_CONST char *default_id_shader_sky           = "default/shader_sky";
 SK_CONST char *default_id_shader_lines         = "default/shader_lines";
+SK_CONST char *default_id_shader_sh_compute    = "default/shader_sh_compute";
 SK_CONST char *default_id_sound_click          = "default/sound_click";
 SK_CONST char *default_id_sound_unclick        = "default/sound_unclick";
 SK_CONST char *default_id_sound_grab           = "default/sound_grab";

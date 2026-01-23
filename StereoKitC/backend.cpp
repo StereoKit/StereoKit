@@ -2,7 +2,7 @@
 #include "_stereokit.h"
 #include "platforms/platform.h"
 
-#include <sk_gpu.h>
+#include <sk_renderer.h>
 
 namespace sk {
 
@@ -140,8 +140,6 @@ backend_platform_ backend_platform_get() {
 	return backend_platform_android;
 #elif defined(SK_OS_LINUX)
 	return backend_platform_linux;
-#elif defined(SK_OS_WINDOWS_UWP)
-	return backend_platform_uwp;
 #elif defined(SK_OS_WINDOWS)
 	return backend_platform_win32;
 #elif defined(SK_OS_WEB)
@@ -160,170 +158,28 @@ void *backend_android_get_jni_env () { log_err(backend_err_wrong_backend); retur
 ///////////////////////////////////////////
 
 backend_graphics_ backend_graphics_get() {
-#if defined(SKG_DIRECT3D11)
-	return backend_graphics_d3d11;
-#elif defined(_SKG_GL_LOAD_WGL)
-	return backend_graphics_opengl_wgl;
-#elif defined(_SKG_GL_LOAD_GLX)
-	return backend_graphics_opengl_glx;
-#elif defined(_SKG_GL_LOAD_EGL)
-	return backend_graphics_opengles_egl;
-#elif defined(_SKG_GL_WEB)
-	return backend_graphics_webgl;
-#else
-	return backend_graphics_none;
-#endif
+	return backend_graphics_vulkan;
 }
 
 ///////////////////////////////////////////
+// Legacy D3D11 backend functions - always return null/0 since we're Vulkan-only now
 
-void *backend_d3d11_get_d3d_device() {
-#if !defined(SKG_DIRECT3D11)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	void *d3d_device;
-	void *d3d_context;
-	render_get_device((void **)&d3d_device, (void **)&d3d_context);
-	return d3d_device;
-#endif
-}
+void    *backend_d3d11_get_d3d_device()           { return nullptr; }
+void    *backend_d3d11_get_d3d_context()          { return nullptr; }
+void    *backend_d3d11_get_deferred_d3d_context() { return nullptr; }
+void    *backend_d3d11_get_deferred_mtx()         { return nullptr; }
+uint32_t backend_d3d11_get_main_thread_id()       { return 0; }
 
 ///////////////////////////////////////////
+// Legacy OpenGL backend functions - always return null since we're Vulkan-only now
 
-void *backend_d3d11_get_d3d_context() {
-#if !defined(SKG_DIRECT3D11)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	void *d3d_device;
-	void *d3d_context;
-	render_get_device((void **)&d3d_device, (void **)&d3d_context);
-	return d3d_context;
-#endif
-}
-
-///////////////////////////////////////////
-
-void* backend_d3d11_get_deferred_d3d_context() {
-#if !defined(SKG_DIRECT3D11)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	skg_platform_data_t platform = skg_get_platform_data();
-	return platform._d3d11_deferred_context;
-#endif
-}
-
-///////////////////////////////////////////
-
-void* backend_d3d11_get_deferred_mtx() {
-#if !defined(SKG_DIRECT3D11)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	skg_platform_data_t platform = skg_get_platform_data();
-	return platform._d3d_deferred_mtx;
-#endif
-}
-
-///////////////////////////////////////////
-
-uint32_t backend_d3d11_get_main_thread_id() {
-#if !defined(SKG_DIRECT3D11)
-	log_err(backend_err_wrong_backend);
-	return 0;
-#else
-	skg_platform_data_t platform = skg_get_platform_data();
-	return platform._d3d_main_thread_id;
-#endif
-}
-
-///////////////////////////////////////////
-
-void* backend_opengl_wgl_get_hdc() {
-#if !defined(_SKG_GL_LOAD_WGL)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	return skg_get_platform_data()._gl_hdc;
-#endif
-}
-
-///////////////////////////////////////////
-
-void* backend_opengl_wgl_get_hglrc() {
-#if !defined(_SKG_GL_LOAD_WGL)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	return skg_get_platform_data()._gl_hrc;
-#endif
-}
-
-///////////////////////////////////////////
-
-void* backend_opengl_glx_get_context(){
-#if !defined(_SKG_GL_LOAD_GLX)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	return skg_get_platform_data()._glx_context;
-#endif
-}
-
-///////////////////////////////////////////
-
-void* backend_opengl_glx_get_display(){
-#if !defined(_SKG_GL_LOAD_GLX)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	return skg_get_platform_data()._x_display;
-#endif
-}
-
-///////////////////////////////////////////
-
-void* backend_opengl_glx_get_drawable(){
-#if !defined(_SKG_GL_LOAD_GLX)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	return skg_get_platform_data()._glx_drawable;
-#endif
-}
-
-///////////////////////////////////////////
-
-void* backend_opengl_egl_get_context(){
-#if !defined(_SKG_GL_LOAD_EGL)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	return skg_get_platform_data()._egl_context;
-#endif
-}
-///////////////////////////////////////////
-
-void* backend_opengl_egl_get_config(){
-#if !defined(_SKG_GL_LOAD_EGL)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	return skg_get_platform_data()._egl_config;
-#endif
-}
-
-///////////////////////////////////////////
-
-void* backend_opengl_egl_get_display() {
-#if !defined(_SKG_GL_LOAD_EGL)
-	log_err(backend_err_wrong_backend);
-	return nullptr;
-#else
-	return skg_get_platform_data()._egl_display;
-#endif
-}
+void *backend_opengl_wgl_get_hdc()     { return nullptr; }
+void *backend_opengl_wgl_get_hglrc()   { return nullptr; }
+void *backend_opengl_glx_get_context() { return nullptr; }
+void *backend_opengl_glx_get_display() { return nullptr; }
+void *backend_opengl_glx_get_drawable(){ return nullptr; }
+void *backend_opengl_egl_get_context() { return nullptr; }
+void *backend_opengl_egl_get_config()  { return nullptr; }
+void *backend_opengl_egl_get_display() { return nullptr; }
 
 }

@@ -3,7 +3,7 @@
 #include "../asset_types/texture.h"
 #include "../libraries/profiler.h"
 
-#include <sk_gpu.h>
+#include <sk_renderer.h>
 #include <stdio.h>
 
 namespace sk {
@@ -25,37 +25,26 @@ struct pipeline_surface_t {
 	matrix*                     view_matrices;
 	matrix*                     proj_matrices;
 	bool32_t                    enabled;
+	skr_tex_t*                  resolve_target;
 };
 
 struct render_pipeline_state_t {
 	array_t<pipeline_surface_t> surfaces;
-	bool32_t                    begin_called;
 };
 static render_pipeline_state_t local = {};
 
 ///////////////////////////////////////////
 
-void render_pipeline_begin() {
+static void render_pipeline_begin() {
 	render_check_pending_skytex();
-	skg_event_begin("Setup");
-	{
-		skg_draw_begin();
-	}
-	skg_event_end();
-	skg_event_begin("Offscreen");
-	{
-		render_action_list_execute();
-		render_check_screenshots();
-	}
-	skg_event_end();
-	local.begin_called = true;
+	render_action_list_execute();
+	render_check_screenshots();
 }
 
 ///////////////////////////////////////////
 
 void render_pipeline_draw() {
-	if (!local.begin_called)
-		render_pipeline_begin();
+	render_pipeline_begin();
 
 	render_list_t list = render_get_primary_list();
 
@@ -66,53 +55,64 @@ void render_pipeline_draw() {
 		int32_t width  = (int32_t)fmaxf(1, (float)(s->tex->width  / s->quilt_width ) * s->viewport_scale);
 		int32_t height = (int32_t)fmaxf(1, (float)(s->tex->height / s->quilt_height) * s->viewport_scale);
 
-		skg_event_begin("Draw Surface");
-		{
-			if (s->strategy == pipeline_render_strategy_sequential) {
-				for (int32_t layer = 0; layer < s->array_count; layer++) {
-					skg_tex_target_bind(&s->tex->tex, layer, 0);
-					skg_target_clear(true, &s->clear_color.r);
+		// Get depth buffer if available
+		tex_t      depth_surface = s->tex->depth_buffer;
+		skr_tex_t* depth_tex     = depth_surface ? &depth_surface->gpu_tex : nullptr;
 
-					for (int32_t quilt_y = 0; quilt_y < s->quilt_height; quilt_y += 1) {
-						for (int32_t quilt_x = 0; quilt_x < s->quilt_width; quilt_x += 1) {
-							int32_t viewport[4] = { quilt_x * width, quilt_y * height, width, height };
-							skg_viewport(viewport);
+		// Set up clear values
+		skr_vec4_t clear_color = { s->clear_color.r, s->clear_color.g, s->clear_color.b, s->clear_color.a };
+		skr_clear_ clear_flags = (skr_clear_)(skr_clear_color | skr_clear_depth | skr_clear_stencil);
 
-							int32_t idx = quilt_x + quilt_y * s->quilt_width + layer * s->quilt_width * s->quilt_height;
-							render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, 1, 1, s->layer, 0);
-						}
+		if (s->strategy == pipeline_render_strategy_sequential) {
+			for (int32_t layer = 0; layer < s->array_count; layer++) {
+				// Begin render pass for this layer
+				// TODO: sk_renderer may need array layer support in begin_pass
+				skr_renderer_begin_pass(&s->tex->gpu_tex, depth_tex, s->resolve_target, clear_flags, clear_color, 1.0f, 0);
+
+				for (int32_t quilt_y = 0; quilt_y < s->quilt_height; quilt_y += 1) {
+					for (int32_t quilt_x = 0; quilt_x < s->quilt_width; quilt_x += 1) {
+						skr_rect_t  viewport = { (float)(quilt_x * width), (float)(quilt_y * height), (float)width, (float)height };
+						skr_recti_t scissor  = { quilt_x * width, quilt_y * height, width, height };
+						skr_renderer_set_viewport(viewport);
+						skr_renderer_set_scissor (scissor);
+
+						int32_t idx = quilt_x + quilt_y * s->quilt_width + layer * s->quilt_width * s->quilt_height;
+						render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, 1, 1, s->layer, 0);
 					}
 				}
-			} else if (
-				s->strategy == pipeline_render_strategy_simultaneous ||
-				s->strategy == pipeline_render_strategy_multiview) {
 
-				skg_tex_target_bind(&s->tex->tex, -1, 0);
-				skg_target_clear   (true, &s->clear_color.r);
-
-				// Regulat simultaneous array textures draw one inst per
-				// `view`, and multiview draws one inst `view` times.
-				int32_t inst_multiplier = s->strategy == pipeline_render_strategy_simultaneous
-					? s->array_count
-					: 1;
-				
-				for (int32_t quilt_y = 0; quilt_y < s->quilt_height; quilt_y += 1) {
-				for (int32_t quilt_x = 0; quilt_x < s->quilt_width;  quilt_x += 1) {
-					int32_t viewport[4] = {quilt_x*width, quilt_y*height, width, height };
-					skg_viewport(viewport);
-
-					int32_t idx = quilt_x + quilt_y * s->quilt_width;
-					render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, s->array_count, inst_multiplier, s->layer, 0);
-				} }
+				skr_renderer_end_pass();
 			}
+		} else if (
+			s->strategy == pipeline_render_strategy_simultaneous ||
+			s->strategy == pipeline_render_strategy_multiview) {
+
+			// Begin render pass for all layers
+			skr_renderer_begin_pass(&s->tex->gpu_tex, depth_tex, s->resolve_target, clear_flags, clear_color, 1.0f, 0);
+
+			// Regular simultaneous array textures draw one inst per
+			// `view`, and multiview draws one inst `view` times.
+			int32_t inst_multiplier = s->strategy == pipeline_render_strategy_simultaneous
+				? s->array_count
+				: 1;
+
+			for (int32_t quilt_y = 0; quilt_y < s->quilt_height; quilt_y += 1) {
+			for (int32_t quilt_x = 0; quilt_x < s->quilt_width;  quilt_x += 1) {
+				skr_rect_t  viewport = { (float)(quilt_x * width), (float)(quilt_y * height), (float)width, (float)height };
+				skr_recti_t scissor  = { quilt_x * width, quilt_y * height, width, height };
+				skr_renderer_set_viewport(viewport);
+				skr_renderer_set_scissor (scissor);
+
+				int32_t idx = quilt_x + quilt_y * s->quilt_width;
+				render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, s->array_count, inst_multiplier, s->layer, 0);
+			} }
+
+			skr_renderer_end_pass();
 		}
-		skg_event_end();
 	}
 
 	render_list_clear  (list);
 	render_list_release(list);
-
-	local.begin_called = false;
 }
 
 ///////////////////////////////////////////
@@ -122,6 +122,20 @@ void render_pipeline_shutdown() {
 		render_pipeline_surface_destroy(i);
 	local.surfaces.free();
 	local = {};
+}
+
+///////////////////////////////////////////
+
+void render_pipeline_begin_frame() {
+	skr_renderer_frame_begin();
+}
+
+///////////////////////////////////////////
+
+void render_pipeline_skip_present() {
+	// End the frame without presenting to any swapchain surface.
+	// Used by OpenXR which manages its own swapchains externally.
+	skr_renderer_frame_end(nullptr, 0);
 }
 
 ///////////////////////////////////////////
@@ -194,27 +208,50 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 
 ///////////////////////////////////////////
 
-void render_pipeline_surface_to_swapchain(pipeline_surface_id surface_id, skg_swapchain_t* swapchain) {
+skr_acquire_ render_pipeline_surface_acquire_swapchain(pipeline_surface_id surface_id, skr_surface_t* skr_surface) {
 	pipeline_surface_t* surface = &local.surfaces[surface_id];
 
-	skg_event_begin("Present");
-	{
-		// If this is a zbuffer, then we don't need depth data after this point. We
-		// discard it if we can.
-		if (surface->tex->depth_buffer)
-			skg_tex_target_discard(&surface->tex->depth_buffer->tex);
+	// Acquire the next swapchain image
+	skr_tex_t*   target         = nullptr;
+	skr_acquire_ acquire_result = skr_surface_next_tex(skr_surface, &target);
 
-		// This copies the color data over to the swapchain, and resolves any
-		// multisampling on the primary target texture.
-		skg_tex_copy_to_swapchain(&surface->tex->tex, swapchain);
+	if (acquire_result == skr_acquire_success && target) {
+		// Set the swapchain image as the MSAA resolve target
+		// The render pass will automatically resolve to this during end_pass
+		surface->resolve_target = target;
+	} else {
+		surface->resolve_target = nullptr;
+
+		if (acquire_result == skr_acquire_needs_resize) {
+			skr_surface_resize(skr_surface);
+		}
+	}
+
+	return acquire_result;
+}
+
+///////////////////////////////////////////
+
+void render_pipeline_surface_present_swapchain(pipeline_surface_id surface_id, skr_surface_t* skr_surface) {
+	pipeline_surface_t* surface = &local.surfaces[surface_id];
+
+	if (surface->resolve_target) {
+		// End frame with surface synchronization
+		skr_surface_t* surfaces[] = { skr_surface };
+		skr_renderer_frame_end(surfaces, 1);
 
 		// Present to the screen
 		{
 			profiler_zone_name("VSync");
-			skg_swapchain_present(swapchain);
+			skr_surface_present(skr_surface);
 		}
+	} else {
+		// Failed to acquire earlier - still need to end frame
+		render_pipeline_skip_present();
 	}
-	skg_event_end();
+
+	// Clear resolve target for next frame
+	surface->resolve_target = nullptr;
 }
 
 ///////////////////////////////////////////
@@ -222,21 +259,16 @@ void render_pipeline_surface_to_swapchain(pipeline_surface_id surface_id, skg_sw
 void render_pipeline_surface_to_tex(pipeline_surface_id surface_id, tex_t destination, material_t mat) {
 	pipeline_surface_t* surface = &local.surfaces[surface_id];
 
-	skg_event_begin("Present to Tex");
-	{
-		// If this is a zbuffer, then we don't need depth data after this point. We
-		// discard it if we can.
-		if (surface->tex->depth_buffer)
-			skg_tex_target_discard(&surface->tex->depth_buffer->tex);
-
-		if (mat) {
-			material_set_texture(mat, "source", surface->tex);
-			render_blit(destination, mat);
-		} else {
-			skg_tex_copy_to(&surface->tex->tex, -1, &destination->tex, -1);
-		}
+	if (mat) {
+		material_set_texture(mat, "source", surface->tex);
+		render_blit(destination, mat);
+	} else {
+		// Copy all array layers
+		uint32_t src_layers = surface->tex->gpu_tex.layer_count;
+		uint32_t dst_layers = destination->gpu_tex.layer_count;
+		uint32_t layer_count = src_layers < dst_layers ? src_layers : dst_layers;
+		skr_tex_copy(&surface->tex->gpu_tex, &destination->gpu_tex, 0, 0, 0, 0, layer_count);
 	}
-	skg_event_end();
 }
 
 ///////////////////////////////////////////
@@ -313,6 +345,12 @@ void render_pipeline_surface_set_perspective(pipeline_surface_id surface_id, mat
 
 	memcpy(surface->view_matrices, view_matrices, sizeof(matrix) * count);
 	memcpy(surface->proj_matrices, proj_matrices, sizeof(matrix) * count);
+}
+
+///////////////////////////////////////////
+
+void render_pipeline_surface_set_resolve_target(pipeline_surface_id surface_id, skr_tex_t* resolve_target) {
+	local.surfaces[surface_id].resolve_target = resolve_target;
 }
 
 }

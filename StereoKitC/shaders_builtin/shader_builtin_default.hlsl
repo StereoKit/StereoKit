@@ -1,11 +1,10 @@
 #include "stereokit.hlsli"
+//--name = sk/default_shader
 
-//--color:color = 1,1,1,1
-//--tex_trans   = 0,0,1,1
-//--diffuse     = white
+float4 color     = float4(1,1,1,1);
+float4 tex_trans = float4(0,0,1,1);
 
-float4       color;
-float4       tex_trans;
+//--diffuse = white
 Texture2D    diffuse   : register(t0);
 SamplerState diffuse_s : register(s0);
 
@@ -15,19 +14,20 @@ struct vsIn {
 	float2 uv   : TEXCOORD0;
 	float4 col  : COLOR0;
 };
-struct psIn : sk_ps_input_t {
+struct psIn {
 	float4 pos   : SV_Position;
 	float2 uv    : TEXCOORD0;
 	float4 color : COLOR0;
+	uint view_id : SV_RenderTargetArrayIndex;
 };
 
-psIn vs(vsIn input, sk_vs_input_t sk_in) {
+psIn vs(vsIn input, uint id : SV_InstanceID) {
 	psIn o;
-	uint view_id = sk_view_init(sk_in, o);
-	uint id      = sk_inst_id  (sk_in);
+	o.view_id = id % sk_view_count;
+	id        = id / sk_view_count;
 
 	float4 world = mul(input.pos, sk_inst[id].world);
-	o.pos        = mul(world,     sk_viewproj[view_id]);
+	o.pos        = mul(world,     sk_viewproj[o.view_id]);
 
 	float3 normal = normalize(mul(input.norm, (float3x3)sk_inst[id].world));
 

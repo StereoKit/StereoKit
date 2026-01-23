@@ -19,9 +19,6 @@
 #elif defined(__linux__)
 	#define SK_OS_LINUX
 	#define SK_XR_OPENXR
-#elif defined(WINDOWS_UWP)
-	#define SK_OS_WINDOWS_UWP
-	#define SK_XR_OPENXR
 #elif defined(_WIN32)
 	#define SK_OS_WINDOWS
 	#define SK_XR_OPENXR
@@ -31,7 +28,7 @@
 	#define SK_DEBUG
 #endif
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 #define platform_path_separator "\\"
 #define platform_path_separator_c '\\'
 #else
@@ -154,7 +151,7 @@ bool32_t platform_read_file_direct(const char* filename_utf8, void** out_data, s
 bool   platform_key_save_bytes    (const char* key, void* data,       int32_t data_size);
 bool   platform_key_load_bytes    (const char* key, void* ref_buffer, int32_t buffer_size);
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_WINDOWS_UWP)
+#if defined(SK_OS_WINDOWS)
 wchar_t *platform_to_wchar  (const char    *utf8_string);
 char    *platform_from_wchar(const wchar_t *string);
 #endif
