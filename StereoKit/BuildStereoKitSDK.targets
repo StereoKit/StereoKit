@@ -67,9 +67,10 @@
 	     run unless the consuming project has dirty code.-->
 	<Target Name="StereoKit_BuildNative" BeforeTargets="BeforeBuild;StereoKit_Properties">
 		<PropertyGroup>
-			<SKSDKPreset>$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)_Fast</SKSDKPreset>
-			<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32'">$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_Fast\CMakeCache.txt</SKSDKCacheFile>
-			<SKSDKCacheFile Condition="'$(SKSDKCacheFile)'==''"   >$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)_Fast\CMakeCache.txt</SKSDKCacheFile>
+			<SKSDKPresetFast Condition="'$(Configuration)'=='Debug'">_Fast</SKSDKPresetFast>
+			<SKSDKPreset>$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)$(SKSDKPresetFast)</SKSDKPreset>
+			<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32'">$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)$(SKSDKPresetFast)\CMakeCache.txt</SKSDKCacheFile>
+			<SKSDKCacheFile Condition="'$(SKSDKCacheFile)'==''"   >$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)$(SKSDKPresetFast)\CMakeCache.txt</SKSDKCacheFile>
 
 			<SKBuildCommand                                         >cd $(SKSDKFolder)</SKBuildCommand>
 			<SKBuildCommand Condition="!Exists('$(SKSDKCacheFile)')">$(SKBuildCommand) &amp;&amp; cmake --preset $(SKSDKPreset) -DSK_BUILD_TESTS=OFF</SKBuildCommand>
