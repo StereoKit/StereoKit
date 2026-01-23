@@ -5,14 +5,14 @@ class TestAssetsFromMemory : ITest
 {
 	bool LoadTexture()
 	{
-		byte[] file = File.ReadAllBytes(SK.Settings.assetsFolder + "/floor.png");
-		Tex tex = Tex.FromMemory(file);
+		byte[] file = Platform.ReadFileBytes("floor.png");
+		Tex    tex  = Tex.FromMemory(file);
 		return tex != null;
 	}
 	bool LoadModel()
 	{
-		byte[] file = File.ReadAllBytes(SK.Settings.assetsFolder + "/Clipboard.glb");
-		Model model = Model.FromMemory(SK.Settings.assetsFolder + "/Clipboard.glb", file);
+		byte[] file  = Platform.ReadFileBytes("Clipboard.glb");
+		Model  model = Model.FromMemory("Clipboard.glb", file);
 		return model != null;
 	}
 
