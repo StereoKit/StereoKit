@@ -56,7 +56,7 @@ const char *shader_get_name(shader_t shader) {
 
 shader_t shader_create_mem(void *data, size_t data_size) {
 	char name[256];
-	if (!sksc_shader_file_verify(data, data_size, nullptr, name, sizeof(name)))
+	if (!sksc_shader_file_verify(data, (uint32_t)data_size, nullptr, name, sizeof(name)))
 		return nullptr;
 
 	skr_shader_t shader = {};

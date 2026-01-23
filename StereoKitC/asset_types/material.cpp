@@ -206,11 +206,11 @@ material_t material_copy(material_t material) {
 		: nullptr;
 	if (buff_info && buff_info->size > 0) {
 		// Get param values from source and set on dest
-		for (int32_t i = 0; i < buff_info->var_count; i++) {
+		for (uint32_t i = 0; i < buff_info->var_count; i++) {
 			const sksc_shader_var_t *var = &buff_info->vars[i];
 			void *tmp = sk_malloc(var->size);
 			skr_material_get_param(&material->gpu_mat, var->name, (sksc_shader_var_)var->type, (uint32_t)var->type_count, tmp);
-			skr_material_set_param(&result->gpu_mat, var->name, (sksc_shader_var_)var->type, (uint32_t)var->type_count, tmp);
+			skr_material_set_param(&result  ->gpu_mat, var->name, (sksc_shader_var_)var->type, (uint32_t)var->type_count, tmp);
 			sk_free(tmp);
 		}
 	}
@@ -302,7 +302,7 @@ void material_set_shader(material_t material, shader_t shader) {
 		old_params      = sk_malloc_t(param_copy_t, old_buff->var_count);
 		old_param_count = old_buff->var_count;
 
-		for (int32_t i = 0; i < old_buff->var_count; i++) {
+		for (uint32_t i = 0; i < old_buff->var_count; i++) {
 			const sksc_shader_var_t *var = &old_buff->vars[i];
 			strncpy(old_params[i].name, var->name, sizeof(old_params[i].name) - 1);
 			old_params[i].name[sizeof(old_params[i].name) - 1] = '\0';

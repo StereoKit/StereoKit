@@ -277,7 +277,7 @@ static inline int32_t _hdr_decode_scanline_planar(
 // Public
 ///////////////////////////////////////////////////////////////////////////////
 
-static inline hdr_header_t hdr_parse_header(const void *data, int32_t size) {
+static inline hdr_header_t hdr_parse_header(const void *data, size_t size) {
 	hdr_header_t   result = {0};
 	const uint8_t *ptr    = (const uint8_t *)data;
 	const uint8_t *end    = ptr + size;
@@ -326,7 +326,7 @@ static inline hdr_header_t hdr_parse_header(const void *data, int32_t size) {
 	return result;
 }
 
-static inline hdr_image_t hdr_decode_pixels(const void *data, int32_t size, const hdr_header_t *header) {
+static inline hdr_image_t hdr_decode_pixels(const void *data, size_t size, const hdr_header_t *header) {
 	hdr_image_t result = {0};
 	if (!header->valid) return result;
 
@@ -338,7 +338,7 @@ static inline hdr_image_t hdr_decode_pixels(const void *data, int32_t size, cons
 	result.width  = width;
 	result.height = height;
 	result.pixels = (uint32_t *)malloc(width * height * sizeof(uint32_t));
-	if (!result.pixels) return (hdr_image_t){0};
+	if (!result.pixels) { hdr_image_t empty = {0}; return empty; }
 
 #if defined(HDR_SIMD_SSE4) || defined(HDR_SIMD_NEON)
 	// Allocate channel buffers once for entire image
@@ -350,14 +350,14 @@ static inline hdr_image_t hdr_decode_pixels(const void *data, int32_t size, cons
 	if (!r_buf || !g_buf || !b_buf || !e_buf) {
 		free(r_buf); free(g_buf); free(b_buf); free(e_buf);
 		free(result.pixels);
-		return (hdr_image_t){0};
+		hdr_image_t empty = {0}; return empty;
 	}
 
 	for (int32_t y = 0; y < height; y++) {
 		if (!_hdr_decode_scanline_planar(&ptr, end, r_buf, g_buf, b_buf, e_buf, width)) {
 			free(r_buf); free(g_buf); free(b_buf); free(e_buf);
 			free(result.pixels);
-			return (hdr_image_t){0};
+			hdr_image_t empty = {0}; return empty;
 		}
 		_rgbe_to_rgb9e5_simd(r_buf, g_buf, b_buf, e_buf, result.pixels + y * width, width);
 	}
@@ -368,7 +368,7 @@ static inline hdr_image_t hdr_decode_pixels(const void *data, int32_t size, cons
 	uint8_t *scanline = (uint8_t *)malloc(width * 4);
 	if (!scanline) {
 		free(result.pixels);
-		return (hdr_image_t){0};
+		hdr_image_t empty = {0}; return empty;
 	}
 
 	for (int32_t y = 0; y < height; y++) {
@@ -428,14 +428,14 @@ static inline hdr_image_t hdr_decode_pixels(const void *data, int32_t size, cons
 fail_scalar:
 	free(scanline);
 	free(result.pixels);
-	return (hdr_image_t){0};
+	hdr_image_t empty = {0}; return empty;
 done_scalar:;
 #endif
 
 	return result;
 }
 
-static inline hdr_image_t hdr_load_from_memory(const void *data, int32_t size) {
+static inline hdr_image_t hdr_load_from_memory(const void *data, size_t size) {
 	hdr_header_t header = hdr_parse_header(data, size);
 	return hdr_decode_pixels(data, size, &header);
 }
