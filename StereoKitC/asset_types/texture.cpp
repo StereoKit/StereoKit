@@ -22,6 +22,8 @@
 #define STBI_NO_STDIO
 #include "../libraries/stb_image.h"
 
+#include "../libraries/hdr_load.h"
+
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <string.h>
@@ -308,6 +310,18 @@ void tex_load_on_failure(asset_header_t *asset, void *) {
 ///////////////////////////////////////////
 
 bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count) {
+
+	// Check for valid .HDR formats that we can super fast load into rgb9e5
+	hdr_header_t hdr_header = hdr_parse_header(data, data_size);
+	if (hdr_header.valid) {
+		*out_format      = tex_format_rgb9e5;
+		*out_array_count = 1;
+		*out_mip_count   = 1;
+		*out_width       = hdr_header.width;
+		*out_height      = hdr_header.height;
+		return true;
+	}
+
 	// Check STB image formats
 	int32_t comp;
 	bool success = stbi_info_from_memory((const stbi_uc*)data, (int)data_size, out_width, out_height, &comp) == 1;
@@ -345,6 +359,19 @@ bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_t
 
 bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_ *out_format, int32_t *out_width, int32_t *out_height, int32_t *out_array_count, int32_t *out_mip_count, void **out_data_arr) {
 	int32_t channels = 0;
+
+	// Check for valid .HDR formats that we can super fast load into rgb9e5
+	hdr_header_t hdr_header = hdr_parse_header(data, data_size);
+	if (hdr_header.valid) {
+		hdr_image_t img = hdr_decode_pixels(data, data_size, &hdr_header);
+		*out_format      = tex_format_rgb9e5;
+		*out_array_count = 1;
+		*out_mip_count   = 1;
+		*out_width       = hdr_header.width;
+		*out_height      = hdr_header.height;
+		*out_data_arr    = img.pixels;
+		return true;
+	}
 
 	// Check for an stbi HDR image
 	if (stbi_is_hdr_from_memory((stbi_uc*)data, (int)data_size)) {
