@@ -138,12 +138,12 @@ void backend_openxr_set_hand_joint_scale(float joint_scale_factor) {
 backend_platform_ backend_platform_get() {
 #if   defined(SK_OS_ANDROID)
 	return backend_platform_android;
+#elif defined(SK_OS_MACOS)
+	return backend_platform_macos;
 #elif defined(SK_OS_LINUX)
 	return backend_platform_linux;
 #elif defined(SK_OS_WINDOWS)
 	return backend_platform_win32;
-#elif defined(SK_OS_WEB)
-	return backend_platform_web;
 #endif
 }
 

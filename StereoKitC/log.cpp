@@ -25,10 +25,6 @@
 #include <syslog.h>
 #endif
 
-#if defined(SK_OS_WEB)
-#include <emscripten.h>
-#endif
-
 namespace sk {
 
 ///////////////////////////////////////////
@@ -175,7 +171,7 @@ void log_write(log_ level, const char *text) {
 	if (color_tags > 0)
 		replace_buffer = sk_stack_alloc_t(char, (text_len - color_tags*7) + color_tags * 8 + 1);
 
-#if defined(SK_OS_WINDOWS) || defined(SK_OS_LINUX)
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_LINUX) || defined(SK_OS_MACOS)
 	const char* colored_text = text;
 	if (color_tags > 0) {
 		log_replace_colors(text, replace_buffer, log_tags, log_colorcodes, _countof(log_tags), sizeof(LOG_C_CLEAR) - 1);
@@ -407,11 +403,10 @@ void log_platform_output(log_ level, const char *text) {
 	snprintf(expanded, expand_size, "[SK %s] %s\n", tag, text);
 
 	OutputDebugStringA(expanded);
-#elif defined(SK_OS_WEB)
-	if      (level == log_diagnostic) emscripten_console_log(text);
-	else if (level == log_inform    ) emscripten_console_log(text);
-	else if (level == log_warning   ) emscripten_console_warn(text);
-	else if (level == log_error     ) emscripten_console_error(text);
+#else
+	// Linux and macOS use printf in log_write() above
+	(void)level;
+	(void)text;
 #endif
 }
 

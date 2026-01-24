@@ -10,9 +10,8 @@
 #if defined(SK_OS_WINDOWS)
 namespace sk {
 
-extern float win32_scroll;
-
-void *win32_hwnd();
+wchar_t *platform_to_wchar  (const char    *utf8_string);
+char    *platform_from_wchar(const wchar_t *string);
 
 } // namespace sk
 #endif // defined(SK_OS_WINDOWS)

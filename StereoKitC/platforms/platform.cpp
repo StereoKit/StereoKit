@@ -6,6 +6,7 @@
 
 #include "_platform.h"
 
+#include <sk_app.h>
 #include <sk_renderer.h>
 
 #include "../device.h"
@@ -34,14 +35,6 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#if defined(SK_OS_LINUX)
-
-	#include <limits.h>
-	#include <unistd.h>
-	#include <libgen.h>
-
-#endif
-
 #if defined(SK_OS_WINDOWS)
 
 	#ifndef WIN32_LEAN_AND_MEAN
@@ -63,6 +56,23 @@ struct platform_state_t {
 static platform_state_t* local = {};
 
 ///////////////////////////////////////////
+// Allocator wrappers for sk_app
+///////////////////////////////////////////
+
+static void* ska_alloc_wrapper(size_t size, void* user_data) {
+	(void)user_data;
+	return sk_malloc(size);
+}
+static void* ska_realloc_wrapper(void* ptr, size_t size, void* user_data) {
+	(void)user_data;
+	return sk_realloc(ptr, size);
+}
+static void ska_free_wrapper(void* ptr, void* user_data) {
+	(void)user_data;
+	_sk_free(ptr);
+}
+
+///////////////////////////////////////////
 
 namespace sk {
 
@@ -82,9 +92,23 @@ bool platform_init() {
 	local = sk_malloc_zero_t(platform_state_t, 1);
 	const sk_settings_t* settings = sk_get_settings_ref();
 
+	// Initialize sk_app for platform abstraction (file I/O, windowing, etc.)
+	// sk_app handles cross-platform window management and input for non-XR modes
+	ska_settings_t ska_settings = {};
+	ska_settings.alloc   = ska_alloc_wrapper;
+	ska_settings.realloc = ska_realloc_wrapper;
+	ska_settings.free    = ska_free_wrapper;
+	if (!ska_init(&ska_settings)) {
+		log_errf("sk_app initialization failed: %s", ska_error_get() ? ska_error_get() : "unknown error");
+		log_fail_reason(80, log_error, "sk_app initialization failed");
+		return false;
+	}
+	ska_kvpstore_set_app_name(settings->app_name ? settings->app_name : "StereoKit");
+
 	// Set up any platform dependent variables
 	if (!platform_impl_init()) {
 		log_fail_reason(80, log_error, "Platform initialization failed!");
+		ska_shutdown();
 		return false;
 	}
 
@@ -108,18 +132,13 @@ bool platform_init() {
 	skr_settings.enable_validation = true;// settings->log_filter == log_diagnostic;
 	skr_settings.bind_settings     = &skr_binds;
 
-	// Build extension array - start with platform-specific surface extensions
+	// Build extension array - start with platform-specific surface extensions from sk_app
 	array_t<const char*> vk_extensions = {};
-#if defined(SK_OS_LINUX)
-	vk_extensions.add("VK_KHR_surface");
-	vk_extensions.add("VK_KHR_xlib_surface");
-#elif defined(SK_OS_WINDOWS)
-	vk_extensions.add("VK_KHR_surface");
-	vk_extensions.add("VK_KHR_win32_surface");
-#elif defined(SK_OS_ANDROID)
-	vk_extensions.add("VK_KHR_surface");
-	vk_extensions.add("VK_KHR_android_surface");
-#endif
+	uint32_t     ska_ext_count = 0;
+	const char** ska_exts      = ska_vk_get_instance_extensions(&ska_ext_count);
+	if (ska_exts != nullptr) {
+		vk_extensions.add_range(ska_exts, ska_ext_count);
+	}
 
 	// For XR modes, initialize OpenXR early to get Vulkan requirements
 #if defined(SK_XR_OPENXR)
@@ -165,6 +184,9 @@ void platform_shutdown() {
 	platform_stop_mode();
 
 	platform_impl_shutdown();
+
+	// Shutdown sk_app after platform impl to ensure windows are destroyed first
+	ska_shutdown();
 
 	device_data_free(&device_data);
 	*local = {};
@@ -289,14 +311,6 @@ void platform_keyboard_show(bool32_t visible, text_context_ type) {
 		return;
 	}
 
-	if (platform_xr_keyboard_present()) {
-		platform_xr_keyboard_show(visible);
-		// If a soft keyboard was forced open, we want to make sure it's not
-		// conflicting with an OS provided one.
-		virtualkeyboard_open(false, type);
-		return;
-	}
-
 	// Since we're now using the fallback keyboard, we need to balance soft
 	// keyboards with physical keyboard on our own.
 	// - It's always OK to set visible to false.
@@ -322,9 +336,7 @@ bool32_t platform_keyboard_set_layout(text_context_ keyboard_type, const char** 
 ///////////////////////////////////////////
 
 bool32_t platform_keyboard_visible() {
-	return platform_xr_keyboard_present() && local->force_fallback_keyboard == false
-		? platform_xr_keyboard_visible()
-		: virtualkeyboard_get_open    ();
+	return virtualkeyboard_get_open();
 }
 
 ///////////////////////////////////////////
@@ -418,115 +430,61 @@ bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t
 	*out_data = nullptr;
 	*out_size = 0;
 
-	char* slash_fix_filename = string_copy(filename);
-	char* curr               = slash_fix_filename;
-	while (*curr != '\0') {
-		if (*curr == '\\' || *curr == '/') {
-			*curr = platform_path_separator_c;
-		}
-		curr++;
+	// Normalize slashes to platform-specific separator
+	char* normalized = string_copy(filename);
+	for (char* c = normalized; *c; c++) {
+		if (*c == '\\' || *c == '/') *c = platform_path_separator_c;
 	}
-	
-	// Open file
+
+	bool success = false;
+
+	// Try reading the file directly
+	if (ska_file_exists(normalized)) {
+		success = ska_file_read(normalized, out_data, out_size);
+	}
+
+	// On Android, try reading from APK assets
 #if defined(SK_OS_ANDROID)
-
-	// Try and load using Android API first!
-	if (android_read_asset(slash_fix_filename, out_data, out_size)) {
-		sk_free(slash_fix_filename);
-		return true;
-	}
-
-	// Fall back to standard file io functions, they -can- work on Android
-#endif
-
-#if defined(SK_OS_LINUX)
-
-	// Linux thinks folders are files, but then fails in a bad way when
-	// treating them like files.
-	struct stat buffer;
-	if (stat(slash_fix_filename, &buffer) == 0 && (S_ISDIR(buffer.st_mode))) {
-		log_diagf("platform_read_file_direct can't read folders: %s", slash_fix_filename);
-		sk_free(slash_fix_filename);
-		return false;
+	if (!success) {
+		success = ska_asset_read(normalized, out_data, out_size);
 	}
 #endif
 
+	// If file not found and path is relative, try exe-relative
+	if (!success && normalized[0] != platform_path_separator_c) {
 #if defined(SK_OS_WINDOWS)
-	wchar_t* wfilename = platform_to_wchar(slash_fix_filename);
-	FILE*    fp        = _wfopen(wfilename, L"rb");
-	if (fp == nullptr) {
-		// If the working directory has been changed, and the exe is called
-		// from a folder other than where the exe sits (like dotnet vs VS), the
-		// file may be relative to where the exe is. We attempt to find that
-		// here.
-		wchar_t drive[MAX_PATH];
-		_wsplitpath(wfilename, drive, nullptr, nullptr, nullptr);
-		if (drive[0] == '\0') {
-			wchar_t exe_name[MAX_PATH];
-			wchar_t dir     [MAX_PATH];
-			GetModuleFileNameW(nullptr, exe_name, _countof(exe_name));
-			_wsplitpath(exe_name, drive, dir, nullptr, nullptr);
-			wchar_t fullpath[MAX_PATH];
-			wcscpy(fullpath, drive);
-			wcscat(fullpath, dir);
-			wcscat(fullpath, wfilename);
-			fp = _wfopen(fullpath, L"rb");
-		}
-	}
-	if (fp == nullptr) {
-		wchar_t* buffer      = nullptr;
-		DWORD    buffer_size = GetFullPathNameW(wfilename, 0, buffer, nullptr);
-		buffer = sk_malloc_t(wchar_t, buffer_size);
-		DWORD err = GetFullPathNameW(wfilename, buffer_size, buffer, nullptr);
-
-		if (err == 0) { log_diagf("platform_read_file_direct can't find or resolve %s", slash_fix_filename); }
-		else          { log_diagf("platform_read_file_direct can't find %ls", buffer); }
-		sk_free(slash_fix_filename);
-		sk_free(buffer);
-		return false;
-	}
-	sk_free(wfilename);
-#else
-	FILE *fp = fopen(slash_fix_filename, "rb");
-
-	#if defined(SK_OS_LINUX)
-	// If the working directory has been changed, and the exe is called
-	// from a folder other than where the exe sits (like dotnet vs VS), the
-	// file may be relative to where the exe is. We attempt to find that
-	// here.
-	if (fp == nullptr && slash_fix_filename[0] != '/') {
-		char exe_path[PATH_MAX];
-		ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path));
-		exe_path[len] = '\0';
-		char* dir = dirname(exe_path);
-		char  fullpath[PATH_MAX];
-		snprintf(fullpath, sizeof(fullpath), "%s/%s", dir, slash_fix_filename);
-		fp = fopen(fullpath, "rb");
-	}
-	#endif
-	if (fp == nullptr) {
-		log_diagf("platform_read_file_direct can't find %s", slash_fix_filename);
-		sk_free(slash_fix_filename);
-		return false;
-	}
+		bool is_absolute = (strlen(normalized) >= 2 && normalized[1] == ':');
+		if (!is_absolute) {
 #endif
+		char exe_path[1024];
+		if (ska_get_exe_path(exe_path, sizeof(exe_path))) {
+			// ska_get_exe_path returns the exe file path, we need the directory
+			char* exe_dir  = platform_pop_path_new(exe_path);
+			char* fullpath = platform_push_path_new(exe_dir, normalized);
+			if (ska_file_exists(fullpath)) {
+				success = ska_file_read(fullpath, out_data, out_size);
+			}
+			sk_free(fullpath);
+			sk_free(exe_dir);
+		}
+#if defined(SK_OS_WINDOWS)
+		}
+#endif
+	}
 
-	// Get length of file
-	fseek(fp, 0, SEEK_END);
-	*out_size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
+	if (!success) {
+		log_diagf("platform_read_file_direct can't find %s", normalized);
+		sk_free(normalized);
+		return false;
+	}
 
-	// Read the data
-	*out_data = sk_malloc(*out_size+1);
-	size_t read = fread (*out_data, 1, *out_size, fp);
-	fclose(fp);
+	sk_free(normalized);
 
-	// Stick an end string 0 character at the end in case the caller wants
-	// to treat it like a string
-	((uint8_t *)*out_data)[*out_size] = 0;
+	// Add null terminator for string convenience
+	*out_data = sk_realloc(*out_data, *out_size + 1);
+	((uint8_t*)*out_data)[*out_size] = 0;
 
-	sk_free(slash_fix_filename);
-	return read != 0 || *out_size == 0;
+	return true;
 }
 
 ///////////////////////////////////////////
@@ -539,25 +497,15 @@ bool32_t platform_read_file(const char* filename, void** out_data, size_t* out_s
 
 ///////////////////////////////////////////
 
-bool32_t _platform_write_file(const char* filename, void* data, size_t size, bool32_t binary) {
-#if defined(SK_OS_WINDOWS)
-	wchar_t* wfilename = platform_to_wchar(filename);
-	FILE*    fp        = _wfopen(wfilename, binary?L"wb":L"w");
-	sk_free(wfilename);
-#else
-	FILE* fp = fopen(filename, binary?"wb":"w");
-#endif
-	if (fp == nullptr) {
-		log_diagf("platform_read_file can't write %s", filename);
+bool32_t platform_write_file(const char* filename, void* data, size_t size) {
+	if (!ska_file_write(filename, data, size)) {
+		log_diagf("platform_write_file can't write %s", filename);
 		return false;
 	}
-
-	fwrite(data, 1, size, fp);
-	fclose(fp);
-
 	return true;
 }
-bool32_t platform_write_file     (const char *filename, void *data, size_t size) { return _platform_write_file(filename, data, size, true); }
-bool32_t platform_write_file_text(const char* filename, const char *text)        { return _platform_write_file(filename, (void*)text, strlen(text), false); }
+bool32_t platform_write_file_text(const char* filename, const char* text) {
+	return platform_write_file(filename, (void*)text, strlen(text));
+}
 
 } // namespace sk

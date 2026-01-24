@@ -8,46 +8,24 @@
 #if defined(SK_OS_ANDROID)
 
 #include "../log.h"
-#include "../device.h"
-#include "../sk_math.h"
-#include "../systems/render.h"
-#include "../systems/system.h"
+#include "../sk_memory.h"
 #include "../_stereokit.h"
-#include "../libraries/sokol_time.h"
+#include "../libraries/array.h"
 
 // JNI types must be available before Vulkan Android / OpenXR Android headers
 #include <jni.h>
 #include <android/native_activity.h>
 #include <android/native_window_jni.h>
 
-#define VK_USE_PLATFORM_ANDROID_KHR
-#include <sk_renderer.h>
-#include <vulkan/vulkan_android.h>
-
-#include "../xr_backends/openxr.h"
-
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 #include <android/font_matcher.h>
 #include <android/font.h>
 
-#include <unistd.h>
 #include <dlfcn.h>
+#include <sk_app.h>
 
 namespace sk {
-
-struct window_event_t {
-	platform_evt_           type;
-	platform_evt_data_t     data;
-};
-
-struct window_t {
-	array_t<window_event_t> events;
-	ANativeWindow*          window;
-	skr_surface_t           surface;
-	bool                    has_surface;
-	bool                    uses_surface;
-};
 
 // These are variables that are set outside of the normal initialization cycle,
 // such as the vm from when the library loads, or window change events from the
@@ -64,16 +42,11 @@ struct platform_android_state_t {
 	jobject        activity;
 	AAssetManager *asset_manager;
 	jobject        asset_manager_obj;
-	window_t       window;
+	ANativeWindow *window;
 };
 
 static platform_android_state_t            local         = {};
 static platform_android_persistent_state_t local_persist = {};
-
-///////////////////////////////////////////
-
-void platform_win_resize       (platform_win_t window_id, int32_t width, int32_t height);
-bool platform_win_create_surface(window_t* win);
 
 ///////////////////////////////////////////
 
@@ -120,22 +93,6 @@ bool platform_impl_init() {
 		return false;
 	}
 
-	// https://stackoverflow.com/questions/51099200/native-crash-jni-detected-error-in-application-thread-using-jnienv-from-th
-	//local_persist.vm->AttachCurrentThread(&local.env, nullptr);
-
-	// Find the current android activity
-	// https://stackoverflow.com/questions/46869901/how-to-get-the-android-context-instance-when-calling-jni-method
-	/*jclass    activity_thread      = local.env->FindClass("android/app/ActivityThread");
-	jmethodID curr_activity_thread = local.env->GetStaticMethodID(activity_thread, "currentActivityThread", "()Landroid/app/ActivityThread;");
-	jobject   at                   = local.env->CallStaticObjectMethod(activity_thread, curr_activity_thread);
-	jmethodID get_application      = local.env->GetMethodID(activity_thread, "getApplication", "()Landroid/app/Application;");
-	jobject   activity_inst        = local.env->CallObjectMethod(at, get_application);
-	local.activity = local.env->NewGlobalRef(activity_inst);
-	if (local.activity == nullptr) {
-		log_fail_reason(95,  "Couldn't find the current Android application context!");
-		return false;
-	}*/
-
 	// Get the asset manager for loading files
 	// from https://stackoverflow.com/questions/22436259/android-ndk-why-is-aassetmanager-open-returning-null/22436260#22436260
 	jclass    activity_class           = local.env->GetObjectClass(local.activity);
@@ -181,94 +138,9 @@ void platform_impl_step() {
 		local_persist.next_window_xam = nullptr;
 	}
 
-	if (local.window.window && local.window.window == local_persist.next_window) {
-		// It's the same window, lets just resize it
-		int32_t width  = ANativeWindow_getWidth (local.window.window);
-		int32_t height = ANativeWindow_getHeight(local.window.window);
-		platform_win_resize(1, width, height);
-	} else {
-		// Completely new window! Destroy the old surface, and make a
-		// new one.
-		if (local.window.has_surface) {
-			local.window.has_surface = false;
-			skr_surface_destroy(&local.window.surface);
-		}
-		local.window.window = (ANativeWindow*)local_persist.next_window;
-
-		if (local.window.window) {
-			int32_t width  = ANativeWindow_getWidth (local.window.window);
-			int32_t height = ANativeWindow_getHeight(local.window.window);
-			platform_win_resize(1, width, height);
-		}
-	}
+	local.window = local_persist.next_window;
 	local_persist.next_win_ready = false;
 	local_persist.next_window    = nullptr;
-}
-
-///////////////////////////////////////////
-
-bool platform_win_create_surface(window_t* win) {
-	if (win->window == nullptr) return false;
-
-	// Load vkCreateAndroidSurfaceKHR dynamically (same pattern as Linux)
-	void* vk_module = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
-	if (!vk_module) {
-		log_err("Failed to load libvulkan.so");
-		return false;
-	}
-
-	PFN_vkGetInstanceProcAddr pfn_vkGetInstanceProcAddr =
-		(PFN_vkGetInstanceProcAddr)dlsym(vk_module, "vkGetInstanceProcAddr");
-	if (pfn_vkGetInstanceProcAddr == nullptr) {
-		log_err("Failed to load vkGetInstanceProcAddr");
-		return false;
-	}
-
-	PFN_vkCreateAndroidSurfaceKHR pfn_vkCreateAndroidSurfaceKHR =
-		(PFN_vkCreateAndroidSurfaceKHR)pfn_vkGetInstanceProcAddr(skr_get_vk_instance(), "vkCreateAndroidSurfaceKHR");
-	if (pfn_vkCreateAndroidSurfaceKHR == nullptr) {
-		log_err("Failed to load vkCreateAndroidSurfaceKHR");
-		return false;
-	}
-
-	// Create Vulkan surface from ANativeWindow
-	VkAndroidSurfaceCreateInfoKHR surface_info = { VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR };
-	surface_info.window = win->window;
-
-	VkSurfaceKHR vk_surface;
-	if (pfn_vkCreateAndroidSurfaceKHR(skr_get_vk_instance(), &surface_info, nullptr, &vk_surface) != VK_SUCCESS) {
-		log_err("Failed to create Vulkan surface for window");
-		return false;
-	}
-
-	skr_surface_create(vk_surface, &win->surface);
-	win->has_surface = true;
-
-	log_diagf("Created surface: %dx%d", win->surface.size.x, win->surface.size.y);
-	return true;
-}
-
-///////////////////////////////////////////
-
-void platform_win_resize(platform_win_t window_id, int32_t width, int32_t height) {
-	if (window_id != 1) return;
-	window_t * win = &local.window;
-
-	width  = maxi(1, width);
-	height = maxi(1, height);
-
-	window_event_t e = { platform_evt_resize };
-	e.data.resize = { width, height };
-	win->events.add(e);
-
-	if (win->uses_surface == false) return;
-
-	if (win->has_surface == false) {
-		platform_win_create_surface(win);
-	}
-	else if (width != win->surface.size.x || height != win->surface.size.y) {
-		skr_surface_resize(&win->surface);
-	}
 }
 
 ///////////////////////////////////////////
@@ -283,6 +155,12 @@ void android_set_window(void *window) {
 void android_set_window_xam(void *window) {
 	local_persist.next_window_xam = (jobject)window;
 	local_persist.next_win_ready  = true;
+}
+
+///////////////////////////////////////////
+
+ANativeWindow* android_get_window() {
+	return local.window;
 }
 
 ///////////////////////////////////////////
@@ -311,107 +189,10 @@ void *backend_android_get_activity() { return local.activity; }
 void *backend_android_get_jni_env () { return local.env; }
 
 ///////////////////////////////////////////
-// Window code                           //
-///////////////////////////////////////////
-
-platform_win_type_ platform_win_type() { return platform_win_type_existing; }
-
-///////////////////////////////////////////
-
-platform_win_t platform_win_make(const char* title, recti_t win_rect, platform_surface_ surface_type) { return -1; }
-
-///////////////////////////////////////////
-
-platform_win_t platform_win_get_existing(platform_surface_ surface_type) {
-	window_t* win = &local.window;
-
-	// Not all windows need a surface, but here's where we make 'em for those
-	// that do.
-	if (surface_type == platform_surface_swapchain) {
-		win->uses_surface = true;
-		if (win->window) {
-			platform_win_create_surface(win);
-		}
-	}
-	return 1;
-}
-
-///////////////////////////////////////////
-
-void platform_win_destroy(platform_win_t window) {
-	if (window != 1) return;
-	window_t* win = &local.window;
-
-	if (win->has_surface) {
-		skr_surface_destroy(&win->surface);
-	}
-
-	win->events.free();
-	*win = {};
-}
-
-///////////////////////////////////////////
-
-void platform_check_events() {
-}
-
-///////////////////////////////////////////
-
-bool platform_win_next_event(platform_win_t window_id, platform_evt_* out_event, platform_evt_data_t* out_event_data) {
-	if (window_id != 1) return false;
-	window_t* win = &local.window;
-
-	if (win->events.count > 0) {
-		*out_event      = win->events[0].type;
-		*out_event_data = win->events[0].data;
-		win->events.remove(0);
-		return true;
-	} return false;
-}
-
-///////////////////////////////////////////
-
-skr_surface_t* platform_win_get_surface(platform_win_t window) {
-	if (window != 1) return nullptr;
-	window_t* win = &local.window;
-
-	return win->has_surface ? &win->surface : nullptr;
-}
-
-///////////////////////////////////////////
-
-recti_t platform_win_rect(platform_win_t window_id) {
-	if (window_id != 1) return {};
-	window_t* win = &local.window;
-
-	return win->has_surface
-		? recti_t{ 0, 0, win->surface.size.x, win->surface.size.y }
-		: recti_t{ 0, 0, 0, 0 };
-}
-
-///////////////////////////////////////////
-
-// TODO: find an alternative to the registry for Android
-bool platform_key_save_bytes(const char* key, void* data,       int32_t data_size)   { return false; }
-bool platform_key_load_bytes(const char* key, void* ref_buffer, int32_t buffer_size) { return false; }
-
-///////////////////////////////////////////
 
 void platform_msgbox_err(const char* text, const char* header) {
 	log_warn("No messagebox capability for this platform!");
 }
-
-///////////////////////////////////////////
-
-bool  platform_get_cursor(vec2 *out_pos)   { *out_pos = { 0,0 }; return false; }
-void  platform_set_cursor(vec2 window_pos) { }
-float platform_get_scroll()                { return 0; }
-
-///////////////////////////////////////////
-
-void platform_xr_keyboard_show   (bool show) { }
-bool platform_xr_keyboard_present()          { return false; }
-bool platform_xr_keyboard_visible()          { return false; }
 
 ///////////////////////////////////////////
 
@@ -430,13 +211,13 @@ font_t platform_default_font() {
 	if (font_japanese) file_japanese = AFont_getFontFilePath(font_japanese);
 #endif
 	if      (file_latin != nullptr)                                      fonts.add(file_latin);
-	else if (platform_file_exists("/system/fonts/NotoSans-Regular.ttf")) fonts.add("/system/fonts/NotoSans-Regular.ttf");
-	else if (platform_file_exists("/system/fonts/Roboto-Regular.ttf"  )) fonts.add("/system/fonts/Roboto-Regular.ttf");
-	else if (platform_file_exists("/system/fonts/DroidSans.ttf"       )) fonts.add("/system/fonts/DroidSans.ttf");
+	else if (ska_file_exists("/system/fonts/NotoSans-Regular.ttf")) fonts.add("/system/fonts/NotoSans-Regular.ttf");
+	else if (ska_file_exists("/system/fonts/Roboto-Regular.ttf"  )) fonts.add("/system/fonts/Roboto-Regular.ttf");
+	else if (ska_file_exists("/system/fonts/DroidSans.ttf"       )) fonts.add("/system/fonts/DroidSans.ttf");
 
 	if      (file_japanese != nullptr)                                      fonts.add(file_japanese);
-	else if (platform_file_exists("/system/fonts/NotoSansCJK-Regular.ttc")) fonts.add("/system/fonts/NotoSansCJK-Regular.ttc");
-	else if (platform_file_exists("/system/fonts/DroidSansJapanese.ttf"  )) fonts.add("/system/fonts/DroidSansJapanese.ttf");
+	else if (ska_file_exists("/system/fonts/NotoSansCJK-Regular.ttc")) fonts.add("/system/fonts/NotoSansCJK-Regular.ttc");
+	else if (ska_file_exists("/system/fonts/DroidSansJapanese.ttf"  )) fonts.add("/system/fonts/DroidSansJapanese.ttf");
 
 	if (fonts.count > 0)
 		result = font_create_files(fonts.data, fonts.count);
@@ -449,10 +230,6 @@ font_t platform_default_font() {
 	fonts.free();
 	return result;
 }
-
-///////////////////////////////////////////
-
-void platform_iterate_dir(const char* directory_path, void* callback_data, void (*on_item)(void* callback_data, const char* name, const platform_file_attr_t file_attr)) {}
 
 ///////////////////////////////////////////
 
@@ -494,8 +271,8 @@ void platform_print_callstack() {
 		Dl_info info;
 		if (dladdr(addr, &info) && info.dli_sname)
 			symbol = info.dli_sname;
-		int   status    = 0; 
-		char *demangled = __cxxabiv1::__cxa_demangle(symbol, 0, 0, &status); 
+		int   status    = 0;
+		char *demangled = __cxxabiv1::__cxa_demangle(symbol, 0, 0, &status);
 
 		sk::log_diagf("%03d: 0x%p %s", idx, addr,
 			(nullptr != demangled && 0 == status) ?
@@ -503,12 +280,6 @@ void platform_print_callstack() {
 
 		sk_free(demangled);
 	}
-}
-
-///////////////////////////////////////////
-
-void platform_sleep(int ms) {
-	usleep(ms * 1000);
 }
 
 } // namespace sk

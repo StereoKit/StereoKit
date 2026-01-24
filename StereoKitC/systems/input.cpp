@@ -16,6 +16,8 @@
 #include "../xr_backends/openxr_input.h"
 #include "../systems/render.h"
 
+#include <sk_app.h>
+
 namespace sk {
 
 ///////////////////////////////////////////
@@ -80,6 +82,9 @@ struct input_state_t {
 	array_t<evt_xy_t>     evt_xys;
 };
 static input_state_t local = {};
+
+// Scroll accumulator for sk_app event-driven scroll
+static float ska_scroll_accumulator = 0.0f;
 
 // TODO: these should be moved to local state
 pose_t input_head_pose_local;
@@ -462,14 +467,18 @@ void input_controller_set_hand(handed_ hand, bool is_hand) {
 ///////////////////////////////////////////
 
 void input_mouse_update() {
-	vec2  mouse_pos    = {};
-	float mouse_scroll = platform_get_scroll();
-	local.mouse_data.available = platform_get_cursor(&mouse_pos) && sk_app_focus() == app_focus_active;
+	// Get mouse position from sk_app
+	int32_t  mouse_x = 0, mouse_y = 0;
+	uint32_t button_state = ska_mouse_get_state(&mouse_x, &mouse_y);
+	vec2     mouse_pos    = { (float)mouse_x, (float)mouse_y };
 
-	// Mouse scroll
+	// Mouse is available if we have focus (button_state is non-zero or we have position data)
+	local.mouse_data.available = sk_app_focus() == app_focus_active;
+
+	// Mouse scroll - use accumulated scroll from sk_app events
 	if (sk_app_focus() == app_focus_active) {
-		local.mouse_data.scroll_change = mouse_scroll - local.mouse_data.scroll;
-		local.mouse_data.scroll        = mouse_scroll;
+		local.mouse_data.scroll_change = ska_scroll_accumulator - local.mouse_data.scroll;
+		local.mouse_data.scroll        = ska_scroll_accumulator;
 	}
 
 	// Mouse position and on-screen
@@ -491,6 +500,7 @@ void input_pose_inject  (input_pose_   pose_type,   pose_t pose, track_state_ po
 void input_float_inject (input_float_  float_type,  float value) { ft_mutex_lock(local.mtx_floats ); local.evt_floats .add({ float_type,  value }); ft_mutex_unlock(local.mtx_floats ); }
 void input_button_inject(input_button_ button_type, bool  value) { ft_mutex_lock(local.mtx_buttons); local.evt_buttons.add({ button_type, value }); ft_mutex_unlock(local.mtx_buttons); }
 void input_xy_inject    (input_xy_     xy_type,     vec2  value) { ft_mutex_lock(local.mtx_xys    ); local.evt_xys    .add({ xy_type,     value }); ft_mutex_unlock(local.mtx_xys    ); }
+void input_scroll_inject(float scroll_delta)                     { ska_scroll_accumulator += scroll_delta; }
 
 ///////////////////////////////////////////
 

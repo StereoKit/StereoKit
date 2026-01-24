@@ -30,9 +30,12 @@
 #include "extensions/vulkan_enable.h"
 #include "extensions/android_thread.h"
 #include "extensions/loader_init.h"
+#include "ska_input.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
+
+#include <sk_app.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -353,7 +356,7 @@ bool openxr_init() {
 	// spaces, reference spaces are sometimes invalid before session start. We
 	// need to submit blank frames in order to get past the READY state.
 	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN) {
-		platform_sleep(33);
+		ska_time_sleep(33);
 		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
 	}
 	// Blank frames should only be submitted when the session is READY
@@ -642,6 +645,15 @@ void openxr_shutdown() {
 
 void openxr_step_begin() {
 	openxr_poll_events();
+
+	// Poll sk_app events for keyboard, mouse, file dialogs, etc.
+	// OpenXR may not have a window, but can still receive input events
+	// and native file dialogs on some systems (e.g., Android)
+	ska_event_t evt;
+	while (ska_event_poll(&evt)) {
+		ska_handle_event(&evt);
+	}
+
 	ext_management_evt_step_begin();
 	input_step();
 
@@ -656,7 +668,7 @@ void openxr_step_end() {
 	ext_management_evt_step_end();
 
 	if (xr_has_session) { openxr_render_frame(); }
-	else                { render_clear(); render_pipeline_skip_present(); platform_sleep(33); }
+	else                { render_clear(); render_pipeline_skip_present(); ska_time_sleep(33); }
 
 	xr_extension_structs_clear();
 
@@ -683,7 +695,7 @@ void openxr_step_end() {
 				if (timer == timer_time) audio_pause();
 				timer += 1;
 
-				platform_sleep(100);
+				ska_time_sleep(100);
 				openxr_poll_events();
 			}
 			if (timer > timer_time) audio_resume();
@@ -691,7 +703,7 @@ void openxr_step_end() {
 			xr_ext_android_thread_set_type(xr_thread_type_render_main);
 			log_diagf("Resuming from sleep");
 		} else if (settings->standby_mode == standby_mode_slow) {
-			platform_sleep(77);
+			ska_time_sleep(77);
 		}
 	}
 }

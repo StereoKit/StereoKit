@@ -26,13 +26,11 @@
 #include "../libraries/profiler.h"
 #include "../systems/render_.h"
 
+#include <sk_app.h>
+
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
-
-#if defined(SK_OS_WEB)
-#include <emscripten/threading.h>
-#endif
 
 namespace sk {
 
@@ -876,7 +874,7 @@ int32_t asset_thread(void *thread_inst_obj) {
 
 	// Don't start processing assets until initialization is finished
 	while (asset_thread_enabled && !sk_is_initialized())
-		platform_sleep(1);
+		ska_time_sleep(1);
 
 	skr_thread_init();
 

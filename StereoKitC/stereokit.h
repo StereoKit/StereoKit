@@ -2790,6 +2790,8 @@ typedef enum backend_platform_ {
 	backend_platform_android,
 	/*This is running in a browser.*/
 	backend_platform_web,
+	/*This is running as a macOS app.*/
+	backend_platform_macos,
 } backend_platform_;
 
 /*This describes the graphics API that StereoKit is using for rendering.*/

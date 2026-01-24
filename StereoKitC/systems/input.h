@@ -78,6 +78,7 @@ void          input_button_inject      (input_button_ button_type, bool value);
 button_state_ input_button_get         (input_button_ button_type);
 void          input_xy_inject          (input_xy_     xy_type, vec2 value);
 vec2          input_xy_get             (input_xy_     xy_type);
+void          input_scroll_inject      (float scroll_delta);
 void          input_reset              ();
 
 void          input_set_palm_offset    (handed_ hand, pose_t offset);

@@ -6,23 +6,14 @@
 
 #include "file_picker.h"
 
+#include <sk_app.h>
+
 #include "../stereokit_ui.h"
 #include "../sk_memory.h"
 #include "../sk_math.h"
 #include "../libraries/array.h"
 #include "../libraries/stref.h"
 #include "../platforms/platform.h"
-
-#if defined(SK_OS_WINDOWS)
-
-	#include "../platforms/win32.h"
-	#ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
-	#endif
-	#include <windows.h>
-	#include <commdlg.h>
-
-#endif
 
 #include <stdio.h>
 
@@ -31,8 +22,9 @@ namespace sk {
 ///////////////////////////////////////////
 
 struct fp_item_t {
-	char *name;
-	platform_file_attr_t file_attr;
+	char    *name;
+	bool     is_file;
+	int64_t  size;
 };
 
 struct fp_path_t {
@@ -75,6 +67,11 @@ sprite_t                     spr_down                 = nullptr;
 sprite_t                     spr_grid                 = nullptr;
 sprite_t                     spr_list                 = nullptr;
 
+// State for pending native file dialog (used in flatscreen mode)
+ska_file_dialog_id_t         fp_native_dialog_id      = 0;
+void                        *fp_native_callback_data  = nullptr;
+void                       (*fp_native_callback)(void *callback_data, bool32_t confirmed, const char* filename_ptr, int32_t filename_length) = nullptr;
+
 ///////////////////////////////////////////
 
 void file_picker_finish     ();
@@ -116,55 +113,40 @@ char *platform_append_filter(char *to, const file_filter_t *filter, bool search_
 ///////////////////////////////////////////
 
 void platform_file_picker_sz(picker_mode_ mode, void *callback_data, void (*picker_callback_sz)(void *callback_data, bool32_t confirmed, const char* filename_ptr, int32_t filename_length), const file_filter_t* in_arr_filters, int32_t filter_count) {
-#if defined(SK_OS_WINDOWS)
-	if (device_display_get_type() == display_type_flatscreen) {
-		fp_wfilename[0] = '\0';
-
-		// Build a filter string
-		char *filter = string_append(nullptr , 1, "(");
-		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &in_arr_filters[e], false, e == filter_count - 1 ? "" : ", ");
-		filter = string_append(filter, 1, ")\1");
-		for (int32_t e = 0; e < filter_count; e++) filter = platform_append_filter(filter, &in_arr_filters[e], true, e == filter_count - 1 ? "" : ";");
-		filter = string_append(filter, 1, "\1Any (*.*)\1*.*\1");
-		size_t len = strlen(filter);
-		wchar_t *w_filter = platform_to_wchar(filter);
-		for (size_t i = 0; i < len; i++) if (w_filter[i] == '\1') w_filter[i] = '\0';
-
-		OPENFILENAMEW settings = {};
-		settings.lStructSize  = sizeof(settings);
-		settings.nMaxFile     = sizeof(fp_filename);
-		settings.hwndOwner    = (HWND)win32_hwnd();
-		settings.lpstrFile    = fp_wfilename;
-		settings.lpstrFilter  = w_filter;
-		settings.nFilterIndex = 1;
-
-		if (mode == picker_mode_open) {
-			settings.Flags      = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-			settings.lpstrTitle = L"Open";
-			if (GetOpenFileNameW(&settings) == TRUE) {
-				char *filename = platform_from_wchar(fp_wfilename);
-				if (picker_callback_sz) picker_callback_sz(callback_data, true, filename, (int32_t)(strlen(filename)+1));
-				sk_free(filename);
-			} else {
-				if (picker_callback_sz) picker_callback_sz(callback_data, false, nullptr, 0);
-			}
-		} else if (mode == picker_mode_save) {
-			settings.Flags      = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
-			settings.lpstrTitle = L"Save As";
-			if (GetSaveFileNameW(&settings) == TRUE) {
-				char *filename = platform_from_wchar(fp_wfilename);
-				if (picker_callback_sz) picker_callback_sz(callback_data, true, filename, (int32_t)(strlen(filename)+1));
-				sk_free(filename);
-			} else {
-				if (picker_callback_sz) picker_callback_sz(callback_data, false, nullptr, 0);
-			}
+	// Use native file dialog if available via sk_app
+	// This works on desktop flatscreen, and some Android XR systems with native pickers
+	ska_file_dialog_ dialog_type = (mode == picker_mode_open) ? ska_file_dialog_open : ska_file_dialog_save;
+	if (ska_file_dialog_available(dialog_type)) {
+		// Build ska_file_filter_t array from file_filter_t
+		// SK's filters are individual extensions, sk_app uses space-separated extensions
+		char* exts_str = nullptr;
+		for (int32_t e = 0; e < filter_count; e++) {
+			const char* ext = in_arr_filters[e].ext;
+			while (*ext == '.' || *ext == '*') ext++; // Skip leading . or *
+			exts_str = string_append(exts_str, 3, "*.", ext, e == filter_count - 1 ? "" : " ");
 		}
 
-		sk_free(w_filter);
-		sk_free(filter);
+		ska_file_filter_t ska_filter = {};
+		ska_filter.name = "Files";
+		ska_filter.mime = "*/*";
+		ska_filter.exts = exts_str ? exts_str : "*.*";
+
+		ska_file_dialog_request_t request = {};
+		request.type          = dialog_type;
+		request.title         = (mode == picker_mode_open) ? "Open" : "Save As";
+		request.default_name  = nullptr;
+		request.filters       = filter_count > 0 ? &ska_filter : nullptr;
+		request.filter_count  = filter_count > 0 ? 1 : 0;
+		request.allow_multiple = false;
+
+		// Store callback info for when the event arrives
+		fp_native_callback_data = callback_data;
+		fp_native_callback      = picker_callback_sz;
+		fp_native_dialog_id     = ska_file_dialog_show(&request);
+
+		sk_free(exts_str);
 		return;
 	}
-#endif
 
 	// Set up the fallback file picker
 
@@ -219,21 +201,22 @@ bool32_t platform_file_picker_visible() {
 ///////////////////////////////////////////
 
 void file_picker_open_folder(const char *folder) {
-	char *dir_mem = nullptr;
+	char cwd_buf[1024];
 	if (folder == nullptr) {
-		dir_mem = platform_working_dir();
-		folder  = dir_mem;
+		ska_get_cwd(cwd_buf, sizeof(cwd_buf));
+		folder = cwd_buf;
 	}
 
 	fp_items.each([](fp_item_t &item) { sk_free(item.name); });
 	fp_items.clear();
 
-	platform_iterate_dir(folder, nullptr, [](void*, const char *name, const platform_file_attr_t file_attr) {
+	ska_dir_iterate(folder, nullptr, [](void*, const ska_dir_entry_t* entry) {
+		bool is_file = !entry->is_dir;
 		bool valid = fp_filter_count == 0;
 		// If the extension matches our filter, add it
-		if (file_attr.file) {
+		if (is_file) {
 			for (int32_t e = 0; e < fp_filter_count; e++) {
-				if (string_endswith(name, fp_filters[e].ext, false)) {
+				if (string_endswith(entry->name, fp_filters[e].ext, false)) {
 					valid = true;
 					break;
 				}
@@ -242,16 +225,17 @@ void file_picker_open_folder(const char *folder) {
 
 		if (valid) {
 			fp_item_t item;
-			item.name = string_copy(name);
-			item.file_attr = file_attr;
+			item.name    = string_copy(entry->name);
+			item.is_file = is_file;
+			item.size    = (int64_t)entry->size;
 			fp_items.add(item);
 		}
+		return true; // continue iteration
 		});
-	fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * ((a.file_attr.file != b.file_attr.file) ? a.file_attr.file - b.file_attr.file : strcmp(a.name, b.name)); });
+	fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * ((a.is_file != b.is_file) ? a.is_file - b.is_file : strcmp(a.name, b.name)); });
 
 	char *new_folder = string_copy(folder);
 	sk_free(fp_path.folder);
-	sk_free(dir_mem);
 	for (int32_t i = 0; i < fp_path.fragments.count; i++) sk_free(fp_path.fragments[i]);
 	fp_path.fragments.clear();
 
@@ -295,7 +279,7 @@ void file_picker_finish() {
 ///////////////////////////////////////////
 
 void file_picker_click_item(fp_item_t item) {
-	if (item.file_attr.file)
+	if (item.is_file)
 		fp_active = item.name;
 	else {
 		char* path = platform_push_path_new(fp_path.folder, item.name);
@@ -447,7 +431,7 @@ void file_picker_update() {
 
 			sprite_t       sprite = nullptr;
 			ui_btn_layout_ layout = ui_btn_layout_none;
-			if (fp_items[i].file_attr.file == false) {
+			if (fp_items[i].is_file == false) {
 				sprite = spr_folder;
 				layout = ui_btn_layout_left;
 			}
@@ -457,9 +441,9 @@ void file_picker_update() {
 					file_picker_click_item(fp_items[i]);
 				}
 				ui_sameline();
-				if (fp_items[i].file_attr.file) {
+				if (fp_items[i].is_file) {
 					char buffer[128];
-					snprintf(buffer, sizeof(buffer), "%d KB ", (int32_t)(fp_items[i].file_attr.size / 1024));
+					snprintf(buffer, sizeof(buffer), "%d KB ", (int32_t)(fp_items[i].size / 1024));
 					ui_text_sz(buffer, nullptr, ui_scroll_none, size, align_center_right, text_fit_clip);
 					ui_sameline();
 				} else {
@@ -499,10 +483,10 @@ void file_picker_update() {
 		if (fp_sort_order_changed) {
 			switch (fp_sortby) {
 			case fp_sort_by_name:
-				fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * ((a.file_attr.file != b.file_attr.file) ? a.file_attr.file - b.file_attr.file : strcmp(a.name, b.name)); });
+				fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * ((a.is_file != b.is_file) ? a.is_file - b.is_file : strcmp(a.name, b.name)); });
 				break;
 			case fp_sort_by_size:
-				fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * (a.file_attr.size == b.file_attr.size ? strcmp(a.name, b.name) : a.file_attr.size - b.file_attr.size > 0 ? 1 : -1);});
+				fp_items.sort([](const fp_item_t& a, const fp_item_t& b) { return (fp_sort_order_asc ? 1 : -1) * (a.size == b.size ? strcmp(a.name, b.name) : a.size - b.size > 0 ? 1 : -1);});
 				break;
 			}
 		}
@@ -522,6 +506,39 @@ void file_picker_shutdown() {
 	fp_path.fragments.free();
 	fp_path = {};
 	fp_items.free();
+
+	// Clear any pending native dialog state
+	fp_native_dialog_id     = 0;
+	fp_native_callback_data = nullptr;
+	fp_native_callback      = nullptr;
+}
+
+///////////////////////////////////////////
+
+void file_picker_handle_dialog_event(ska_event_file_dialog_t* evt) {
+	// Check if this event matches our pending dialog
+	if (evt->id != fp_native_dialog_id || fp_native_callback == nullptr) {
+		ska_file_dialog_free_result(evt);
+		return;
+	}
+
+	// Invoke the callback with the result
+	if (evt->cancelled || evt->count == 0) {
+		fp_native_callback(fp_native_callback_data, false, nullptr, 0);
+	} else {
+		const char* path = ska_file_dialog_get_path(evt, 0);
+		if (path) {
+			fp_native_callback(fp_native_callback_data, true, path, (int32_t)(strlen(path) + 1));
+		} else {
+			fp_native_callback(fp_native_callback_data, false, nullptr, 0);
+		}
+	}
+
+	// Clean up
+	ska_file_dialog_free_result(evt);
+	fp_native_dialog_id     = 0;
+	fp_native_callback_data = nullptr;
+	fp_native_callback      = nullptr;
 }
 
 ///////////////////////////////////////////

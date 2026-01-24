@@ -8,7 +8,9 @@
 #include "../asset_types/anchor.h"
 #include "../libraries/stref.h"
 #include "../sk_math.h"
+#include "../platforms/platform.h" // for platform_file_delete (not in sk_app)
 
+#include <sk_app.h>
 #include <stdio.h>
 
 namespace sk {
@@ -36,8 +38,8 @@ bool32_t anchor_stage_init() {
 	char*  anchor_file      = nullptr;
 	size_t anchor_file_size = 0;
 	
-	if (platform_file_exists     (anchor_stage_store_filename) &&
-		platform_read_file_direct(anchor_stage_store_filename, (void**)&anchor_file, &anchor_file_size)) {
+	if (ska_file_exists(anchor_stage_store_filename) &&
+		ska_file_read  (anchor_stage_store_filename, (void**)&anchor_file, &anchor_file_size)) {
 
 		stref_t data_stref = stref_make(anchor_file);
 		stref_t line = {};
@@ -74,7 +76,7 @@ bool32_t anchor_stage_init() {
 
 			sk_free(name);
 		}
-		sk_free(anchor_file);
+		ska_file_free_data(anchor_file);
 	}
 	anchor_stage_sys.loaded = true;
 	return true;
@@ -97,11 +99,11 @@ void anchor_stage_shutdown() {
 				a->name);
 			file_data = string_append(file_data, 1, line);
 		}
-		platform_write_file_text(anchor_stage_store_filename, file_data);
+		ska_file_write_text(anchor_stage_store_filename, file_data);
 		sk_free(file_data);
 	} else {
-		if (platform_file_exists(anchor_stage_store_filename))
-			platform_file_delete(anchor_stage_store_filename);
+		if (ska_file_exists(anchor_stage_store_filename))
+			platform_file_delete(anchor_stage_store_filename); // platform_file_delete not in sk_app
 	}
 
 	// Release the persisted anchors and free the array
@@ -120,7 +122,7 @@ void anchor_stage_clear_stored() {
 		anchor_release(anchor_stage_sys.persistent[i]);
 	}
 	anchor_stage_sys.persistent.free();
-	platform_write_file_text(anchor_stage_store_filename, "");
+	ska_file_write_text(anchor_stage_store_filename, "");
 }
 
 ///////////////////////////////////////////

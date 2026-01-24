@@ -40,7 +40,8 @@ set(SK_BUILD_TESTS                  ON  CACHE BOOL "Build the StereoKitCTest pro
 set(SK_BUILD_SHARED_LIBS            ON  CACHE BOOL "Should StereoKit build as a shared, or static library?")
 set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standard OpenXR Loader. Not what you want on desktop, but on Android you may need to dynamic link with other loaders.")
 set(SK_WINDOWS_GL                   OFF CACHE BOOL "Build Windows version using OpenGL as the renderer. This is primarily for debugging GL code while developing on Windows.")
-set(SK_LOCAL_SK_RENDERER            OFF CACHE BOOL "Build using a local version of sk_renderer, instead of the latest release. This is useful for testing in-progress changes to sk_renderer.")
+set(SK_LOCAL_SK_RENDERER            ON  CACHE BOOL "Build using a local version of sk_renderer, instead of the latest release. This is useful for testing in-progress changes to sk_renderer.")
+set(SK_LOCAL_SK_APP                 ON  CACHE BOOL "Build using a local version of sk_app, instead of the latest release. This is useful for testing in-progress changes to sk_app.")
 set(SK_PROFILE                      OFF CACHE BOOL "Build with Tracy profiler enabled.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
@@ -126,7 +127,24 @@ elseif(EMSCRIPTEN)
     -sALLOW_MEMORY_GROWTH=1
     -g
     -gsource-map )
+elseif (APPLE)
+  # macOS-specific settings
+  set(MACOS_LIBS
+    Threads::Threads
+    "-framework Cocoa"
+    "-framework IOKit" )
+
+  # Add pthreads
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+
+  # Apple Silicon uses arm64, Intel Macs use x86_64
+  if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    add_compile_options(-mavx -mf16c)
+  endif()
+
 elseif (UNIX)
+  # Linux-specific settings
   set(LINUX_LIBS
     Threads::Threads
     gbm
@@ -248,7 +266,7 @@ if (SK_PROFILE)
   set_target_properties(TracyClient PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
-#### sk_gpu - https://github.com/StereoKit/sk_renderer ####
+#### sk_renderer - https://github.com/StereoKit/sk_renderer ####
 set(SKR_ENABLE_STATIC_ANALYSIS OFF CACHE PATH "Faster build" FORCE)
 set(SKR_BUILD_EXAMPLES OFF CACHE PATH "Faster build" FORCE)
 if (NOT SK_LOCAL_SK_RENDERER)
@@ -267,6 +285,21 @@ set_target_properties(sk_renderer PROPERTIES POSITION_INDEPENDENT_CODE ON)
 if(WIN32)
   target_compile_definitions(volk PUBLIC VK_USE_PLATFORM_WIN32_KHR)
 endif()
+
+#### sk_app - https://github.com/StereoKit/sk_app ####
+set(SKA_BUILD_EXAMPLES OFF CACHE PATH "Faster build" FORCE)
+if (NOT SK_LOCAL_SK_APP)
+  CPMAddPackage(
+    NAME sk_app
+    GITHUB_REPOSITORY StereoKit/sk_app
+    GIT_TAG v0.1.0
+  )
+else()
+  # For building directly with in-progress sk_app changes, point this to your
+  # local sk_app clone, and use it instead of CPM.
+  add_subdirectory(../sk_app ../sk_app/build)
+endif()
+set_target_properties(sk_app PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 
 ###########################################
@@ -421,13 +454,12 @@ set(SK_SRC_PLATFORMS
   StereoKitC/platforms/android.h
   StereoKitC/platforms/linux.h
   StereoKitC/platforms/linux.cpp
+  StereoKitC/platforms/macos.h
+  StereoKitC/platforms/macos.cpp
   StereoKitC/platforms/platform.h
   StereoKitC/platforms/_platform.h
   StereoKitC/platforms/platform.cpp
   StereoKitC/platforms/platform_common_win.cpp
-  StereoKitC/platforms/platform_common_unix.cpp
-  StereoKitC/platforms/web.h
-  StereoKitC/platforms/web.cpp
   StereoKitC/platforms/win32.h
   StereoKitC/platforms/win32.cpp )
 
@@ -594,20 +626,26 @@ if (NOT MSVC)
   # DirectXMath on non-msvc compilers needs a few extra files
   set(LINUX_INCLUDES
     StereoKitC/lib/include_no_win/)
-  set(SK_BIN_DEBUG_EXT ".so.dbg")
 
-  if (NOT EMSCRIPTEN AND SK_BUILD_SHARED_LIBS)
-    set(SK_SEPARATE_DBG ON)
-    add_custom_command(TARGET StereoKitC POST_BUILD
-      COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}
-      COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:StereoKitC>
-      COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT} $<TARGET_FILE:StereoKitC>
-    )
-  endif()
-  if (SK_DYNAMIC_OPENXR)
-    add_custom_command(TARGET StereoKitC POST_BUILD
-      COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:openxr_loader>
-    )
+  if (APPLE)
+    set(SK_BIN_DEBUG_EXT ".dSYM")
+    # macOS uses dSYM for debug symbols, handled automatically by Xcode/CMake
+  else()
+    set(SK_BIN_DEBUG_EXT ".so.dbg")
+
+    if (NOT EMSCRIPTEN AND SK_BUILD_SHARED_LIBS)
+      set(SK_SEPARATE_DBG ON)
+      add_custom_command(TARGET StereoKitC POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}
+        COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:StereoKitC>
+        COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT} $<TARGET_FILE:StereoKitC>
+      )
+    endif()
+    if (SK_DYNAMIC_OPENXR)
+      add_custom_command(TARGET StereoKitC POST_BUILD
+        COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:openxr_loader>
+      )
+    endif()
   endif()
 else()
   set(SK_BIN_DEBUG_EXT ".pdb")
@@ -629,11 +667,13 @@ target_link_libraries( StereoKitC
   PRIVATE
     ${PHYSICS_LIB}
     ${LINUX_LIBS}
+    ${MACOS_LIBS}
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
     meshoptimizer
     basisu_transcoder
   PUBLIC
+    sk_app
     sk_renderer
     ${OPENXR_LIB}
     ${ANDROID_LIBS}
@@ -688,6 +728,8 @@ if (WIN32)
   set(SK_BIN_OS "Win32")
 elseif(ANDROID)
   set(SK_BIN_OS "Android")
+elseif(APPLE)
+  set(SK_BIN_OS "macOS")
 elseif(UNIX)
   set(SK_BIN_OS "Linux")
 elseif(EMSCRIPTEN)
@@ -706,6 +748,12 @@ elseif(WIN32)
     set(SK_ARCH "x64")
   else()
     set(SK_ARCH "x86")
+  endif()
+elseif(APPLE)
+  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+    set(SK_ARCH "arm64")
+  else()
+    set(SK_ARCH "x64")
   endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   if(CMAKE_SYSTEM_PROCESSOR)

@@ -18,14 +18,10 @@
 #include "utils/random.h"
 #include "platforms/platform.h"
 
-#if defined(SK_OS_WEB)
-#include <emscripten/threading.h>
-#include "platforms/web.h"
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <sk_renderer.h>
+#include <sk_app.h>
 
 ///////////////////////////////////////////
 
@@ -244,7 +240,7 @@ bool32_t sk_step_end() {
 	systems_step_partial(system_run_from, local.app_system_idx+1);
 
 	if (device_display_get_type() == display_type_flatscreen && local.focus != app_focus_active && local.settings.standby_mode != standby_mode_none)
-		platform_sleep(100);
+		ska_time_sleep(100);
 	local.in_step = false;
 	
 	profiler_frame_mark();
@@ -256,10 +252,6 @@ bool32_t sk_step_end() {
 void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
 	local.disallow_user_shutdown = true;
 
-#if defined(SK_OS_WEB)
-	sk_first_step();
-	web_start_main_loop(app_update, app_shutdown);
-#else
 	while (sk_step(app_update));
 
 	if (app_shutdown != nullptr)
@@ -267,7 +259,6 @@ void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
 
 	local.disallow_user_shutdown = false;
 	sk_shutdown();
-#endif
 }
 
 ///////////////////////////////////////////
@@ -280,12 +271,6 @@ void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_
 
 	local.disallow_user_shutdown = true;
 
-#if defined(SK_OS_WEB)
-	sk_first_step();
-	web_start_main_loop(
-		[]() { if (local.run_data_app_step    ) local.run_data_app_step    (local.run_data_step_data    ); },
-		[]() { if (local.run_data_app_shutdown) local.run_data_app_shutdown(local.run_data_shutdown_data); });
-#else
 	while (sk_step(
 		[]() { if (local.run_data_app_step    ) local.run_data_app_step    (local.run_data_step_data    ); }));
 
@@ -294,7 +279,6 @@ void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_
 
 	local.disallow_user_shutdown = false;
 	sk_shutdown();
-#endif
 }
 
 ///////////////////////////////////////////
@@ -373,10 +357,10 @@ void sk_set_window_xam(void* window) {
 
 const char *sk_version_name() {
 	return SK_VERSION " "
-#if defined(SK_OS_WEB)
-		"Web"
-#elif defined(SK_OS_ANDROID)
+#if defined(SK_OS_ANDROID)
 		"Android"
+#elif defined(SK_OS_MACOS)
+		"macOS"
 #elif defined(SK_OS_LINUX)
 		"Linux"
 #elif defined(SK_OS_WINDOWS)
