@@ -1044,14 +1044,19 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 
 		uint8_t* dst = (uint8_t*)flat_data;
 
-		// Convert from layer-major (array_data[layer * mip_count + mip]) to mip-major
+		// Convert from packed layer data to mip-major layout.
+		// KTX2/basisu pack all mips for each layer into a single allocation:
+		//   array_data[layer] points to: [mip0][mip1][mip2]...
+		// We need to convert to mip-major: all layers for mip0, then mip1, etc.
+		uint64_t mip_offset = 0;
 		for (int32_t mip = 0; mip < mip_count; mip++) {
 			uint64_t mip_size = skr_tex_calc_mip_size((skr_tex_fmt_)texture->format, base_size, mip);
 			for (int32_t layer = 0; layer < array_count; layer++) {
-				int32_t src_idx = layer * mip_count + mip;
-				memcpy(dst, array_data[src_idx], (size_t)mip_size);
+				uint8_t* src = ((uint8_t*)array_data[layer]) + mip_offset;
+				memcpy(dst, src, (size_t)mip_size);
 				dst += mip_size;
 			}
+			mip_offset += mip_size;
 		}
 
 		tex_data.data        = flat_data;
