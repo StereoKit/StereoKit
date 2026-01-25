@@ -158,6 +158,9 @@ bool defaults_init() {
 	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16, 0.3f);
 	tex_set_id(sk_default_cubemap, default_id_cubemap);
 
+	tex_set_loading_fallback(sk_default_cubemap);
+	tex_set_error_fallback  (sk_default_cubemap);
+
 	// Default quad mesh
 	sk_default_quad = mesh_create();
 	vert_t verts[4] = {
