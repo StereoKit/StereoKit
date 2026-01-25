@@ -129,9 +129,21 @@ namespace StereoKit
 		static bool LoadUnix1(string arch)
 		{
 			const int RTLD_NOW = 2;
-			if (dlopen($"./runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW)                                       != IntPtr.Zero) return true;
-			if (dlopen($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
-			if (dlopen("libStereoKitC.so", RTLD_NOW)                                                                       != IntPtr.Zero) return true;
+			bool isMac = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+			string os = isMac ? "osx" : "linux";
+			string ext = isMac ? "dylib" : "so";
+
+			// On macOS, load MoltenVK first (required for Vulkan support)
+			if (isMac)
+			{
+				dlopen($"./runtimes/{os}-{arch}/native/libMoltenVK.dylib", RTLD_NOW);
+				dlopen($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/{os}-{arch}/native/libMoltenVK.dylib", RTLD_NOW);
+				dlopen("libMoltenVK.dylib", RTLD_NOW);
+			}
+
+			if (dlopen($"./runtimes/{os}-{arch}/native/libStereoKitC.{ext}", RTLD_NOW)                                       != IntPtr.Zero) return true;
+			if (dlopen($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/{os}-{arch}/native/libStereoKitC.{ext}", RTLD_NOW) != IntPtr.Zero) return true;
+			if (dlopen($"libStereoKitC.{ext}", RTLD_NOW)                                                                      != IntPtr.Zero) return true;
 			return false;
 		}
 
@@ -141,9 +153,21 @@ namespace StereoKit
 		static bool LoadUnix2(string arch)
 		{
 			const int RTLD_NOW = 2;
-			if (dlopen2($"./runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW)                                       != IntPtr.Zero) return true;
-			if (dlopen2($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/linux-{arch}/native/libStereoKitC.so", RTLD_NOW) != IntPtr.Zero) return true;
-			if (dlopen2("libStereoKitC.so", RTLD_NOW)                                                                       != IntPtr.Zero) return true;
+			bool isMac = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+			string os = isMac ? "osx" : "linux";
+			string ext = isMac ? "dylib" : "so";
+
+			// On macOS, load MoltenVK first (required for Vulkan support)
+			if (isMac)
+			{
+				dlopen2($"./runtimes/{os}-{arch}/native/libMoltenVK.dylib", RTLD_NOW);
+				dlopen2($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/{os}-{arch}/native/libMoltenVK.dylib", RTLD_NOW);
+				dlopen2("libMoltenVK.dylib", RTLD_NOW);
+			}
+
+			if (dlopen2($"./runtimes/{os}-{arch}/native/libStereoKitC.{ext}", RTLD_NOW)                                       != IntPtr.Zero) return true;
+			if (dlopen2($"{AppDomain.CurrentDomain.BaseDirectory}/runtimes/{os}-{arch}/native/libStereoKitC.{ext}", RTLD_NOW) != IntPtr.Zero) return true;
+			if (dlopen2($"libStereoKitC.{ext}", RTLD_NOW)                                                                      != IntPtr.Zero) return true;
 			return false;
 		}
 

@@ -16,6 +16,7 @@
 		<SKSDKBuildOS Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'"                             >Android</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">Android</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(OS)'=='Windows_NT'"                           >Win32</SKSDKBuildOS>
+		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and $([MSBuild]::IsOSPlatform('OSX'))"               >MacOS</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(OS)'!='Windows_NT'"                           >Linux</SKSDKBuildOS>
 
 
@@ -36,6 +37,7 @@
 		<!-- Get the SK native binary names, which is different per-platform. -->
 		<SKSDKLibFile Condition="'$(SKSDKBuildOS)'=='Win32'">StereoKitC.dll</SKSDKLibFile>
 		<SKSDKDbgFile Condition="'$(SKSDKBuildOS)'=='Win32'">StereoKitC.pdb</SKSDKDbgFile>
+		<SKSDKLibFile Condition="'$(SKSDKBuildOS)'=='MacOS'">libStereoKitC.dylib</SKSDKLibFile>
 		<SKSDKLibFile Condition="'$(SKSDKBuildOS)'=='Linux' or '$(SKSDKBuildOS)'=='Android'">libStereoKitC.so</SKSDKLibFile>
 		<SKSDKDbgFile Condition="'$(SKSDKBuildOS)'=='Linux' or '$(SKSDKBuildOS)'=='Android'">libStereoKitC.so.dbg</SKSDKDbgFile>
 
@@ -46,6 +48,7 @@
 
 		<!-- Make a Runtime Id for the binary file. -->
 		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='Win32'"  >win-$(SKSDKBuildMode.ToLower())</SKSDKRID>
+		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='MacOS'"  >osx-$(SKSDKBuildMode.ToLower())</SKSDKRID>
 		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='Linux'"  >linux-$(SKSDKBuildMode.ToLower())</SKSDKRID>
 		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='Android'">android-$(SKSDKBuildAbi)</SKSDKRID>
 	</PropertyGroup>
@@ -69,6 +72,7 @@
 		<PropertyGroup>
 			<SKSDKPresetFast Condition="'$(Configuration)'=='Debug'">_Fast</SKSDKPresetFast>
 			<SKSDKPreset>$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)$(SKSDKPresetFast)</SKSDKPreset>
+			<!-- Windows uses multi-config generator (MSVC), others use single-config (Ninja) -->
 			<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32'">$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)$(SKSDKPresetFast)\CMakeCache.txt</SKSDKCacheFile>
 			<SKSDKCacheFile Condition="'$(SKSDKCacheFile)'==''"   >$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)$(SKSDKPresetFast)\CMakeCache.txt</SKSDKCacheFile>
 
@@ -83,9 +87,13 @@
 	
 	<!-- Attach the native library binaries. -->
 	<ItemGroup>
-		<None                                       Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKLibFile)" Include="$(SKSDKLibPath)" />
-		<None Condition="Exists('$(SKSDKDbgPath)')" Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKDbgFile)" Include="$(SKSDKDbgPath)" />
-		
+		<None                                                                 Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKLibFile)" Include="$(SKSDKLibPath)" />
+		<None Condition="'$(SKSDKDbgFile)'!='' and Exists('$(SKSDKDbgPath)')" Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKDbgFile)" Include="$(SKSDKDbgPath)" />
+	</ItemGroup>
+
+	<!-- macOS requires MoltenVK for Vulkan support. -->
+	<ItemGroup Condition="'$(SKSDKBuildOS)'=='MacOS'">
+		<None Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\libMoltenVK.dylib" Include="$(SKSDKBinDir)libMoltenVK.dylib" />
 	</ItemGroup>
 
 	<!-- Android binaries are included differently. -->
@@ -98,6 +106,7 @@
 
 	<!-- Full rebuilds of this project should also be full rebuilds of StereoKit. -->
 	<Target Name="SKSDKRebuild" AfterTargets="Clean">
+		<!-- Windows uses multi-config generator (MSVC), others use single-config (Ninja) -->
 		<RemoveDir Condition="'$(SKSDKBuildOS)'=='Win32'" Directories="$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildMode)" />
 		<RemoveDir Condition="'$(SKSDKBuildOS)'!='Win32'" Directories="$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildMode)_$(Configuration)" />
 	</Target>

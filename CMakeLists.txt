@@ -28,7 +28,8 @@ endif()
 project(StereoKit VERSION "0.4.0" LANGUAGES CXX C)
 
 # Add this repository's cmake modules to CMAKE_MODULE_PATH
-list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_CURRENT_LIST_DIR}/cmake)
+# Ensure our cmake/ folder is in path first to override FindMetalTools (skip Metal on macOS)
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 ###########################################
 ## Options                               ##
@@ -205,6 +206,7 @@ if (SK_BUILD_OPENXR_LOADER)
     GIT_TAG release-1.1.49
     GIT_SHALLOW 1
     OPTIONS
+    "BUILD_ALL_EXTENSIONS OFF" # Only need Vulkan, not Metal/OpenGL
     "BUILD_WITH_SYSTEM_JSONCPP OFF"
     "BUILD_WITH_XCB_HEADERS OFF"
     "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
@@ -629,8 +631,7 @@ if (NOT MSVC)
     StereoKitC/lib/include_no_win/)
 
   if (APPLE)
-    set(SK_BIN_DEBUG_EXT ".dSYM")
-    # macOS uses dSYM for debug symbols, handled automatically by Xcode/CMake
+    # macOS uses dSYM for debug symbols, but we don't separate them currently
   else()
     set(SK_BIN_DEBUG_EXT ".so.dbg")
 
@@ -689,6 +690,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   if (MINGW)
     set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections )
     set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id)
+    set(SK_WARNING_FLAG    -w)
+  elseif(APPLE)
+    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
+    set(SK_RELEASE_LINK    -Wl,-dead_strip -flto)
     set(SK_WARNING_FLAG    -w)
   else()
     set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
@@ -751,7 +756,13 @@ elseif(WIN32)
     set(SK_ARCH "x86")
   endif()
 elseif(APPLE)
-  if(CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+  # CMAKE_OSX_ARCHITECTURES is set by presets, falls back to CMAKE_SYSTEM_PROCESSOR
+  set(SK_ARCH_CHECK "${CMAKE_OSX_ARCHITECTURES}")
+  if(NOT SK_ARCH_CHECK)
+    set(SK_ARCH_CHECK "${CMAKE_SYSTEM_PROCESSOR}")
+  endif()
+  string(TOLOWER "${SK_ARCH_CHECK}" SK_ARCH_CHECK_LOWER)
+  if(SK_ARCH_CHECK_LOWER STREQUAL "arm64")
     set(SK_ARCH "arm64")
   else()
     set(SK_ARCH "x64")
@@ -794,6 +805,12 @@ if(SK_DISTRIBUTE)
     add_custom_command(TARGET StereoKitC POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard"
       COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:openxr_loader>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard/$<TARGET_FILE_NAME:openxr_loader>" )
+  endif()
+  # Copy MoltenVK on macOS (required for Vulkan/Metal translation)
+  if (APPLE AND TARGET MoltenVK)
+    add_custom_command(TARGET StereoKitC POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:MoltenVK>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_NAME:MoltenVK>"
+      COMMENT "Copying MoltenVK to distribute folder" )
   endif()
 endif()
 
@@ -874,7 +891,7 @@ if (SK_BUILD_TESTS)
   set (source      ${CMAKE_CURRENT_SOURCE_DIR}/Examples/Assets)
   set (destination $<TARGET_FILE_DIR:StereoKitCTest>/Assets)
   add_custom_command(
-    TARGET StereoKitCTest
+    TARGET StereoKitCTest POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${source} ${destination}
     COMMENT "Copy resources from ${source} => ${destination}")
 endif()

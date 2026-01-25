@@ -291,7 +291,6 @@
       "name":      "MacOS_Arm64_Base",
       "inherits":  "MacOS",
       "hidden":    true,
-      "binaryDir": "${sourceDir}/bin/intermediate/MacOS_Arm64",
       "cacheVariables": {
         "CMAKE_OSX_ARCHITECTURES": "arm64"
       }
@@ -299,7 +298,8 @@
     {
       "name":        "MacOS_Arm64_Debug",
       "description": "Debug build for MacOS ARM64",
-      "inherits":    ["MacOS_Arm64_Base", "BuildType_Debug"]
+      "inherits":    ["MacOS_Arm64_Base", "BuildType_Debug"],
+      "binaryDir":   "${sourceDir}/bin/intermediate/MacOS_Arm64_Debug"
     },
     {
       "name":        "MacOS_Arm64_Debug_Fast",
@@ -309,7 +309,8 @@
     {
       "name":        "MacOS_Arm64_Release",
       "description": "Release build for MacOS ARM64",
-      "inherits":    ["MacOS_Arm64_Base", "BuildType_Release"]
+      "inherits":    ["MacOS_Arm64_Base", "BuildType_Release"],
+      "binaryDir":   "${sourceDir}/bin/intermediate/MacOS_Arm64_Release"
     },
     {
       "name":        "MacOS_Arm64_Release_Fast",

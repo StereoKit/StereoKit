@@ -15,11 +15,11 @@
 
 	<!-- Switch compiler binary depending on the platform -->
 	<PropertyGroup>
-		<PlatformArch Condition="$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) == 'X64'">x64</PlatformArch>
-		<PlatformArch Condition="$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) == 'Arm64'">arm64</PlatformArch>
+		<PlatformArch Condition="$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLower()) == 'x64'">x64</PlatformArch>
+		<PlatformArch Condition="$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLower()) == 'arm64'">arm64</PlatformArch>
 		<SKShadercExe Condition="$([MSBuild]::IsOSPlatform('Windows'))">skshaderc\win32_$(PlatformArch)\skshaderc.exe</SKShadercExe>
 		<SKShadercExe Condition="$([MSBuild]::IsOSPlatform('Linux'))"  >skshaderc/linux_$(PlatformArch)/skshaderc</SKShadercExe>
-		<SKShadercExe Condition="$([MSBuild]::IsOSPlatform('OSX'))"    >skshaderc/mac/skshaderc</SKShadercExe>
+		<SKShadercExe Condition="$([MSBuild]::IsOSPlatform('OSX'))"    >skshaderc/macos_$(PlatformArch)/skshaderc</SKShadercExe>
 		<SKShadercPath>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)../tools/$(SKShadercExe)'))</SKShadercPath>
 		<SKAutoFindShaders Condition="'$(SKAutoFindShaders)' == ''">True</SKAutoFindShaders>
 	</PropertyGroup>

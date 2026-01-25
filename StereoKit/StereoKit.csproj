@@ -61,12 +61,16 @@
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so"     PackagePath="runtimes/linux-arm64/native/" Condition="Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so')"/>
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so.dbg" PackagePath="runtimes/linux-arm64/native/" Condition="Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so.dbg')"/>
 
+		<!-- macOS Libraries -->
+		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/MacOS/arm64/Release/libStereoKitC.dylib" PackagePath="runtimes/osx-arm64/native/" Condition="Exists('../bin/distribute/bin/MacOS/arm64/Release/libStereoKitC.dylib')"/>
+		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/MacOS/arm64/Release/libMoltenVK.dylib"   PackagePath="runtimes/osx-arm64/native/" Condition="Exists('../bin/distribute/bin/MacOS/arm64/Release/libMoltenVK.dylib')"/>
+
 		<!-- Shader compile tools -->
 		<Content Pack="true" Visible="false" Include="../tools/skshaderc/win32_x64/skshaderc.exe"   PackagePath="tools/skshaderc/win32_x64/" />
 		<Content Pack="true" Visible="false" Include="../tools/skshaderc/win32_arm64/skshaderc.exe" PackagePath="tools/skshaderc/win32_arm64/" />
 		<Content Pack="true" Visible="false" Include="../tools/skshaderc/linux_x64/skshaderc"       PackagePath="tools/skshaderc/linux_x64/" />
 		<Content Pack="true" Visible="false" Include="../tools/skshaderc/linux_arm64/skshaderc"     PackagePath="tools/skshaderc/linux_arm64/" />
-		<Content Pack="true" Visible="false" Include="../tools/skshaderc/mac/skshaderc"             PackagePath="tools/skshaderc/mac/" />
+		<Content Pack="true" Visible="false" Include="../tools/skshaderc/macos_arm64/skshaderc"     PackagePath="tools/skshaderc/macos_arm64/" />
 		<Content Pack="true" Visible="false" Include="../tools/include/*.*" PackagePath="tools/include/" />
 
 		<!-- Targets and copies and commands for the NuGet package once it's in
@@ -87,6 +91,7 @@
 		<Error Condition="!Exists('../bin/distribute/bin/Android/x86_64/Release/libStereoKitC.so')"    Text="[SK NuGet] Missing Android x64 binaries." />
 		<Error Condition="!Exists('../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so')"         Text="[SK NuGet] Missing Linux x64 binaries." />
 		<Warning Condition="!Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so')"     Text="[SK NuGet] Missing Linux ARM64 binaries." />
+		<Warning Condition="!Exists('../bin/distribute/bin/MacOS/arm64/Release/libStereoKitC.dylib')"  Text="[SK NuGet] Missing macOS ARM64 binaries." />
 	</Target>
 	<Target Name="SKWarnPlatformFiles" AfterTargets="BeforeBuild" BeforeTargets="CoreBuild" Condition="'$(GeneratePackageOnBuild)'=='true'">
 		<Warning Condition="!Exists('../bin/distribute/bin/Win32/x64/Release/StereoKitC.dll')"           Text="[SK NuGet] Missing Win32 x64 binaries." />
@@ -95,5 +100,6 @@
 		<Warning Condition="!Exists('../bin/distribute/bin/Android/x86_64/Release/libStereoKitC.so')"    Text="[SK NuGet] Missing Android x64 binaries." />
 		<Warning Condition="!Exists('../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so')"         Text="[SK NuGet] Missing Linux x64 binaries." />
 		<Warning Condition="!Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so')"       Text="[SK NuGet] Missing Linux ARM64 binaries." />
+		<Warning Condition="!Exists('../bin/distribute/bin/MacOS/arm64/Release/libStereoKitC.dylib')"    Text="[SK NuGet] Missing macOS ARM64 binaries." />
 	</Target>
 </Project>

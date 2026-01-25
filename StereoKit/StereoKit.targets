@@ -21,6 +21,7 @@
 		<ItemGroup Condition="'$(SKBuildPlatform)'=='Desktop'">
 			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/linux-arm64/*.*" />
 			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/linux-x64/*.*" />
+			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/osx-arm64/*.*" />
 			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/win-x64/*.*" />
 		</ItemGroup>
 		<Copy
