@@ -129,7 +129,7 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 	FcConfigDestroy(config);
 #endif
 
-#if defined(_WIN32) || defined(__ANDROID__)
+#if defined(_WIN32) || defined(__ANDROID__) || (defined(__APPLE__) && !defined(__ANDROID__))
 
 	while (token != nullptr) {
 		char* trimmed = _trim_whitespace(token);
@@ -394,6 +394,135 @@ bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** ou
 	}	
 	AFontMatcher_destroy(matcher);
 	return true;
+}
+
+///////////////////////////////////////////
+
+#endif
+
+///////////////////////////////////////////
+// macOS                                 //
+///////////////////////////////////////////
+
+#if defined(__APPLE__) && !defined(__ANDROID__)
+
+#include <CoreText/CoreText.h>
+
+///////////////////////////////////////////
+
+char* fontfile_folder() {
+	// macOS system fonts are primarily located here
+	return strdup("/System/Library/Fonts/");
+}
+
+///////////////////////////////////////////
+
+char* fontfile_name_to_path(const char* name_utf8) {
+	// Filenames are already filenames
+	if (strchr(name_utf8, '.') != nullptr) {
+		return strdup(name_utf8);
+	}
+
+	// Create font by name
+	CFStringRef fontName = CFStringCreateWithCString(nullptr, name_utf8, kCFStringEncodingUTF8);
+	if (fontName == nullptr) return nullptr;
+
+	CTFontRef font = CTFontCreateWithName(fontName, 12.0, nullptr);
+	CFRelease(fontName);
+
+	if (font == nullptr) return nullptr;
+
+	// Get font file URL
+	CFURLRef url = (CFURLRef)CTFontCopyAttribute(font, kCTFontURLAttribute);
+	CFRelease(font);
+
+	if (url == nullptr) return nullptr;
+
+	char path[256];
+	Boolean success = CFURLGetFileSystemRepresentation(url, true, (UInt8*)path, sizeof(path));
+	CFRelease(url);
+
+	if (!success) return nullptr;
+
+	return strdup(path);
+}
+
+///////////////////////////////////////////
+
+bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** out_info, int32_t* out_info_count) {
+	*out_info       = nullptr;
+	*out_info_count = 0;
+
+	// Filenames have no fallback
+	if (strchr(name_utf8, '.') != nullptr)
+		return false;
+
+	// Create font by name
+	CFStringRef fontName = CFStringCreateWithCString(nullptr, name_utf8, kCFStringEncodingUTF8);
+	if (fontName == nullptr) return false;
+
+	CTFontRef font = CTFontCreateWithName(fontName, 12.0, nullptr);
+	CFRelease(fontName);
+
+	if (font == nullptr) return false;
+
+	// Get comprehensive cascade list for full Unicode coverage
+	// NULL for languages parameter gives us the complete fallback chain
+	CFArrayRef cascadeList = CTFontCopyDefaultCascadeListForLanguages(font, nullptr);
+	CFRelease(font);
+
+	if (cascadeList == nullptr) return false;
+
+	CFIndex count = CFArrayGetCount(cascadeList);
+	if (count == 0) {
+		CFRelease(cascadeList);
+		return false;
+	}
+
+	// Allocate array for fallback info
+	*out_info = (font_fallback_info_t*)malloc(sizeof(font_fallback_info_t) * count);
+	if (*out_info == nullptr) {
+		CFRelease(cascadeList);
+		return false;
+	}
+
+	// Extract each fallback font's information
+	int32_t valid_count = 0;
+	for (CFIndex i = 0; i < count; i++) {
+		CTFontDescriptorRef descriptor = (CTFontDescriptorRef)CFArrayGetValueAtIndex(cascadeList, i);
+		if (descriptor == nullptr) continue;
+
+		// Get file path
+		CFURLRef url = (CFURLRef)CTFontDescriptorCopyAttribute(descriptor, kCTFontURLAttribute);
+		if (url == nullptr) continue;
+
+		Boolean success = CFURLGetFileSystemRepresentation(url, true,
+			(UInt8*)(*out_info)[valid_count].filepath,
+			sizeof((*out_info)[valid_count].filepath));
+
+		if (success) {
+			// Get font family name
+			CFStringRef familyName = (CFStringRef)CTFontDescriptorCopyAttribute(descriptor, kCTFontFamilyNameAttribute);
+			if (familyName != nullptr) {
+				CFStringGetCString(familyName, (*out_info)[valid_count].name,
+					sizeof((*out_info)[valid_count].name), kCFStringEncodingUTF8);
+				CFRelease(familyName);
+			} else {
+				// If no family name, use a placeholder
+				strncpy((*out_info)[valid_count].name, "Unknown", sizeof((*out_info)[valid_count].name));
+			}
+
+			(*out_info)[valid_count].scale = 1.0;
+			valid_count++;
+		}
+
+		CFRelease(url);
+	}
+
+	CFRelease(cascadeList);
+
+	*out_info_count = valid_count;
+	return valid_count > 0;
 }
 
 ///////////////////////////////////////////

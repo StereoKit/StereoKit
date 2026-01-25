@@ -161,6 +161,7 @@ int main() {
 	settings.app_name      = "StereoKit C";
 	settings.assets_folder = "Assets";
 	settings.mode          = app_mode_xr;
+	settings.render_multisample = 4;
 	if (!sk_init(settings))
 		return 1;
 

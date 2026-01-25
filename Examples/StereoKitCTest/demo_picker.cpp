@@ -4,7 +4,7 @@
 #include <stereokit_ui.h>
 using namespace sk;
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 

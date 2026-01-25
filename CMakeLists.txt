@@ -132,6 +132,7 @@ elseif (APPLE)
   set(MACOS_LIBS
     Threads::Threads
     "-framework Cocoa"
+    "-framework CoreText"
     "-framework IOKit" )
 
   # Add pthreads
@@ -273,7 +274,7 @@ if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.1.22
+    GIT_TAG 23b69437da1c1ccf44173e85c940288a58aa83ab
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to your
@@ -844,6 +845,9 @@ if (SK_BUILD_TESTS)
   target_link_libraries( StereoKitCTest
     StereoKitC
   )
+
+  # Ensure we get MoltenVK binaries in the right place on MacOS
+  skr_copy_moltenvk(StereoKitCTest)
 
   # MinGW: Statically link C++ runtime. Both DLL and EXE get their own copy.
   # --allow-multiple-definition: The DLL's import library has runtime symbols too,
