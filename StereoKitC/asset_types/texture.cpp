@@ -47,8 +47,22 @@ const char *tex_msg_inconsistent_parse    = "Texture data doesn't match earlier 
 const char *tex_msg_requires_rendertarget = "Zbuffer can only be attached to a rendertarget!";
 const char *tex_msg_requires_depth        = "Zbuffer must be a depth texture!";
 
-tex_t tex_error_texture   = nullptr;
-tex_t tex_loading_texture = nullptr;
+tex_t tex_error_texture           = nullptr;
+tex_t tex_loading_texture         = nullptr;
+tex_t tex_error_texture_cubemap   = nullptr;
+tex_t tex_loading_texture_cubemap = nullptr;
+
+tex_t _tex_get_loading_fallback(tex_t texture) {
+	return (texture->type & tex_type_cubemap)
+		? tex_loading_texture_cubemap
+		: tex_loading_texture;
+}
+
+tex_t _tex_get_error_fallback(tex_t texture) {
+	return (texture->type & tex_type_cubemap)
+		? tex_error_texture_cubemap
+		: tex_error_texture;
+}
 
 ///////////////////////////////////////////
 // Helper functions for sk_renderer API  //
@@ -284,7 +298,7 @@ end:
 		tex->header.state = asset_state_loaded_meta;
 		return true;
 	} else {
-		tex_set_fallback(tex, tex_error_texture);
+		tex_set_fallback(tex, _tex_get_error_fallback(tex));
 		return false;
 	}
 }
@@ -304,7 +318,8 @@ bool32_t tex_load_arr_upload(asset_task_t *, asset_header_t *asset, void *job_da
 ///////////////////////////////////////////
 
 void tex_load_on_failure(asset_header_t *asset, void *) {
-	tex_set_fallback((tex_t)asset, tex_error_texture);
+	tex_t tex = (tex_t)asset;
+	tex_set_fallback(tex, _tex_get_error_fallback(tex));
 }
 
 ///////////////////////////////////////////
@@ -534,7 +549,7 @@ tex_t tex_create(tex_type_ type, tex_format_ format) {
 	result->anisotropy   = 4;
 	result->header.state = asset_state_none;
 
-	tex_set_fallback(result, tex_loading_texture);
+	tex_set_fallback(result, _tex_get_loading_fallback(result));
 
 	return result;
 }
@@ -921,7 +936,7 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 		? asset_state_loaded
 		: asset_state_error;
 	tex_set_fallback(texture, texture->header.state <= 0
-		? tex_error_texture
+		? _tex_get_error_fallback(texture)
 		: nullptr);
 }
 
@@ -1142,7 +1157,7 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		tex_set_fallback(texture, nullptr);
 		texture->header.state = asset_state_loaded;
 	} else {
-		tex_set_fallback(texture, tex_error_texture);
+		tex_set_fallback(texture, _tex_get_error_fallback(texture));
 		texture->header.state = asset_state_error;
 	}
 }
@@ -1516,8 +1531,20 @@ void tex_set_loading_fallback(tex_t loading_texture) {
 		}
 		tex_addref(loading_texture);
 	}
-	tex_release(tex_loading_texture);
-	tex_loading_texture = loading_texture;
+	// Assign to the appropriate fallback based on texture type, or clear both
+	// if nullptr
+	if (loading_texture == nullptr) {
+		tex_release(tex_loading_texture);
+		tex_release(tex_loading_texture_cubemap);
+		tex_loading_texture         = nullptr;
+		tex_loading_texture_cubemap = nullptr;
+	} else if (loading_texture->type & tex_type_cubemap) {
+		tex_release(tex_loading_texture_cubemap);
+		tex_loading_texture_cubemap = loading_texture;
+	} else {
+		tex_release(tex_loading_texture);
+		tex_loading_texture = loading_texture;
+	}
 }
 
 ///////////////////////////////////////////
@@ -1531,8 +1558,20 @@ void tex_set_error_fallback(tex_t error_texture) {
 		}
 		tex_addref(error_texture);
 	}
-	tex_release(tex_error_texture);
-	tex_error_texture = error_texture;
+	// Assign to the appropriate fallback based on texture type, or clear both
+	// if nullptr
+	if (error_texture == nullptr) {
+		tex_release(tex_error_texture);
+		tex_release(tex_error_texture_cubemap);
+		tex_error_texture         = nullptr;
+		tex_error_texture_cubemap = nullptr;
+	} else if (error_texture->type & tex_type_cubemap) {
+		tex_release(tex_error_texture_cubemap);
+		tex_error_texture_cubemap = error_texture;
+	} else {
+		tex_release(tex_error_texture);
+		tex_error_texture = error_texture;
+	}
 }
 
 ///////////////////////////////////////////
