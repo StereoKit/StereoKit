@@ -84,4 +84,6 @@ jobs:
         dotnet-version: 7.0.x
 
     - name: Build Sample Project
-      run: dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Release
+      run: |
+        dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Release
+        dotnet run --project Examples/StereoKitTest/StereoKitTest.csproj -c Release -- -headless -test -noscreens
