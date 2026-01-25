@@ -1673,8 +1673,39 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 		sk_free(data[i]);
 	}
 
+	// Compute SH by sampling the gradient at uniformly distributed directions
+	// on a sphere using a Fibonacci spiral.
+	spherical_harmonics_t sh = {};
+	const int32_t sample_count = 64;
+	const float   golden_ratio = 1.618033988749895f;
+	const float   golden_angle = (MATH_PI * 2.0f) / (golden_ratio * golden_ratio);
+
+	for (int32_t i = 0; i < sample_count; i++) {
+		float t           = (float)i / (float)sample_count;
+		float inclination = acosf(1.0f - 2.0f * t);
+		float azimuth     = golden_angle * (float)i;
+
+		vec3 dir = {
+			sinf(inclination) * cosf(azimuth),
+			cosf(inclination),
+			sinf(inclination) * sinf(azimuth) };
+
+		float    pct = (vec3_dot(dir, gradient_dir) + 1.0f) * 0.5f;
+		color128 c   = gradient_get(gradient_bot_to_top, pct);
+		sh_add(sh, dir, { c.r, c.g, c.b });
+	}
+
+	for (int32_t i = 0; i < 9; i++)
+		sh.coefficients[i] /= (float)sample_count;
+
+	sh_windowing(sh, 0.01f);
+
+	// Store in texture for later retrieval
+	result->light_info  = sk_malloc_t(spherical_harmonics_t, 1);
+	*result->light_info = sh;
+
 	if (out_sh_lighting_info != nullptr)
-		*out_sh_lighting_info = tex_get_cubemap_lighting(result);
+		*out_sh_lighting_info = sh;
 
 	return result;
 }

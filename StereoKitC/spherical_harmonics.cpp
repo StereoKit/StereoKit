@@ -5,9 +5,6 @@
 
 namespace sk {
 
-void sh_add      (spherical_harmonics_t &to, vec3 light_dir, vec3 light_color);
-void sh_windowing(spherical_harmonics_t &harmonics, float window_width);
-
 ///////////////////////////////////////////
 
 vec3 to_color_128(uint8_t *color) { return *(vec3 *)color; }
@@ -181,11 +178,16 @@ color128 sh_lookup(const spherical_harmonics_t &harmonics, vec3 normal) {
 vec3 sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics) {
 	// Reference from here:
 	// https://seblagarde.wordpress.com/2011/10/09/dive-in-sh-buffer-idea/
-	vec3 dir = vec3_normalize({
+	vec3 dir = {
 		harmonics.coefficients[3].x * 0.3f + harmonics.coefficients[3].y * 0.59f + harmonics.coefficients[3].z,
 		harmonics.coefficients[1].x * 0.3f + harmonics.coefficients[1].y * 0.59f + harmonics.coefficients[1].z,
-		harmonics.coefficients[2].x * 0.3f + harmonics.coefficients[2].y * 0.59f + harmonics.coefficients[2].z });
-	return -dir;
+		harmonics.coefficients[2].x * 0.3f + harmonics.coefficients[2].y * 0.59f + harmonics.coefficients[2].z };
+
+	// If no lighting data, default to light from above
+	if (vec3_magnitude_sq(dir) < 0.0001f)
+		return { 0, 1, 0 };
+
+	return -vec3_normalize(dir);
 }
 
 ///////////////////////////////////////////
