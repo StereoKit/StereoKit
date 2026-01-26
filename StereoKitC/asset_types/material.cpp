@@ -262,7 +262,6 @@ void material_destroy(material_t material) {
 			material_release(material->variants[i]);
 	}
 	if (material->chain) material_release(material->chain);
-	shader_release(material->shader);
 
 	// Release all texture references
 	for (int32_t i = 0; i < material->texture_count; i++) {
@@ -273,6 +272,10 @@ void material_destroy(material_t material) {
 	sk_free(material->texture_meta_hashes);
 
 	skr_material_destroy(&material->gpu_mat);
+
+	// SKR refs the shader meta, so we want to make sure the shader is
+	// released _after_ skr's material is completely finished with it.
+	shader_release(material->shader);
 	*material = {};
 }
 
