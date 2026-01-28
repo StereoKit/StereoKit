@@ -475,6 +475,8 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/hand_tracking.cpp
   StereoKitC/xr_backends/extensions/input_profiles.h
   StereoKitC/xr_backends/extensions/input_profiles.cpp
+  StereoKitC/xr_backends/extensions/light_estimation.h
+  StereoKitC/xr_backends/extensions/light_estimation.cpp
   StereoKitC/xr_backends/extensions/loader_init.h
   StereoKitC/xr_backends/extensions/loader_init.cpp
   StereoKitC/xr_backends/extensions/palm_pose.h

@@ -20,6 +20,7 @@
 #include "hand_tracking.h"
 #include "hand_mesh.h"
 #include "input_profiles.h"
+#include "light_estimation.h"
 #include "loader_init.h"
 #include "palm_pose.h"
 #include "android_create_instance.h"
@@ -62,6 +63,7 @@ bool ext_registration() {
 	xr_ext_msft_bridge_register();
 	xr_ext_interaction_render_model_register();
 	xr_ext_render_model_register();
+	xr_ext_android_light_estimation_register();
 
 	// Input extensions all must go before the oxri/input system
 	xr_ext_palm_pose_register                    ();
