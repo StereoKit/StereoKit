@@ -77,7 +77,7 @@ void render_pipeline_draw() {
 						skr_renderer_set_scissor (scissor);
 
 						int32_t idx = quilt_x + quilt_y * s->quilt_width + layer * s->quilt_width * s->quilt_height;
-						render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, 1, 1, s->layer, 0);
+						render_draw_queue(list, s->view_matrices, s->proj_matrices, width, height, idx, 1, 1, s->layer, 0);
 					}
 				}
 
@@ -104,7 +104,7 @@ void render_pipeline_draw() {
 				skr_renderer_set_scissor (scissor);
 
 				int32_t idx = quilt_x + quilt_y * s->quilt_width;
-				render_draw_queue(list, s->view_matrices, s->proj_matrices, idx, s->array_count, inst_multiplier, s->layer, 0);
+				render_draw_queue(list, s->view_matrices, s->proj_matrices, width, height, idx, s->array_count, inst_multiplier, s->layer, 0);
 			} }
 
 			skr_renderer_end_pass();

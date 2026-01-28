@@ -37,6 +37,8 @@
 #define STBIW_WINDOWS_UTF8
 #include "../libraries/stb_image_write.h"
 
+#define SK_SHADER_MAX_VIEWS 6
+
 using namespace DirectX;
 
 namespace sk {
@@ -48,18 +50,20 @@ struct render_transform_buffer_t {
 	color128 color;
 };
 struct render_global_buffer_t {
-	XMMATRIX view[2];
-	XMMATRIX proj[2];
-	XMMATRIX proj_inv[2];
-	XMMATRIX viewproj[2];
+	XMMATRIX view    [SK_SHADER_MAX_VIEWS];
+	XMMATRIX proj    [SK_SHADER_MAX_VIEWS];
+	XMMATRIX proj_inv[SK_SHADER_MAX_VIEWS];
+	XMMATRIX viewproj[SK_SHADER_MAX_VIEWS];
 	vec4     lighting[9];
-	vec4     camera_pos[2];
-	vec4     camera_dir[2];
+	vec4     camera_pos[SK_SHADER_MAX_VIEWS];
+	vec4     camera_dir[SK_SHADER_MAX_VIEWS];
 	vec4     fingertip[2];
 	vec4     cubemap_i;
 	float    time;
 	uint32_t view_count;
 	uint32_t eye_offset;
+	uint32_t surface_width;
+	uint32_t surface_height;
 };
 struct render_blit_data_t {
 	float width;
@@ -734,17 +738,7 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 
 ///////////////////////////////////////////
 
-void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter, int32_t material_variant) {
-	// A temporary fix for multiview trying to render to mono rendertargets
-	if (view_count == 1) {
-		memset(&local.global_buffer.view      [1], 0, sizeof(local.global_buffer.view      [1]));
-		memset(&local.global_buffer.proj      [1], 0, sizeof(local.global_buffer.proj      [1]));
-		memset(&local.global_buffer.proj_inv  [1], 0, sizeof(local.global_buffer.proj_inv  [1]));
-		memset(&local.global_buffer.viewproj  [1], 0, sizeof(local.global_buffer.viewproj  [1]));
-		memset(&local.global_buffer.camera_pos[1], 0, sizeof(local.global_buffer.camera_pos[1]));
-		memset(&local.global_buffer.camera_dir[1], 0, sizeof(local.global_buffer.camera_dir[1]));
-	}
-
+void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t viewport_width, int32_t viewport_height, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter, int32_t material_variant) {
 	// Copy camera information into the global buffer
 	for (int32_t i = 0; i < view_count; i++) {
 		XMMATRIX view_f, projection_f;
@@ -767,9 +761,11 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 
 	// Copy in the other global shader variables
 	memcpy(local.global_buffer.lighting, lighting_get_lighting(), sizeof(vec4) * 9);
-	local.global_buffer.time       = time_totalf();
-	local.global_buffer.view_count = view_count;
-	local.global_buffer.eye_offset = eye_offset;
+	local.global_buffer.time           = time_totalf();
+	local.global_buffer.surface_width  = viewport_width;
+	local.global_buffer.surface_height = viewport_height;
+	local.global_buffer.view_count     = view_count;
+	local.global_buffer.eye_offset     = eye_offset;
 	for (int32_t i = 0; i < handed_max; i++) {
 		const hand_t* hand = input_hand((handed_)i);
 		vec3 tip = (hand->tracked_state & button_state_active) != 0 && input_get_finger_glow()
@@ -887,7 +883,7 @@ void render_check_screenshots() {
 		skr_renderer_set_scissor (scissor);
 
 		// Render!
-		render_draw_queue(local.list_primary, &local.screenshot_list[i].camera, &local.screenshot_list[i].projection, 0, 1, 1, local.screenshot_list[i].layer_filter, 0);
+		render_draw_queue(local.list_primary, &local.screenshot_list[i].camera, &local.screenshot_list[i].projection, w, h, 0, 1, 1, local.screenshot_list[i].layer_filter, 0);
 
 		// End render pass
 		skr_renderer_end_pass();
@@ -957,7 +953,7 @@ void render_draw_viewpoint(render_action_viewpoint_t* vp) {
 	skr_renderer_set_scissor (scissor);
 
 	// Render!
-	render_draw_queue(local.list_primary, &vp->camera, &vp->projection, 0, 1, 1, vp->layer_filter, vp->material_variant);
+	render_draw_queue(local.list_primary, &vp->camera, &vp->projection, w, h, 0, 1, 1, vp->layer_filter, vp->material_variant);
 
 	// End render pass
 	skr_renderer_end_pass();
@@ -1364,7 +1360,7 @@ void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix came
 	skr_renderer_set_scissor (scissor);
 
 	// Render!
-	render_draw_queue(list, &camera, &projection, 0, 1, 1, layer_filter, material_variant);
+	render_draw_queue(list, &camera, &projection, w, h, 0, 1, 1, layer_filter, material_variant);
 
 	// End render pass
 	skr_renderer_end_pass();

@@ -3,19 +3,22 @@
 
 ///////////////////////////////////////////
 
+#define SK_SHADER_MAX_VIEWS 6
+
 cbuffer stereokit_buffer : register(b1) {
-	float4x4 sk_view       [2];
-	float4x4 sk_proj       [2];
-	float4x4 sk_proj_inv   [2];
-	float4x4 sk_viewproj   [2];
+	float4x4 sk_view       [SK_SHADER_MAX_VIEWS];
+	float4x4 sk_proj       [SK_SHADER_MAX_VIEWS];
+	float4x4 sk_proj_inv   [SK_SHADER_MAX_VIEWS];
+	float4x4 sk_viewproj   [SK_SHADER_MAX_VIEWS];
 	float4   sk_lighting_sh[9];
-	float4   sk_camera_pos [2];
-	float4   sk_camera_dir [2];
+	float4   sk_camera_pos [SK_SHADER_MAX_VIEWS];
+	float4   sk_camera_dir [SK_SHADER_MAX_VIEWS];
 	float4   sk_fingertip  [2];
 	float4   sk_cubemap_i;
 	float    sk_time;
 	uint     sk_view_count;
 	uint     sk_eye_offset;
+	uint2    sk_surface_size;
 };
 struct inst_t {
 	float4x4 world;
