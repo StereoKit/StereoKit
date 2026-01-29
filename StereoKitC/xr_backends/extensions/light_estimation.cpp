@@ -13,10 +13,10 @@ OPENXR_DEFINE_FN_STATIC(XR_EXT_FUNCTIONS);
 
 typedef struct xr_light_estimation_state_t {
 	bool                    available;
-    XrLightEstimatorANDROID estimator;
-    XrTime                  last_update;
-    bool                    needs_skytex;
-    sk::spherical_harmonics_t   sh_data;
+	XrLightEstimatorANDROID estimator;
+	XrTime                  last_update;
+	bool                    needs_skytex;
+	sk::spherical_harmonics_t   sh_data;
 } xr_light_estimation_state_t;
 static xr_light_estimation_state_t local = { };
 
@@ -37,7 +37,7 @@ void xr_ext_android_light_estimation_register() {
 	sys.request_exts[sys.request_ext_count++] = XR_ANDROID_LIGHT_ESTIMATION_EXTENSION_NAME;
 	sys.evt_initialize = { xr_ext_android_light_estimation_initialize };
 	sys.evt_shutdown   = { xr_ext_android_light_estimation_shutdown };
-    sys.evt_step_begin = { xr_ext_android_light_estimation_step_begin };
+	sys.evt_step_begin = { xr_ext_android_light_estimation_step_begin };
 	ext_management_sys_register(sys);
 }
 
@@ -49,7 +49,7 @@ xr_system_ xr_ext_android_light_estimation_initialize(void*) {
 
 	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
 
-    // Check the system properties, see if we can actually do hand
+	// Check the system properties, see if we can actually do hand
 	// tracking.
 	XrSystemProperties                       properties       = { XR_TYPE_SYSTEM_PROPERTIES };
 	XrSystemLightEstimationPropertiesANDROID properties_light = { (XrStructureType)XR_TYPE_SYSTEM_LIGHT_ESTIMATION_PROPERTIES_ANDROID };
@@ -64,12 +64,12 @@ xr_system_ xr_ext_android_light_estimation_initialize(void*) {
 
 	local.available = true;
 
-    XrLightEstimatorCreateInfoANDROID info = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATOR_CREATE_INFO_ANDROID};
-    result = xrCreateLightEstimatorANDROID(xr_session, &info, &local.estimator);
-    if (XR_FAILED(result)) {
-        log_warnf("%s: [%s]", "xrCreateLightEstimatorANDROID", openxr_string(result));
+	XrLightEstimatorCreateInfoANDROID info = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATOR_CREATE_INFO_ANDROID};
+	result = xrCreateLightEstimatorANDROID(xr_session, &info, &local.estimator);
+	if (XR_FAILED(result)) {
+		log_warnf("%s: [%s]", "xrCreateLightEstimatorANDROID", openxr_string(result));
 		return xr_system_fail;
-    }
+	}
 
 	return xr_system_succeed;
 }
@@ -77,43 +77,43 @@ xr_system_ xr_ext_android_light_estimation_initialize(void*) {
 ///////////////////////////////////////////
 
 void xr_ext_android_light_estimation_shutdown(void*) {
-    xrDestroyLightEstimatorANDROID(local.estimator);
+	xrDestroyLightEstimatorANDROID(local.estimator);
 	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
-    local = {};
+	local = {};
 }
 
 ///////////////////////////////////////////
 
 void xr_ext_android_light_estimation_step_begin(void*) {
-    XrLightEstimateGetInfoANDROID info = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATE_GET_INFO_ANDROID};
-    info.space = xr_app_space;
-    info.time  = xr_time;
+	XrLightEstimateGetInfoANDROID info = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATE_GET_INFO_ANDROID};
+	info.space = xr_app_space;
+	info.time  = xr_time;
 
-    XrSphericalHarmonicsANDROID sh       = {(XrStructureType)XR_TYPE_SPHERICAL_HARMONICS_ANDROID};
-    XrLightEstimateANDROID      estimate = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATE_ANDROID};
-    estimate.next = &sh;
-    sh.kind = XR_SPHERICAL_HARMONICS_KIND_TOTAL_ANDROID;
-    XrResult result = xrGetLightEstimateANDROID(local.estimator, &info, &estimate);
-    
-    if (XR_FAILED(result)) {
-        log_warnf("%s: [%s]", "xrGetLightEstimateANDROID", openxr_string(result));
-        return;
-    }
+	XrSphericalHarmonicsANDROID sh       = {(XrStructureType)XR_TYPE_SPHERICAL_HARMONICS_ANDROID};
+	XrLightEstimateANDROID      estimate = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATE_ANDROID};
+	estimate.next = &sh;
+	sh.kind = XR_SPHERICAL_HARMONICS_KIND_TOTAL_ANDROID;
+	XrResult result = xrGetLightEstimateANDROID(local.estimator, &info, &estimate);
+	
+	if (XR_FAILED(result)) {
+		log_warnf("%s: [%s]", "xrGetLightEstimateANDROID", openxr_string(result));
+		return;
+	}
 
-    if (local.last_update != estimate.lastUpdatedTime && estimate.state == XR_LIGHT_ESTIMATE_STATE_VALID_ANDROID) {
-        local.last_update =  estimate.lastUpdatedTime;
-        
-        memcpy(local.sh_data.coefficients, sh.coefficients, sizeof(vec3)*9);
-        render_set_skylight(local.sh_data);
+	if (local.last_update != estimate.lastUpdatedTime && estimate.state == XR_LIGHT_ESTIMATE_STATE_VALID_ANDROID) {
+		local.last_update =  estimate.lastUpdatedTime;
+		
+		memcpy(local.sh_data.coefficients, sh.coefficients, sizeof(vec3)*9);
+		render_set_skylight(local.sh_data);
 
-        tex_t tex = tex_gen_cubemap_sh(local.sh_data, 32, 0.2f, 2);
-        render_set_skytex(tex);
-        tex_release(tex);
+		tex_t tex = tex_gen_cubemap_sh(local.sh_data, 32, 0.2f, 2);
+		render_set_skytex(tex);
+		tex_release(tex);
 
-        local.needs_skytex = true;
-    } else if (local.needs_skytex) {
-        local.needs_skytex = false;
-    }
+		local.needs_skytex = true;
+	} else if (local.needs_skytex) {
+		local.needs_skytex = false;
+	}
 }
 
 }
