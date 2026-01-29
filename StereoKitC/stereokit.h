@@ -1930,9 +1930,13 @@ SK_API matrix                render_get_cam_root   (void);
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
 SK_API void                  render_set_skytex     (tex_t sky_texture);
 SK_API tex_t                 render_get_skytex     (void);
+SK_API void                  render_enable_skytex  (bool32_t show_sky);
+SK_API bool32_t              render_enabled_skytex (void);
 SK_API void                  render_set_skymaterial(material_t sky_material);
 SK_API material_t            render_get_skymaterial(void);
+// TODO: obsolete, use lighting_set_ambient
 SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
+// TODO: obsolete, use lighting_get_ambient
 SK_API spherical_harmonics_t render_get_skylight   (void);
 SK_API void                  render_set_filter     (render_layer_ layer_filter);
 SK_API render_layer_         render_get_filter     (void);
@@ -1947,8 +1951,6 @@ SK_API render_layer_         render_get_capture_filter     (void);
 SK_API bool32_t              render_has_capture_filter     (void);
 SK_API void                  render_set_clear_color(color128 color_gamma);
 SK_API color128              render_get_clear_color(void);
-SK_API void                  render_enable_skytex  (bool32_t show_sky);
-SK_API bool32_t              render_enabled_skytex (void);
 SK_API void                  render_global_texture     (int32_t register_slot, tex_t texture);
 SK_API tex_t                 render_get_global_texture (int32_t register_slot);
 SK_API void                  render_global_buffer      (int32_t register_slot, material_buffer_t buffer);
@@ -1963,6 +1965,23 @@ SK_API void                  render_screenshot_viewpoint(void (*render_on_screen
 SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 SK_API render_list_t         render_get_primary_list(void);
+
+///////////////////////////////////////////
+
+typedef enum lighting_mode_ {
+	lighting_mode_default,
+	lighting_mode_manual,
+	lighting_mode_world,
+} lighting_mode_;
+
+SK_API void                  lighting_set_ambient     (const sk_ref(spherical_harmonics_t) ambient_lighting);
+SK_API spherical_harmonics_t lighting_get_ambient     (void);
+SK_API void                  lighting_set_directional (vec3      dir, color128      color_linear);
+SK_API void                  lighting_get_directional (vec3* out_dir, color128* out_color_linear);
+SK_API void                  lighting_set_reflection  (tex_t ibl_cubemap);
+SK_API tex_t                 lighting_get_reflection  (void);
+SK_API bool                  lighting_set_mode        (lighting_mode_ mode);
+SK_API lighting_mode_        lighting_get_mode        (void);
 
 ///////////////////////////////////////////
 
