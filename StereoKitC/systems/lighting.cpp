@@ -14,6 +14,7 @@
 #include "../asset_types/material.h"
 #include "../asset_types/texture.h"
 #include "../asset_types/shader.h"
+#include "../xr_backends/extensions/light_estimation.h"
 #include "../log.h"
 
 namespace sk {
@@ -26,10 +27,81 @@ struct lighting_state_t {
 	material_t              sky_mat_default;
 	bool32_t                sky_show;
 	tex_t                   sky_pending_tex;
-	vec4                    lighting[9];
-	spherical_harmonics_t   lighting_src;
+
+	lighting_mode_          mode;
+	vec4                    ambient[9];
+	spherical_harmonics_t   ambient_src;
+	vec3                    directional_dir;
+	color128                directional_color;
+	tex_t                   reflection;
+	tex_t                   reflection_pending_tex;
 };
 static lighting_state_t local = {};
+
+///////////////////////////////////////////
+
+static void _lighting_set_reflection(tex_t ibl_cubemap);
+static void _lighting_set_ambient   (const spherical_harmonics_t& ambient_lighting);
+
+///////////////////////////////////////////
+
+static tex_t check_pending_cubemap(tex_t* ref_pending, const char* description) {
+	if (*ref_pending == nullptr) return nullptr;
+
+	asset_state_ state = tex_asset_state(*ref_pending);
+
+	// Check if it's errored out
+	if (state < 0) {
+		tex_release(*ref_pending);
+		*ref_pending = nullptr;
+		return nullptr;
+	}
+
+	// Check if it's a valid asset, we'll know for sure once the metadata is
+	// loaded.
+	if (state >= asset_state_loaded_meta && ((*ref_pending)->type & tex_type_cubemap) == 0) {
+		log_warnf("%s must be a cubemap, ignoring %s", description, tex_get_id(*ref_pending));
+		tex_release(*ref_pending);
+		*ref_pending = nullptr;
+		return nullptr;
+	}
+
+	// Check if it's loaded, transfer ownership out
+	if (state >= asset_state_loaded) {
+		tex_t result = *ref_pending;
+		*ref_pending = nullptr;
+		return result;
+	}
+
+	return nullptr;
+}
+
+///////////////////////////////////////////
+
+static void check_pending_skytex() {
+	tex_t tex = check_pending_cubemap(&local.sky_pending_tex, "Skytex");
+	if (tex != nullptr) {
+		render_global_texture(render_skytex_register, tex);
+		tex_release(tex);
+	}
+}
+
+///////////////////////////////////////////
+
+static void check_pending_reflection() {
+	tex_t tex = check_pending_cubemap(&local.reflection_pending_tex, "Reflection texture");
+	if (tex != nullptr) {
+		if (local.reflection != nullptr) tex_release(local.reflection);
+		local.reflection = tex;
+	}
+}
+
+///////////////////////////////////////////
+
+void lighting_check_pending() {
+	check_pending_skytex();
+	check_pending_reflection();
+}
 
 ///////////////////////////////////////////
 
@@ -57,9 +129,14 @@ bool lighting_init() {
 
 	// Create a default skybox texture
 	tex_t sky_cubemap = tex_find(default_id_cubemap);
+	
 	render_set_skytex   (sky_cubemap);
-	render_set_skylight (sk_default_lighting);
 	render_enable_skytex(true);
+
+	lighting_set_reflection(sky_cubemap);
+	lighting_set_ambient   (sk_default_lighting);
+	lighting_set_mode      (lighting_mode_auto);
+	
 	tex_release(sky_cubemap);
 
 	return true;
@@ -68,7 +145,18 @@ bool lighting_init() {
 ///////////////////////////////////////////
 
 void lighting_step() {
-	render_check_pending_skytex();
+	lighting_check_pending();
+
+	if (local.mode == lighting_mode_world) {
+		spherical_harmonics_t sh;
+		if (xr_ext_light_estimation_update_sh(&sh)) {
+			_lighting_set_ambient(sh);
+			
+			tex_t reflection = tex_gen_cubemap_sh(local.ambient_src, 32, 0.2f, 2.0f);
+			_lighting_set_reflection(reflection);
+			tex_release(reflection);
+		}
+	}
 
 	if (local.sky_show && device_display_get_blend() == display_blend_opaque) {
 		render_add_mesh(local.sky_mesh, local.sky_mat, matrix_identity, {1,1,1,1}, render_layer_vfx);
@@ -79,6 +167,8 @@ void lighting_step() {
 
 void lighting_shutdown() {
 	tex_release     (local.sky_pending_tex);
+	tex_release     (local.reflection);
+	tex_release     (local.reflection_pending_tex);
 	material_release(local.sky_mat_default);
 	material_release(local.sky_mat);
 	mesh_release    (local.sky_mesh);
@@ -88,49 +178,17 @@ void lighting_shutdown() {
 
 ///////////////////////////////////////////
 
-void render_check_pending_skytex() {
-	if (local.sky_pending_tex == nullptr) return;
-
-	asset_state_ state = tex_asset_state(local.sky_pending_tex);
-
-	// Check if it's errored out
-	if (state < 0) {
-		tex_release(local.sky_pending_tex);
-		local.sky_pending_tex = nullptr;
-		return;
-	}
-
-	// Check if it's a valid asset, we'll know for sure once the metadata is
-	// loaded.
-	if (state >= asset_state_loaded_meta && (local.sky_pending_tex->type & tex_type_cubemap) == 0) {
-		log_warnf("Skytex must be a cubemap, ignoring %s", tex_get_id(local.sky_pending_tex));
-
-		tex_release(local.sky_pending_tex);
-		local.sky_pending_tex = nullptr;
-		return;
-	}
-
-	// Check if it's loaded
-	if (state >= asset_state_loaded) {
-		render_global_texture(render_skytex_register, local.sky_pending_tex);
-
-		tex_release(local.sky_pending_tex);
-		local.sky_pending_tex = nullptr;
-		return;
-	}
-}
-
-///////////////////////////////////////////
-
 void render_set_skytex(tex_t sky_texture) {
 	if (sky_texture == nullptr) return;
 
 	tex_addref(sky_texture);
+	if (local.sky_pending_tex != nullptr) tex_release(local.sky_pending_tex);
 	local.sky_pending_tex = sky_texture;
+
 
 	// This is also checked every step, but if the texture is already valid, we
 	// can set it up right away and avoid any potential frame delays.
-	render_check_pending_skytex();
+	check_pending_skytex();
 }
 
 ///////////////////////////////////////////
@@ -169,14 +227,13 @@ material_t render_get_skymaterial(void) {
 ///////////////////////////////////////////
 
 void render_set_skylight(const spherical_harmonics_t &light_info) {
-	local.lighting_src = light_info;
-	sh_to_fast(light_info, local.lighting);
+	lighting_set_ambient(light_info);
 }
 
 ///////////////////////////////////////////
 
 spherical_harmonics_t render_get_skylight() {
-	return local.lighting_src;
+	return lighting_get_ambient();
 }
 
 ///////////////////////////////////////////
@@ -194,7 +251,126 @@ bool32_t render_enabled_skytex() {
 ///////////////////////////////////////////
 
 const vec4* lighting_get_lighting() {
-	return local.lighting;
+	return local.ambient;
+}
+
+///////////////////////////////////////////
+
+bool lighting_mode_available(lighting_mode_ mode) {
+	switch (mode) {
+	case lighting_mode_auto:   return true;
+	case lighting_mode_manual: return true;
+	case lighting_mode_world:  return xr_ext_android_light_estimation_available();
+	default:                   return false;
+	}
+}
+
+///////////////////////////////////////////
+
+bool lighting_set_mode(lighting_mode_ mode) {
+	// In auto mode, select the best mode based on current conditions
+	if (mode == lighting_mode_auto) {
+		display_blend_ blend = device_display_get_blend();
+		if ((blend == display_blend_blend || blend == display_blend_additive) &&
+		    lighting_mode_available(lighting_mode_world)) {
+			mode = lighting_mode_world;
+		} else {
+			mode = lighting_mode_manual;
+		}
+	}
+
+	if (local.mode == mode) return true;
+
+	// Stop light estimation if we're leaving world mode
+	if (local.mode == lighting_mode_world) {
+		xr_ext_light_estimation_stop();
+	}
+
+	local.mode = mode;
+
+	// Start light estimation if we're entering world mode
+	if (mode == lighting_mode_world) {
+		if (!xr_ext_light_estimation_start()) {
+			local.mode = lighting_mode_manual;
+			return false;
+		}
+	}
+
+	return true;
+}
+
+///////////////////////////////////////////
+
+lighting_mode_ lighting_get_mode(void) {
+	return local.mode;
+}
+
+///////////////////////////////////////////
+
+static void _lighting_set_ambient(const spherical_harmonics_t& ambient_lighting) {
+	local.ambient_src = ambient_lighting;
+	sh_to_fast(ambient_lighting, local.ambient);
+}
+
+///////////////////////////////////////////
+
+void lighting_set_ambient(const spherical_harmonics_t& ambient_lighting) {
+	if (local.mode == lighting_mode_world) return;
+	_lighting_set_ambient(ambient_lighting);
+}
+
+///////////////////////////////////////////
+
+spherical_harmonics_t lighting_get_ambient(void) {
+	return local.ambient_src;
+}
+
+///////////////////////////////////////////
+
+void lighting_set_directional(vec3 dir, color128 color_linear) {
+	if (local.mode == lighting_mode_world) return;
+	local.directional_dir   = dir;
+	local.directional_color = color_linear;
+}
+
+///////////////////////////////////////////
+
+void lighting_get_directional(vec3* out_dir, color128* out_color_linear) {
+	if (out_dir)          *out_dir          = local.directional_dir;
+	if (out_color_linear) *out_color_linear = local.directional_color;
+}
+
+///////////////////////////////////////////
+
+static void _lighting_set_reflection(tex_t ibl_cubemap) {
+	if (ibl_cubemap == nullptr) return;
+
+	tex_addref(ibl_cubemap);
+	if (local.reflection_pending_tex != nullptr) tex_release(local.reflection_pending_tex);
+	local.reflection_pending_tex = ibl_cubemap;
+
+	// This is also checked every step, but if the texture is already valid, we
+	// can set it up right away and avoid any potential frame delays.
+	check_pending_reflection();
+}
+
+///////////////////////////////////////////
+
+void lighting_set_reflection(tex_t ibl_cubemap) {
+	if (local.mode == lighting_mode_world) return;
+	_lighting_set_reflection(ibl_cubemap);
+}
+
+///////////////////////////////////////////
+
+tex_t lighting_get_reflection(void) {
+	if (local.reflection_pending_tex != nullptr) {
+		tex_addref(local.reflection_pending_tex);
+		return local.reflection_pending_tex;
+	}
+
+	if (local.reflection != nullptr) tex_addref(local.reflection);
+	return local.reflection;
 }
 
 } // namespace sk

@@ -1,5 +1,6 @@
 #include "render_pipeline.h"
 #include "render.h"
+#include "lighting.h"
 #include "../asset_types/texture.h"
 #include "../libraries/profiler.h"
 
@@ -36,7 +37,7 @@ static render_pipeline_state_t local = {};
 ///////////////////////////////////////////
 
 static void render_pipeline_begin() {
-	render_check_pending_skytex();
+	lighting_check_pending();
 	render_action_list_execute();
 	render_check_screenshots();
 }

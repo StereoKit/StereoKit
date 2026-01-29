@@ -1968,20 +1968,34 @@ SK_API render_list_t         render_get_primary_list(void);
 
 ///////////////////////////////////////////
 
+/*This determines how scene lighting is sourced. In most cases you'll
+  want auto mode, which will use light estimation when available, and
+  manual mode when not.*/
 typedef enum lighting_mode_ {
-	lighting_mode_default,
+	/*StereoKit will pick the best mode for the current conditions. On
+	  a headset with a transparent display and light estimation support,
+	  this will use world mode. Otherwise, it will fall back to manual
+	  mode.*/
+	lighting_mode_auto,
+	/*Lighting values are set manually by the application. Use the
+	  Lighting functions to configure the scene lighting.*/
 	lighting_mode_manual,
+	/*Lighting is sourced from the real world via the device's light
+	  estimation capabilities. The Lighting functions will have no
+	  effect in this mode. Use can check Lighting.ModeAvailable to check
+	  if this is supported before enabling it.*/
 	lighting_mode_world,
 } lighting_mode_;
 
+SK_API bool                  lighting_mode_available  (lighting_mode_ mode);
+SK_API bool                  lighting_set_mode        (lighting_mode_ mode);
+SK_API lighting_mode_        lighting_get_mode        (void);
 SK_API void                  lighting_set_ambient     (const sk_ref(spherical_harmonics_t) ambient_lighting);
 SK_API spherical_harmonics_t lighting_get_ambient     (void);
 SK_API void                  lighting_set_directional (vec3      dir, color128      color_linear);
 SK_API void                  lighting_get_directional (vec3* out_dir, color128* out_color_linear);
 SK_API void                  lighting_set_reflection  (tex_t ibl_cubemap);
 SK_API tex_t                 lighting_get_reflection  (void);
-SK_API bool                  lighting_set_mode        (lighting_mode_ mode);
-SK_API lighting_mode_        lighting_get_mode        (void);
 
 ///////////////////////////////////////////
 
