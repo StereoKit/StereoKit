@@ -1968,6 +1968,25 @@ SK_API render_list_t         render_get_primary_list(void);
 
 ///////////////////////////////////////////
 
+SK_API render_list_t         render_list_find         (const char* id);
+SK_API render_list_t         render_list_create       (void);
+SK_API void                  render_list_set_id       (      render_list_t list, const char* id);
+SK_API const char*           render_list_get_id       (const render_list_t list);
+SK_API void                  render_list_addref       (      render_list_t list);
+SK_API void                  render_list_release      (      render_list_t list);
+SK_API void                  render_list_clear        (      render_list_t list);
+SK_API int32_t               render_list_item_count   (const render_list_t list);
+SK_API int32_t               render_list_prev_count   (const render_list_t list);
+SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
+SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0));
+
+SK_API void                  render_list_push         (      render_list_t list);
+SK_API void                  render_list_pop          (void);
+
+///////////////////////////////////////////
+
 /*This determines how scene lighting is sourced. In most cases you'll
   want auto mode, which will use light estimation when available, and
   manual mode when not.*/
@@ -1996,26 +2015,6 @@ SK_API void                  lighting_set_directional (vec3      dir, color128  
 SK_API void                  lighting_get_directional (vec3* out_dir, color128* out_color_linear);
 SK_API void                  lighting_set_reflection  (tex_t ibl_cubemap);
 SK_API tex_t                 lighting_get_reflection  (void);
-
-///////////////////////////////////////////
-
-
-SK_API render_list_t         render_list_find         (const char* id);
-SK_API render_list_t         render_list_create       (void);
-SK_API void                  render_list_set_id       (      render_list_t list, const char* id);
-SK_API const char*           render_list_get_id       (const render_list_t list);
-SK_API void                  render_list_addref       (      render_list_t list);
-SK_API void                  render_list_release      (      render_list_t list);
-SK_API void                  render_list_clear        (      render_list_t list);
-SK_API int32_t               render_list_item_count   (const render_list_t list);
-SK_API int32_t               render_list_prev_count   (const render_list_t list);
-SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
-SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
-SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
-SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0));
-
-SK_API void                  render_list_push         (      render_list_t list);
-SK_API void                  render_list_pop          (void);
 
 ///////////////////////////////////////////
 

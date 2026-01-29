@@ -35,6 +35,8 @@ struct lighting_state_t {
 	color128                directional_color;
 	tex_t                   reflection;
 	tex_t                   reflection_pending_tex;
+
+	bool                    pending_scene_permission;
 };
 static lighting_state_t local = {};
 
@@ -146,6 +148,19 @@ bool lighting_init() {
 
 void lighting_step() {
 	lighting_check_pending();
+
+	// If we asked for permission to do world lighting, check on the status of
+	// that.
+	if (local.pending_scene_permission) {
+		permission_state_ state = permission_state(permission_type_scene);
+		if (state == permission_state_granted) {
+			local.pending_scene_permission = false;
+			lighting_set_mode(lighting_mode_world);
+		} else if (state == permission_state_unavailable) {
+			local.pending_scene_permission = false;
+			lighting_set_mode(lighting_mode_manual);
+		}
+	}
 
 	if (local.mode == lighting_mode_world) {
 		spherical_harmonics_t sh;
@@ -271,15 +286,31 @@ bool lighting_set_mode(lighting_mode_ mode) {
 	// In auto mode, select the best mode based on current conditions
 	if (mode == lighting_mode_auto) {
 		display_blend_ blend = device_display_get_blend();
-		if ((blend == display_blend_blend || blend == display_blend_additive) &&
-		    lighting_mode_available(lighting_mode_world)) {
-			mode = lighting_mode_world;
-		} else {
-			mode = lighting_mode_manual;
-		}
+		return lighting_set_mode((blend & display_blend_any_transparent) > 0 && lighting_mode_available(lighting_mode_world) 
+			? lighting_mode_world
+			: lighting_mode_manual);
 	}
 
 	if (local.mode == mode) return true;
+
+	if (mode == lighting_mode_world) {
+		// Request permission if we need it
+		permission_state_ perms = permission_state(permission_type_scene);
+		if (perms == permission_state_capable) {
+			permission_request(permission_type_scene);
+			// Permissions may be granted immediately
+			perms = permission_state(permission_type_scene);
+		}
+
+		if (perms != permission_state_granted) {
+			// If we're still waiting on permission, set a flag
+			if (perms == permission_state_capable)
+				local.pending_scene_permission = true;
+			mode = lighting_mode_manual;
+		}
+	} else {
+		local.pending_scene_permission = false;
+	}
 
 	// Stop light estimation if we're leaving world mode
 	if (local.mode == lighting_mode_world) {

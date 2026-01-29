@@ -62,6 +62,11 @@ xr_system_ xr_ext_android_light_estimation_initialize(void*) {
 	if (properties_light.supportsLightEstimation == false)
 		return xr_system_fail;
 
+    // Check if permissions will ever allow this
+    permission_state_ perms = permission_state(permission_type_scene);
+    if (perms == permission_state_unavailable || perms == permission_state_unknown)
+        return xr_system_fail;
+
 	local.available = true;
 	return xr_system_succeed;
 }
