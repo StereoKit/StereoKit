@@ -63,6 +63,11 @@ namespace StereoKit
 			/// `XR_REFERENCE_SPACE_TYPE_LOCAL`.</summary>
 			public static ulong Space => NativeAPI.backend_openxr_get_space();
 
+			/// <summary>Type: XrSpace. StereoKit's head/view reference space,
+			/// valid after SK.Initialize, this is created from
+			/// `XR_REFERENCE_SPACE_TYPE_VIEW`.</summary>
+			public static ulong HeadSpace => NativeAPI.backend_openxr_get_head_space();
+
 			/// <summary>Type: XrTime. This is the OpenXR time for the current
 			/// frame, and is available after SK.Initialize.</summary>
 			public static long Time => NativeAPI.backend_openxr_get_time();

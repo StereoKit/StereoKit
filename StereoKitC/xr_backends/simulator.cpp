@@ -55,6 +55,7 @@ bool simulator_init() {
 	device_data.display_type      = display_type_flatscreen;
 	device_data.name              = string_copy("Simulator");
 	device_data.runtime           = string_copy("Simulator");
+	device_data.runtime_version   = 0;
 
 	sim_head_rot     = { -21, 0.0001f, 0 };
 	sim_head_pos     = { 0, 0.2f, 0.0f };

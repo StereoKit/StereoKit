@@ -38,6 +38,13 @@
 		/// will be "Simulator", and in other non-XR modes this will be "None".
 		/// </summary>
 		public static string Runtime => NativeHelper.FromUtf8(NativeAPI.device_get_runtime());
+		/// <summary>This is the multi-part version of the active OpenXR runtime
+		/// packed into a 64-bit integer. The major version number is a 16-bit
+		/// integer packed into bits 63-48. The minor version number is a 16-bit
+		/// integer packed into bits 47-32. The patch version number is a 32-bit
+		/// integer packed into bits 31-0. On the simulator and other non-XR modes,
+		/// this will be 0.</summary>
+		public static ulong RuntimeVersion => NativeAPI.device_get_runtime_version();
 		/// <summary>The reported name of the GPU, this will differ between D3D
 		/// and GL.</summary>
 		public static string GPU => NativeHelper.FromUtf8(NativeAPI.device_get_gpu());

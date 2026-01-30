@@ -51,6 +51,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DeviceTracking device_get_tracking();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       device_get_name();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       device_get_runtime();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        device_get_runtime_version();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       device_get_gpu();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         device_has_eye_gaze();
@@ -818,6 +819,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        backend_openxr_get_session();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        backend_openxr_get_system_id();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        backend_openxr_get_space();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        backend_openxr_get_head_space();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern long         backend_openxr_get_time();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern long         backend_openxr_get_eyes_sample_time();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       backend_openxr_get_function([MarshalAs(UnmanagedType.LPUTF8Str)] string function_name);
