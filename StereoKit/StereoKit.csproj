@@ -62,11 +62,11 @@
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so.dbg" PackagePath="runtimes/linux-arm64/native/" Condition="Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so.dbg')"/>
 
 		<!-- Shader compile tools -->
-		<Content Pack="true" Visible="false" Include="../tools/skshaderc/win32_x64/skshaderc.exe"   PackagePath="tools/skshaderc/win32_x64/" />
-		<Content Pack="true" Visible="false" Include="../tools/skshaderc/win32_arm64/skshaderc.exe" PackagePath="tools/skshaderc/win32_arm64/" />
-		<Content Pack="true" Visible="false" Include="../tools/skshaderc/linux_x64/skshaderc"       PackagePath="tools/skshaderc/linux_x64/" />
-		<Content Pack="true" Visible="false" Include="../tools/skshaderc/linux_arm64/skshaderc"     PackagePath="tools/skshaderc/linux_arm64/" />
-		<Content Pack="true" Visible="false" Include="../tools/skshaderc/mac/skshaderc"             PackagePath="tools/skshaderc/mac/" />
+		<Content Pack="true" Visible="false" Include="../bin/tools/win32_x64/skshaderc.exe"   PackagePath="tools/skshaderc/win32_x64/"   Condition="Exists('../bin/tools/win32_x64/skshaderc.exe')"/>
+		<Content Pack="true" Visible="false" Include="../bin/tools/win32_arm64/skshaderc.exe" PackagePath="tools/skshaderc/win32_arm64/" Condition="Exists('../bin/tools/win32_arm64/skshaderc.exe')"/>
+		<Content Pack="true" Visible="false" Include="../bin/tools/linux_x64/skshaderc"       PackagePath="tools/skshaderc/linux_x64/"   Condition="Exists('../bin/tools/linux_x64/skshaderc')"/>
+		<Content Pack="true" Visible="false" Include="../bin/tools/linux_arm64/skshaderc"     PackagePath="tools/skshaderc/linux_arm64/" Condition="Exists('../bin/tools/linux_arm64/skshaderc')"/>
+		<Content Pack="true" Visible="false" Include="../bin/tools/macos_arm64/skshaderc"     PackagePath="tools/skshaderc/macos_arm64/" Condition="Exists('../bin/tools/macos_arm64/skshaderc')"/>
 		<Content Pack="true" Visible="false" Include="../tools/include/*.*" PackagePath="tools/include/" />
 
 		<!-- Targets and copies and commands for the NuGet package once it's in

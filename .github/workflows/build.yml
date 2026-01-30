@@ -212,7 +212,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: tools
-        path: tools/skshaderc/
+        path: bin/tools/
 
   ###########################################
 
@@ -240,7 +240,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: tools
-        path: tools/skshaderc/
+        path: bin/tools/
 
     - name: Set Version
       shell: pwsh
