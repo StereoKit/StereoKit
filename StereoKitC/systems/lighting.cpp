@@ -135,9 +135,10 @@ bool lighting_init() {
 	render_set_skytex   (sky_cubemap);
 	render_enable_skytex(true);
 
-	lighting_set_reflection(sky_cubemap);
-	lighting_set_ambient   (sk_default_lighting);
-	lighting_set_mode      (lighting_mode_auto);
+	lighting_set_reflection (sky_cubemap);
+	lighting_set_ambient    (sk_default_lighting);
+	lighting_set_directional(sh_dominant_dir(sk_default_lighting), {0,0,0,1});
+	lighting_set_mode       (lighting_mode_auto);
 	
 	tex_release(sky_cubemap);
 
@@ -271,7 +272,7 @@ const vec4* lighting_get_lighting() {
 
 ///////////////////////////////////////////
 
-bool lighting_mode_available(lighting_mode_ mode) {
+bool32_t lighting_mode_available(lighting_mode_ mode) {
 	switch (mode) {
 	case lighting_mode_auto:   return true;
 	case lighting_mode_manual: return true;
@@ -282,7 +283,7 @@ bool lighting_mode_available(lighting_mode_ mode) {
 
 ///////////////////////////////////////////
 
-bool lighting_set_mode(lighting_mode_ mode) {
+bool32_t lighting_set_mode(lighting_mode_ mode) {
 	// In auto mode, select the best mode based on current conditions
 	if (mode == lighting_mode_auto) {
 		display_blend_ blend = device_display_get_blend();
@@ -333,7 +334,7 @@ bool lighting_set_mode(lighting_mode_ mode) {
 ///////////////////////////////////////////
 
 lighting_mode_ lighting_get_mode(void) {
-	return local.mode;
+	return local.pending_scene_permission ? lighting_mode_world : local.mode;
 }
 
 ///////////////////////////////////////////

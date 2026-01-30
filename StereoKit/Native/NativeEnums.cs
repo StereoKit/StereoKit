@@ -1048,6 +1048,25 @@ namespace StereoKit
 		Ortho        = 1,
 	}
 
+	/// <summary>This determines how scene lighting is sourced. In most cases you'll
+	/// want auto mode, which will use light estimation when available, and
+	/// manual mode when not.</summary>
+	public enum LightingMode {
+		/// <summary>StereoKit will pick the best mode for the current conditions. On
+		/// a headset with a transparent display and light estimation support,
+		/// this will use world mode. Otherwise, it will fall back to manual
+		/// mode.</summary>
+		Auto,
+		/// <summary>Lighting values are set manually by the application. Use the
+		/// Lighting functions to configure the scene lighting.</summary>
+		Manual,
+		/// <summary>Lighting is sourced from the real world via the device's light
+		/// estimation capabilities. The Lighting functions will have no
+		/// effect in this mode. Use can check Lighting.ModeAvailable to check
+		/// if this is supported before enabling it.</summary>
+		World,
+	}
+
 	/// <summary>When used with a hierarchy modifying function that will push/pop items onto a
 	/// stack, this can be used to change the behavior of how parent hierarchy items
 	/// will affect the item being added to the top of the stack.</summary>

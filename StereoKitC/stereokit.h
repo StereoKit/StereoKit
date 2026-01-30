@@ -2006,8 +2006,8 @@ typedef enum lighting_mode_ {
 	lighting_mode_world,
 } lighting_mode_;
 
-SK_API bool                  lighting_mode_available  (lighting_mode_ mode);
-SK_API bool                  lighting_set_mode        (lighting_mode_ mode);
+SK_API bool32_t              lighting_mode_available  (lighting_mode_ mode);
+SK_API bool32_t              lighting_set_mode        (lighting_mode_ mode);
 SK_API lighting_mode_        lighting_get_mode        (void);
 SK_API void                  lighting_set_ambient     (const sk_ref(spherical_harmonics_t) ambient_lighting);
 SK_API spherical_harmonics_t lighting_get_ambient     (void);

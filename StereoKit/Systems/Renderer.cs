@@ -44,6 +44,7 @@ namespace StereoKit
 		/// <summary>Sets the lighting information for the scene! You can
 		/// build one through `SphericalHarmonics.FromLights`, or grab one
 		/// from `Tex.FromEquirectangular` or `Tex.GenCubemap`</summary>
+		[Obsolete("Use Lighting.Ambient")]
 		public static SphericalHarmonics SkyLight
 		{
 			set => NativeAPI.render_set_skylight(value);

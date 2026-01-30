@@ -550,6 +550,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_cam_root(in Matrix cam_root);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_skytex(IntPtr sky_texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_skytex();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_enable_skytex([MarshalAs(UnmanagedType.Bool)] bool show_sky);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         render_enabled_skytex();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_skymaterial(IntPtr sky_material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_skymaterial();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_skylight(in SphericalHarmonics light_info);
@@ -568,9 +571,6 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         render_has_capture_filter();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_clear_color(Color color_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color        render_get_clear_color();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_enable_skytex([MarshalAs(UnmanagedType.Bool)] bool show_sky);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         render_enabled_skytex();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_global_texture(int register_slot, IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_global_texture(int register_slot);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_global_buffer(int register_slot, IntPtr buffer);
@@ -602,6 +602,20 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_draw_now(IntPtr list, IntPtr to_rendertarget, Matrix camera, Matrix projection, Color clear_color, RenderClear clear, Rect viewport_pct, RenderLayer layer_filter, int material_variant);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_push(IntPtr list);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_pop();
+
+		///////////////////////////////////////////
+
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         lighting_mode_available(LightingMode mode);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         lighting_set_mode(LightingMode mode);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern LightingMode lighting_get_mode();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         lighting_set_ambient(in SphericalHarmonics ambient_lighting);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics lighting_get_ambient();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         lighting_set_directional(Vec3 dir, Color color_linear);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         lighting_get_directional(out Vec3 out_dir, out Color out_color_linear);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         lighting_set_reflection(IntPtr ibl_cubemap);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       lighting_get_reflection();
 
 		///////////////////////////////////////////
 

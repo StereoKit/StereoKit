@@ -15,6 +15,7 @@ class Light
 }
 enum LightMode
 {
+	World,
 	Lights,
 	Image,
 }
@@ -35,15 +36,22 @@ class DemoLighting : ITest
 	LightMode  mode          = LightMode.Lights;
 	Model      previewModel  = Model.FromFile("DamagedHelmet.gltf");
 	Mesh       lightMesh     = Mesh.GenerateSphere(1);
-	Material   lightProbeMat = Default.Material;
+	Material   lightProbeMat;
 	Material   lightSrcMat   = new Material(Default.ShaderUnlit);
 
-	public void Initialize() { }
+	public void Initialize() {
+		lightProbeMat = Material.PBR.Copy();
+		lightProbeMat[MatParamName.RoughnessAmount] = 0.0f;
+		lightProbeMat[MatParamName.MetallicAmount] = 0.0f;
+		lightProbeMat[MatParamName.ColorTint] = new Color(0,0,0,1);
+	}
 	public void Shutdown() => Platform.FilePickerClose();
 	public void Step()
 	{
 		UI.WindowBegin("Lighting Source", ref windowPose);
 		UI.Label("Mode");
+		UI.SameLine();
+		if (UI.Radio("World", mode == LightMode.World)) mode = LightMode.World;
 		UI.SameLine();
 		if (UI.Radio("Lights", mode == LightMode.Lights)) mode = LightMode.Lights;
 		UI.SameLine();
@@ -51,19 +59,29 @@ class DemoLighting : ITest
 
 		UI.HSeparator();
 
+		if (mode == LightMode.World)
+		{
+			UI.PushEnabled(Lighting.ModeAvailable(LightingMode.World));
+			bool useEstimation = Lighting.Mode == LightingMode.World;
+			if (UI.Toggle("Use Light Estimation", ref useEstimation)) Lighting.Mode = useEstimation ? LightingMode.World : LightingMode.Manual;
+			UI.PopEnabled();
+		}
+		
 		if (mode == LightMode.Lights)
-		{ 
+		{
 			if (UI.Button("Add"))
 			{
-				lights.Add(new Light { 
-					pose  = new Pose(Vec3.Up*25*U.cm, Quat.LookDir(-Vec3.Forward)), 
-					color = Vec3.One });
+				lights.Add(new Light
+				{
+					pose = new Pose(Vec3.Up * 25 * U.cm, Quat.LookDir(-Vec3.Forward)),
+					color = Vec3.One
+				});
 				UpdateLights();
 			}
 
 			if (UI.Button("Remove") && lights.Count > 1)
-			{ 
-				lights.RemoveAt(lights.Count-1);
+			{
+				lights.RemoveAt(lights.Count - 1);
 				UpdateLights();
 			}
 		}
@@ -79,7 +97,7 @@ class DemoLighting : ITest
 
 		if (UI.Button("Print Lighting Code"))
 		{
-			Vec3[] c = Renderer.SkyLight.ToArray();
+			Vec3[] c = Lighting.Ambient.ToArray();
 			string shStr = "new SphericalHarmonics(new Vec3[]{";
 			for (int i = 0; i < c.Length; i++)
 				shStr += $"new Vec3({c[i].x:F2}f, {c[i].y:F2}f, {c[i].z:F2}f),";
@@ -96,7 +114,10 @@ class DemoLighting : ITest
 		UI.Handle("Light Tool", ref lightToolPose, new Bounds(Vec3.One * 0.12f));
 		Hierarchy.Push(Matrix.T(lightToolPose.position));
 		lightMesh.Draw(lightProbeMat, Matrix.S(0.04f));
-		DrawSH(Renderer.SkyLight, 0.02f, 0.06f);
+		
+		Lighting.GetDirectional(out Vec3 lightDir, out Color lightColor);
+		Lines.Add(-lightDir * 0.02f, -lightDir * 0.06f, lightColor, lightColor, 0.005f);
+		DrawSH(Lighting.Ambient, 0.02f, 0.06f);
 		if (mode == LightMode.Lights)
 		{ 
 			bool needsUpdate = false;
@@ -109,7 +130,7 @@ class DemoLighting : ITest
 		Hierarchy.Pop();
 
 		if (cubelightDirty && cubemap.AssetState == AssetState.Loaded) {
-			Renderer.SkyLight = cubemap.CubemapLighting;
+			Lighting.Ambient = cubemap.CubemapLighting;
 			cubelightDirty = false;
 		}
 
@@ -172,8 +193,9 @@ class DemoLighting : ITest
 		cubemapFile = Path.GetFileName(file);
 		cubemap     = Tex.FromCubemap(file);
 
-		Renderer.SkyTex = cubemap;
-		cubelightDirty  = true;
+		Renderer.SkyTex     = cubemap;
+		Lighting.Reflection = cubemap;
+		cubelightDirty      = true;
 	}
 
 	void UpdateLights()
@@ -184,8 +206,9 @@ class DemoLighting : ITest
 				color       = Color.HSV(a.color) * LightIntensity(a.pose.position) })
 			.ToArray());
 
-		Renderer.SkyTex   = Tex.GenCubemap(lighting);
-		Renderer.SkyLight = lighting;
+		Renderer.SkyTex     = Tex.GenCubemap(lighting);
+		Lighting.Reflection = Renderer.SkyTex;
+		Lighting.Ambient    = lighting;
 	}
 
 	float LightIntensity(Vec3 pos)
