@@ -60,6 +60,13 @@ openxr_handle_t backend_openxr_get_space() {
 
 ///////////////////////////////////////////
 
+openxr_handle_t backend_openxr_get_head_space() {
+	log_err(backend_err_wrong_backend);
+	return 0;
+}
+
+///////////////////////////////////////////
+
 int64_t backend_openxr_get_time() {
 	log_err(backend_err_wrong_backend);
 	return 0;

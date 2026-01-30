@@ -199,6 +199,8 @@ void common_init() {
 	const char* text = "";
 	log_infof("Device:   %s", device_get_name());
 	log_infof("GPU:      %s", device_get_gpu());
+	uint64_t runtime_version = device_get_runtime_version();
+	log_infof("Runtime:  %llu.%llu.%llu", (runtime_version >> 48) & 0xFFFF, (runtime_version >> 32) & 0xFFFF, runtime_version & 0xFFFFFFFF);
 	switch (device_get_tracking()) { case device_tracking_none: text = "none"; break; case device_tracking_3dof: text = "3dof"; break; case device_tracking_6dof: text = "6dof"; break; }
 	log_infof("Tracking: %s", text);
 	log_infof("Hands:    %s", device_has_hand_tracking()?"true":"false");
