@@ -14,7 +14,7 @@
 		<!-- The managed .pdb is not copied by default, so we copy it here to
 		     enable debugging of the managed dll.-->
 		<Copy
-			SourceFiles        = "$(MSBuildThisFileDirectory)../lib/$(TargetFramework)/StereoKit.pdb"
+			SourceFiles        = "$(MSBuildThisFileDirectory)../lib/net8.0/StereoKit.pdb"
 			DestinationFolder  = "$(OutputPath)"
 			SkipUnchangedFiles = "true"/>
 		

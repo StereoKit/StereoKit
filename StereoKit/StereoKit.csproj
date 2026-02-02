@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework> <!--Update the PDB URL in StereoKit.targets if changing-->
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<OutputPath>../bin/</OutputPath>
 		<DocumentationFile>../bin/StereoKit.xml</DocumentationFile>
