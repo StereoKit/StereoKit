@@ -42,6 +42,7 @@ set(SK_DYNAMIC_OPENXR               OFF CACHE BOOL "Dynamic link with the standa
 set(SK_WINDOWS_GL                   OFF CACHE BOOL "Build Windows version using OpenGL as the renderer. This is primarily for debugging GL code while developing on Windows.")
 set(SK_LOCAL_SK_RENDERER            OFF CACHE BOOL "Build using a local version of sk_renderer, instead of the latest release. This is useful for testing in-progress changes to sk_renderer.")
 set(SK_PROFILE                      OFF CACHE BOOL "Build with Tracy profiler enabled.")
+set(SK_STRIP_DEBUG_SYMBOLS          ON  CACHE BOOL "Strip debug symbols from the shared library. Disable on Android to keep symbols embedded for native debugging.")
 set(FORCE_COLORED_OUTPUT            OFF CACHE BOOL "Always produce ANSI-colored output (GNU/Clang only).")
 
 ###########################################
@@ -596,7 +597,7 @@ if (NOT MSVC)
     StereoKitC/lib/include_no_win/)
   set(SK_BIN_DEBUG_EXT ".so.dbg")
 
-  if (NOT EMSCRIPTEN AND SK_BUILD_SHARED_LIBS)
+  if (NOT EMSCRIPTEN AND SK_BUILD_SHARED_LIBS AND SK_STRIP_DEBUG_SYMBOLS)
     set(SK_SEPARATE_DBG ON)
     add_custom_command(TARGET StereoKitC POST_BUILD
       COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}
@@ -604,7 +605,7 @@ if (NOT MSVC)
       COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT} $<TARGET_FILE:StereoKitC>
     )
   endif()
-  if (SK_DYNAMIC_OPENXR)
+  if (SK_DYNAMIC_OPENXR AND SK_STRIP_DEBUG_SYMBOLS)
     add_custom_command(TARGET StereoKitC POST_BUILD
       COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:openxr_loader>
     )
@@ -753,7 +754,7 @@ endif()
 ###########################################
 
 if (SK_BUILD_TESTS)
-  add_executable( StereoKitCTest ${SK_WIN32}
+  set(SK_CTEST_SOURCES
     Examples/StereoKitCTest/main.cpp
     Examples/StereoKitCTest/demo_envmap.h
     Examples/StereoKitCTest/demo_envmap.cpp
@@ -793,9 +794,15 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/skt_lighting.cpp
   )
 
-  target_link_libraries( StereoKitCTest
-    StereoKitC
-  )
+  if (ANDROID)
+    add_library( StereoKitCTest SHARED
+      ${SK_CTEST_SOURCES} )
+  else()
+    add_executable( StereoKitCTest ${SK_WIN32}
+      ${SK_CTEST_SOURCES} )
+  endif()
+
+  target_link_libraries( StereoKitCTest PRIVATE StereoKitC )
 
   # MinGW: Statically link C++ runtime. Both DLL and EXE get their own copy.
   # --allow-multiple-definition: The DLL's import library has runtime symbols too,
@@ -825,6 +832,24 @@ if (SK_BUILD_TESTS)
     TARGET StereoKitCTest
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${source} ${destination}
     COMMENT "Copy resources from ${source} => ${destination}")
+
+  if (ANDROID)
+    if(NOT ANDROID_PACKAGE_NAME)
+      set(ANDROID_PACKAGE_NAME "com.stereokit.ctest")
+    endif()
+    if(NOT ANDROID_MIN_SDK_VERSION)
+      set(ANDROID_MIN_SDK_VERSION 29)
+    endif()
+    if(NOT ANDROID_TARGET_SDK_VERSION)
+      set(ANDROID_TARGET_SDK_VERSION 36)
+    endif()
+	set(CMAKE_SYSTEM_VERSION    ${ANDROID_TARGET_SDK_VERSION})
+    set(ANDROID_APP_TARGET      "StereoKitCTest")
+    set(ANDROID_ASSETS_DIR      "${CMAKE_CURRENT_SOURCE_DIR}/Examples/Assets")
+    set(ANDROID_SOURCE_DIR      "${CMAKE_CURRENT_SOURCE_DIR}/Examples/StereoKitCTest/StereoKitCTest_Android")
+    set(ANDROID_RESOURCE_DIR    "${ANDROID_SOURCE_DIR}/resources")
+    include(${CMAKE_CURRENT_SOURCE_DIR}/Examples/StereoKitCTest/StereoKitCTest_Android/AndroidBuild.cmake)
+  endif()
 endif()
 
 ###########################################
