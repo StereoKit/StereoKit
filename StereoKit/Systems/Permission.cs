@@ -5,7 +5,7 @@ using System.Text;
 namespace StereoKit
 {
 	/// <summary>Certain features in XR require explicit permissions from the
-	/// operating system and user! This is typically for feature that surface
+	/// operating system and user! This is typically for features that surface
 	/// sensitive data like eye gaze, or objects in the user's room. This is
 	/// often complicated by the fact that permissions aren't standardized
 	/// across XR runtimes, making these permissions fragile and a pain to work
@@ -16,6 +16,10 @@ namespace StereoKit
 	/// will still need to add permission strings to your app's metadata file
 	/// (like AndroidManifest.xml), but this class will handle figuring out
 	/// which strings in the metadata to actually use.
+	/// 
+	/// On Android, if you use a Service or Context instead of an Activity for
+	/// your app (unusual), StereoKit will not be able to manage permissions
+	/// for you!
 	/// 
 	/// On platforms that don't use permissions, like Win32 or Linux, these
 	/// functions will behave as though everything is granted automatically.
@@ -31,7 +35,10 @@ namespace StereoKit
 
 		/// <summary>Does this permission need the user to approve it? This
 		/// typically means a popup window will come up when you Request this
-		/// permission, and the user has a chance to decline it.</summary>
+		/// permission, and the user has a chance to decline it.
+		/// 
+		/// If your app is an Android Service, this only reflects the Dangerous
+		/// status of the permission.</summary>
 		/// <param name="permission">The permission you're interested in.</param>
 		/// <returns>True if the permission requires user interaction, false
 		/// otherwise.</returns>
@@ -43,7 +50,10 @@ namespace StereoKit
 		/// up a popup that the user may need to interact with. Otherwise, this
 		/// will silently approve the permission. This means that the
 		/// permission may take an arbitrary amount of time before it's
-		/// approved, or declined.</summary>
+		/// approved, or declined.
+		/// 
+		/// If your app is an Android Service, this function will do nothing.
+		/// </summary>
 		/// <param name="permission">The permission to request.</param>
 		public static void Request(PermissionType permission)
 			=> NativeAPI.permission_request(permission);
