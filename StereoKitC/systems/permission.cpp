@@ -24,9 +24,10 @@ struct permission_state_t {
 	bool              requires_interaction[permission_type_max];
 	const char*       permission_str      [permission_type_max];
 
-	jclass    class_activity;
-	jmethodID activity_checkSelfPermission;
+	jclass    class_context;
+	jmethodID context_checkSelfPermission;
 	jmethodID activity_requestPermissions;
+	bool      context_is_activity;
 };
 static permission_state_t local;
 
@@ -126,15 +127,22 @@ bool permission_init() {
 	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env();
 	jobject activity = (jobject)backend_android_get_activity();
 
-	jclass local_class_activity = env->GetObjectClass(activity);
+	jclass local_class_context = env->GetObjectClass(activity);
 	// Promote this one to a global reference, so it doesn't get cleaned up
-	local.class_activity = (jclass)env->NewGlobalRef(local_class_activity);
-	env->DeleteLocalRef(local_class_activity);
+	local.class_context = (jclass)env->NewGlobalRef(local_class_context);
+	env->DeleteLocalRef(local_class_context);
+
+	// Check if the context is actually an Activity (not a Service or other Context)
+	jclass class_activity = env->FindClass("android/app/Activity");
+	local.context_is_activity = env->IsInstanceOf(activity, class_activity);
+	env->DeleteLocalRef(class_activity);
 
 	// A jmethodID is valid for as long as the class is, no global ref needed
-	local.activity_checkSelfPermission = env->GetMethodID(local.class_activity, "checkSelfPermission", "(Ljava/lang/String;)I");
-	local.activity_requestPermissions  = env->GetMethodID(local.class_activity, "requestPermissions", "([Ljava/lang/String;I)V");
-
+	local.context_checkSelfPermission = env->GetMethodID(local.class_context, "checkSelfPermission", "(Ljava/lang/String;)I");
+	// This method is only available on Activity, not on Service or other Context types
+	local.activity_requestPermissions = local.context_is_activity
+		? env->GetMethodID(local.class_context, "requestPermissions", "([Ljava/lang/String;I)V")
+		: nullptr;
 
 	// Check what permissions we've got in the manifest
 	_permission_check_manifest_permissions();
@@ -146,7 +154,7 @@ bool permission_init() {
 
 void permission_shutdown() {
 	JNIEnv* env = (JNIEnv*)backend_android_get_jni_env();
-	env->DeleteGlobalRef(local.class_activity);
+	env->DeleteGlobalRef(local.class_context);
 
 	local = {};
 }
@@ -185,7 +193,7 @@ bool _permission_check_app_permission(const char* permission) {
 	jobject activity = (jobject)backend_android_get_activity();
 
 	jstring jobj_permission = env->NewStringUTF(permission);
-	jint    result          = env->CallIntMethod(activity, local.activity_checkSelfPermission, jobj_permission);
+	jint    result          = env->CallIntMethod(activity, local.context_checkSelfPermission, jobj_permission);
 	env->DeleteLocalRef(jobj_permission);
 
 	return result == PERMISSION_GRANTED;
@@ -215,15 +223,17 @@ void _permission_check_manifest_permissions() {
 	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env ();
 	jobject activity = (jobject)backend_android_get_activity();
 
-	jmethodID    activity_getPackageManager    =          env->GetMethodID     (local.class_activity, "getPackageManager", "()Landroid/content/pm/PackageManager;");
-	jmethodID    activity_getPackageName       =          env->GetMethodID     (local.class_activity, "getPackageName", "()Ljava/lang/String;");
-	jmethodID    activity_shouldShowRationale  =          env->GetMethodID     (local.class_activity, "shouldShowRequestPermissionRationale", "(Ljava/lang/String;)Z");
-	jobject      jobj_packageManager           =          env->CallObjectMethod(activity, activity_getPackageManager);
+	jmethodID    context_getPackageManager     =          env->GetMethodID     (local.class_context, "getPackageManager", "()Landroid/content/pm/PackageManager;");
+	jmethodID    context_getPackageName        =          env->GetMethodID     (local.class_context, "getPackageName", "()Ljava/lang/String;");
+	jobject      jobj_packageManager           =          env->CallObjectMethod(activity, context_getPackageManager);
 	jclass       class_packageManager          =          env->GetObjectClass  (jobj_packageManager);
 	jmethodID    packageManager_getPackageInfo =          env->GetMethodID     (class_packageManager, "getPackageInfo",    "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
 	jmethodID    packageManager_getPermissionInfo =       env->GetMethodID     (class_packageManager, "getPermissionInfo", "(Ljava/lang/String;I)Landroid/content/pm/PermissionInfo;");
+	jmethodID    activity_shouldShowRationale  = local.context_is_activity
+		? env->GetMethodID(local.class_context, "shouldShowRequestPermissionRationale", "(Ljava/lang/String;)Z")
+		: nullptr;
 
-	jstring      jobj_packageName              = (jstring)env->CallObjectMethod(activity, activity_getPackageName);
+	jstring      jobj_packageName              = (jstring)env->CallObjectMethod(activity, context_getPackageName);
 
 	jint         flags = 4096; // PackageManager.GET_PERMISSIONS
 	jobject      jobj_packageInfo  = env->CallObjectMethod(jobj_packageManager, packageManager_getPackageInfo, jobj_packageName, flags);
@@ -257,7 +267,9 @@ void _permission_check_manifest_permissions() {
 		}
 
 		jstring  jstr_permission = env->NewStringUTF(local.permission_str[p]);
-		jboolean is_interactive  = env->CallBooleanMethod(activity, activity_shouldShowRationale, jstr_permission);
+		jboolean is_interactive  = activity_shouldShowRationale
+			? env->CallBooleanMethod(activity, activity_shouldShowRationale, jstr_permission)
+			: JNI_FALSE;
 		jobject  permission_info = env->CallObjectMethod(jobj_packageManager, packageManager_getPermissionInfo, jstr_permission, 0);
 		if (env->ExceptionCheck()) { env->ExceptionClear(); }
 		env->DeleteLocalRef(jstr_permission);
@@ -303,6 +315,10 @@ void _permission_check_manifest_permissions() {
 ///////////////////////////////////////////
 
 void _permission_request_permission(const char* permission) {
+	// We can't request permission unless we're an Activity, Services or other
+	// Android contexts will have to manage permission requests themselves.
+	if (local.context_is_activity == false) return;
+
 	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env ();
 	jobject activity = (jobject)backend_android_get_activity();
 
