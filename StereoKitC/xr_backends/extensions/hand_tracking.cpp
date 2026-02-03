@@ -314,9 +314,13 @@ void xr_ext_hand_tracking_update_joints() {
 		// Update the aim values
 		inp_hand->aim.position = local.hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
 
+		// Blend the wrist orientation into the pointing ray
+		quat wrist_orientation = quat_normalize(quat_from_angles(-50, h == handed_left ? 20 : -20, 0)*inp_hand->wrist.orientation);
+
 		vec3 dir   = inp_hand->aim.position - shoulders[h];
-		vec3 right = local.hand_joints[h][XR_HAND_JOINT_LITTLE_PROXIMAL_EXT].position - inp_hand->aim.position;
-		inp_hand->aim.orientation = quat_lookat_up(vec3_zero, dir, vec3_cross(dir, right));
+		vec3 right = wrist_orientation * vec3_right;
+		quat shoulder_orientation = quat_lookat_up(vec3_zero, dir, vec3_cross(right, dir));
+		inp_hand->aim.orientation = quat_slerp(wrist_orientation, shoulder_orientation, 0.5f);
 	}
 
 	if (!hands_active) {

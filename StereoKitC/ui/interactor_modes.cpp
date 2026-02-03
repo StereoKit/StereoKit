@@ -274,7 +274,7 @@ void interact_mode_hands_step(interact_mode_hands_t* ref_hands) {
 			ref_hands->prev_active[i] = is_active;
 
 			id = ref_hands->far[i];
-			interactor_set_min_distance(id, math_lerp(0.35f, 0.20f, math_saturate((hand_dist - 0.1f) / 0.4f)));
+			interactor_set_min_distance(id, math_lerp(0.25f, 0.1f, math_saturate((hand_dist - 0.1f) / 0.4f)));
 			interactor_update          (id,
 				hand->aim.position, hand->aim.position + hand->aim.orientation * vec3_forward * 100,
 				hand->aim, head.position + vec3{0,-0.12f,0}, vec3_zero,
