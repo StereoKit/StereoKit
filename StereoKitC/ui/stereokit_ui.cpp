@@ -568,10 +568,11 @@ bool32_t ui_input_at_g(const C* id, C* buffer, int32_t buffer_size, vec3 window_
 					utf_remove_chars(utf_advance_chars(buffer, start), count);
 					skui_input_carat_end = skui_input_carat = start;
 				}
-				utf_insert_char(buffer, buffer_size, utf_advance_chars(buffer, skui_input_carat), add);
-				skui_input_carat += 1;
-				skui_input_carat_end = skui_input_carat;
-				result = true;
+				if (utf_insert_char(buffer, buffer_size, utf_advance_chars(buffer, skui_input_carat), add)) {
+					skui_input_carat += 1;
+					skui_input_carat_end = skui_input_carat;
+					result = true;
+				}
 			}
 
 			curr = input_text_consume();
