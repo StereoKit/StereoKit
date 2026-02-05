@@ -29,6 +29,7 @@ using namespace sk;
 matrix      floor_tr;
 material_t  floor_mat;
 model_t     floor_model;
+sk_settings_t settings = {};
 
 scene_t demos[] = {
 	{
@@ -157,10 +158,13 @@ int main() {
 	log_subscribe(on_log);
 	log_set_filter(log_diagnostic);
 
-	sk_settings_t settings = {};
 	settings.app_name      = "StereoKit C";
 	settings.assets_folder = "Assets";
+#if defined(__ANDROID__)
 	settings.mode          = app_mode_xr;
+#else
+	settings.mode          = app_mode_simulator;
+#endif
 	if (!sk_init(settings))
 		return 1;
 

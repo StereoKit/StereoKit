@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	package="@ANDROID_PACKAGE_NAME@"
+	android:versionCode="@APK_VERSION_CODE@"
+	android:versionName="@APK_VERSION_NAME@">
+
+	<uses-sdk
+		android:minSdkVersion   ="@ANDROID_MIN_SDK_VERSION@"
+		android:targetSdkVersion="@ANDROID_TARGET_SDK_VERSION@" />
+
+	<application
+		android:allowBackup="true"
+		android:icon="@mipmap/ic_launcher"
+		android:label="@string/app_name"
+		android:supportsRtl="true"
+		android:debuggable="@ANDROID_DEBUGGABLE@">
+
+		<activity
+			android:name="android.app.NativeActivity"
+			android:label="@string/app_name"
+			android:configChanges="orientation|keyboardHidden|screenSize"
+			android:exported="true">
+
+			<meta-data android:name="android.app.lib_name" android:value="@ANDROID_APP_TARGET@" />
+			<intent-filter>
+				<action   android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="org.khronos.openxr.intent.category.IMMERSIVE_HMD" />
+				<category android:name="com.oculus.intent.category.VR" />
+			</intent-filter>
+		</activity>
+
+		<!-- Oculus -->
+		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|quest3|questpro"/>
+		<meta-data android:name="com.oculus.handtracking.version" android:value="V2.0"/>
+		<meta-data android:name="com.oculus.ossplash.background" android:value="passthrough-contextual"/>
+		<uses-native-library android:name="libopenxr_forwardloader.oculus.so" android:required="false"/>
+		<!-- Pico -->
+		<meta-data android:name="pvr.app.type" android:value="vr" />
+		<meta-data android:name="handtracking" android:value="1" />
+		<!-- Snapdragon -->
+		<meta-data android:name="spaces.version" android:value="0.15.0"/>
+
+		<profileable android:shell="true"/>
+	</application>
+
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="android.permission.RECORD_AUDIO" />
+	<uses-permission android:name="android.permission.CAPTURE_AUDIO_OUTPUT" />
+	<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+	<!-- Generic OpenXR items -->
+	<uses-feature    android:name="android.hardware.vr.headtracking" android:required="false" android:version="1" />
+	<uses-permission android:name="org.khronos.openxr.permission.OPENXR_SYSTEM"/>
+	<uses-permission android:name="org.khronos.openxr.permission.OPENXR" />
+	<queries>
+		<provider android:name="NA" android:authorities="org.khronos.openxr.runtime_broker;org.khronos.openxr.system_runtime_broker" />
+		<intent>
+			<action android:name="org.khronos.openxr.OpenXRRuntimeService" />
+		</intent>
+		<intent>
+			<action android:name="org.khronos.openxr.OpenXRApiLayerService" />
+		</intent>
+	</queries>
+
+	<!-- Vive specific items  -->
+	<uses-feature android:name="wave.feature.handtracking" android:required="false"/>
+	<uses-feature android:name="wave.feature.tracker"      android:required="false"/>
+
+	<!-- Snapdragon specific items -->
+	<uses-permission android:name="com.qualcomm.qti.qxr.QXRServiceClientPermission" android:required="false"/>
+	<queries>
+		<package android:name="com.qualcomm.qti.spaces.services" />
+		<package android:name="com.qualcomm.qti.openxrruntime" />
+		<intent>
+			<action android:name="com.qualcomm.qti.openxr.spaces.intent.action.BIND" />
+		</intent>
+	</queries>
+
+	<!-- Oculus specific items -->
+	<uses-permission android:name="com.oculus.permission.HAND_TRACKING"/>
+	<uses-permission android:name="com.oculus.permission.BODY_TRACKING"/>
+	<uses-permission android:name="com.oculus.permission.FACE_TRACKING"/>
+	<uses-permission android:name="com.oculus.permission.EYE_TRACKING"/>
+	<uses-feature    android:name="com.oculus.feature.PASSTHROUGH"    android:required="false"/>
+	<uses-feature    android:name="oculus.software.handtracking"      android:required="false"/>
+	<uses-feature    android:name="com.oculus.software.body_tracking" android:required="false"/>
+	<uses-feature    android:name="oculus.software.face_tracking"     android:required="false"/>
+	<uses-feature    android:name="oculus.software.eye_tracking"      android:required="false"/>
+	<uses-feature    android:name="com.oculus.experimental.enabled"   android:required="false"/>
+</manifest>

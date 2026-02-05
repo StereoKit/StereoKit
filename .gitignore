@@ -357,3 +357,7 @@ build_*/
 
 .vscode/*
 !.vscode/tasks.json
+
+# Android files
+.gradle/
+debug.keystore

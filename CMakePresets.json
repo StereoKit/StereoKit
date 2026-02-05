@@ -312,6 +312,7 @@
       "generator":   "Ninja",
       "cacheVariables": {
         "CMAKE_SYSTEM_NAME":    "Android",
+        "CMAKE_TOOLCHAIN_FILE": "$env{NDK}/build/cmake/android.toolchain.cmake",
         "CMAKE_ANDROID_NDK":    "$env{NDK}",
         "ANDROID_PLATFORM":     "android-32",
         "CMAKE_SYSTEM_VERSION": "32",
