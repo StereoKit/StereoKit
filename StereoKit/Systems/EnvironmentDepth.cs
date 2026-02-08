@@ -18,8 +18,8 @@ namespace StereoKit
 		/// values into 3D positions.</summary>
 		public struct Frame
 		{
-			/// <summary>Stereo depth texture. Both eyes are packed vertically into a
-			/// single texture (left on top, right on bottom) in D16_UNORM format.</summary>
+			/// <summary>Stereo depth texture as a 2D array with 2 layers
+			/// (layer 0 = left eye, layer 1 = right eye) in D16_UNORM format.</summary>
 			public Tex    Texture;
 			/// <summary>Predicted display time used during acquisition,
 			/// in OpenXR time units (nanoseconds).</summary>

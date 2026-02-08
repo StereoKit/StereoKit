@@ -576,8 +576,8 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public partial struct EnvironmentDepthFrame
 	{
-		/// <summary>Stereo depth texture. Both eyes are packed vertically into a
-		/// single texture (left on top, right on bottom) in D16_UNORM format.</summary>
+		/// <summary>Stereo depth texture as a 2D array with 2 layers (layer 0 = left
+		/// eye, layer 1 = right eye) in D16_UNORM format.</summary>
 		public IntPtr texture;
 		/// <summary>The predicted display time this frame was acquired for, in OpenXR
 		/// time units (nanoseconds).</summary>

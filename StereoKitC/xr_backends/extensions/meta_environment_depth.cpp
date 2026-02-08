@@ -217,6 +217,15 @@ void xr_ext_meta_environment_depth_destroy() {
 	}
 	local.running = false;
 
+	if (local.latest_mutex != nullptr) {
+		ft_mutex_lock(local.latest_mutex);
+		if (local.has_latest_frame && local.latest_frame.texture != nullptr)
+			tex_release(local.latest_frame.texture);
+		local.latest_frame = {};
+		local.has_latest_frame = false;
+		ft_mutex_unlock(local.latest_mutex);
+	}
+
 	if (local.textures != nullptr) {
 		for (uint32_t i = 0; i < local.image_count; i++) {
 			if (local.textures[i] != nullptr)
@@ -238,13 +247,6 @@ void xr_ext_meta_environment_depth_destroy() {
 	if (local.provider != XR_NULL_HANDLE && xrDestroyEnvironmentDepthProviderMETA != nullptr) {
 		xrDestroyEnvironmentDepthProviderMETA(local.provider);
 		local.provider = XR_NULL_HANDLE;
-	}
-
-	if (local.latest_mutex != nullptr) {
-		ft_mutex_lock(local.latest_mutex);
-		local.latest_frame = {};
-		local.has_latest_frame = false;
-		ft_mutex_unlock(local.latest_mutex);
 	}
 }
 
@@ -363,8 +365,12 @@ void xr_ext_meta_environment_depth_update_frame(XrTime display_time) {
 	frame.right.fov       = xr_to_fov (image_info.views[1].fov );
 
 	ft_mutex_lock(local.latest_mutex);
+	if (local.has_latest_frame && local.latest_frame.texture != nullptr)
+		tex_release(local.latest_frame.texture);
 	local.latest_frame = frame;
 	local.has_latest_frame = true;
+	if (frame.texture != nullptr)
+		tex_addref(frame.texture);
 	ft_mutex_unlock(local.latest_mutex);
 }
 
