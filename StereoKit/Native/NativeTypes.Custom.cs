@@ -569,4 +569,30 @@ namespace StereoKit
 		[Obsolete("Use Pivot instead")]
 		public static implicit operator Pivot(TextAlign a) => (Pivot)a;
 	}
+
+	/// <summary>A snapshot of environment depth data for the current frame. Contains
+	/// a GPU texture with packed stereo depth, along with per-eye camera
+	/// metadata needed to unproject the depth values into 3D positions.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public partial struct EnvironmentDepthFrame
+	{
+		/// <summary>Stereo depth texture. Both eyes are packed vertically into a
+		/// single texture (left on top, right on bottom) in D16_UNORM format.</summary>
+		public IntPtr texture;
+		/// <summary>The predicted display time this frame was acquired for, in OpenXR
+		/// time units (nanoseconds).</summary>
+		public long displayTime;
+		/// <summary>Width of a single eye's depth image, in pixels.</summary>
+		public uint width;
+		/// <summary>Height of a single eye's depth image, in pixels.</summary>
+		public uint height;
+		/// <summary>Near clip plane of the depth projection, in meters.</summary>
+		public float nearZ;
+		/// <summary>Far clip plane of the depth projection, in meters.</summary>
+		public float farZ;
+		/// <summary>Depth camera metadata for the left eye.</summary>
+		public EnvironmentDepthView left;
+		/// <summary>Depth camera metadata for the right eye.</summary>
+		public EnvironmentDepthView right;
+	}
 }

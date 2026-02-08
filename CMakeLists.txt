@@ -383,6 +383,8 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/input.cpp
   StereoKitC/systems/input_keyboard.h
   StereoKitC/systems/input_keyboard.cpp
+  StereoKitC/systems/environment_depth.h
+  StereoKitC/systems/environment_depth.cpp
   StereoKitC/systems/input_render.h
   StereoKitC/systems/input_render.cpp
   StereoKitC/systems/line_drawer.h
@@ -457,6 +459,8 @@ set(SK_SRC_XR_BACKENDS
 set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/composition_depth.h
   StereoKitC/xr_backends/extensions/composition_depth.cpp
+  StereoKitC/xr_backends/extensions/meta_environment_depth.h
+  StereoKitC/xr_backends/extensions/meta_environment_depth.cpp
   StereoKitC/xr_backends/extensions/debug_utils.h
   StereoKitC/xr_backends/extensions/debug_utils.cpp
   StereoKitC/xr_backends/extensions/ext_interaction_render_model.h

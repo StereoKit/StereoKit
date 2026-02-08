@@ -2760,6 +2760,62 @@ SK_API void                  world_set_origin_offset         (pose_t offset);
 
 ///////////////////////////////////////////
 
+/*Per-eye view metadata for an environment depth frame, providing
+  the camera pose and field of view used to capture that eye's depth.*/
+typedef struct environment_depth_view_t {
+	/*The pose of this eye's depth camera in world space.*/
+	pose_t     pose;
+	/*The field of view of this eye's depth camera, in degrees.*/
+	fov_info_t fov;
+} environment_depth_view_t;
+
+/*A snapshot of environment depth data for the current frame. Contains
+  a GPU texture with packed stereo depth, along with per-eye camera
+  metadata needed to unproject the depth values into 3D positions.*/
+typedef struct environment_depth_frame_t {
+	/*Stereo depth texture as a 2D array with 2 layers (layer 0 = left
+	  eye, layer 1 = right eye) in D16_UNORM format.*/
+	tex_t                        texture;
+	/*The predicted display time this frame was acquired for, in OpenXR
+	  time units (nanoseconds).*/
+	int64_t                      display_time;
+	/*Width of a single eye's depth image, in pixels.*/
+	uint32_t                     width;
+	/*Height of a single eye's depth image, in pixels.*/
+	uint32_t                     height;
+	/*Near clip plane of the depth projection, in meters.*/
+	float                        near_z;
+	/*Far clip plane of the depth projection, in meters.*/
+	float                        far_z;
+	/*Depth camera metadata for the left eye.*/
+	environment_depth_view_t     left;
+	/*Depth camera metadata for the right eye.*/
+	environment_depth_view_t     right;
+} environment_depth_frame_t;
+
+/*Is environment depth available on the current device and backend?*/
+SK_API bool32_t              environment_depth_available            (void);
+/*Is the environment depth provider currently running and producing
+  frames?*/
+SK_API bool32_t              environment_depth_running              (void);
+/*Does the current runtime support hand removal filtering for depth?*/
+SK_API bool32_t              environment_depth_supports_hand_removal(void);
+/*Starts the environment depth provider. Must be called before
+  try_get_latest_frame will return data. Use set_hand_removal to
+  configure hand removal separately.*/
+SK_API bool32_t              environment_depth_start                (void);
+/*Stops the environment depth provider and releases resources.*/
+SK_API void                  environment_depth_stop                 (void);
+/*Enables or disables hand removal filtering on the depth data, if
+  supported by the runtime. Can be called before or after start.*/
+SK_API bool32_t              environment_depth_set_hand_removal     (bool32_t enabled);
+/*Retrieves the latest environment depth frame. Returns false if no
+  frame is available yet. The returned texture handle has an added
+  reference that the caller must eventually release.*/
+SK_API bool32_t              environment_depth_try_get_latest_frame (environment_depth_frame_t* out_frame);
+
+///////////////////////////////////////////
+
 /*This describes what technology is being used to power StereoKit's
   XR backend.*/
 typedef enum backend_xr_type_ {

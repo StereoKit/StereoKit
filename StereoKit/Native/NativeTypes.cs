@@ -128,6 +128,17 @@ namespace StereoKit
 		public float scrollChange;
 	}
 
+	/// <summary>Per-eye view metadata for an environment depth frame, providing
+	/// the camera pose and field of view used to capture that eye's depth.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public partial struct EnvironmentDepthView
+	{
+		/// <summary>The pose of this eye's depth camera in world space.</summary>
+		public Pose pose;
+		/// <summary>The field of view of this eye's depth camera, in degrees.</summary>
+		public FovInfo fov;
+	}
+
 	/// <summary>A point on a lathe for a mesh generation algorithm. This is the 'silhouette'
 	/// of the mesh, or the shape the mesh would take if you spun this line of points
 	/// in a cylinder.</summary>

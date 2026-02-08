@@ -12,6 +12,7 @@
 #include "openxr_platform.h"
 #include "extensions/fb_colorspace.h"
 #include "extensions/composition_depth.h"
+#include "extensions/meta_environment_depth.h"
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
@@ -785,6 +786,10 @@ bool openxr_render_frame() {
 
 	// Timing also needs some work, may be best as some sort of anchor system
 	xr_time = frame_state.predictedDisplayTime;
+
+	// Meta's environment depth images are only valid when acquired during a running
+	// OpenXR frame (between xrBeginFrame and xrEndFrame)
+	xr_ext_meta_environment_depth_update_frame(xr_time);
 
 	// Execute any code that's dependent on the predicted time, such as
 	// updating the location of controller models. This often includes drawing,
