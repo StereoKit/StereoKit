@@ -112,6 +112,7 @@ ui_scroll_ UIScroll
 # Complex structs in NativeTypes.cs with special handling
 @noimpl sk_settings_t rect_t
 @noimpl hand_sim_id_t id_hash_t
+@noimpl environment_depth_frame_t
 
 # UI types with special handling
 # (none currently)
