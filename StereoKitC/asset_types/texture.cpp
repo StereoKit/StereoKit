@@ -1090,7 +1090,7 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 
 	if (!skr_tex_is_valid(&texture->gpu_tex) || different_size || (!different_size && !dynamic)) {
 		if (!different_size && !dynamic)
-			texture->type &= tex_type_dynamic;
+			texture->type |= tex_type_dynamic;
 
 		// Convert tex_type_ to skr_tex_flags_
 		skr_tex_flags_    flags   = tex_type_to_skr_flags(texture->type);
