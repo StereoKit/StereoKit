@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: MIT */
+/* The authors below grant copyright rights under the MIT license:
+ * Copyright (c) 2025 Qualcomm Technologies, Inc.
+ */
+
 #include "../sk_memory.h"
 
 #ifdef _MSC_VER
@@ -11,6 +16,7 @@
 #define CGLTF_MALLOC sk::sk_malloc
 #define CGLTF_FREE sk::_sk_free
 #include "../libraries/cgltf.h"
+#include "../libraries/array.h"
 #ifdef _MSC_VER
 #pragma warning(pop)
 #else
@@ -59,6 +65,50 @@ void gltf_parse_extras(model_t model, model_node_id node, const char *extras_jso
 			log_warn("SK node extras does not support array types");
 		}
 		i += tokens[i].size;
+	}
+	sk_free(tokens);
+}
+
+void gltf_parse_extension(cgltf_extension extension, dictionary_t<char*> *out_result) {
+	const char* extension_json = extension.data;
+	const size_t extension_size = strlen(extension_json);
+
+	jsmn_parser parser;
+	jsmn_init(&parser);
+
+	int32_t token_ct = jsmn_parse(&parser, extension_json, extension_size, nullptr, 0);
+	if (token_ct <= 0) return;
+
+	jsmntok_t* tokens = sk_malloc_t(jsmntok_t, token_ct);
+	jsmn_init(&parser);
+	token_ct = jsmn_parse(&parser, extension_json, extension_size, tokens, token_ct);
+
+	if (token_ct < 1 || tokens[0].type != JSMN_OBJECT) {
+		return;
+	}
+
+	for (int32_t j = 1; j < token_ct; j+=1) {
+		if (tokens[j].type == JSMN_STRING) {
+			if (tokens[j].size == 1) {
+				stref_t key     = { extension_json + tokens[j  ].start, (uint32_t)(tokens[j  ].end-tokens[j  ].start) };
+				stref_t val     = { extension_json + tokens[j+1].start, (uint32_t)(tokens[j+1].end-tokens[j+1].start) };
+				char*   key_str = stref_copy(key);
+				char*   val_str = stref_copy(val);
+				out_result->set(key_str, string_copy(val_str));
+				sk_free(key_str);
+				sk_free(val_str);
+			} else {
+				stref_t key     = { extension_json + tokens[j].start, (uint32_t)(tokens[j].end - tokens[j].start) };
+				char*   key_str = stref_copy(key);
+				out_result->set(key_str, string_copy("true"));
+				sk_free(key_str);
+			}
+		} else if (tokens[j].type == JSMN_OBJECT) {
+			log_warn("SK node extensions does not support object types");
+		} else if (tokens[j].type == JSMN_ARRAY) {
+			log_warn("SK node extensions does not support array types");
+		}
+		j += tokens[j].size;
 	}
 	sk_free(tokens);
 }
