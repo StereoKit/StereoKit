@@ -45,6 +45,24 @@ namespace StereoKit
 		/// <returns>A System.Numerics compatible vector.</returns>
 		public static implicit operator Vector2(Vec2 v) => v.v;
 
+        /// <summary>Override of the equals operator for the Vec2 class.</summary>
+        /// <param name="a">Any vector.</param>
+        /// <param name="b">Any vector.</param>
+        /// <returns>true if the Vectors match, false otherwise.</returns>
+        public static bool operator ==(Vec2 a, Vec2 b)
+        {
+            return Distance(a, b) == 0;
+        }
+
+        /// <summary>Override of the not equals operator for the Vec2 class.</summary>
+        /// <param name="a">Any vector.</param>
+        /// <param name="b">Any vector.</param>
+        /// <returns>false if the Vectors match, true otherwise.</returns>
+        public static bool operator !=(Vec2 a, Vec2 b)
+		{
+			return !(a == b);
+		}
+
 		/// <summary>Adds matching components together. Commutative.</summary>
 		/// <param name="a">Any vector.</param>
 		/// <param name="b">Any vector.</param>

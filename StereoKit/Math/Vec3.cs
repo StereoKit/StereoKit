@@ -18,11 +18,11 @@ namespace StereoKit
 		/// provided.</summary>
 		public Vector3 v;
 		/// <summary>X component.</summary>
-		public float x { get => v.X; set => v.X=value; }
+		public float x { get => v.X; set => v.X = value; }
 		/// <summary>Y component.</summary>
-		public float y { get => v.Y; set => v.Y=value; }
+		public float y { get => v.Y; set => v.Y = value; }
 		/// <summary>Z component.</summary>
-		public float z { get => v.Z; set => v.Z=value; }
+		public float z { get => v.Z; set => v.Z = value; }
 
 		/// <summary>Creates a vector from x, y, and z values! StereoKit uses
 		/// a right-handed metric coordinate system, where +x is to the
@@ -49,11 +49,29 @@ namespace StereoKit
 		/// <returns>A System.Numerics compatible vector.</returns>
 		public static implicit operator Vector3(Vec3 v) => v.v;
 
-		/// <summary>Adds matching components together. Commutative.</summary>
-		/// <param name="a">Any vector.</param>
-		/// <param name="b">Any vector.</param>
-		/// <returns>A new vector from the added components.</returns>
-		public static Vec3 operator +(Vec3 a, Vec3 b) => a.v + b.v;
+        /// <summary>Override of the equals operator for the Vec3 class.</summary>
+        /// <param name="a">Any vector.</param>
+        /// <param name="b">Any vector.</param>
+        /// <returns>true if the Vectors match, false otherwise.</returns>
+        public static bool operator ==(Vec3 a, Vec3 b)
+        {
+            return Distance(a, b) == 0;
+        }
+
+        /// <summary>Override of the not equals operator for the Vec3 class.</summary>
+        /// <param name="a">Any vector.</param>
+        /// <param name="b">Any vector.</param>
+        /// <returns>false if the Vectors match, true otherwise.</returns>
+        public static bool operator !=(Vec3 a, Vec3 b)
+		{
+			return !(a == b);
+		}
+
+        /// <summary>Adds matching components together. Commutative.</summary>
+        /// <param name="a">Any vector.</param>
+        /// <param name="b">Any vector.</param>
+        /// <returns>A new vector from the added components.</returns>
+        public static Vec3 operator +(Vec3 a, Vec3 b) => a.v + b.v;
 		/// <summary>Subtracts matching components from eachother. Not
 		/// commutative.</summary>
 		/// <param name="a">Any vector.</param>
@@ -220,7 +238,7 @@ namespace StereoKit
 		/// <returns>Distance between the two points.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float Distance(Vec3 a, Vec3 b)
-			=> (a.v-b.v).Length();
+			=> (a.v - b.v).Length();
 
 		/// <summary>Calculates the distance between two points in space, but
 		/// leaves them squared! Make sure they're in the same coordinate
@@ -230,7 +248,7 @@ namespace StereoKit
 		/// <returns>Distance between the two points, but squared!</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float DistanceSq(Vec3 a, Vec3 b)
-			=> (a.v-b.v).LengthSquared();
+			=> (a.v - b.v).LengthSquared();
 
 		/// <summary>Checks if two points are within a certain radius of
 		/// each other. This is an easily readable shorthand of the squared
@@ -242,7 +260,7 @@ namespace StereoKit
 		/// not.</returns>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static bool InRadius(Vec3 a, Vec3 b, float radius)
-			=> (a.v-b.v).LengthSquared() < radius * radius;
+			=> (a.v - b.v).LengthSquared() < radius * radius;
 
 		/// <summary>Creates a vector that points out at the given 2D angle!
 		/// This creates the vector on the XZ plane, and allows you to
@@ -277,7 +295,7 @@ namespace StereoKit
 		/// angle to. Does not need to be normalized.</param>
 		/// <returns>A positive angle between two vectors in degrees!</returns>
 		public static float AngleBetween(Vec3 a, Vec3 b)
-			=> (float)System.Math.Acos( Dot(a, b) / SKMath.Sqrt(a.LengthSq * b.LengthSq) ) * Units.rad2deg;
+			=> (float)System.Math.Acos(Dot(a, b) / SKMath.Sqrt(a.LengthSq * b.LengthSq)) * Units.rad2deg;
 
 		/// <summary>Exactly the same as Vec3.Cross, but has some naming
 		/// mnemonics for getting the order right when trying to find a
