@@ -41,6 +41,7 @@
 	<uses-feature    android:name="android.hardware.xr.input.controller"    android:required="false" />
 	<uses-feature    android:name="android.hardware.xr.input.eye_tracking"  android:required="false" />
 	<uses-permission android:name="android.permission.SCENE_UNDERSTANDING" />
+	<uses-permission android:name="android.permission.SCENE_UNDERSTANDING_COARSE" />
 	<uses-permission android:name="android.permission.HAND_TRACKING" />
 	<uses-permission android:name="android.permission.EYE_TRACKING_FINE" />
 

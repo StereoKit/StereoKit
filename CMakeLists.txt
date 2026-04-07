@@ -512,6 +512,8 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/eye_interaction.cpp
   StereoKitC/xr_backends/extensions/fb_colorspace.h
   StereoKitC/xr_backends/extensions/fb_colorspace.cpp
+  StereoKitC/xr_backends/extensions/future.h
+  StereoKitC/xr_backends/extensions/future.cpp
   StereoKitC/xr_backends/extensions/vulkan_enable.h
   StereoKitC/xr_backends/extensions/vulkan_enable.cpp
   StereoKitC/xr_backends/extensions/hand_mesh.h
@@ -524,6 +526,8 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/loader_init.cpp
   StereoKitC/xr_backends/extensions/palm_pose.h
   StereoKitC/xr_backends/extensions/palm_pose.cpp
+  StereoKitC/xr_backends/extensions/spatial_entity.h
+  StereoKitC/xr_backends/extensions/spatial_entity.cpp
   StereoKitC/xr_backends/extensions/android_create_instance.h
   StereoKitC/xr_backends/extensions/android_create_instance.cpp
   StereoKitC/xr_backends/extensions/android_thread.h
