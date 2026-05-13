@@ -196,6 +196,16 @@ void xr_ext_msft_hand_mesh_update_mesh(handed_ handed, hand_mesh_t* ref_hand_mes
 		ref_hand_mesh->root_transform = pose_matrix(pose) * render_get_cam_final();
 
 	if (local.mesh_src[h].isActive) {
+		// Update hand mesh vertices when they've changed, or when we've
+		// just switched away from another mesh type
+		if (local.mesh_src[h].vertexBufferChanged || local.mesh_dirty[h]) {
+			for (uint32_t v = 0; v < local.mesh_src[h].vertexBuffer.vertexCountOutput; v++) {
+				memcpy(&ref_hand_mesh->verts[v].pos,  &local.mesh_src[h].vertexBuffer.vertices[v].position, sizeof(vec3));
+				memcpy(&ref_hand_mesh->verts[v].norm, &local.mesh_src[h].vertexBuffer.vertices[v].normal,   sizeof(vec3));
+			}
+			mesh_set_verts(ref_hand_mesh->mesh, ref_hand_mesh->verts, local.mesh_src[h].vertexBuffer.vertexCountOutput, false);
+		}
+
 		// Update hand mesh indices when they've changed, or when we've
 		// just switched away from another mesh type
 		if (local.mesh_src[h].indexBufferChanged || local.mesh_dirty[h]) {
@@ -209,16 +219,6 @@ void xr_ext_msft_hand_mesh_update_mesh(handed_ handed, hand_mesh_t* ref_hand_mes
 			qsort(tris, local.mesh_src[h].indexBuffer.indexCountOutput / 3, sizeof(hand_tri_t), h == handed_left ? hand_tri_t::compare_l : hand_tri_t::compare_r);
 
 			mesh_set_inds(ref_hand_mesh->mesh, ref_hand_mesh->inds, local.mesh_src[h].indexBuffer.indexCountOutput);
-		}
-
-		// Update hand mesh vertices when they've changed, or when we've
-		// just switched away from another mesh type
-		if (local.mesh_src[h].vertexBufferChanged || local.mesh_dirty[h]) {
-			for (uint32_t v = 0; v < local.mesh_src[h].vertexBuffer.vertexCountOutput; v++) {
-				memcpy(&ref_hand_mesh->verts[v].pos,  &local.mesh_src[h].vertexBuffer.vertices[v].position, sizeof(vec3));
-				memcpy(&ref_hand_mesh->verts[v].norm, &local.mesh_src[h].vertexBuffer.vertices[v].normal,   sizeof(vec3));
-			}
-			mesh_set_verts(ref_hand_mesh->mesh, ref_hand_mesh->verts, local.mesh_src[h].vertexBuffer.vertexCountOutput, false);
 		}
 
 		// Calculate the UVs from the reference pose if the mesh is dirty

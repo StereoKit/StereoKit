@@ -3,6 +3,9 @@
 // Copyright (c) 2019-2023 Nick Klingensmith
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
 
+// profiler.h must be included before sk_math.h to avoid SAL macro pollution
+#include "../libraries/profiler.h"
+
 #include "window.h"
 #include "ska_input.h"
 
@@ -207,6 +210,7 @@ void window_step_begin() {
 ///////////////////////////////////////////
 
 void window_step_end() {
+	profiler_zone();
 	input_step_late();
 
 	matrix view = matrix_invert(render_get_cam_final());

@@ -11,6 +11,7 @@
 #include "openxr_input.h"
 #include "extensions/ext_management.h"
 #include "extensions/eye_interaction.h"
+#include "extensions/fb_haptic.h"
 #include "../systems/input.h"
 #include "../systems/render.h"
 
@@ -20,6 +21,8 @@
 
 #include <openxr/openxr.h>
 #include <stdio.h>
+#include <string.h>
+#include <math.h>
 
 namespace sk {
 
@@ -31,6 +34,7 @@ struct xrc_profile_info_t {
 	XrPath        top_level_path;
 	pose_t        offset;
 	bool          is_hand;
+	bool          has_haptic;
 };
 
 struct xr_top_level_t {
@@ -38,6 +42,13 @@ struct xr_top_level_t {
 	XrPath        path;
 	int32_t       id;
 	int32_t       active_profile;
+};
+
+struct haptic_stream_t {
+	array_t<float> pending;           // user samples not yet submitted to the runtime
+	int32_t        pending_offset;    // offset into 'pending' of the next un-submitted sample
+	float          rate_hz;           // sample rate of the pending buffer
+	bool           active;            // is there a stream currently being drained?
 };
 
 struct xrc_state_t {
@@ -57,6 +68,10 @@ struct xrc_state_t {
 
 	array_t<xrc_profile_info_t>       profiles;
 	array_t<xr_top_level_t>           top_levels;
+
+	haptic_stream_t                   haptic_streams  [input_haptic_max];
+	float                             haptic_pref_rate[input_haptic_max];
+	input_haptic_caps_                haptic_caps     [input_haptic_max];
 };
 static xrc_state_t local = {};
 
@@ -67,9 +82,10 @@ void       oxri_shutdown            (void*);
 void       oxri_update_frame        (void*);
 void       oxri_poll                (void*, XrEventDataBuffer* event);
 
-void       oxri_update_profiles     ();
-XrAction   oxri_get_or_create_action(xra_type_ type, uint32_t xra_val);
-bool       oxri_bind_profile        (xr_interaction_profile_t* profiles, int32_t profile_count);
+void        oxri_update_profiles      ();
+XrAction    oxri_get_or_create_action (xra_type_ type, uint32_t xra_val);
+bool        oxri_bind_profile         (xr_interaction_profile_t* profiles, int32_t profile_count);
+static void oxri_haptic_recompute_caps(input_haptic_ haptic_type);
 
 ///////////////////////////////////////////
 
@@ -86,6 +102,8 @@ void oxri_register() {
 ///////////////////////////////////////////
 
 xr_system_ oxri_init(void*) {
+	for (int32_t i = 0; i < input_haptic_max; i++) local.haptic_pref_rate[i] = -1;
+
 	XrActionSetCreateInfo actionset_info = { XR_TYPE_ACTION_SET_CREATE_INFO };
 	snprintf(actionset_info.actionSetName,          sizeof(actionset_info.actionSetName),          "input");
 	snprintf(actionset_info.localizedActionSetName, sizeof(actionset_info.localizedActionSetName), "Input");
@@ -121,26 +139,28 @@ xr_system_ oxri_init(void*) {
 		profile_l.top_level_path = "/user/hand/left";
 		profile_l.palm_offset    = palm_offset;
 		profile_l.is_hand        = false;
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_grip,      "grip/pose"        };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_aim,       "aim/pose"         };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_trigger,  "trigger/value"    };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_grip,     "squeeze/click"    };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_xy,    input_xy_l_stick,       "thumbstick"       };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_stick,   "thumbstick/click" };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_menu,    "menu/click"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,   input_pose_l_grip,         "grip/pose"        };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,   input_pose_l_aim,          "aim/pose"         };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float,  input_float_l_trigger,     "trigger/value"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float,  input_float_l_grip,        "squeeze/click"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_xy,     input_xy_l_stick,          "thumbstick"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_stick,      "thumbstick/click" };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_menu,       "menu/click"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_haptic, input_haptic_l_controller, "haptic"           };
 		oxri_register_profile(profile_l);
 
 		xr_interaction_profile_t profile_r = { "microsoft/motion_controller" };
 		profile_r.top_level_path = "/user/hand/right";
 		profile_r.palm_offset    = palm_offset;
 		profile_r.is_hand        = false;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,      "grip/pose"        };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,       "aim/pose"         };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger,  "trigger/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,     "squeeze/click"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_r_stick,       "thumbstick"       };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_stick,   "thumbstick/click" };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_menu,    "menu/click"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,   input_pose_r_grip,         "grip/pose"        };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,   input_pose_r_aim,          "aim/pose"         };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float,  input_float_r_trigger,     "trigger/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float,  input_float_r_grip,        "squeeze/click"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,     input_xy_r_stick,          "thumbstick"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_stick,      "thumbstick/click" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_menu,       "menu/click"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_haptic, input_haptic_r_controller, "haptic"           };
 		oxri_register_profile(profile_r);
 	}
 
@@ -151,22 +171,24 @@ xr_system_ oxri_init(void*) {
 		profile_l.top_level_path = "/user/hand/left";
 		profile_l.palm_offset    = pose_t{ {-0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
 		profile_l.is_hand        = false;
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_grip,      "grip/pose"     };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_aim,       "aim/pose"      };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_trigger,  "trigger/value" };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_grip,     "squeeze/click" };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_menu,    "menu/click"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,   input_pose_l_grip,         "grip/pose"     };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,   input_pose_l_aim,          "aim/pose"      };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float,  input_float_l_trigger,     "trigger/value" };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float,  input_float_l_grip,        "squeeze/click" };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_menu,       "menu/click"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_haptic, input_haptic_l_controller, "haptic"        };
 		oxri_register_profile(profile_l);
 
 		xr_interaction_profile_t profile_r = { "htc/vive_controller" };
 		profile_r.top_level_path = "/user/hand/right";
 		profile_r.palm_offset    = pose_t{ { 0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
 		profile_r.is_hand        = false;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,      "grip/pose"     };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,       "aim/pose"      };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger,  "trigger/value" };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,     "squeeze/click" };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_menu,    "menu/click"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,   input_pose_r_grip,         "grip/pose"     };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,   input_pose_r_aim,          "aim/pose"      };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float,  input_float_r_trigger,     "trigger/value" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float,  input_float_r_grip,        "squeeze/click" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_menu,       "menu/click"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_haptic, input_haptic_r_controller, "haptic"        };
 		oxri_register_profile(profile_r);
 	}
 
@@ -177,30 +199,32 @@ xr_system_ oxri_init(void*) {
 		profile_l.top_level_path = "/user/hand/left";
 		profile_l.palm_offset    = pose_t{ {-0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
 		profile_l.is_hand        = false;
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_grip,      "grip/pose"        };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_aim,       "aim/pose"         };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_trigger,  "trigger/value"    };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_grip,     "squeeze/value"    };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_xy,    input_xy_l_stick,       "thumbstick"       };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_stick,   "thumbstick/click" };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_menu,    "system/click"     };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_x1,      "a/click"          };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_x2,      "b/click"          };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,   input_pose_l_grip,         "grip/pose"        };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,   input_pose_l_aim,          "aim/pose"         };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float,  input_float_l_trigger,     "trigger/value"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float,  input_float_l_grip,        "squeeze/value"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_xy,     input_xy_l_stick,          "thumbstick"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_stick,      "thumbstick/click" };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_menu,       "system/click"     };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_x1,         "a/click"          };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_x2,         "b/click"          };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_haptic, input_haptic_l_controller, "haptic"           };
 		oxri_register_profile(profile_l);
 
 		xr_interaction_profile_t profile_r = { "valve/index_controller" };
 		profile_r.top_level_path = "/user/hand/right";
 		profile_r.palm_offset    = pose_t{ {-0.035f, 0, 0}, quat_from_angles(-40, 0, 0) };
 		profile_r.is_hand        = false;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,      "grip/pose"        };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,       "aim/pose"         };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger,  "trigger/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,     "squeeze/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_r_stick,       "thumbstick"       };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_stick,   "thumbstick/click" };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_menu,    "system/click"     };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x1,      "a/click"          };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x2,      "b/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,   input_pose_r_grip,         "grip/pose"        };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,   input_pose_r_aim,          "aim/pose"         };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float,  input_float_r_trigger,     "trigger/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float,  input_float_r_grip,        "squeeze/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,     input_xy_r_stick,          "thumbstick"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_stick,      "thumbstick/click" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_menu,       "system/click"     };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_x1,         "a/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_x2,         "b/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_haptic, input_haptic_r_controller, "haptic"           };
 		oxri_register_profile(profile_r);
 	}
 
@@ -211,30 +235,32 @@ xr_system_ oxri_init(void*) {
 		profile_l.top_level_path = "/user/hand/left";
 		profile_l.palm_offset    = pose_t{ {-0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
 		profile_l.is_hand        = false;
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_grip,     "grip/pose"        };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_aim,      "aim/pose"         };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_trigger, "trigger/value"    };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_grip,    "squeeze/value"    };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_xy,    input_xy_l_stick,      "thumbstick"       };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_stick,  "thumbstick/click" };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_menu,   "menu/click"       };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_x1,     "x/click"          };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_x2,     "y/click"          };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,   input_pose_l_grip,         "grip/pose"        };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,   input_pose_l_aim,          "aim/pose"         };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float,  input_float_l_trigger,     "trigger/value"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float,  input_float_l_grip,        "squeeze/value"    };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_xy,     input_xy_l_stick,          "thumbstick"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_stick,      "thumbstick/click" };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_menu,       "menu/click"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_x1,         "x/click"          };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_x2,         "y/click"          };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_haptic, input_haptic_l_controller, "haptic"           };
 		oxri_register_profile(profile_l);
 
 		xr_interaction_profile_t profile_r = { "oculus/touch_controller" };
 		profile_r.top_level_path = "/user/hand/right";
 		profile_r.palm_offset    = pose_t{ { 0.03f, 0.01f, 0 }, quat_from_angles(-80, 0, 0) };
 		profile_r.is_hand        = false;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,     "grip/pose"        };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,      "aim/pose"         };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger, "trigger/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_grip,    "squeeze/value"    };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,    input_xy_r_stick,      "thumbstick"       };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_stick,  "thumbstick/click" };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,   input_pose_r_grip,         "grip/pose"        };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,   input_pose_r_aim,          "aim/pose"         };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float,  input_float_r_trigger,     "trigger/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float,  input_float_r_grip,        "squeeze/value"    };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_xy,     input_xy_r_stick,          "thumbstick"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_stick,      "thumbstick/click" };
 
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x1,     "a/click"          };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_x2,     "b/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_x1,         "a/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_x2,         "b/click"          };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_haptic, input_haptic_r_controller, "haptic"           };
 		oxri_register_profile(profile_r);
 	}
 
@@ -245,20 +271,22 @@ xr_system_ oxri_init(void*) {
 		profile_l.top_level_path = "/user/hand/left";
 		profile_l.palm_offset    = pose_identity;
 		profile_l.is_hand        = false;
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_grip,     "grip/pose"        };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,  input_pose_l_aim,      "aim/pose"         };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_float, input_float_l_trigger, "select/click"     };
-		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,  input_button_l_menu,   "menu/click"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,   input_pose_l_grip,         "grip/pose"        };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_pose,   input_pose_l_aim,          "aim/pose"         };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_float,  input_float_l_trigger,     "select/click"     };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_bool,   input_button_l_menu,       "menu/click"       };
+		profile_l.binding[profile_l.binding_ct++] = { xra_type_haptic, input_haptic_l_controller, "haptic"           };
 		oxri_register_profile(profile_l);
 
 		xr_interaction_profile_t profile_r = { "khr/simple_controller" };
 		profile_r.top_level_path = "/user/hand/right";
 		profile_r.palm_offset    = pose_identity;
 		profile_r.is_hand        = false;
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_grip,     "grip/pose"        };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,  input_pose_r_aim,      "aim/pose"         };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_float, input_float_r_trigger, "select/click"     };
-		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,  input_button_r_menu,   "menu/click"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,   input_pose_r_grip,         "grip/pose"        };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_pose,   input_pose_r_aim,          "aim/pose"         };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_float,  input_float_r_trigger,     "select/click"     };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_bool,   input_button_r_menu,       "menu/click"       };
+		profile_r.binding[profile_r.binding_ct++] = { xra_type_haptic, input_haptic_r_controller, "haptic"           };
 		oxri_register_profile(profile_r);
 	}
 
@@ -312,6 +340,9 @@ xr_system_ oxri_init(void*) {
 				bind_info.name    = top_levels[t].name;
 				bind_info.is_hand = top_levels[t].is_hand;
 				bind_info.offset  = top_levels[t].palm_offset;
+				for (int32_t b = 0; b < top_levels[t].binding_ct; b++) {
+					if (top_levels[t].binding[b].xra_type == xra_type_haptic) { bind_info.has_haptic = true; break; }
+				}
 				local.profiles.add(bind_info);
 
 				// Track all our top level paths
@@ -381,6 +412,9 @@ void oxri_shutdown(void*) {
 	for (int32_t i = 0; i < xra_type_max; i++)
 		local.actions[i].free();
 
+	for (int32_t i = 0; i < input_haptic_max; i++)
+		local.haptic_streams[i].pending.free();
+
 	local.profiles    .free();
 	local.input_bools .free();
 	local.input_floats.free();
@@ -432,8 +466,8 @@ bool oxri_bind_profile(xr_interaction_profile_t *profiles, int32_t profile_count
 			XrActionSuggestedBinding bind = {};
 			bind.action = oxri_get_or_create_action((xra_type_)profile->binding[i].xra_type, (uint32_t)profile->binding[i].xra_type_val);
 
-			// TODO This needs modification for outputs??
-			snprintf(buffer, sizeof(buffer), "%s/input/%s", profile->top_level_path, profile->binding[i].path);
+			const char* direction = profile->binding[i].xra_type == xra_type_haptic ? "output" : "input";
+			snprintf(buffer, sizeof(buffer), "%s/%s/%s", profile->top_level_path, direction, profile->binding[i].path);
 			xr = xrStringToPath(xr_instance, buffer, &bind.binding);
 			if (XR_FAILED(xr)) { log_errf("xrStringToPath failed for %s '%s': [%s]", profile->name, buffer, openxr_string(xr)); binds.free(); return false; }
 			else               { binds.add(bind); }
@@ -562,6 +596,8 @@ void oxri_update_frame(void*) {
 		xrGetActionStateVector2f(xr_session, &get_info, &state);
 		input_xy_inject((input_xy_)i, { state.currentState.x, state.currentState.y });
 	}
+
+	oxri_haptic_step();
 }
 
 ///////////////////////////////////////////
@@ -597,8 +633,8 @@ void oxri_update_profiles() {
 			reset = true;
 
 			top_level->active_profile = p;
-			if      (string_eq(top_level->name, "/user/hand/left" )) { input_set_palm_offset(handed_left,  profile->offset); input_controller_set_hand(handed_left,  profile->is_hand); }
-			else if (string_eq(top_level->name, "/user/hand/right")) { input_set_palm_offset(handed_right, profile->offset); input_controller_set_hand(handed_right, profile->is_hand); }
+			if      (string_eq(top_level->name, "/user/hand/left" )) { input_set_palm_offset(handed_left,  profile->offset); input_controller_set_hand(handed_left,  profile->is_hand); oxri_haptic_stop(input_haptic_l_controller); local.haptic_pref_rate[input_haptic_l_controller] = -1; oxri_haptic_recompute_caps(input_haptic_l_controller); }
+			else if (string_eq(top_level->name, "/user/hand/right")) { input_set_palm_offset(handed_right, profile->offset); input_controller_set_hand(handed_right, profile->is_hand); oxri_haptic_stop(input_haptic_r_controller); local.haptic_pref_rate[input_haptic_r_controller] = -1; oxri_haptic_recompute_caps(input_haptic_r_controller); }
 			
 			log_diagf("Switched %s to %s", top_level->name, profile->name);
 			break;
@@ -693,6 +729,14 @@ XrAction oxri_get_or_create_action(xra_type_ type, uint32_t xra_val) {
 			default:                       oxri_make_action_default(&action_info, 2, "xy", xra_val); break;
 			}
 			break;
+		case xra_type_haptic:
+			action_info.actionType = XR_ACTION_TYPE_VIBRATION_OUTPUT;
+			switch (xra_val) {
+			case input_haptic_l_controller: oxri_make_action_name(&action_info, handed_left,  "haptic", "Haptic"); break;
+			case input_haptic_r_controller: oxri_make_action_name(&action_info, handed_right, "haptic", "Haptic"); break;
+			default:                        oxri_make_action_default(&action_info, 2, "haptic", xra_val); break;
+			}
+			break;
 		case xra_type_max: break;
 		}
 
@@ -705,6 +749,276 @@ XrAction oxri_get_or_create_action(xra_type_ type, uint32_t xra_val) {
 		}
 	}
 	return result;
+}
+
+///////////////////////////////////////////
+// Haptic output                          //
+///////////////////////////////////////////
+
+// Pacing target: roughly two frames' worth of samples queued in the runtime at
+// any time. ~33ms covers a 60fps app with one frame of headroom for stutters.
+const float HAPTIC_CHUNK_SECONDS = 0.033f;
+// Hard cap on a single xrApplyHapticFeedback submission. Quest's effective limit
+// is in this neighborhood; mirroring the FB envelope extension's 4000-sample
+// cap is a safe default for PCM as well.
+const int32_t HAPTIC_MAX_CHUNK_SAMPLES = 4000;
+
+///////////////////////////////////////////
+
+static XrAction oxri_haptic_action(input_haptic_ idx) {
+	array_t<XrAction>* actions = &local.actions[xra_type_haptic];
+	if (idx >= actions->count) return XR_NULL_HANDLE;
+	return actions->get(idx);
+}
+
+///////////////////////////////////////////
+
+static int32_t oxri_haptic_top_level_for(input_haptic_ idx) {
+	const char* str = idx == input_haptic_l_controller
+		? "/user/hand/left"
+		: "/user/hand/right";
+	for (int32_t i = 0; i < local.top_levels.count; i++) {
+		if (string_eq(local.top_levels[i].name, str)) return i;
+	}
+	return -1;
+}
+
+///////////////////////////////////////////
+
+static void oxri_haptic_clear_stream(input_haptic_ idx) {
+	haptic_stream_t* s = &local.haptic_streams[idx];
+	s->pending.clear();
+	s->pending_offset  = 0;
+	s->active          = false;
+	s->rate_hz         = 0;
+}
+
+///////////////////////////////////////////
+
+// Computes the caps for a single haptic output given the current active
+// interaction profile. Called only on interaction-profile change events; the
+// public oxri_haptic_caps just returns the cached value.
+static void oxri_haptic_recompute_caps(input_haptic_ haptic_type) {
+	if (haptic_type >= input_haptic_max)                   { local.haptic_caps[haptic_type] = input_haptic_caps_none; return; }
+	if (oxri_haptic_action(haptic_type) == XR_NULL_HANDLE) { local.haptic_caps[haptic_type] = input_haptic_caps_none; return; }
+
+	int32_t tl = oxri_haptic_top_level_for(haptic_type);
+	if (tl < 0 || local.top_levels[tl].active_profile < 0) { local.haptic_caps[haptic_type] = input_haptic_caps_none; return; }
+
+	// The action exists if *any* profile bound it, but the runtime won't route
+	// haptics unless the *currently active* profile is one of those. A profile
+	// without a haptic binding (e.g. hand-tracking-only) means no output.
+	if (!local.profiles[local.top_levels[tl].active_profile].has_haptic) { local.haptic_caps[haptic_type] = input_haptic_caps_none; return; }
+
+	int32_t caps = input_haptic_caps_pulse;
+	if (xr_fb_haptic_pcm_available()     ) caps |= input_haptic_caps_waveform;
+	if (xr_fb_haptic_envelope_available()) caps |= input_haptic_caps_curve;
+	local.haptic_caps[haptic_type] = (input_haptic_caps_)caps;
+}
+
+///////////////////////////////////////////
+
+input_haptic_caps_ oxri_haptic_caps(input_haptic_ haptic_type) {
+	if (haptic_type >= input_haptic_max) return input_haptic_caps_none;
+	return local.haptic_caps[haptic_type];
+}
+
+///////////////////////////////////////////
+
+float oxri_haptic_preferred_rate(input_haptic_ haptic_type) {
+	if (haptic_type >= input_haptic_max) return 0;
+	if (!xr_fb_haptic_pcm_available())   return 0;
+	// -1 means "uncached", 0 means "queried, runtime accepts any rate". Without
+	// this sentinel a 0 result would re-query every frame.
+	if (local.haptic_pref_rate[haptic_type] >= 0)
+		return local.haptic_pref_rate[haptic_type];
+
+	XrAction action = oxri_haptic_action(haptic_type);
+	if (action == XR_NULL_HANDLE) return 0;
+
+	XrHapticActionInfo info = { XR_TYPE_HAPTIC_ACTION_INFO };
+	info.action          = action;
+	info.subactionPath   = XR_NULL_PATH;
+
+	local.haptic_pref_rate[haptic_type] = xr_fb_haptic_pcm_get_sample_rate(&info);
+	return local.haptic_pref_rate[haptic_type];
+}
+
+///////////////////////////////////////////
+
+void oxri_haptic_pulse(input_haptic_ haptic_type, float frequency, float amplitude, double duration_seconds) {
+	XrAction action = oxri_haptic_action(haptic_type);
+	if (action == XR_NULL_HANDLE) return;
+
+	// Any new submission of a different type clears the streaming queue, so the
+	// previous waveform doesn't keep leaking out chunks behind the new pulse.
+	oxri_haptic_clear_stream(haptic_type);
+
+	XrHapticActionInfo info = { XR_TYPE_HAPTIC_ACTION_INFO };
+	info.action        = action;
+	info.subactionPath = XR_NULL_PATH;
+
+	XrHapticVibration vibration = { XR_TYPE_HAPTIC_VIBRATION };
+	vibration.amplitude = fmaxf(0.0f, fminf(1.0f, amplitude));
+	vibration.frequency = frequency        > 0 ? frequency                            : XR_FREQUENCY_UNSPECIFIED;
+	vibration.duration  = duration_seconds > 0 ? (XrDuration)(duration_seconds * 1e9) : XR_MIN_HAPTIC_DURATION;
+
+	XrResult r = xrApplyHapticFeedback(xr_session, &info, (const XrHapticBaseHeader*)&vibration);
+	if (XR_FAILED(r)) log_warnf("xrApplyHapticFeedback (pulse) failed [%s]", openxr_string(r));
+}
+
+///////////////////////////////////////////
+
+void oxri_haptic_stop(input_haptic_ haptic_type) {
+	XrAction action = oxri_haptic_action(haptic_type);
+	if (action == XR_NULL_HANDLE) return;
+
+	oxri_haptic_clear_stream(haptic_type);
+
+	XrHapticActionInfo info = { XR_TYPE_HAPTIC_ACTION_INFO };
+	info.action          = action;
+	info.subactionPath   = XR_NULL_PATH;
+	XrResult r = xrStopHapticFeedback(xr_session, &info);
+	if (XR_FAILED(r)) log_warnf("xrStopHapticFeedback failed [%s]", openxr_string(r));
+}
+
+///////////////////////////////////////////
+
+// Submits up to one chunk worth of pending samples to the runtime. Returns the
+// runtime-reported samplesConsumed for the previous submission, or 0 if there
+// was nothing in flight. is_append=false starts a fresh stream (cancelling any
+// prior playback); is_append=true queues onto an already-running stream.
+static int32_t oxri_haptic_submit_chunk(input_haptic_ haptic_type, bool is_append) {
+	haptic_stream_t* s      = &local.haptic_streams[haptic_type];
+	XrAction         action = oxri_haptic_action(haptic_type);
+	if (action == XR_NULL_HANDLE ||
+		s->pending_offset >= s->pending.count) return 0;
+
+	int32_t remaining   = s->pending.count - s->pending_offset;
+	int32_t chunk_count = (int32_t)(s->rate_hz * HAPTIC_CHUNK_SECONDS);
+	if (chunk_count > HAPTIC_MAX_CHUNK_SAMPLES) chunk_count = HAPTIC_MAX_CHUNK_SAMPLES;
+	if (chunk_count < 1)                        chunk_count = 1;
+	if (chunk_count > remaining)                chunk_count = remaining;
+
+	XrHapticActionInfo info = { XR_TYPE_HAPTIC_ACTION_INFO };
+	info.action          = action;
+	info.subactionPath   = XR_NULL_PATH;
+
+	uint32_t consumed = 0;
+	XrHapticPcmVibrationFB pcm = { XR_TYPE_HAPTIC_PCM_VIBRATION_FB };
+	pcm.bufferSize      = (uint32_t)chunk_count;
+	pcm.buffer          = &s->pending[s->pending_offset];
+	pcm.sampleRate      = s->rate_hz;
+	pcm.append          = is_append ? XR_TRUE : XR_FALSE;
+	pcm.samplesConsumed = &consumed;
+	XrResult r = xrApplyHapticFeedback(xr_session, &info, (const XrHapticBaseHeader*)&pcm);
+	if (XR_FAILED(r)) log_warnf("xrApplyHapticFeedback (waveform) failed [%s]", openxr_string(r));
+
+	s->pending_offset += chunk_count;
+	s->active          = true;
+
+	// Compact when we've drained more than half the buffer, to bound memory
+	// growth on long-running streams without thrashing reallocations.
+	if (s->pending_offset > 0 && s->pending_offset >= s->pending.count / 2) {
+		int32_t keep = s->pending.count - s->pending_offset;
+		if (keep > 0) memmove(s->pending.data, &s->pending.data[s->pending_offset], keep * sizeof(float));
+		s->pending.count   = keep;
+		s->pending_offset  = 0;
+	}
+
+	if (s->pending_offset >= s->pending.count) {
+		// Buffer fully submitted to the runtime. Drop the pending storage but
+		// leave 'active' true so subsequent appends know whether to use
+		// append=true on their first chunk.
+		s->pending.clear();
+		s->pending_offset = 0;
+	}
+
+	return (int32_t)consumed;
+}
+
+///////////////////////////////////////////
+
+void oxri_haptic_waveform(input_haptic_ haptic_type, const float* samples, int32_t sample_count, float sample_rate_hz, bool append, int32_t* out_prev_consumed) {
+	if (out_prev_consumed) *out_prev_consumed = 0;
+	if (!xr_fb_haptic_pcm_available()      ||
+		haptic_type    >= input_haptic_max ||
+		sample_count   <= 0                ||
+		sample_rate_hz <= 0) return;
+
+	haptic_stream_t* s      = &local.haptic_streams[haptic_type];
+	XrAction         action = oxri_haptic_action(haptic_type);
+	if (action == XR_NULL_HANDLE) return;
+
+	// Different sample rate forces a restart: a single in-flight stream can't
+	// have its rate changed mid-flight, and append=false explicitly restarts.
+	bool restart = !append || s->rate_hz != sample_rate_hz;
+	if (restart) {
+		if (s->active) {
+			XrHapticActionInfo info = { XR_TYPE_HAPTIC_ACTION_INFO };
+			info.action        = action;
+			info.subactionPath = XR_NULL_PATH;
+			xrStopHapticFeedback(xr_session, &info);
+		}
+		oxri_haptic_clear_stream(haptic_type);
+	}
+
+	s->rate_hz = sample_rate_hz;
+	s->pending.add_range(samples, sample_count);
+
+	int32_t consumed = oxri_haptic_submit_chunk(haptic_type, restart ? false : true);
+	if (out_prev_consumed) *out_prev_consumed = consumed;
+}
+
+///////////////////////////////////////////
+
+void oxri_haptic_curve(input_haptic_ haptic_type, const float* amplitudes, int32_t sample_count, float sample_rate_hz) {
+	if (!xr_fb_haptic_envelope_available() ||
+		haptic_type    >= input_haptic_max ||
+		sample_count   <= 0                ||
+		sample_rate_hz <= 0) return;
+
+	XrAction action = oxri_haptic_action(haptic_type);
+	if (action == XR_NULL_HANDLE) return;
+
+	// XR_FB_haptic_amplitude_envelope has no append concept; each submission
+	// replaces the in-flight playback. So a curve always cancels any
+	// streaming PCM as a side effect, and we cap at the documented limit.
+	oxri_haptic_clear_stream(haptic_type);
+
+	if (sample_count > XR_MAX_HAPTIC_AMPLITUDE_ENVELOPE_SAMPLES_FB) {
+		sample_count = XR_MAX_HAPTIC_AMPLITUDE_ENVELOPE_SAMPLES_FB;
+	}
+
+	XrHapticActionInfo info = { XR_TYPE_HAPTIC_ACTION_INFO };
+	info.action        = action;
+	info.subactionPath = XR_NULL_PATH;
+
+	XrHapticAmplitudeEnvelopeVibrationFB env = { XR_TYPE_HAPTIC_AMPLITUDE_ENVELOPE_VIBRATION_FB };
+	env.duration       = (XrDuration)((sample_count / sample_rate_hz) * 1e9);
+	env.amplitudeCount = (uint32_t)sample_count;
+	env.amplitudes     = amplitudes;
+	XrResult r = xrApplyHapticFeedback(xr_session, &info, (const XrHapticBaseHeader*)&env);
+	if (XR_FAILED(r)) log_warnf("xrApplyHapticFeedback (curve) failed [%s]", openxr_string(r));
+}
+
+///////////////////////////////////////////
+
+void oxri_haptic_step() {
+	// Drain one chunk per output per frame. The chunk size is sized to a few
+	// frames' worth of samples, so the runtime stays a step or two ahead of
+	// real time without unbounded queue growth.
+	for (int32_t i = 0; i < input_haptic_max; i++) {
+		haptic_stream_t* s = &local.haptic_streams[i];
+		if (!s->active) continue;
+		if (s->pending_offset < s->pending.count) {
+			oxri_haptic_submit_chunk((input_haptic_)i, true);
+		} else {
+			// Nothing left to submit; the runtime is responsible for finishing
+			// playback of what we already gave it.
+			s->active = false;
+		}
+	}
 }
 
 } // namespace sk

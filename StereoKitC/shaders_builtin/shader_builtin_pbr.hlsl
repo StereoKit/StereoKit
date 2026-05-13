@@ -9,9 +9,9 @@ float4 tex_trans       = {0,0,1,1};
 float  metallic        = 0;
 float  roughness       = 1;
 
-//--diffuse   = white
-//--emission  = white
-//--metal     = white
+//--diffuse  = white
+//--emission = black
+//--metal    = rough
 Texture2D    diffuse    : register(t0);
 SamplerState diffuse_s  : register(s0);
 Texture2D    emission   : register(t1);

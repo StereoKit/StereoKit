@@ -1,16 +1,20 @@
 #ifndef _STEREOKIT_HLSLI
 #define _STEREOKIT_HLSLI
 
+// Maximum number of views StereoKit can render in a single pass. Must
+// match SK_MAX_VIEWS in renderer.cpp.
+#define SK_MAX_VIEWS 6
+
 ///////////////////////////////////////////
 
 cbuffer stereokit_buffer : register(b1) {
-	float4x4 sk_view       [2];
-	float4x4 sk_proj       [2];
-	float4x4 sk_proj_inv   [2];
-	float4x4 sk_viewproj   [2];
+	float4x4 sk_view       [SK_MAX_VIEWS];
+	float4x4 sk_proj       [SK_MAX_VIEWS];
+	float4x4 sk_proj_inv   [SK_MAX_VIEWS];
+	float4x4 sk_viewproj   [SK_MAX_VIEWS];
 	float4   sk_lighting_sh[7];
-	float4   sk_camera_pos [2];
-	float4   sk_camera_dir [2];
+	float4   sk_camera_pos [SK_MAX_VIEWS];
+	float4   sk_camera_dir [SK_MAX_VIEWS];
 	float4   sk_fingertip  [2];
 	float4   sk_cubemap_i;   // .xy = width/height, .z  = mip count, .w = unused
 	float4   sk_screen_size; // .xy = width/height, .zw = 1/width, 1/height

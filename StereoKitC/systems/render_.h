@@ -41,6 +41,7 @@ struct _render_list_t {
 	render_list_state_     state;
 	bool                   prepped;
 	int32_t                prev_count;
+	render_list_refs_      refs;
 };
 
 

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2025 Nick Klingensmith
- * Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2026 Nick Klingensmith
+ * Copyright (c) 2023-2026 Qualcomm Technologies, Inc.
  */
 
 #pragma once
@@ -1163,40 +1163,56 @@ typedef enum cull_ {
 	cull_none,
 } cull_;
 
-SK_API mesh_t      mesh_find            (const char *name);
-SK_API mesh_t      mesh_create          (void);
-SK_API mesh_t      mesh_copy            (mesh_t mesh);
-SK_API void        mesh_set_id          (mesh_t mesh, const char *id);
-SK_API const char* mesh_get_id          (const mesh_t mesh);
-SK_API void        mesh_addref          (mesh_t mesh);
-SK_API void        mesh_release         (mesh_t mesh);
-SK_API void        mesh_draw            (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
-SK_API void        mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
-SK_API bool32_t    mesh_get_keep_data   (mesh_t mesh);
-SK_API void        mesh_set_data        (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, const vind_t *in_arr_indices, int32_t index_count, bool32_t calculate_bounds sk_default(true));
-SK_API void        mesh_set_verts       (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
-SK_API void        mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_arr_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
-SK_API int32_t     mesh_get_vert_count  (mesh_t mesh);
-SK_API void        mesh_set_inds        (mesh_t mesh, const vind_t *in_arr_indices, int32_t index_count);
-SK_API void        mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_arr_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
-SK_API int32_t     mesh_get_ind_count   (mesh_t mesh);
-SK_API void        mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
-SK_API void        mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);
-SK_API bounds_t    mesh_get_bounds      (mesh_t mesh);
-SK_API bool32_t    mesh_has_skin        (mesh_t mesh);
-SK_API void        mesh_set_skin        (mesh_t mesh, const uint16_t *in_arr_bone_ids_4, int32_t bone_id_4_count, const vec4 *in_arr_bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
-SK_API void        mesh_update_skin     (mesh_t mesh, const matrix *in_arr_bone_transforms, int32_t bone_count);
-SK_API bool32_t    mesh_ray_intersect    (mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_opt_start_inds sk_default(nullptr));
-SK_API bool32_t    mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr));
-SK_API bool32_t    mesh_get_triangle     (mesh_t mesh, uint32_t triangle_index, vert_t* out_a, vert_t* out_b, vert_t* out_c);
+/*Bit-flags for controlling mesh data upload behavior.*/
+typedef enum mesh_data_ {
+	/*No special behavior. Mesh data will be uploaded synchronously with
+	  no bounds calculation.*/
+	mesh_data_none        = 0,
+	/*Calculate mesh bounds from the provided vertices.*/
+	mesh_data_calc_bounds = 1 << 0,
+	/*Upload mesh data asynchronously on a background thread. The mesh
+	  will be skipped during rendering until the upload completes.*/
+	mesh_data_async       = 1 << 1,
+} mesh_data_;
+SK_MakeFlag(mesh_data_);
 
-SK_API mesh_t      mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0), bool32_t double_sided sk_default(false));
-SK_API mesh_t      mesh_gen_circle      (float diameter,  vec3 plane_normal, vec3 plane_top_direction, int32_t spokes sk_default(16), bool32_t double_sided sk_default(false));
-SK_API mesh_t      mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_default(0));
-SK_API mesh_t      mesh_gen_sphere      (float diameter,  int32_t subdivisions sk_default(4));
-SK_API mesh_t      mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
-SK_API mesh_t      mesh_gen_cylinder    (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
-SK_API mesh_t      mesh_gen_cone        (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
+SK_API mesh_t       mesh_find            (const char *name);
+SK_API mesh_t       mesh_create          (void);
+SK_API mesh_t       mesh_copy            (mesh_t mesh);
+SK_API void         mesh_set_id          (mesh_t mesh, const char *id);
+SK_API const char*  mesh_get_id          (const mesh_t mesh);
+SK_API void         mesh_addref          (mesh_t mesh);
+SK_API void         mesh_release         (mesh_t mesh);
+SK_API asset_state_ mesh_asset_state     (const mesh_t mesh);
+SK_API void         mesh_on_load         (mesh_t mesh, void (*asset_on_load_callback)(mesh_t mesh, void *context), void *context);
+SK_API void         mesh_on_load_remove  (mesh_t mesh, void (*asset_on_load_callback)(mesh_t mesh, void *context));
+SK_API void         mesh_draw            (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void         mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
+SK_API bool32_t     mesh_get_keep_data   (mesh_t mesh);
+SK_API void         mesh_set_data        (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, const vind_t *in_arr_indices, int32_t index_count, mesh_data_ flags sk_default(mesh_data_calc_bounds), int32_t priority sk_default(0));
+SK_API void         mesh_set_verts       (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
+SK_API void         mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_arr_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
+SK_API int32_t      mesh_get_vert_count  (mesh_t mesh);
+SK_API void         mesh_set_inds        (mesh_t mesh, const vind_t *in_arr_indices, int32_t index_count);
+SK_API void         mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_arr_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
+SK_API int32_t      mesh_get_ind_count   (mesh_t mesh);
+SK_API void         mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
+SK_API void         mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);
+SK_API bounds_t     mesh_get_bounds      (mesh_t mesh);
+SK_API bool32_t     mesh_has_skin        (mesh_t mesh);
+SK_API void         mesh_set_skin        (mesh_t mesh, const uint16_t *in_arr_bone_ids_4, int32_t bone_id_4_count, const vec4 *in_arr_bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
+SK_API void         mesh_update_skin     (mesh_t mesh, const matrix *in_arr_bone_transforms, int32_t bone_count);
+SK_API bool32_t     mesh_ray_intersect    (mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_opt_start_inds sk_default(nullptr));
+SK_API bool32_t     mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr));
+SK_API bool32_t     mesh_get_triangle     (mesh_t mesh, uint32_t triangle_index, vert_t* out_a, vert_t* out_b, vert_t* out_c);
+
+SK_API mesh_t       mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0), bool32_t double_sided sk_default(false));
+SK_API mesh_t       mesh_gen_circle      (float diameter,  vec3 plane_normal, vec3 plane_top_direction, int32_t spokes sk_default(16), bool32_t double_sided sk_default(false));
+SK_API mesh_t       mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_default(0));
+SK_API mesh_t       mesh_gen_sphere      (float diameter,  int32_t subdivisions sk_default(4));
+SK_API mesh_t       mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
+SK_API mesh_t       mesh_gen_cylinder    (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
+SK_API mesh_t       mesh_gen_cone        (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
 
 ///////////////////////////////////////////
 
@@ -1239,6 +1255,10 @@ typedef enum tex_type_ {
 	  Create it with a format that supports storage images, such as
 	  tex_format_rgba128.*/
 	tex_type_compute       = 1 << 7,
+	/*A volumetric (3D) texture, sized with width, height, and depth.
+	  Volume textures are mutually exclusive with Cubemap and array
+	  textures, and don't pair with a zbuffer.*/
+	tex_type_volume        = 1 << 8,
 	/*A standard color image that also generates mip-maps
 	  automatically.*/
 	tex_type_image         = tex_type_image_nomips | tex_type_mips,
@@ -1341,6 +1361,7 @@ SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
 SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_colors_3d       (tex_t texture, int32_t width, int32_t height, int32_t depth, void *data);
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
@@ -1353,6 +1374,7 @@ SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t)
 SK_API tex_format_  tex_get_format          (tex_t texture);
 SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
+SK_API int32_t      tex_get_depth           (tex_t texture);
 SK_API void         tex_set_sample          (tex_t texture, tex_sample_ sample sk_default(tex_sample_linear));
 SK_API tex_sample_  tex_get_sample          (tex_t texture);
 SK_API void             tex_set_sample_comp (tex_t texture, tex_sample_comp_ compare sk_default(tex_sample_comp_none));
@@ -1638,6 +1660,7 @@ SK_API bool32_t         compute_set_texture      (compute_t compute, const char 
 SK_API bool32_t         compute_set_storage      (compute_t compute, const char *name, compute_buffer_t  buffer);
 SK_API bool32_t         compute_set_constant     (compute_t compute, const char *name, material_buffer_t buffer);
 SK_API void             compute_dispatch         (compute_t compute, uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z);
+SK_API void             compute_dispatch_now     (compute_t compute, uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z);
 SK_API int32_t          compute_get_param_count  (compute_t compute);
 SK_API void             compute_get_param_info   (compute_t compute, int32_t index, char **out_name, material_param_ *out_type);
 SK_API void             compute_addref           (compute_t compute);
@@ -1839,12 +1862,15 @@ SK_API model_t       model_find                    (const char *id);
 SK_API model_t       model_copy                    (model_t model);
 SK_API model_t       model_create                  (void);
 SK_API model_t       model_create_mesh             (mesh_t mesh, material_t material);
-SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr));
-SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr));
+SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr), int32_t priority sk_default(10));
+SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr), int32_t priority sk_default(10));
 SK_API void          model_set_id                  (model_t model, const char *id);
 SK_API const char*   model_get_id                  (const model_t model);
 SK_API void          model_addref                  (model_t model);
 SK_API void          model_release                 (model_t model);
+SK_API asset_state_  model_asset_state             (const model_t model);
+SK_API void          model_on_load                 (model_t model, void (*asset_on_load_callback)(model_t model, void *context), void *context);
+SK_API void          model_on_load_remove          (model_t model, void (*asset_on_load_callback)(model_t model, void *context));
 SK_API void          model_draw                    (model_t model,                               matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_draw_mat                (model_t model, material_t material_override, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_recalculate_bounds      (model_t model);
@@ -2033,15 +2059,30 @@ SK_API void                  render_screenshot     (const char *file_utf8, int32
 //TODO: for v0.4, reorder parameters, context in particular should be next to callback
 SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
 SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
-SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
+SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, const matrix* in_arr_cameras, const matrix* in_arr_projections, int32_t view_count, render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 SK_API render_list_t         render_get_primary_list(void);
 
 ///////////////////////////////////////////
 
 
+/* Controls whether a RenderList holds asset references for the items it
+   contains. Tracked lists are safe to keep around across frames at the cost
+   of an addref/releaseref pair per item. */
+typedef enum render_list_refs_ {
+	/* The list calls addref on each item's mesh/material when added, and
+	   releaseref when cleared. This keeps assets alive for as long as the
+	   list holds them, and is the safe default. */
+	render_list_refs_tracked = 0,
+	/* The list does not addref or releaseref its items. The caller is
+	   responsible for ensuring referenced assets remain valid until the
+	   list is cleared. Useful for per-frame lists that are filled and
+	   drained inside a single frame. */
+	render_list_refs_none    = 1,
+} render_list_refs_;
+
 SK_API render_list_t         render_list_find         (const char* id);
-SK_API render_list_t         render_list_create       (void);
+SK_API render_list_t         render_list_create       (render_list_refs_ refs sk_default(render_list_refs_tracked));
 SK_API void                  render_list_set_id       (      render_list_t list, const char* id);
 SK_API const char*           render_list_get_id       (const render_list_t list);
 SK_API void                  render_list_addref       (      render_list_t list);
@@ -2052,7 +2093,7 @@ SK_API int32_t               render_list_prev_count   (const render_list_t list)
 SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
 SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
 SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
-SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0));
+SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, const matrix* in_arr_cameras, const matrix* in_arr_projections, int32_t view_count, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0));
 
 SK_API void                  render_list_push         (      render_list_t list);
 SK_API void                  render_list_pop          (void);
@@ -2728,10 +2769,190 @@ typedef enum controller_key_ {
 	controller_key_menu,
 } controller_key_;
 
+/*Index values for input poses. These represent tracked spatial poses
+  from the XR system, such as hand or controller positions and
+  orientations.*/
+typedef enum input_pose_ {
+	/*The user's eye gaze, where they're looking in the world. Requires
+	  eye tracking hardware and permissions to provide meaningful data.*/
+	input_pose_eyes,
+	/*The left hand/controller grip pose, centered in the hand where you'd
+	  hold something like a sword hilt or a tool handle.*/
+	input_pose_l_grip,
+	/*The left hand/controller palm pose, located at the surface of the
+	  palm facing outward. This uses the palm pose OpenXR extension when
+	  available, and falls back to an approximation when it's not.*/
+	input_pose_l_palm,
+	/*The left hand/controller aim pose. This points forward from the hand
+	  like a laser pointer, useful for UI interaction at a distance.*/
+	input_pose_l_aim,
+	/*The left pose of a "detached controller", when the user has both hands
+	  and controllers active in the scene.*/
+	input_pose_l_detached,
+	/*The right hand/controller grip pose, centered in the hand where
+	  you'd hold something like a sword hilt or a tool handle.*/
+	input_pose_r_grip,
+	/*The right hand/controller palm pose, located at the surface of the
+	  palm facing outward. This uses the palm pose OpenXR extension when
+	  available, and falls back to an approximation when it's not.*/
+	input_pose_r_palm,
+	/*The right hand/controller aim pose. This points forward from the
+	  hand like a laser pointer, useful for UI interaction at a
+	  distance.*/
+	input_pose_r_aim,
+	/*The right pose of a "detached controller", when the user has both hands
+	  and controllers active in the scene.*/
+	input_pose_r_detached,
+
+	/*Total number of input pose types.*/
+	input_pose_max
+} input_pose_;
+
+/*Index values for analog float inputs from controllers. These are
+  inputs that range from 0-1 based on how far the user has pressed
+  them.*/
+typedef enum input_float_ {
+	/*The trigger on the left controller, where the user's index finger
+	  typically rests.*/
+	input_float_l_trigger,
+	/*The grip button on the left controller, usually where the remaining
+	  fingers sit.*/
+	input_float_l_grip,
+	/*The trigger on the right controller, where the user's index finger
+	  typically rests.*/
+	input_float_r_trigger,
+	/*The grip button on the right controller, usually where the remaining
+	  fingers sit.*/
+	input_float_r_grip,
+
+	/*Total number of input float types.*/
+	input_float_max
+} input_float_;
+
+/*Index values for binary button inputs from controllers. These are
+  on/off inputs that provide button_state_ information.*/
+typedef enum input_button_ {
+	/*Is the left hand ready to interact at a distance? This maps to the
+	  pinch_ext/ready_ext binding from the hand interaction extension, and
+	  factors in facing direction and pinch readiness.*/
+	input_button_l_aim_ready,
+	/*The left controller's thumbstick button, pressed by clicking the
+	  stick inward. This has nothing to do with the stick's XY position.*/
+	input_button_l_stick,
+	/*The lower of the two left thumb buttons, sometimes labelled X, and
+	  sometimes A.*/
+	input_button_l_x1,
+	/*The upper of the two left thumb buttons, sometimes labelled Y, and
+	  sometimes B.*/
+	input_button_l_x2,
+	/*The menu or settings button on the left controller.*/
+	input_button_l_menu,
+	/*Is the right hand ready to interact at a distance? This maps to the
+	  pinch_ext/ready_ext binding from the hand interaction extension, and
+	  factors in facing direction and pinch readiness.*/
+	input_button_r_aim_ready,
+	/*The right controller's thumbstick button, pressed by clicking the
+	  stick inward. This has nothing to do with the stick's XY position.*/
+	input_button_r_stick,
+	/*The lower of the two right thumb buttons, sometimes labelled X, and
+	  sometimes A.*/
+	input_button_r_x1,
+	/*The upper of the two right thumb buttons, sometimes labelled Y, and
+	  sometimes B.*/
+	input_button_r_x2,
+	/*The menu or settings button on the right controller.*/
+	input_button_r_menu,
+
+	/*Total number of input button types.*/
+	input_button_max
+} input_button_;
+
+/*Index values for 2D axis inputs from controllers, like thumbsticks.
+  These provide a vec2 with X and Y ranging from -1 to 1.*/
+typedef enum input_xy_ {
+	/*The thumbstick on the left controller. X is left/right, Y is
+	  forward/back.*/
+	input_xy_l_stick,
+	/*The thumbstick on the right controller. X is left/right, Y is
+	  forward/back.*/
+	input_xy_r_stick,
+
+	/*Total number of input XY types.*/
+	input_xy_max
+} input_xy_;
+
+/*Index values for haptic outputs on controllers. These represent a
+  destination for vibration playback, requested via Input.HapticPulse,
+  Input.HapticWaveform, or Input.HapticCurve.*/
+typedef enum input_haptic_ {
+	/*The left controller's primary haptic actuator.*/
+	input_haptic_l_controller,
+	/*The right controller's primary haptic actuator.*/
+	input_haptic_r_controller,
+
+	/*Total number of haptic outputs.*/
+	input_haptic_max
+} input_haptic_;
+
+/*Bit flags describing what playback modes a haptic output currently
+  supports. Queryable via Input.HapticCaps. The set of supported modes
+  may change at runtime whenever the active OpenXR interaction profile
+  changes, which typically happens as the user picks up, sets down, or
+  swaps a controller.*/
+typedef enum input_haptic_caps_ {
+	/*No haptic output is available right now (e.g. no controller is
+	  bound, or the haptic action isn't active).*/
+	input_haptic_caps_none     = 0,
+	/*Simple frequency / amplitude / duration vibration via
+	  Input.HapticPulse. Supported by every controller that has any
+	  haptic actuator.*/
+	input_haptic_caps_pulse    = 1 << 0,
+	/*Sample-by-sample PCM playback via Input.HapticWaveform. Requires
+	  the XR_FB_haptic_pcm OpenXR extension.*/
+	input_haptic_caps_waveform = 1 << 1,
+	/*Amplitude envelope playback via Input.HapticCurve. Requires the
+	  XR_FB_haptic_amplitude_envelope OpenXR extension.*/
+	input_haptic_caps_curve    = 1 << 2,
+} input_haptic_caps_;
+
+/*A bit-flag describing the tracking state of a pose, with separate
+  bits for position and orientation. The PosAny, RotAny, and Any
+  combinations are handy when you only care if there's tracking at
+  all, and not whether it's directly measured or just an educated
+  guess.*/
+typedef enum pose_state_ {
+	/*The pose has no tracking at all, neither position nor
+	  orientation should be trusted.*/
+	pose_state_lost         = 0,
+	/*The position isn't directly tracked, but the system has an
+	  educated guess for it. For example, a controller's accelerometer
+	  can keep dead-reckoning the position for a short time after it
+	  leaves optical view.*/
+	pose_state_pos_inferred = 1 << 0,
+	/*The orientation isn't directly tracked, but the system has an
+	  educated guess for it, often from an IMU after the source has
+	  left direct view.*/
+	pose_state_rot_inferred = 1 << 1,
+	/*The position is actively tracked by the underlying hardware,
+	  to the best of its ability.*/
+	pose_state_pos_known    = 1 << 2,
+	/*The orientation is actively tracked by the underlying hardware,
+	  to the best of its ability.*/
+	pose_state_rot_known    = 1 << 3,
+
+	/*Matches any positional tracking, whether the position is
+	  directly known or just inferred.*/
+	pose_state_pos_any = pose_state_pos_inferred | pose_state_pos_known,
+	/*Matches any orientation tracking, whether the orientation is
+	  directly known or just inferred.*/
+	pose_state_rot_any = pose_state_rot_inferred | pose_state_rot_known,
+	/*Matches any tracking at all, on position or orientation. A pose
+	  with no overlap with this is fully lost.*/
+	pose_state_any     = pose_state_pos_inferred | pose_state_pos_known | pose_state_rot_inferred | pose_state_rot_known,
+} pose_state_;
+
 typedef int32_t hand_sim_id_t;
 
-SK_API int32_t               input_pointer_count             (input_source_ filter sk_default(input_source_any));
-SK_API pointer_t             input_pointer                   (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API const hand_t*         input_hand                      (handed_ hand);
 SK_API void                  input_hand_override             (handed_ hand, const hand_joint_t *in_arr_hand_joints);
 SK_API hand_source_          input_hand_source               (handed_ hand);
@@ -2739,11 +2960,11 @@ SK_API const controller_t*   input_controller                (handed_ hand);
 SK_API button_state_         input_controller_menu           (void);
 SK_API void                  input_controller_model_set      (handed_ hand, model_t model);
 SK_API model_t               input_controller_model_get      (handed_ hand);
+SK_API pose_t                input_controller_detached       (handed_ hand);
 SK_API pose_t                input_head                      (void);
 SK_API pose_t                input_eyes                      (void);
 SK_API button_state_         input_eyes_tracked              (void);
 SK_API const mouse_t*        input_mouse                     (void);
-SK_API button_state_         input_key                       (key_ key);
 SK_API void                  input_key_inject_press          (key_ key);
 SK_API void                  input_key_inject_release        (key_ key);
 SK_API char32_t              input_text_consume              (void);
@@ -2755,10 +2976,26 @@ SK_API void                  input_hand_material             (handed_ hand, mate
 SK_API bool32_t              input_get_finger_glow           (void);
 SK_API void                  input_set_finger_glow           (bool32_t visible);
 
+SK_API pose_t                input_pose                      (input_pose_   pose_type);
+SK_API pose_state_           input_pose_state                (input_pose_   pose_type);
+SK_API float                 input_float                     (input_float_  float_type);
+SK_API button_state_         input_button                    (input_button_ button_type);
+SK_API vec2                  input_xy                        (input_xy_     xy_type);
+SK_API button_state_         input_key                       (key_ key);
+
+SK_API input_haptic_caps_    input_haptic_caps               (input_haptic_ haptic_type);
+SK_API float                 input_haptic_preferred_rate     (input_haptic_ haptic_type);
+SK_API void                  input_haptic_pulse              (input_haptic_ haptic_type, float frequency, float amplitude, float duration_seconds);
+SK_API void                  input_haptic_waveform           (input_haptic_ haptic_type, const float* in_arr_samples,    int32_t sample_count, float sample_rate_hz, bool32_t append, int32_t* out_prev_samples_consumed sk_default(nullptr));
+SK_API void                  input_haptic_curve              (input_haptic_ haptic_type, const float* in_arr_amplitudes, int32_t sample_count, float sample_rate_hz);
+SK_API void                  input_haptic_stop               (input_haptic_ haptic_type);
+
 SK_API hand_sim_id_t         input_hand_sim_pose_add         (const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
 SK_API void                  input_hand_sim_pose_remove      (hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear       (void);
 
+SK_API SK_DEPRECATED int32_t input_pointer_count             (input_source_ filter sk_default(input_source_any));
+SK_API SK_DEPRECATED pointer_t input_pointer                 (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API SK_DEPRECATED void    input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API SK_DEPRECATED void    input_unsubscribe               (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API SK_DEPRECATED void    input_fire_event                (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
@@ -3104,6 +3341,8 @@ typedef enum asset_type_ {
 	asset_type_compute,
 	/*A ComputeBuffer*/
 	asset_type_compute_buffer,
+	/*A MaterialBuffer*/
+	asset_type_material_buffer,
 } asset_type_;
 
 typedef void* asset_t;
@@ -3113,6 +3352,7 @@ SK_API int32_t     assets_current_task         (void);
 SK_API int32_t     assets_total_tasks          (void);
 SK_API int32_t     assets_current_task_priority(void);
 SK_API void        assets_block_for_priority   (int32_t priority);
+SK_API void        assets_block_until          (asset_t asset, asset_state_ state);
 SK_API int32_t     assets_count                (void);
 SK_API asset_t     assets_get_index            (int32_t index);
 SK_API asset_type_ assets_get_type             (int32_t index);
@@ -3145,6 +3385,7 @@ SK_CONST char *default_id_tex_rough            = "default/tex_rough";
 SK_CONST char *default_id_tex_devtex           = "default/tex_devtex";
 SK_CONST char *default_id_tex_error            = "default/tex_error";
 SK_CONST char *default_id_cubemap              = "default/cubemap";
+SK_CONST char *default_id_tex_3d               = "default/tex_3d";
 SK_CONST char *default_id_font                 = "default/font";
 SK_CONST char *default_id_mesh_quad            = "default/mesh_quad";
 SK_CONST char *default_id_mesh_screen_quad     = "default/mesh_screen_quad";

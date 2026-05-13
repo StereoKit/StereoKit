@@ -18,6 +18,10 @@
 #include "utils/random.h"
 #include "platforms/platform.h"
 
+#if defined(SK_XR_OPENXR)
+#include "xr_backends/openxr.h"
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sk_renderer.h>
@@ -238,6 +242,8 @@ bool32_t sk_step_end() {
 		ska_time_sleep(100);
 	local.in_step = false;
 	
+	profiler_plot("sk_renderer CPU (us)", (int64_t)time_perf_cpu_us());
+	profiler_plot("sk_renderer GPU (us)", (int64_t)time_perf_gpu_us());
 	profiler_frame_mark();
 	return local.running;
 }
@@ -475,7 +481,17 @@ float  time_stepf            (){ return local.timev_stepf;     };
 double time_step             (){ return local.timev_step;      };
 void   time_scale(double scale) { local.timev_scale = scale; }
 uint64_t time_frame() { return local.frame; }
-uint64_t time_perf_cpu_us() { return skr_renderer_get_cpu_time_us(); }
+uint64_t time_perf_cpu_us() {
+	uint64_t cpu_us = skr_renderer_get_cpu_time_us();
+#if defined(SK_XR_OPENXR)
+	// OpenXR's xrWaitFrame/xrAcquire/WaitSwapchainImage block inside
+	// sk_renderer's CPU frame window. Subtract that dead time so callers see
+	// just the CPU work. Slot is zero-init, so warm-up frames subtract 0.
+	uint64_t dead_us = openxr_cpu_dead_time_us();
+	cpu_us = cpu_us > dead_us ? cpu_us - dead_us : 0;
+#endif
+	return cpu_us;
+}
 uint64_t time_perf_gpu_us() { return skr_renderer_get_gpu_time_us(); }
 
 ///////////////////////////////////////////

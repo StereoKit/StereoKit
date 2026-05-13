@@ -276,7 +276,7 @@ if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.3.26
+    GIT_TAG v2026.5.12
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to your
@@ -295,7 +295,7 @@ if (NOT SK_LOCAL_SK_APP)
   CPMAddPackage(
     NAME sk_app
     GITHUB_REPOSITORY StereoKit/sk_app
-    GIT_TAG v2026.3.11
+    GIT_TAG v2026.4.21
   )
 else()
   # For building directly with in-progress sk_app changes, point this to your
@@ -500,6 +500,8 @@ set(SK_SRC_XR_BACKENDS
 set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/composition_depth.h
   StereoKitC/xr_backends/extensions/composition_depth.cpp
+  StereoKitC/xr_backends/extensions/meta_detached_controllers.h
+  StereoKitC/xr_backends/extensions/meta_detached_controllers.cpp
   StereoKitC/xr_backends/extensions/meta_environment_depth.h
   StereoKitC/xr_backends/extensions/meta_environment_depth.cpp
   StereoKitC/xr_backends/extensions/debug_utils.h
@@ -512,6 +514,10 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/eye_interaction.cpp
   StereoKitC/xr_backends/extensions/fb_colorspace.h
   StereoKitC/xr_backends/extensions/fb_colorspace.cpp
+  StereoKitC/xr_backends/extensions/fb_haptic.h
+  StereoKitC/xr_backends/extensions/fb_haptic.cpp
+  StereoKitC/xr_backends/extensions/fb_render_model.h
+  StereoKitC/xr_backends/extensions/fb_render_model.cpp
   StereoKitC/xr_backends/extensions/future.h
   StereoKitC/xr_backends/extensions/future.cpp
   StereoKitC/xr_backends/extensions/vulkan_enable.h

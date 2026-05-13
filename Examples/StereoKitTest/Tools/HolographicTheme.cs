@@ -174,8 +174,7 @@ namespace StereoKit.Framework
 				inds[ind++] = tl_b; inds[ind++] = br_b; inds[ind++] = bl_b;
 			}
 
-			mesh.SetVerts(verts);
-			mesh.SetInds(inds);
+			mesh.SetData(verts, inds);
 			return mesh;
 		}
 
@@ -336,8 +335,7 @@ namespace StereoKit.Framework
 				inds[ind++] = tff; inds[ind++] = bfb; inds[ind++] = bff;
 			}
 
-			mesh.SetVerts(verts);
-			mesh.SetInds(inds);
+			mesh.SetData(verts, inds);
 			return mesh;
 		}
 
@@ -352,11 +350,7 @@ namespace StereoKit.Framework
 			};
 
 			public Mesh MakeMesh()
-			{
-				Mesh mesh = new Mesh();
-				mesh.SetData(verts.ToArray(), inds.ToArray());
-				return mesh;
-			}
+				=> new Mesh(verts.ToArray(), inds.ToArray());
 		}
 
 		static Mesh GlassButtonMesh(float cornerRadius, uint cornerResolution, float topRadiusScale)

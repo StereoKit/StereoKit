@@ -30,6 +30,8 @@ key_9 N9
 key_lcmd LCmd
 key_rcmd RCmd
 
+input_xy_ InputXY
+
 # Same with render_layer_!
 render_layer_0 Layer0
 render_layer_1 Layer1

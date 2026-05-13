@@ -15,10 +15,13 @@
 #include "composition_depth.h"
 #include "debug_utils.h"
 #include "meta_environment_depth.h"
+#include "meta_detached_controllers.h"
 #include "ext_interaction_render_model.h"
 #include "ext_render_model.h"
 #include "eye_interaction.h"
 #include "fb_colorspace.h"
+#include "fb_haptic.h"
+#include "fb_render_model.h"
 #include "future.h"
 #include "vulkan_enable.h"
 #include "hand_tracking.h"
@@ -70,14 +73,17 @@ bool ext_registration() {
 	xr_ext_msft_bridge_register();
 	xr_ext_interaction_render_model_register();
 	xr_ext_render_model_register();
+	xr_fb_render_model_register();
 
 	// Input extensions all must go before the oxri/input system
 	xr_ext_palm_pose_register                    ();
+	xr_fb_haptic_register                        ();
 	xr_profile_ext_hp_mr_controller_register     ();
 	xr_profile_ext_hand_interaction_register     ();
 	xr_profile_msft_hand_interaction_register    ();
 	xr_profile_bd_controller_interaction_register();
 	xr_profile_ext_eye_gaze_register             ();
+	xr_profile_meta_detached_controllers_register();
 	oxri_register();
 
 	anchors_register();

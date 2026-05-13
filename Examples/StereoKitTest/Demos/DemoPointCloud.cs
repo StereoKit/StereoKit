@@ -52,8 +52,9 @@ public class PointCloud
 			verts[idx+2] = new Vertex(p.pos, p.norm, V.XY( .5f,-.5f), p.col);
 			verts[idx+3] = new Vertex(p.pos, p.norm, V.XY(-.5f,-.5f), p.col);
 		}
+		uint[] inds = null;
 		if (mesh == null) {
-			uint[] inds = new uint[points.Length*6];
+			inds = new uint[points.Length*6];
 			for (uint i = 0; i < points.Length; i++)
 			{
 				uint ind  = i*6;
@@ -66,10 +67,12 @@ public class PointCloud
 				inds[ind+4] = vert+2;
 				inds[ind+5] = vert+0;
 			}
-			mesh = new Mesh();
-			mesh.SetInds(inds);
+			mesh = new Mesh(verts, inds);
 		}
-		mesh.SetVerts(verts);
+		else
+		{
+			mesh.SetVerts(verts);
+		}
 	}
 	public void SetPoints(Mesh fromMeshVerts)
 		=> SetPoints(fromMeshVerts.GetVerts());

@@ -12,6 +12,7 @@
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/extensions/hand_mesh.h"
 #include "../xr_backends/extensions/ext_interaction_render_model.h"
+#include "../xr_backends/extensions/fb_render_model.h"
 #include "../systems/defaults.h"
 
 namespace sk {
@@ -142,6 +143,10 @@ void input_render_step_late() {
 					} else if (xr_ext_interaction_render_model_available()) {
 						// If OpenXR has a model for the controller
 						xr_ext_interaction_render_model_draw_controller((handed_)i);
+					} else if (xr_fb_render_model_available()) {
+						// Fallback for runtimes that ship XR_FB_render_model
+						// but not the cross-vendor EXT extensions (Quest).
+						xr_fb_render_model_draw_controller((handed_)i);
 					} else {
 						// Otherwise, our built-in backup models
 						render_add_model(i == handed_left ? sk_default_controller_l : sk_default_controller_r, matrix_trs(control->pose.position, control->pose.orientation));
@@ -204,6 +209,7 @@ void input_controller_model_set(handed_ hand, model_t model) {
 model_t input_controller_model_get(handed_ hand) {
 	model_t result = local.controller_model[hand];
 	if (result == nullptr && xr_ext_interaction_render_model_available()) result = xr_ext_interaction_render_model_get(hand);
+	if (result == nullptr && xr_fb_render_model_available             ()) result = xr_fb_render_model_get             (hand);
 	if (result == nullptr)                                                result = hand == handed_left ? sk_default_controller_l : sk_default_controller_r;
 	
 	model_addref(result);

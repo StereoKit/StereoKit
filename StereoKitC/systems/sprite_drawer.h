@@ -8,9 +8,12 @@ struct sprite_buffer_t {
 	material_t material;
 	mesh_t     mesh;
 	vert_t    *verts;
+	vind_t    *inds;
 	uint32_t   id;
 	int32_t    vert_count;
 	int32_t    vert_cap;
+	int32_t    ind_count;
+	bool32_t   dirty_inds;
 };
 
 void sprite_drawer_add_buffer(material_t material);

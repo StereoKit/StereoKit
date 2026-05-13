@@ -3,6 +3,9 @@
 // Copyright (c) 2019-2025 Nick Klingensmith
 // Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
 
+// profiler.h must be included before sk_math.h to avoid SAL macro pollution
+#include "../libraries/profiler.h"
+
 #include "simulator.h"
 #include "ska_input.h"
 
@@ -269,6 +272,7 @@ void simulator_step_begin() {
 ///////////////////////////////////////////
 
 void simulator_step_end() {
+	profiler_zone();
 	anchors_step_end(NULL);
 	input_step_late();
 

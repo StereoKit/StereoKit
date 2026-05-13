@@ -11,8 +11,8 @@ float  roughness       = 1;
 float  cutoff          = 0.5;
 
 //--diffuse  = white
-//--emission = white
-//--metal    = white
+//--emission = black
+//--metal    = rough
 Texture2D    diffuse    : register(t0);
 SamplerState diffuse_s  : register(s0);
 Texture2D    emission   : register(t1);

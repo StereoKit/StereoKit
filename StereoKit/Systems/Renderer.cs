@@ -485,13 +485,36 @@ namespace StereoKit
 		/// If the width of this value is zero, then this will render to the
 		/// entire texture.</param>
 		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
-			=> NativeAPI.render_to(toRendertarget._inst, 0, camera, projection, layerFilter, materialVariant, clear, viewport);
+			=> NativeAPI.render_to(toRendertarget._inst, 0, in camera, in projection, 1, layerFilter, materialVariant, clear, viewport);
 
 		/// <inheritdoc cref="RenderTo(Tex, Matrix, Matrix, RenderLayer, int, RenderClear, Rect)"/>
 		/// <param name="toTargetIndex">Index of the render target's array
 		/// texture we want to draw to.</param>
 		public static void RenderTo(Tex toRendertarget, int toTargetIndex, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
-			=> NativeAPI.render_to(toRendertarget._inst, toTargetIndex, camera, projection, layerFilter, materialVariant, clear, viewport);
+			=> NativeAPI.render_to(toRendertarget._inst, toTargetIndex, in camera, in projection, 1, layerFilter, materialVariant, clear, viewport);
+
+		/// <summary>Multi-view variant of RenderTo. Queues a single render
+		/// pass that draws the active list into N views at once, with one
+		/// camera + projection per view, writing into N consecutive layers
+		/// of an array rendertarget. The number of views is capped by the
+		/// engine's max-views constant. Like the single-view RenderTo,
+		/// this is queued for the next pipeline frame.</summary>
+		/// <param name="toRendertarget">An array or cubemap rendertarget
+		/// with at least `cameras.Length` layers.</param>
+		/// <param name="cameras">View transforms, one per view.</param>
+		/// <param name="projections">Projection matrices, one per view.
+		/// Length must match `cameras`.</param>
+		/// <param name="layerFilter">Bit flag for which render layers to
+		/// include this pass.</param>
+		/// <param name="materialVariant">Which material variant to use.</param>
+		/// <param name="clear">Whether and how to clear the rendertarget.</param>
+		/// <param name="viewport">Subregion in normalized 0-1 coordinates.</param>
+		public static void RenderTo(Tex toRendertarget, in Matrix[] cameras, in Matrix[] projections, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+		{
+			if (cameras.Length != projections.Length)
+				throw new ArgumentException("cameras and projections must have the same length");
+			NativeAPI.render_to(toRendertarget._inst, 0, cameras, projections, cameras.Length, layerFilter, materialVariant, clear, viewport);
+		}
 
 		/// <summary>This attaches a texture resource globally across all
 		/// shaders. StereoKit uses this to attach the sky cubemap for use in

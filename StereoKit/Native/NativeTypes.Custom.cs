@@ -310,6 +310,30 @@ namespace StereoKit
 		}
 	}
 
+	/// <summary>A collection of extension methods for the PoseState enum that
+	/// makes bit-field checks a little easier.</summary>
+	public static class PoseStateExtensions
+	{
+		/// <summary>Is the pose tracked at all, on either position or
+		/// orientation?</summary>
+		/// <returns>True if any tracking is present, false if fully lost.</returns>
+		public static bool IsTracked    (this PoseState state) => (state & PoseState.Any        ) > 0;
+		/// <summary>Is the position an educated guess rather than directly
+		/// tracked?</summary>
+		/// <returns>True if inferred, false if not.</returns>
+		public static bool IsPosInferred(this PoseState state) => (state & PoseState.PosInferred) > 0;
+		/// <summary>Is the position actively tracked by the hardware?</summary>
+		/// <returns>True if directly known, false if not.</returns>
+		public static bool IsPosKnown   (this PoseState state) => (state & PoseState.PosKnown   ) > 0;
+		/// <summary>Is the orientation an educated guess rather than directly
+		/// tracked?</summary>
+		/// <returns>True if inferred, false if not.</returns>
+		public static bool IsRotInferred(this PoseState state) => (state & PoseState.RotInferred) > 0;
+		/// <summary>Is the orientation actively tracked by the hardware?</summary>
+		/// <returns>True if directly known, false if not.</returns>
+		public static bool IsRotKnown   (this PoseState state) => (state & PoseState.RotKnown   ) > 0;
+	}
+
 	public partial struct Pointer
 	{
 		/// <summary>Convenience property that turns ray.position and orientation

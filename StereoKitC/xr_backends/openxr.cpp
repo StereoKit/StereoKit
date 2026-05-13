@@ -373,6 +373,13 @@ bool openxr_init() {
 		return false;
 	}
 
+	// Create swapchains after extensions are initialized, so features
+	// like depth composition are available during creation.
+	if (!openxr_views_create_swapchains()) {
+		openxr_cleanup();
+		return false;
+	}
+
 	// On Android, tell OpenXR what kind of thread this is. This can be
 	// important on Android systems so we don't get treated as a low priority
 	// thread by accident.
@@ -674,6 +681,11 @@ void openxr_step_end() {
 
 	if (xr_has_session) { openxr_render_frame(); }
 	else                { render_clear(); render_pipeline_skip_present(); ska_time_sleep(33); }
+
+	// Both branches above tick sk_renderer's frame counter via
+	// render_pipeline_skip_present (directly or inside openxr_render_frame),
+	// so commit here keeps our mirror counter in lockstep.
+	openxr_cpu_dead_commit();
 
 	xr_extension_structs_clear();
 

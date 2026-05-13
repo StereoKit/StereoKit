@@ -46,18 +46,22 @@ static void render_list_execute(render_list_t list, render_layer_ filter, int32_
 
 ///////////////////////////////////////////
 
+// Sizes the globally-bound shader buffer's per-view arrays (sk_view,
+// sk_proj, sk_viewproj, etc.). Must match SK_MAX_VIEWS in stereokit.hlsli.
+#define SK_MAX_VIEWS 6
+
 struct render_transform_buffer_t {
 	XMMATRIX world;
 	color128 color;
 };
 struct render_global_buffer_t {
-	XMMATRIX view[2];
-	XMMATRIX proj[2];
-	XMMATRIX proj_inv[2];
-	XMMATRIX viewproj[2];
+	XMMATRIX view[SK_MAX_VIEWS];
+	XMMATRIX proj[SK_MAX_VIEWS];
+	XMMATRIX proj_inv[SK_MAX_VIEWS];
+	XMMATRIX viewproj[SK_MAX_VIEWS];
 	vec4     lighting[7];
-	vec4     camera_pos[2];
-	vec4     camera_dir[2];
+	vec4     camera_pos[SK_MAX_VIEWS];
+	vec4     camera_dir[SK_MAX_VIEWS];
 	vec4     fingertip[2];
 	vec4     cubemap_i;
 	vec4     screen_size; // {width, height, 1/width, 1/height}
@@ -113,13 +117,15 @@ enum render_action_type_ {
 	render_action_type_viewpoint,
 	render_action_type_global_texture,
 	render_action_type_global_buffer,
+	render_action_type_compute,
 };
 
 struct render_action_viewpoint_t {
 	tex_t         rendertarget;
 	int32_t       rendertarget_index;
-	matrix        camera;
-	matrix        projection;
+	matrix        cameras    [SK_MAX_VIEWS];
+	matrix        projections[SK_MAX_VIEWS];
+	int32_t       view_count;
 	rect_t        viewport;
 	render_layer_ layer_filter;
 	int32_t       material_variant;
@@ -136,12 +142,18 @@ struct render_action_global_buffer_t {
 	int32_t           slot;
 };
 
+struct render_action_compute_t {
+	compute_t compute;
+	uint32_t  groups[3];
+};
+
 struct render_action_t {
 	render_action_type_ type;
 	union {
 		render_action_viewpoint_t      viewpoint;
 		render_action_global_texture_t global_texture;
 		render_action_global_buffer_t  global_buffer;
+		render_action_compute_t        compute;
 	};
 };
 
@@ -240,7 +252,7 @@ bool render_init() {
 	render_set_clip    (local.clip_planes.x, local.clip_planes.y);
 	render_set_cam_root(matrix_identity);
 
-	local.list_primary = render_list_create();
+	local.list_primary = render_list_create(render_list_refs_none);
 	render_list_set_id(local.list_primary, "sk/render/primary_renderlist");
 	render_list_push  (local.list_primary);
 
@@ -267,6 +279,7 @@ void render_shutdown() {
 		case render_action_type_viewpoint: break;
 		case render_action_type_global_texture: tex_release            (a->global_texture.texture); break;
 		case render_action_type_global_buffer:  material_buffer_release(a->global_buffer .buffer ); break;
+		case render_action_type_compute:        compute_release        (a->compute       .compute); break;
 		}
 	}
 	local.render_action_list.free();
@@ -637,6 +650,21 @@ void render_global_texture_internal(int32_t register_slot, tex_t texture) {
 
 ///////////////////////////////////////////
 
+void render_queue_compute(compute_t compute, uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z) {
+	if (compute == nullptr) return;
+	compute_addref(compute);
+
+	render_action_t action = {};
+	action.type             = render_action_type_compute;
+	action.compute.compute  = compute;
+	action.compute.groups[0]= group_count_x;
+	action.compute.groups[1]= group_count_y;
+	action.compute.groups[2]= group_count_z;
+	local.render_action_list.add(action);
+}
+
+///////////////////////////////////////////
+
 void render_global_texture(int32_t register_slot, tex_t texture) {
 	if (register_slot < 0 || register_slot >= _countof(local.global_textures)) {
 		log_errf("render_global_texture: Register_slot should be 0-16. Received %d.", register_slot);
@@ -741,16 +769,6 @@ void render_add_model(model_t model, const matrix &transform, color128 color_lin
 ///////////////////////////////////////////
 
 void render_draw_queue(render_list_t list, const matrix *views, const matrix *projections, int32_t eye_offset, int32_t view_count, render_layer_ filter, int32_t material_variant, int32_t surface_width, int32_t surface_height) {
-	// A temporary fix for multiview trying to render to mono rendertargets
-	if (view_count == 1) {
-		memset(&local.global_buffer.view      [1], 0, sizeof(local.global_buffer.view      [1]));
-		memset(&local.global_buffer.proj      [1], 0, sizeof(local.global_buffer.proj      [1]));
-		memset(&local.global_buffer.proj_inv  [1], 0, sizeof(local.global_buffer.proj_inv  [1]));
-		memset(&local.global_buffer.viewproj  [1], 0, sizeof(local.global_buffer.viewproj  [1]));
-		memset(&local.global_buffer.camera_pos[1], 0, sizeof(local.global_buffer.camera_pos[1]));
-		memset(&local.global_buffer.camera_dir[1], 0, sizeof(local.global_buffer.camera_dir[1]));
-	}
-
 	// Copy camera information into the global buffer
 	for (int32_t i = 0; i < view_count; i++) {
 		XMMATRIX view_f, projection_f;
@@ -791,7 +809,7 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	// render_global_textures system.
 	tex_t sky_tex = local.global_textures[render_skytex_register];
 	local.global_buffer.cubemap_i = sky_tex != nullptr
-		? vec4{ (float)sky_tex->width, (float)sky_tex->height, floorf(log2f((float)sky_tex->width)), 0 }
+		? vec4{ (float)sky_tex->width, (float)sky_tex->height, sky_tex->gpu_tex.mip_levels > 0 ? (float)(sky_tex->gpu_tex.mip_levels - 1) : 0, 0 }
 		: vec4{};
 
 	// Upload shader globals
@@ -973,17 +991,18 @@ void render_draw_viewpoint(render_action_viewpoint_t* vp) {
 
 	// Render!
 	skr_vec4_t clear_color = { local.clear_col.r, local.clear_col.g, local.clear_col.b, local.clear_col.a };
-	render_draw_queue(local.list_primary, &vp->camera, &vp->projection, 0, 1, vp->layer_filter, vp->material_variant, w, h);
+	render_draw_queue(local.list_primary, vp->cameras, vp->projections, 0, vp->view_count, vp->layer_filter, vp->material_variant, w, h);
 
 	skr_pass_t pass = {};
-	pass.color       = color_tex;
-	pass.depth       = depth_tex;
-	pass.clear       = clear_flags;
-	pass.clear_color = clear_color;
-	pass.clear_depth = 1.0f;
-	pass.viewport    = viewport;
-	pass.scissor     = scissor;
-	pass.view_count  = 1;
+	pass.color            = color_tex;
+	pass.depth            = depth_tex;
+	pass.clear            = clear_flags;
+	pass.clear_color      = clear_color;
+	pass.clear_depth      = 1.0f;
+	pass.viewport         = viewport;
+	pass.scissor          = scissor;
+	pass.view_count       = vp->view_count;
+	pass.views_correlated = vp->view_count == 2;
 	render_pass_add_draw(&pass);
 	skr_pass_submit(&pass);
 
@@ -1000,6 +1019,7 @@ void render_action_list_execute() {
 		case render_action_type_viewpoint:      render_draw_viewpoint(&a->viewpoint); break;
 		case render_action_type_global_buffer:  render_global_buffer_internal ( a->global_buffer .slot, a->global_buffer .buffer ); material_buffer_release(a->global_buffer .buffer ); break;
 		case render_action_type_global_texture: render_global_texture_internal( a->global_texture.slot, a->global_texture.texture); tex_release            (a->global_texture.texture); break;
+		case render_action_type_compute:        compute_dispatch_now          ( a->compute       .compute, a->compute.groups[0], a->compute.groups[1], a->compute.groups[2]); compute_release(a->compute.compute); break;
 		default: break;
 		}
 	}
@@ -1069,21 +1089,26 @@ void render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* 
 
 ///////////////////////////////////////////
 
-void render_to(tex_t to_rendertarget, int32_t to_target_index, const matrix& camera, const matrix& projection, render_layer_ layer_filter, int32_t material_variant, render_clear_ clear, rect_t viewport) {
+void render_to(tex_t to_rendertarget, int32_t to_target_index, const matrix* cameras, const matrix* projections, int32_t view_count, render_layer_ layer_filter, int32_t material_variant, render_clear_ clear, rect_t viewport) {
 	if (!(to_rendertarget->type & tex_type_rendertarget || to_rendertarget->type & tex_type_depthtarget || to_rendertarget->type & tex_type_zbuffer)) {
 		log_err("render_to texture must be a render target texture type!");
 		return;
 	}
+	if (view_count < 1 || view_count > SK_MAX_VIEWS) {
+		log_errf("render_to view_count %d out of range [1, %d]", view_count, SK_MAX_VIEWS);
+		return;
+	}
 	tex_addref(to_rendertarget);
 
-	matrix inv_cam;
-	matrix_inverse(camera, inv_cam);
 	render_action_t action = {};
 	action.type = render_action_type_viewpoint;
-	action.viewpoint.rendertarget      = to_rendertarget;
-	action.viewpoint.rendertarget_index= to_target_index;
-	action.viewpoint.camera            = inv_cam;
-	action.viewpoint.projection        = projection;
+	action.viewpoint.rendertarget       = to_rendertarget;
+	action.viewpoint.rendertarget_index = to_target_index;
+	action.viewpoint.view_count         = view_count;
+	for (int32_t i = 0; i < view_count; i++) {
+		matrix_inverse(cameras[i], action.viewpoint.cameras[i]);
+		action.viewpoint.projections[i] = projections[i];
+	}
 	action.viewpoint.layer_filter      = layer_filter;
 	action.viewpoint.viewport          = viewport;
 	action.viewpoint.clear             = clear;
@@ -1128,8 +1153,9 @@ render_list_t render_list_find(const char* id) {
 
 ///////////////////////////////////////////
 
-render_list_t render_list_create() {
+render_list_t render_list_create(render_list_refs_ refs) {
 	render_list_t result = (render_list_t)assets_allocate(asset_type_render_list);
+	result->refs = refs;
 	return result;
 }
 
@@ -1191,16 +1217,20 @@ void render_list_pop() {
 
 void render_list_add(const render_item_t *item) {
 	local.list_active->queue.add(*item);
-	assets_addref(&item->material->header);
-	assets_addref(&item->mesh->header);
+	if (local.list_active->refs == render_list_refs_tracked) {
+		assets_addref(&item->material->header);
+		assets_addref(&item->mesh->header);
+	}
 }
 
 ///////////////////////////////////////////
 
 void render_list_add_to(render_list_t list, const render_item_t *item) {
 	list->queue.add(*item);
-	assets_addref(&item->material->header);
-	assets_addref(&item->mesh->header);
+	if (list->refs == render_list_refs_tracked) {
+		assets_addref(&item->material->header);
+		assets_addref(&item->mesh->header);
+	}
 }
 
 ///////////////////////////////////////////
@@ -1267,9 +1297,11 @@ static void render_list_execute(render_list_t list, render_layer_ filter, int32_
 
 void render_list_clear(render_list_t list) {
 	list->prev_count = list->queue.count;
-	for (int32_t i = 0; i < list->queue.count; i++) {
-		assets_releaseref(&list->queue[i].material->header);
-		assets_releaseref(&list->queue[i].mesh    ->header);
+	if (list->refs == render_list_refs_tracked) {
+		for (int32_t i = 0; i < list->queue.count; i++) {
+			assets_releaseref(&list->queue[i].material->header);
+			assets_releaseref(&list->queue[i].mesh    ->header);
+		}
 	}
 	list->queue.clear();
 	list->stats = {};
@@ -1291,7 +1323,8 @@ int32_t render_list_prev_count(render_list_t list) {
 ///////////////////////////////////////////
 
 void render_list_add_mesh(render_list_t list, mesh_t mesh, material_t material, matrix transform, color128 color_linear, render_layer_ layer) {
-	render_item_t item;
+	if (mesh->ind_draw == 0) return;
+	render_item_t item = {};
 	item.mesh      = mesh;
 	item.mesh_inds = mesh->ind_draw;
 	item.color     = color_linear;
@@ -1317,6 +1350,8 @@ void render_list_add_model(render_list_t list, model_t model, matrix transform, 
 ///////////////////////////////////////////
 
 void render_list_add_model_mat(render_list_t list, model_t model, material_t material_override, matrix transform, color128 color_linear, render_layer_ layer) {
+	if (model->header.state < asset_state_loaded_meta) return;
+
 	XMMATRIX root;
 	if (hierarchy_use_top()) matrix_mul         (transform, hierarchy_top(), root);
 	else                     math_matrix_to_fast(transform, &root);
@@ -1325,8 +1360,9 @@ void render_list_add_model_mat(render_list_t list, model_t model, material_t mat
 	for (int32_t i = 0; i < model->visuals.count; i++) {
 		const model_visual_t *vis = &model->visuals[i];
 		if (vis->visible == false || vis->mesh == nullptr || vis->material == nullptr) continue;
-		
-		render_item_t item;
+		if (vis->mesh->ind_draw == 0) continue;
+
+		render_item_t item = {};
 		item.mesh      = vis->mesh;
 		item.mesh_inds = vis->mesh->ind_draw;
 		item.color     = color_linear;
@@ -1350,12 +1386,14 @@ void render_list_add_model_mat(render_list_t list, model_t model, material_t mat
 
 ///////////////////////////////////////////
 
-void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color, render_clear_ clear, rect_t viewport_pct, render_layer_ layer_filter, int32_t material_variant) {
+void render_list_draw_now(render_list_t list, tex_t to_rendertarget, const matrix* cameras, const matrix* projections, int32_t view_count, color128 clear_color, render_clear_ clear, rect_t viewport_pct, render_layer_ layer_filter, int32_t material_variant) {
 	int32_t w = to_rendertarget->width;
 	int32_t h = to_rendertarget->height;
 
-	// Use depth buffer if attached to the render target
-	tex_t depth_surface = to_rendertarget->depth_buffer;
+	// Depth-only targets (e.g. shadow maps) — the rendertarget IS the depth
+	// buffer and there is no color attachment. Match render_draw_viewpoint.
+	bool  depth_only    = (to_rendertarget->type & tex_type_depth) || (to_rendertarget->type & tex_type_depthtarget);
+	tex_t depth_surface = depth_only ? to_rendertarget : to_rendertarget->depth_buffer;
 
 	// Set up viewport
 	if (viewport_pct.w == 0) viewport_pct.w = 1;
@@ -1379,17 +1417,18 @@ void render_list_draw_now(render_list_t list, tex_t to_rendertarget, matrix came
 
 	// Render!
 	skr_vec4_t skr_clear_color = { clear_color.r, clear_color.g, clear_color.b, clear_color.a };
-	render_draw_queue(list, &camera, &projection, 0, 1, layer_filter, material_variant, w, h);
+	render_draw_queue(list, cameras, projections, 0, view_count, layer_filter, material_variant, w, h);
 
 	skr_pass_t pass = {};
-	pass.color       = &to_rendertarget->gpu_tex;
+	pass.color       = depth_only ? nullptr : &to_rendertarget->gpu_tex;
 	pass.depth       = depth_surface ? &depth_surface->gpu_tex : nullptr;
 	pass.clear       = clear_flags;
 	pass.clear_color = skr_clear_color;
 	pass.clear_depth = 1.0f;
 	pass.viewport    = viewport;
 	pass.scissor     = scissor;
-	pass.view_count  = 1;
+	pass.view_count       = view_count;
+	pass.views_correlated = view_count == 2; // XR L/R eyes; assume uncorrelated for other counts
 	render_pass_add_draw(&pass);
 	skr_pass_submit(&pass);
 }

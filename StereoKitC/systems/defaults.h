@@ -15,6 +15,7 @@ extern tex_t        sk_default_tex_rough;
 extern tex_t        sk_default_tex_devtex;
 extern tex_t        sk_default_tex_error;
 extern tex_t        sk_default_cubemap;
+extern tex_t        sk_default_tex_3d;
 extern mesh_t       sk_default_quad;
 extern mesh_t       sk_default_screen_quad;
 extern mesh_t       sk_default_sphere;

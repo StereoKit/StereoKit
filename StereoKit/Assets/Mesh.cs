@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -20,7 +21,8 @@ namespace StereoKit
 	/// </summary>
 	public class Mesh : IAsset
 	{
-		internal IntPtr _inst;
+		internal IntPtr                    _inst;
+		private  List<Assets.CallbackData> _callbacks;
 
 		/// <summary>Gets or sets the unique identifier of this asset resource!
 		/// This can be helpful for debugging, managing your assets, or finding
@@ -61,6 +63,30 @@ namespace StereoKit
 		/// </summary>
 		public int IndCount => NativeAPI.mesh_get_ind_count(_inst);
 
+		/// <summary>This tells you the current state of the Mesh asset.
+		/// A Mesh starts in the None state, transitions to LoadedMeta when
+		/// bounds are available (async path), and Loaded once GPU upload
+		/// completes.</summary>
+		public AssetState AssetState => NativeAPI.mesh_asset_state(_inst);
+
+		/// <summary>This event fires when the Mesh has finished loading
+		/// and has data ready for rendering.</summary>
+		public event Action<Mesh> OnLoaded {
+			add {
+				if (_callbacks == null) _callbacks = new List<Assets.CallbackData>();
+				AssetOnLoadCallback callback = (a, _) => { NativeAPI.mesh_addref(a); value(new Mesh(a)); };
+				_callbacks.Add(new Assets.CallbackData { action = value, callback = callback });
+				NativeAPI.mesh_on_load(_inst, callback, IntPtr.Zero);
+			}
+			remove {
+				if (_callbacks == null) throw new NullReferenceException();
+				int i = _callbacks.FindIndex(d => (Action<Mesh>)d.action == value);
+				if (i < 0) throw new KeyNotFoundException();
+				NativeAPI.mesh_on_load_remove(_inst, _callbacks[i].callback);
+				_callbacks.RemoveAt(i);
+			}
+		}
+
 		/// <summary>Creates an empty Mesh asset. Use SetVerts and SetInds to
 		/// add data to it!</summary>
 		public Mesh()
@@ -69,6 +95,19 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Couldn't create empty mesh!");
 		}
+		/// <summary>Creates a Mesh asset and sets its vertex and index
+		/// data with control over upload behavior. This is a shorthand
+		/// for creating a Mesh and calling SetData on it.</summary>
+		/// <param name="vertices">An array of vertices for the mesh.
+		/// Null is okay here, but may require a special shader.</param>
+		/// <param name="indices">A list of face indices, must be a
+		/// multiple of 3.</param>
+		/// <param name="flags">Flags controlling upload behavior. See
+		/// MeshData for options.</param>
+		/// <param name="priority">Loading priority for async upload.
+		/// Lower values load sooner.</param>
+		public Mesh(Vertex[] vertices, uint[] indices, MeshData flags = MeshData.CalcBounds, int priority = 0) : this()
+			=> SetData(vertices, indices, flags, priority);
 		internal Mesh(IntPtr mesh)
 		{
 			_inst = mesh;
@@ -78,6 +117,12 @@ namespace StereoKit
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Mesh()
 		{
+			if (_callbacks != null)
+			{
+				foreach (var cb in _callbacks)
+					NativeAPI.mesh_on_load_remove(_inst, cb.callback);
+				_callbacks = null;
+			}
 			if (_inst != IntPtr.Zero)
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
@@ -98,7 +143,7 @@ namespace StereoKit
 		/// <param name="vertices">An array of vertices to add to the mesh.
 		/// Remember to set all the relevant values! Your material will often
 		/// show black if the Normals or Colors are left at their default
-		/// values.</param>
+		/// values. Null is okay here, but may require a special shader.</param>
 		/// <param name="indices">A list of face indices, must be a multiple of
 		/// 3. Each index represents a vertex from the provided vertex array.
 		/// </param>
@@ -109,7 +154,25 @@ namespace StereoKit
 		/// frequently or need all the performance you can get, setting this to
 		/// false is a nice way to gain some speed!</param>
 		public void SetData(Vertex[] vertices, uint[] indices, bool calculateBounds = true)
-			=> NativeAPI.mesh_set_data(_inst, vertices, vertices.Length, indices, indices.Length, calculateBounds);
+			=> NativeAPI.mesh_set_data(_inst, vertices, vertices?.Length ?? 0, indices, indices.Length,
+				calculateBounds ? MeshData.CalcBounds : MeshData.None, 0);
+
+		/// <summary>Assigns the vertices and indices for this Mesh with
+		/// control over upload behavior via flags. Upload is synchronous
+		/// by default — pass MeshData.Async for background upload.</summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
+		/// Remember to set all the relevant values! Your material will often
+		/// show black if the Normals or Colors are left at their default
+		/// values. Null is okay here, but may require a special shader.</param>
+		/// <param name="indices">A list of face indices, must be a multiple of
+		/// 3. Each index represents a vertex from the provided vertex array.
+		/// </param>
+		/// <param name="flags">Flags controlling upload behavior. See
+		/// MeshData for options.</param>
+		/// <param name="priority">Loading priority for async upload. Lower
+		/// values load sooner.</param>
+		public void SetData(Vertex[] vertices, uint[] indices, MeshData flags, int priority = 0)
+			=> NativeAPI.mesh_set_data(_inst, vertices, vertices?.Length ?? 0, indices, indices.Length, flags, priority);
 
 		/// <summary>Assigns the vertices for this Mesh! This will create a
 		/// vertex buffer object on the graphics card. If you're

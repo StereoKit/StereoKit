@@ -16,6 +16,7 @@ struct _tex_t {
 	// TODO: can get rid of some maybe?
 	int32_t          width;
 	int32_t          height;
+	int32_t          depth;
 	tex_format_      format;
 	uint64_t         meta_hash;
 

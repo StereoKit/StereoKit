@@ -44,6 +44,7 @@ void          render_check_screenshots    ();
 void          render_check_pending_skytex ();
 void          render_global_buffer_internal (int32_t register_slot, material_buffer_t buffer);
 void          render_global_texture_internal(int32_t register_slot, tex_t             texture);
+void          render_queue_compute          (compute_t compute, uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z);
 void          render_action_list_execute  ();
 
 void          render_list_destroy         (      render_list_t list);

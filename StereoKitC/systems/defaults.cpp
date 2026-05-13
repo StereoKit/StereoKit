@@ -24,6 +24,7 @@ tex_t        sk_default_tex_rough;
 tex_t        sk_default_tex_devtex;
 tex_t        sk_default_tex_error;
 tex_t        sk_default_cubemap;
+tex_t        sk_default_tex_3d;
 mesh_t       sk_default_quad;
 mesh_t       sk_default_screen_quad;
 mesh_t       sk_default_sphere;
@@ -155,7 +156,7 @@ bool defaults_init() {
 	sk_default_tex_black = defaults_texture(default_id_tex_black, {0,0,0,1}         );
 	sk_default_tex_gray  = defaults_texture(default_id_tex_gray,  {0.5f,0.5f,0.5f,1});
 	sk_default_tex_flat  = defaults_texture(default_id_tex_flat,  {0.5f,0.5f,1,1}   ); // Default for normal maps
-	sk_default_tex_rough = defaults_texture(default_id_tex_rough, {1,1,0,1}         ); // Default for metal/roughness maps
+	sk_default_tex_rough = defaults_texture(default_id_tex_rough, {0,1,1,1}         ); // Default for metal/roughness maps
 
 	sk_default_tex_devtex = dev_texture(default_id_tex_devtex, { 1,1,   1,   1 }, 1);
 	sk_default_tex_error  = dev_texture(default_id_tex_error,  { 1,0.7f,0.7f,1 }, 1);
@@ -183,6 +184,13 @@ bool defaults_init() {
 	tex_set_loading_fallback(sk_default_cubemap);
 	tex_set_error_fallback  (sk_default_cubemap);
 
+	color32 black_3d = { 0, 0, 0, 0 };
+	sk_default_tex_3d = tex_create(tex_type_image_nomips | tex_type_volume, tex_format_rgba32);
+	tex_set_colors_3d(sk_default_tex_3d, 1, 1, 1, &black_3d);
+	tex_set_id              (sk_default_tex_3d, default_id_tex_3d);
+	tex_set_loading_fallback(sk_default_tex_3d);
+	tex_set_error_fallback  (sk_default_tex_3d);
+
 	// Default quad mesh
 	sk_default_quad = mesh_create();
 	vert_t verts[4] = {
@@ -191,8 +199,8 @@ bool defaults_init() {
 		{ vec3{ 0.5f, 0.5f,0}, vec3{0,0,-1}, vec2{0,0}, color32{255,255,255,255} },
 		{ vec3{-0.5f, 0.5f,0}, vec3{0,0,-1}, vec2{1,0}, color32{255,255,255,255} }, };
 	vind_t inds[6] = { 2,1,0, 3,2,0 };
-	mesh_set_data(sk_default_quad, verts, 4, inds, 6);
-	
+	mesh_set_data(sk_default_quad, verts, 4, inds, 6, mesh_data_calc_bounds);
+
 	// Default rendering quad
 	sk_default_screen_quad = mesh_create();
 	vert_t sq_verts[4] = {
@@ -201,7 +209,7 @@ bool defaults_init() {
 		{ vec3{ 1, 1,0}, vec3{0,0,1}, vec2{1,0}, color32{255,255,255,255} },
 		{ vec3{-1, 1,0}, vec3{0,0,1}, vec2{0,0}, color32{255,255,255,255} }, };
 	vind_t sq_inds[6] = { 0,1,2, 0,2,3 };
-	mesh_set_data(sk_default_screen_quad, sq_verts, 4, sq_inds, 6);
+	mesh_set_data(sk_default_screen_quad, sq_verts, 4, sq_inds, 6, mesh_data_calc_bounds);
 	
 	sk_default_cube   = mesh_gen_cube(vec3_one);
 	sk_default_sphere = mesh_gen_sphere(1);
@@ -440,6 +448,7 @@ void defaults_shutdown() {
 	tex_release     (sk_default_tex_devtex);
 	tex_release     (sk_default_tex_error);
 	tex_release     (sk_default_cubemap);
+	tex_release     (sk_default_tex_3d);
 }
 
 } // namespace sk

@@ -49,7 +49,7 @@ void shader_update_label(shader_t shader) {
 ///////////////////////////////////////////
 
 const char *shader_get_name(shader_t shader) {
-	return shader->gpu_shader.meta->name;
+	return shader->gpu_shader.meta.name;
 }
 
 ///////////////////////////////////////////

@@ -36,6 +36,33 @@ namespace StereoKit
 		/// complete.</param>
 		public static void BlockForPriority(int priority) => NativeAPI.assets_block_for_priority(priority);
 
+		/// <summary>This will block execution until the given asset reaches
+		/// the specified loading state. If the asset has already reached or
+		/// passed that state, this returns immediately. If the asset is in
+		/// an error state, this also returns immediately.</summary>
+		/// <param name="asset">The asset to wait on.</param>
+		/// <param name="state">The state to wait for, such as
+		/// AssetState.Loaded or AssetState.LoadedMeta.</param>
+		public static void BlockUntil(IAsset asset, AssetState state)
+		{
+			IntPtr inst = asset switch {
+				Font       a => a._inst,
+				Material   a => a._inst,
+				Mesh       a => a._inst,
+				Model      a => a._inst,
+				Shader     a => a._inst,
+				Sound      a => a._inst,
+				Sprite     a => a._inst,
+				Tex        a => a._inst,
+				Anchor     a => a._inst,
+				RenderList a => a._inst,
+				Compute    a => a._inst,
+				_ => IntPtr.Zero,
+			};
+			if (inst != IntPtr.Zero)
+				NativeAPI.assets_block_until(inst, state);
+		}
+
 		/// <summary>A list of supported model format extensions. This pairs
 		/// pretty well with `Platform.FilePicker` when attempting to load a
 		/// `Model`!</summary>
@@ -47,6 +74,14 @@ namespace StereoKit
 
 		private static AssetType TypeToAssetType(Type t)
 		{
+			// MaterialBuffer<T> and ComputeBuffer<T> are generic, so we match
+			// on the open generic definition rather than the closed type.
+			if (t.IsGenericType)
+			{
+				Type def = t.GetGenericTypeDefinition();
+				if (def == typeof(MaterialBuffer<>)) return AssetType.MaterialBuffer;
+				if (def == typeof(ComputeBuffer<> )) return AssetType.ComputeBuffer;
+			}
 			switch (t)
 			{
 				case Type _ when t == typeof(Font      ): return AssetType.Font;
@@ -59,6 +94,7 @@ namespace StereoKit
 				case Type _ when t == typeof(Tex       ): return AssetType.Tex;
 				case Type _ when t == typeof(Anchor    ): return AssetType.Anchor;
 				case Type _ when t == typeof(RenderList): return AssetType.RenderList;
+				case Type _ when t == typeof(Compute   ): return AssetType.Compute;
 				case Type _ when t == typeof(IAsset    ): return AssetType.None;
 				default: throw new ArgumentException("Not a valid asset type!");
 			}
@@ -68,16 +104,22 @@ namespace StereoKit
 		{
 			switch ( currType )
 			{
-				case AssetType.Font:      return new Font      (inst);
-				case AssetType.Material:  return new Material  (inst);
-				case AssetType.Mesh:      return new Mesh      (inst);
-				case AssetType.Model:     return new Model     (inst);
-				case AssetType.Shader:    return new Shader    (inst);
-				case AssetType.Sound:     return new Sound     (inst);
-				case AssetType.Sprite:    return new Sprite    (inst);
-				case AssetType.Tex:       return new Tex       (inst);
-				case AssetType.Anchor:    return new Anchor    (inst);
-				case AssetType.RenderList:return new RenderList(inst);
+				case AssetType.Font:           return new Font      (inst);
+				case AssetType.Material:       return new Material  (inst);
+				case AssetType.Mesh:           return new Mesh      (inst);
+				case AssetType.Model:          return new Model     (inst);
+				case AssetType.Shader:         return new Shader    (inst);
+				case AssetType.Sound:          return new Sound     (inst);
+				case AssetType.Sprite:         return new Sprite    (inst);
+				case AssetType.Tex:            return new Tex       (inst);
+				case AssetType.Anchor:         return new Anchor    (inst);
+				case AssetType.RenderList:     return new RenderList(inst);
+				case AssetType.Compute:        return new Compute   (inst);
+				// MaterialBuffer<T> and ComputeBuffer<T> are generic on the C#
+				// side, so we can't wrap them from a bare IntPtr without knowing
+				// T. Skip silently in enumeration.
+				case AssetType.MaterialBuffer: return null;
+				case AssetType.ComputeBuffer:  return null;
 				default: Log.Err("Found an invalid asset type!"); return null;
 			}
 		}

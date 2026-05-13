@@ -546,6 +546,159 @@ namespace StereoKit
 		/// whether or not the key was pressed or released this frame.</returns>
 		public static BtnState Key(Key key)
 			=> NativeAPI.input_key(key);
+
+		/// <summary>Gets a tracked pose from the input system by type. These
+		/// are spatial poses provided by the XR runtime, such as hand or
+		/// controller positions and orientations.</summary>
+		/// <param name="poseType">The type of pose to retrieve.</param>
+		/// <returns>The most recent pose of the given type.</returns>
+		public static Pose Pose(InputPose poseType)
+			=> NativeAPI.input_pose(poseType);
+		/// <summary>Gets the tracking state of a tracked pose. This tells
+		/// you whether the position and rotation components are actively
+		/// being tracked by the XR system, and at what quality.</summary>
+		/// <param name="poseType">The type of pose to check tracking state
+		/// for.</param>
+		/// <returns>A PoseState flags value indicating which components are
+		/// tracked and whether they are inferred or known.</returns>
+		public static PoseState PoseState(InputPose poseType)
+			=> NativeAPI.input_pose_state(poseType);
+		/// <summary>Gets an analog float input value from the input system.
+		/// These are inputs like controller triggers and grip buttons that
+		/// range from 0 to 1.</summary>
+		/// <param name="floatType">The type of float input to retrieve.
+		/// </param>
+		/// <returns>A value from 0 to 1 representing how far the input is
+		/// pressed.</returns>
+		public static float Float(InputFloat floatType)
+			=> NativeAPI.input_float(floatType);
+		/// <summary>Gets a binary button state from the input system. These
+		/// are on/off inputs like controller face buttons and thumbstick
+		/// clicks.</summary>
+		/// <param name="buttonType">The type of button input to retrieve.
+		/// </param>
+		/// <returns>A BtnState describing whether the button is active,
+		/// just became active, or just became inactive this frame.</returns>
+		public static BtnState Button(InputButton buttonType)
+			=> NativeAPI.input_button(buttonType);
+		/// <summary>Gets a 2D axis input from the input system, like a
+		/// controller thumbstick. X is left/right, and Y is
+		/// forward/back, each ranging from -1 to 1.</summary>
+		/// <param name="xyType">The type of XY input to retrieve.</param>
+		/// <returns>A Vec2 representing the current stick position.</returns>
+		public static Vec2 XY(InputXY xyType)
+			=> NativeAPI.input_xy(xyType);
+
+		/// <summary>Returns the playback modes the given haptic output supports
+		/// right now. The result depends on which controller is active and which
+		/// OpenXR extensions are available, so it can change at runtime whenever
+		/// the active OpenXR interaction profile changes — typically when the
+		/// user picks up, sets down, or swaps a controller. Code that relies on
+		/// HapticWaveform or HapticCurve should check this first and fall back
+		/// to HapticPulse when the relevant capability bit is missing.</summary>
+		/// <param name="output">Which haptic output to query.</param>
+		/// <returns>A flags value with one bit per supported playback mode, or
+		/// None if the output isn't currently bound.</returns>
+		public static InputHapticCaps HapticCaps(InputHaptic output)
+			=> NativeAPI.input_haptic_caps(output);
+
+		/// <summary>Reports the controller's preferred PCM sample rate in Hz.
+		/// Authoring HapticWaveform buffers at this rate avoids runtime
+		/// resampling, which matters for procedural / streaming use. Returns 0
+		/// when the runtime accepts any rate or PCM playback isn't available
+		/// on this device.</summary>
+		/// <param name="output">Which haptic output to query.</param>
+		/// <returns>Preferred sample rate in Hz, or 0 if unspecified.</returns>
+		public static float HapticPreferredRate(InputHaptic output)
+			=> NativeAPI.input_haptic_preferred_rate(output);
+
+		/// <summary>Plays a single sustained vibration on the given output.
+		/// This is the simplest haptic mode and works on every controller that
+		/// has any actuator at all. Cancels any in-flight HapticWaveform stream
+		/// on this output before playing.</summary>
+		/// <param name="output">Which haptic output to vibrate.</param>
+		/// <param name="frequency">Carrier frequency in Hz. Pass 0 or negative
+		/// to let the runtime pick a sensible default for the device.</param>
+		/// <param name="amplitude">Vibration intensity, 0 (off) to 1 (full).
+		/// Values outside this range are clamped.</param>
+		/// <param name="durationSec">How long to vibrate, in seconds. Pass 0
+		/// or negative for the shortest pulse the device supports.</param>
+		public static void HapticPulse(InputHaptic output, float frequency, float amplitude, float durationSec)
+			=> NativeAPI.input_haptic_pulse(output, frequency, amplitude, durationSec);
+
+		/// <summary>Plays a PCM waveform on the given output. Samples are
+		/// signed values in [-1, 1] sampled at sampleRateHz, like an audio
+		/// buffer. Requires the InputHapticCaps.Waveform capability bit; the
+		/// call is a silent no-op on devices that lack XR_FB_haptic_pcm.
+		///
+		/// Buffers longer than the runtime's per-call limit are streamed
+		/// transparently — pass any length and StereoKit will drip-feed chunks
+		/// to the device over multiple frames. For procedural use, reuse the
+		/// same float[] buffer across calls to avoid per-frame allocations.
+		/// To explicitly cut a stream mid-playback, pass append=false here, or
+		/// call HapticStop / HapticPulse.</summary>
+		/// <param name="output">Which haptic output to vibrate.</param>
+		/// <param name="samples">Signed [-1, 1] PCM samples.</param>
+		/// <param name="sampleRateHz">The sample rate the buffer was authored
+		/// at. See HapticPreferredRate for the device's native rate. If this
+		/// differs from the in-flight stream's rate, append behavior degrades
+		/// to a restart.</param>
+		/// <param name="append">When true, queues these samples after any
+		/// playback already in flight on this output. When false (default),
+		/// cancels any current playback and starts the new buffer
+		/// immediately.</param>
+		public static void HapticWaveform(InputHaptic output, float[] samples, float sampleRateHz, bool append = false)
+			=> NativeAPI.input_haptic_waveform(output, samples, samples?.Length ?? 0, sampleRateHz, append, out _);
+
+		/// <summary>Plays a PCM waveform and reports how many samples the
+		/// runtime had drained from the previously-submitted chunk by the time
+		/// this call was processed. Streaming callers use the consumed count
+		/// to throttle their per-frame submission rate and bound playback
+		/// latency.</summary>
+		/// <param name="output">Which haptic output to vibrate.</param>
+		/// <param name="samples">Signed [-1, 1] PCM samples.</param>
+		/// <param name="sampleRateHz">The sample rate the buffer was authored
+		/// at.</param>
+		/// <param name="append">When true, queues after any in-flight playback;
+		/// when false, replaces it.</param>
+		/// <param name="prevSamplesConsumed">Receives the runtime's
+		/// samplesConsumed count for the most recent chunk StereoKit submitted
+		/// to the device, or 0 if no chunk was in flight. This is reported at
+		/// chunk granularity, not at the granularity of HapticWaveform calls —
+		/// a single HapticWaveform call may span multiple internal chunks.
+		/// </param>
+		public static void HapticWaveform(InputHaptic output, float[] samples, float sampleRateHz, bool append, out int prevSamplesConsumed)
+			=> NativeAPI.input_haptic_waveform(output, samples, samples?.Length ?? 0, sampleRateHz, append, out prevSamplesConsumed);
+
+		/// <summary>Plays an amplitude envelope on the given output. Each
+		/// element is an unsigned amplitude in [0, 1] sampled at
+		/// sampleRateHz; the runtime picks the carrier frequency and
+		/// modulates intensity over time. Requires the InputHapticCaps.Curve
+		/// capability bit; the call is a silent no-op on devices that lack
+		/// the XR_FB_haptic_amplitude_envelope OpenXR extension.
+		///
+		/// Use HapticCurve for shaping the *intensity* of a vibration (fade,
+		/// pulse, decay tail) when the texture of the underlying buzz isn't
+		/// important. Use HapticWaveform when you need to author the
+		/// underlying carrier yourself.
+		///
+		/// Each call replaces any in-flight playback (the underlying OpenXR
+		/// extension has no append concept for envelopes), and amplitudes
+		/// over 4000 samples are truncated to fit the extension's documented
+		/// limit. For longer or streamed effects, use HapticWaveform.</summary>
+		/// <param name="output">Which haptic output to vibrate.</param>
+		/// <param name="amplitudes">Unsigned [0, 1] intensity samples.</param>
+		/// <param name="sampleRateHz">The sample rate the envelope was
+		/// authored at.</param>
+		public static void HapticCurve(InputHaptic output, float[] amplitudes, float sampleRateHz)
+			=> NativeAPI.input_haptic_curve(output, amplitudes, amplitudes?.Length ?? 0, sampleRateHz);
+
+		/// <summary>Cancels any haptic playback on the given output, including
+		/// in-flight PCM streams.</summary>
+		/// <param name="output">Which haptic output to silence.</param>
+		public static void HapticStop(InputHaptic output)
+			=> NativeAPI.input_haptic_stop(output);
+
 		/// <summary>This will inject a key press event into StereoKit's input
 		/// event queue. It will be processed at the start of the next frame,
 		/// and will be indistinguishable from a physical key press. Remember

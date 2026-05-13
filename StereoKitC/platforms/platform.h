@@ -82,5 +82,6 @@ char  *platform_push_path_new     (const char *path, const char *directory);
 char  *platform_pop_path_new      (const char *path);
 
 bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t *out_size);
+size_t   platform_file_size       (const char *filename);
 
 } // namespace sk

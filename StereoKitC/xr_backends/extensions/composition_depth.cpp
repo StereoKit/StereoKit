@@ -44,6 +44,12 @@ xr_system_ xr_ext_composition_depth_init(void*) {
 	if (!backend_openxr_ext_enabled(XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME))
 		return xr_system_fail;
 
+	// Opt-in only. Some runtimes mishandle depth swapchain transitions
+	// (aspect/usage mismatches), and the perceptible benefit is minimal on
+	// modern hardware. Apps that want it can request it explicitly.
+	if (!ext_management_is_user_requested(XR_KHR_COMPOSITION_LAYER_DEPTH_EXTENSION_NAME))
+		return xr_system_fail;
+
 	local.available = true;
 	return xr_system_succeed;
 }

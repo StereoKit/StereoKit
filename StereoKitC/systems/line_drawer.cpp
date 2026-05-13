@@ -61,7 +61,7 @@ void line_drawer_step() {
 	if (local.line_inds.count <= 0)
 		return;
 
-	mesh_set_data     (local.line_mesh, local.line_verts.data, local.line_verts.count, local.line_inds.data, local.line_inds.count, false);
+	mesh_set_data     (local.line_mesh, local.line_verts.data, local.line_verts.count, local.line_inds.data, local.line_inds.count, mesh_data_none);
 	mesh_set_draw_inds(local.line_mesh, local.line_inds.count);
 	render_add_mesh   (local.line_mesh, local.line_material, matrix_identity, {1,1,1,1}, render_layer_vfx);
 

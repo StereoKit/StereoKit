@@ -36,22 +36,22 @@ void sprite_buffer_ensure_capacity(sprite_buffer_t &buffer) {
 	buffer.vert_cap = buffer.vert_count + 4;
 	buffer.verts    = sk_realloc_t(vert_t, buffer.verts, buffer.vert_cap);
 
-	// regenerate indices
-	vind_t  quads = (vind_t)(buffer.vert_cap / 4);
-	vind_t *inds  = sk_malloc_t(vind_t, quads * 6);
+	// regenerate indices, defer upload to step time so verts are set first
+	vind_t quads     = (vind_t)(buffer.vert_cap / 4);
+	buffer.ind_count = quads * 6;
+	buffer.inds      = sk_realloc_t(vind_t, buffer.inds, buffer.ind_count);
 	for (vind_t i = 0; i < quads; i++) {
 		vind_t q = i * 4;
 		vind_t c = i * 6;
-		inds[c+0] = q+2;
-		inds[c+1] = q+1;
-		inds[c+2] = q;
+		buffer.inds[c+0] = q+2;
+		buffer.inds[c+1] = q+1;
+		buffer.inds[c+2] = q;
 
-		inds[c+3] = q+3;
-		inds[c+4] = q+2;
-		inds[c+5] = q;
+		buffer.inds[c+3] = q+3;
+		buffer.inds[c+4] = q+2;
+		buffer.inds[c+5] = q;
 	}
-	mesh_set_inds(buffer.mesh, inds, quads * 6);
-	sk_free(inds);
+	buffer.dirty_inds = true;
 }
 
 ///////////////////////////////////////////
@@ -129,7 +129,7 @@ bool sprite_drawer_init() {
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_id       (sprite_quad_old, "sk/render/sprite_quad");
 	mesh_set_keep_data(sprite_quad_old, false);
-	mesh_set_data     (sprite_quad_old, verts, 4, inds, 6, false);
+	mesh_set_data     (sprite_quad_old, verts, 4, inds, 6, mesh_data_none);
 
 	return true;
 }
@@ -145,6 +145,10 @@ void sprite_drawer_step() {
 			continue;
 
 		mesh_set_verts(buffer.mesh, buffer.verts, buffer.vert_count, false);
+		if (buffer.dirty_inds) {
+			mesh_set_inds(buffer.mesh, buffer.inds, buffer.ind_count);
+			buffer.dirty_inds = false;
+		}
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);
 
 		render_add_mesh(buffer.mesh, buffer.material, matrix_identity);
@@ -162,6 +166,7 @@ void sprite_drawer_shutdown() {
 		mesh_release(buffer.mesh);
 		material_release(buffer.material);
 		sk_free(buffer.verts);
+		sk_free(buffer.inds);
 	}
 	sprite_buffers.clear();
 }

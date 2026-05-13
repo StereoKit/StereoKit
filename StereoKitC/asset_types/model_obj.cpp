@@ -2,10 +2,16 @@
 #include "mesh_.h"
 #include "../libraries/stref.h"
 #include "../libraries/array.h"
+#include "../sk_memory.h"
 
 #include <stdio.h>
 
 namespace sk {
+
+struct simple_load_t {
+	const void *file_data;
+	size_t      file_size;
+};
 
 ///////////////////////////////////////////
 
@@ -28,19 +34,11 @@ int indexof(int iV, int iT, int iN, array_t<vec3> *verts, array_t<vec3> *norms, 
 
 ///////////////////////////////////////////
 
-bool modelfmt_obj(model_t model, const char *filename, const void *file_data, size_t, shader_t shader) {
-	material_t material = shader == nullptr ? material_find(default_id_material) : material_create(shader);
+static mesh_t obj_load_mesh(const void *file_data, const char *filename, int32_t priority) {
 	char id[512];
 	snprintf(id, sizeof(id), "%s/mesh", filename);
 	mesh_t mesh = mesh_find(id);
-
-	if (mesh) {
-		model_node_add(model, nullptr, matrix_identity, mesh, material, true);
-
-		material_release(material);
-		mesh_release(mesh);
-		return true;
-	}
+	if (mesh) return mesh;
 
 	array_t<vec3>   poss  = {};
 	array_t<vec3>   norms = {};
@@ -48,7 +46,7 @@ bool modelfmt_obj(model_t model, const char *filename, const void *file_data, si
 	array_t<vert_t> verts = {};
 	array_t<vind_t> faces = {};
 	hashmap_t<vert_t, vind_t> indmap = {};
-	
+
 	vec3 in;
 	int inds[12] = {};
 
@@ -107,12 +105,7 @@ bool modelfmt_obj(model_t model, const char *filename, const void *file_data, si
 
 	mesh = mesh_create();
 	mesh_set_id  (mesh, id);
-	mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count);
-
-	model_node_add(model, nullptr, matrix_identity, mesh, material, true);
-
-	material_release(material);
-	mesh_release(mesh);
+	mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count, mesh_data_calc_bounds, priority);
 
 	poss  .free();
 	norms .free();
@@ -120,7 +113,43 @@ bool modelfmt_obj(model_t model, const char *filename, const void *file_data, si
 	verts .free();
 	faces .free();
 	indmap.free();
+	return mesh;
+}
+
+///////////////////////////////////////////
+
+bool modelfmt_obj_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t, void **out_format_data) {
+	material_t material = shader == nullptr
+		? material_find  (default_id_material)
+		: material_create(shader);
+
+	model_node_add(model, nullptr, matrix_identity, nullptr, material, true);
+	material_release(material);
+
+	simple_load_t *load = sk_malloc_zero_t(simple_load_t, 1);
+	load->file_data = file_data;
+	load->file_size = file_size;
+	*out_format_data = load;
 	return true;
+}
+
+///////////////////////////////////////////
+
+bool modelfmt_obj_meshes(model_t model, const char *filename, shader_t, int32_t priority, void *format_data) {
+	simple_load_t *load = (simple_load_t *)format_data;
+
+	mesh_t mesh = obj_load_mesh(load->file_data, filename, priority);
+	if (mesh) {
+		model_node_set_mesh(model, 0, mesh);
+		mesh_release(mesh);
+	}
+	return true;
+}
+
+///////////////////////////////////////////
+
+void modelfmt_obj_free(void *format_data) {
+	sk_free(format_data);
 }
 
 }

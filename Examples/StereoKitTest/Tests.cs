@@ -36,6 +36,7 @@ public static class Tests
 	private static Type   ActiveScene        { set { nextScene = (ITest)Activator.CreateInstance(value); } }
 	public  static bool   IsTesting          { get; set; }
 	public  static bool   TestSingle         { get; set; }
+	public  static int    SceneFrame => sceneFrame;
 
 	public  static string ScreenshotRoot     { get; set; } = null;
 	public  static bool   MakeScreenshots    { get; set; } = true;

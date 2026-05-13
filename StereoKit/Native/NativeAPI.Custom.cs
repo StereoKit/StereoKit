@@ -63,6 +63,23 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] float[] data);
 
+		// tex_set_colors_3d overload for byte[] (single-channel volumes, SDFs, etc.)
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
+		public static extern void tex_set_colors_3d(IntPtr texture, int width, int height, int depth, [In] byte[] data);
+
+		// render_list_draw_now single-matrix overload — passes one camera +
+		// projection by reference (ABI-equivalent to a 1-element array
+		// pointer) so the common single-view call path doesn't have to
+		// allocate a temporary array.
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
+		public static extern void render_list_draw_now(IntPtr list, IntPtr to_rendertarget, in Matrix in_arr_cameras, in Matrix in_arr_projections, int view_count, Color clear_color, RenderClear clear, Rect viewport_pct, RenderLayer layer_filter, int material_variant);
+
+		// render_to single-matrix overload — same trick as
+		// render_list_draw_now above. Lets the single-view RenderTo
+		// path avoid a temporary array allocation.
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
+		public static extern void render_to(IntPtr to_rendertarget, int to_target_index, in Matrix in_arr_cameras, in Matrix in_arr_projections, int view_count, RenderLayer layer_filter, int material_variant, RenderClear clear, Rect viewport);
+
 		// tex_create_mem with byte array
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern IntPtr tex_create_mem([In] byte[] data, UIntPtr data_size, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, int priority);
@@ -83,6 +100,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern void tex_set_color_arr_mips(IntPtr texture, int width, int height, IntPtr array_data, int array_count, int mip_count, int multisample, IntPtr out_sh_lighting_info);
 
+		// tex_set_color_arr_mips overload accepting an array of per-layer pointers
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
+		public static extern void tex_set_color_arr_mips(IntPtr texture, int width, int height, [In] IntPtr[] array_data, int array_count, int mip_count, int multisample, IntPtr out_sh_lighting_info);
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern IntPtr tex_gen_cubemap(IntPtr gradient, Vec3 gradient_dir, int resolution, IntPtr out_sh_lighting_info);
 
@@ -93,7 +114,7 @@ namespace StereoKit
 
 		// model_create_mem with byte array data
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern IntPtr model_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, [In] byte[] data, UIntPtr data_size, IntPtr shader);
+		public static extern IntPtr model_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, [In] byte[] data, UIntPtr data_size, IntPtr shader, int priority);
 
 		// sound_write_samples with IntPtr (for native buffers)
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]

@@ -205,8 +205,7 @@ class DemoSensorDepth : ITest
 		}
 
 		pointMesh ??= new Mesh();
-		pointMesh.SetInds(inds);
-		pointMesh.SetVerts(verts);
+		pointMesh.SetData(verts, inds);
 
 		meshWidth  = width;
 		meshHeight = height;

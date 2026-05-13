@@ -41,6 +41,7 @@ static void render_pipeline_begin() {
 ///////////////////////////////////////////
 
 void render_pipeline_draw() {
+	profiler_zone();
 	render_pipeline_begin();
 
 	render_list_t list = render_get_primary_list();
@@ -100,6 +101,7 @@ void render_pipeline_begin_frame() {
 ///////////////////////////////////////////
 
 void render_pipeline_skip_present() {
+	profiler_zone();
 	// End the frame without presenting to any swapchain surface.
 	// Used by OpenXR which manages its own swapchains externally.
 	skr_renderer_frame_end(nullptr, 0);
@@ -174,6 +176,7 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 ///////////////////////////////////////////
 
 skr_acquire_ render_pipeline_surface_acquire_swapchain(pipeline_surface_id surface_id, skr_surface_t* skr_surface) {
+	profiler_zone();
 	pipeline_surface_t* surface = &local.surfaces[surface_id];
 
 	// Acquire the next swapchain image
@@ -194,6 +197,7 @@ skr_acquire_ render_pipeline_surface_acquire_swapchain(pipeline_surface_id surfa
 ///////////////////////////////////////////
 
 void render_pipeline_surface_present_swapchain(pipeline_surface_id surface_id, skr_surface_t* skr_surface) {
+	profiler_zone();
 	pipeline_surface_t* surface = &local.surfaces[surface_id];
 
 	if (surface->resolve_target) {

@@ -724,9 +724,8 @@ void text_step() {
 		if (buffer.vert_count <= 0)
 			continue;
 
-		text_buffer_check_dirty_inds(buffer);
-
 		mesh_set_verts    (buffer.mesh, buffer.verts, buffer.vert_count, false);
+		text_buffer_check_dirty_inds(buffer);
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);
 
 		render_add_mesh(buffer.mesh, buffer.material, matrix_identity);

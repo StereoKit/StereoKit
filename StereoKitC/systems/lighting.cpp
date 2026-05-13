@@ -42,7 +42,7 @@ bool lighting_init() {
 		vert_t{ { 1, 1,1}, {0,0,1}, {1,0}, {255,255,255,255} },
 		vert_t{ { 1,-1,1}, {0,0,1}, {1,1}, {255,255,255,255} },
 		vert_t{ {-1,-1,1}, {0,0,1}, {0,1}, {255,255,255,255} }, };
-	mesh_set_data(local.sky_mesh, verts, _countof(verts), inds, _countof(inds));
+	mesh_set_data(local.sky_mesh, verts, _countof(verts), inds, _countof(inds), mesh_data_calc_bounds);
 	mesh_set_id  (local.sky_mesh, "sk/lighting/skybox_mesh");
 
 	// Create a default skybox material

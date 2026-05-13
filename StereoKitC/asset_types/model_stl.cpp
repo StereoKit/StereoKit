@@ -2,10 +2,16 @@
 #include "../libraries/stref.h"
 #include "../libraries/array.h"
 #include "../sk_math.h"
+#include "../sk_memory.h"
 
 #include <stdio.h>
 
 namespace sk {
+
+struct simple_load_t {
+	const void *file_data;
+	size_t      file_size;
+};
 
 struct stl_header_t {
 	uint8_t  header[80];
@@ -165,42 +171,67 @@ bool modelfmt_stl_text_flat(const void *file_data, size_t, array_t<vert_t> *vert
 
 ///////////////////////////////////////////
 
-bool modelfmt_stl(model_t model, const char *filename, const void *file_data, size_t file_length, shader_t shader) {
-	material_t material = shader == nullptr ? material_find(default_id_material) : material_create(shader);
-	bool       result   = true;
-
+static mesh_t stl_load_mesh(const void *file_data, size_t file_length, const char *filename, int32_t priority) {
 	char id[512];
 	snprintf(id, sizeof(id), "%s/mesh", filename);
 	mesh_t mesh = mesh_find(id);
+	if (mesh) return mesh;
 
-	if (mesh) {
-		model_node_add(model, nullptr, matrix_identity, mesh, material);
-	} else {
-		array_t<vert_t> verts = {};
-		array_t<vind_t> faces = {};
+	array_t<vert_t> verts = {};
+	array_t<vind_t> faces = {};
 
-		result = file_length > 5 && memcmp(file_data, "solid", sizeof(char) * 5) == 0 ?
-			modelfmt_stl_text_flat  (file_data, file_length, &verts, &faces) :
-			modelfmt_stl_binary_flat(file_data, file_length, &verts, &faces);
+	bool ok = file_length > 5 && memcmp(file_data, "solid", sizeof(char) * 5) == 0
+		? modelfmt_stl_text_flat  (file_data, file_length, &verts, &faces)
+		: modelfmt_stl_binary_flat(file_data, file_length, &verts, &faces);
 
-		// Normalize all the normals
+	if (ok) {
 		for (int32_t i = 0; i < verts.count; i++)
 			verts[i].norm = vec3_normalize(verts[i].norm);
 
 		mesh = mesh_create();
 		mesh_set_id  (mesh, id);
-		mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count);
-
-		model_node_add(model, nullptr, matrix_identity, mesh, material);
-
-		verts.free();
-		faces.free();
+		mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count, mesh_data_calc_bounds, priority);
 	}
 
-	mesh_release    (mesh);
+	verts.free();
+	faces.free();
+	return mesh;
+}
+
+///////////////////////////////////////////
+
+bool modelfmt_stl_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t, void **out_format_data) {
+	material_t material = shader == nullptr
+		? material_find  (default_id_material)
+		: material_create(shader);
+	model_node_add(model, nullptr, matrix_identity, nullptr, material, true);
 	material_release(material);
 
-	return result;
+	simple_load_t *load = sk_malloc_zero_t(simple_load_t, 1);
+	load->file_data = file_data;
+	load->file_size = file_size;
+
+	*out_format_data = load;
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool modelfmt_stl_meshes(model_t model, const char *filename, shader_t, int32_t priority, void *format_data) {
+	simple_load_t *load = (simple_load_t *)format_data;
+
+	mesh_t mesh = stl_load_mesh(load->file_data, load->file_size, filename, priority);
+	if (mesh) {
+		model_node_set_mesh(model, 0, mesh);
+		mesh_release(mesh);
+	}
+	return true;
+}
+
+///////////////////////////////////////////
+
+void modelfmt_stl_free(void *format_data) {
+	sk_free(format_data);
 }
 
 }

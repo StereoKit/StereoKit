@@ -527,13 +527,14 @@ void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_
 	const int32_t  ring_count  = _countof(sincos);
 	const int32_t  slice_count = SK_FINGERJOINTS + 1;
 	const uint32_t vert_count  = (_countof(sincos) * slice_count + 1) * SK_FINGERS; // verts: per joint, per finger
+	const uint32_t ind_count   = (3 * 5 * 2 * (slice_count - 1) + (8 * 3)) * (SK_FINGERS); // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
 
-	vert_t *verts = *ref_verts;
-	vind_t *inds  = *ref_inds;
+	vert_t *verts     = *ref_verts;
+	vind_t *inds      = *ref_inds;
+	bool    set_inds  = false;
 
 	// if this mesh hasn't been initialized yet
 	if (*ref_verts == nullptr) {
-		const uint32_t ind_count = (3 * 5 * 2 * (slice_count - 1) + (8 * 3)) * (SK_FINGERS); // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
 		*ref_verts = sk_malloc_t(vert_t, vert_count);
 		*ref_inds  = sk_malloc_t(vind_t, ind_count );
 		verts      = *ref_verts;
@@ -622,7 +623,7 @@ void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_
 		verts[v++].col = { 255,255,255,255 };
 		}
 
-		mesh_set_inds(mesh, inds, ind_count);
+		set_inds = true;
 	}
 
 	int32_t v = 0;
@@ -676,8 +677,10 @@ void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_
 		v++;
 	}
 
-	// And update the mesh vertices!
+	// Update verts first, then inds, so the mesh state transitions correctly
 	mesh_set_verts(mesh, verts, vert_count);
+	if (set_inds)
+		mesh_set_inds(mesh, inds, ind_count);
 }
 
 ///////////////////////////////////////////

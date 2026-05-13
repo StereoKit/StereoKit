@@ -134,8 +134,10 @@ bool platform_init() {
 	skr_settings_t skr_settings = {};
 	skr_settings.app_name          = settings->app_name;
 	skr_settings.app_version       = 1;
-	skr_settings.enable_validation = true;// settings->log_filter == log_diagnostic;
 	skr_settings.bind_settings     = &skr_binds;
+	#if defined(SK_DEBUG)
+	skr_settings.enable_validation = true;
+	#endif
 
 	// Build extension array - start with platform-specific surface extensions from sk_app
 	array_t<const char*> vk_extensions = {};
@@ -440,65 +442,107 @@ char *platform_pop_path_new(const char *path) {
 
 ///////////////////////////////////////////
 
+// Normalizes path separators for the current platform in place.
+static void platform_normalize_path_inplace(char *path) {
+	for (char *c = path; *c; c++) {
+		if (*c == '\\' || *c == '/') *c = platform_path_separator_c;
+	}
+}
+
+// Looks for a file matching `normalized` on the actual filesystem, checking
+// the given path directly and then (for relative paths) relative to the
+// executable. Takes ownership of `normalized` and returns it on a direct hit
+// (same buffer, no copy), a newly allocated path on an exe-relative hit, or
+// nullptr on miss (freeing the input). Does not consult Android APK assets —
+// callers must handle that separately.
+static char *platform_find_existing_file(char *normalized) {
+	if (ska_file_exists(normalized))
+		return normalized;
+
+	bool is_relative = normalized[0] != platform_path_separator_c;
+#if defined(SK_OS_WINDOWS)
+	if (is_relative && strlen(normalized) >= 2 && normalized[1] == ':')
+		is_relative = false;
+#endif
+	if (!is_relative) { sk_free(normalized); return nullptr; }
+
+	char exe_path[1024];
+	if (!ska_get_exe_path(exe_path, sizeof(exe_path))) { sk_free(normalized); return nullptr; }
+
+	// ska_get_exe_path returns the exe file path, we need the directory
+	char *exe_dir  = platform_pop_path_new(exe_path);
+	char *fullpath = platform_push_path_new(exe_dir, normalized);
+	sk_free(exe_dir);
+	sk_free(normalized);
+	if (ska_file_exists(fullpath))
+		return fullpath;
+	sk_free(fullpath);
+	return nullptr;
+}
+
+///////////////////////////////////////////
+
 bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t *out_size) {
 	*out_data = nullptr;
 	*out_size = 0;
 
-	// Normalize slashes to platform-specific separator
-	char* normalized = string_copy(filename);
-	for (char* c = normalized; *c; c++) {
-		if (*c == '\\' || *c == '/') *c = platform_path_separator_c;
-	}
+	char *normalized = string_copy(filename);
+	platform_normalize_path_inplace(normalized);
 
+	// Prefer APK-packaged assets over the filesystem — that's the shipping
+	// location, and filesystem lookups are a dev/override fallback.
 	bool success = false;
-
-	// Try reading the file directly
-	if (ska_file_exists(normalized)) {
-		success = ska_file_read(normalized, out_data, out_size);
-	}
-
-	// On Android, try reading from APK assets
 #if defined(SK_OS_ANDROID)
-	if (!success) {
-		success = ska_asset_read(normalized, out_data, out_size);
-	}
+	success = ska_asset_read(normalized, out_data, out_size);
 #endif
 
-	// If file not found and path is relative, try exe-relative
-	if (!success && normalized[0] != platform_path_separator_c) {
-#if defined(SK_OS_WINDOWS)
-		bool is_absolute = (strlen(normalized) >= 2 && normalized[1] == ':');
-		if (!is_absolute) {
-#endif
-		char exe_path[1024];
-		if (ska_get_exe_path(exe_path, sizeof(exe_path))) {
-			// ska_get_exe_path returns the exe file path, we need the directory
-			char* exe_dir  = platform_pop_path_new(exe_path);
-			char* fullpath = platform_push_path_new(exe_dir, normalized);
-			if (ska_file_exists(fullpath)) {
-				success = ska_file_read(fullpath, out_data, out_size);
-			}
-			sk_free(fullpath);
-			sk_free(exe_dir);
-		}
-#if defined(SK_OS_WINDOWS)
-		}
-#endif
-	}
-
-	if (!success) {
-		log_diagf("platform_read_file_direct can't find %s", normalized);
+	if (success) {
 		sk_free(normalized);
-		return false;
+	} else {
+		char *resolved = platform_find_existing_file(normalized);
+		if (resolved != nullptr) {
+			success = ska_file_read(resolved, out_data, out_size);
+			sk_free(resolved);
+		}
+		if (!success) {
+			log_diagf("platform_read_file_direct can't find %s", filename);
+			return false;
+		}
 	}
-
-	sk_free(normalized);
 
 	// Add null terminator for string convenience
 	*out_data = sk_realloc(*out_data, *out_size + 1);
 	((uint8_t*)*out_data)[*out_size] = 0;
 
 	return true;
+}
+
+///////////////////////////////////////////
+
+size_t platform_file_size(const char *filename) {
+	// Mirrors platform_read_file's path resolution, but uses stat to get size
+	// only — no file contents read, no buffer allocated. Used to estimate asset
+	// task complexity at insertion time so the asset scheduler can load smaller
+	// files before larger ones. Returns 0 if the file can't be found; callers
+	// should treat 0 as "unknown" rather than a hard error.
+
+	char *normalized = assets_file(filename);
+	platform_normalize_path_inplace(normalized);
+
+	size_t result = 0;
+#if defined(SK_OS_ANDROID)
+	result = ska_asset_size(normalized);
+#endif
+	if (result == 0) {
+		char *resolved = platform_find_existing_file(normalized);
+		if (resolved != nullptr) {
+			result = ska_file_size(resolved);
+			sk_free(resolved);
+		}
+	} else {
+		sk_free(normalized);
+	}
+	return result;
 }
 
 ///////////////////////////////////////////

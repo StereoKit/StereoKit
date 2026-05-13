@@ -148,18 +148,19 @@ asset_header_t* assets_allocate_no_add(asset_type_ type, const char** out_type_s
 	size_t      size      = sizeof(asset_header_t);
 	const char* type_name = "asset";
 	switch(type) {
-	case asset_type_mesh:           size = sizeof(_mesh_t );          type_name = "mesh";           break;
-	case asset_type_tex:            size = sizeof(_tex_t);            type_name = "tex";            break;
-	case asset_type_shader:         size = sizeof(_shader_t);         type_name = "shader";         break;
-	case asset_type_material:       size = sizeof(_material_t);       type_name = "material";       break;
-	case asset_type_model:          size = sizeof(_model_t);          type_name = "model";          break;
-	case asset_type_font:           size = sizeof(_font_t);           type_name = "font";           break;
-	case asset_type_sprite:         size = sizeof(_sprite_t);         type_name = "sprite";         break;
-	case asset_type_sound:          size = sizeof(_sound_t);          type_name = "sound";          break;
-	case asset_type_anchor:         size = sizeof(_anchor_t);         type_name = "anchor";         break;
-	case asset_type_render_list:    size = sizeof(_render_list_t);    type_name = "render_list";    break;
-	case asset_type_compute:        size = sizeof(_compute_t);        type_name = "compute";        break;
-	case asset_type_compute_buffer: size = sizeof(_compute_buffer_t); type_name = "compute_buffer"; break;
+	case asset_type_mesh:            size = sizeof(_mesh_t );           type_name = "mesh";            break;
+	case asset_type_tex:             size = sizeof(_tex_t);             type_name = "tex";             break;
+	case asset_type_shader:          size = sizeof(_shader_t);          type_name = "shader";          break;
+	case asset_type_material:        size = sizeof(_material_t);        type_name = "material";        break;
+	case asset_type_model:           size = sizeof(_model_t);           type_name = "model";           break;
+	case asset_type_font:            size = sizeof(_font_t);            type_name = "font";            break;
+	case asset_type_sprite:          size = sizeof(_sprite_t);          type_name = "sprite";          break;
+	case asset_type_sound:           size = sizeof(_sound_t);           type_name = "sound";           break;
+	case asset_type_anchor:          size = sizeof(_anchor_t);          type_name = "anchor";          break;
+	case asset_type_render_list:     size = sizeof(_render_list_t);     type_name = "render_list";     break;
+	case asset_type_compute:         size = sizeof(_compute_t);         type_name = "compute";         break;
+	case asset_type_compute_buffer:  size = sizeof(_compute_buffer_t);  type_name = "compute_buffer";  break;
+	case asset_type_material_buffer: size = sizeof(_material_buffer_t); type_name = "material_buffer"; break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -289,18 +290,19 @@ void assets_destroy(asset_header_t *asset) {
 
 	// Call asset specific destroy function
 	switch(asset->type) {
-	case asset_type_mesh:        mesh_destroy       ((mesh_t       )asset); break;
-	case asset_type_tex:         tex_destroy        ((tex_t        )asset); break;
-	case asset_type_shader:      shader_destroy     ((shader_t     )asset); break;
-	case asset_type_material:    material_destroy   ((material_t   )asset); break;
-	case asset_type_model:       model_destroy      ((model_t      )asset); break;
-	case asset_type_font:        font_destroy       ((font_t       )asset); break;
-	case asset_type_sprite:      sprite_destroy     ((sprite_t     )asset); break;
-	case asset_type_sound:       sound_destroy      ((sound_t      )asset); break;
-	case asset_type_anchor:      anchor_destroy     ((anchor_t     )asset); break;
-	case asset_type_render_list:    render_list_destroy   ((render_list_t   )asset); break;
-	case asset_type_compute:        compute_destroy       ((compute_t       )asset); break;
-	case asset_type_compute_buffer: compute_buffer_destroy((compute_buffer_t)asset); break;
+	case asset_type_mesh:            mesh_destroy           ((mesh_t           )asset); break;
+	case asset_type_tex:             tex_destroy            ((tex_t            )asset); break;
+	case asset_type_shader:          shader_destroy         ((shader_t         )asset); break;
+	case asset_type_material:        material_destroy       ((material_t       )asset); break;
+	case asset_type_model:           model_destroy          ((model_t          )asset); break;
+	case asset_type_font:            font_destroy           ((font_t           )asset); break;
+	case asset_type_sprite:          sprite_destroy         ((sprite_t         )asset); break;
+	case asset_type_sound:           sound_destroy          ((sound_t          )asset); break;
+	case asset_type_anchor:          anchor_destroy         ((anchor_t         )asset); break;
+	case asset_type_render_list:     render_list_destroy    ((render_list_t    )asset); break;
+	case asset_type_compute:         compute_destroy        ((compute_t        )asset); break;
+	case asset_type_compute_buffer:  compute_buffer_destroy ((compute_buffer_t )asset); break;
+	case asset_type_material_buffer: material_buffer_destroy((material_buffer_t)asset); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -378,16 +380,20 @@ void  assets_shutdown_check() {
 		for (int32_t i = 0; i < assets.count; i++) {
 			const char *type_name = "[unimplemented type name]";
 			switch(assets[i]->type) {
-			case asset_type_mesh:     type_name = "mesh_t";     break;
-			case asset_type_tex:      type_name = "tex_t";      break;
-			case asset_type_shader:   type_name = "shader_t";   break;
-			case asset_type_material: type_name = "material_t"; break;
-			case asset_type_model:    type_name = "model_t";    break;
-			case asset_type_font:     type_name = "font_t";     break;
-			case asset_type_sprite:   type_name = "sprite_t";   break;
-			case asset_type_sound:    type_name = "sound_t";    break;
-			case asset_type_solid:    type_name = "solid_t";    break;
-			case asset_type_anchor:   type_name = "anchor_t";   break;
+			case asset_type_mesh:            type_name = "mesh_t";            break;
+			case asset_type_tex:             type_name = "tex_t";             break;
+			case asset_type_shader:          type_name = "shader_t";          break;
+			case asset_type_material:        type_name = "material_t";        break;
+			case asset_type_model:           type_name = "model_t";           break;
+			case asset_type_font:            type_name = "font_t";            break;
+			case asset_type_sprite:          type_name = "sprite_t";          break;
+			case asset_type_sound:           type_name = "sound_t";           break;
+			case asset_type_solid:           type_name = "solid_t";           break;
+			case asset_type_anchor:          type_name = "anchor_t";          break;
+			case asset_type_render_list:     type_name = "render_list_t";     break;
+			case asset_type_compute:         type_name = "compute_t";         break;
+			case asset_type_compute_buffer:  type_name = "compute_buffer_t";  break;
+			case asset_type_material_buffer: type_name = "material_buffer_t"; break;
 			default: break;
 			}
 			log_infof("\t%s (%d): %s", type_name, assets[i]->refs, assets[i]->id_text);
@@ -513,12 +519,20 @@ void assets_step() {
 ///////////////////////////////////////////
 
 void assets_shutdown() {
+	// Signal asset threads to drain remaining tasks and exit. Use a single
+	// loop for all threads so we keep calling assets_step while any thread
+	// is still running — the old per-thread sequential loop could miss
+	// queued work from threads that exited while waiting on another.
 	asset_thread_enabled = false;
 	ft_condition_broadcast(asset_tasks_available);
-	for (int32_t i = 0; i < asset_threads.count; i++) {
-		while (asset_threads[i].running) {
-			assets_step();
-			ft_yield();
+	bool any_running = true;
+	while (any_running) {
+		assets_step();
+		ft_yield();
+
+		any_running = false;
+		for (int32_t i = 0; i < asset_threads.count; i++) {
+			if (asset_threads[i].running) { any_running = true; break; }
 		}
 	}
 	asset_threads.free();
@@ -533,7 +547,7 @@ void assets_shutdown() {
 	// assets array on destroy!
 	for (int32_t i = assets.count-1; i >= 0; i--) {
 		// mark as no refs, or assets_destroy will not be pleased.
-		assets[i]->refs = 0; 
+		assets[i]->refs = 0;
 		assets_destroy(assets[i]);
 	}
 
@@ -777,11 +791,6 @@ void assets_complete_task(asset_task_t* task) {
 
 ///////////////////////////////////////////
 
-void assets_task_set_complexity(asset_task_t *task, int32_t complexity) {
-}
-
-///////////////////////////////////////////
-
 void asset_step_task() {
 	asset_task_t* task = assets_acquire_task();
 	if (task == nullptr) return;
@@ -903,11 +912,12 @@ int32_t asset_thread(void *thread_inst_obj) {
 
 ///////////////////////////////////////////
 
-void assets_block_until(asset_header_t *asset, asset_state_ state) {
+void assets_block_until(asset_t asset, asset_state_ state) {
+	asset_header_t *header = (asset_header_t *)asset;
 	// If we're past the required state already, drop out. asset_state_none and
 	// below (error states) means no loading is happening, so blocking will
 	// only put us in an infinite loop.
-	if (asset->state >= state || asset->state <= asset_state_none)
+	if (header->state >= state || header->state <= asset_state_none)
 		return;
 
 	profiler_zone();
@@ -921,7 +931,7 @@ void assets_block_until(asset_header_t *asset, asset_state_ state) {
 		}
 	}
 
-	while (asset->state < state && asset->state >= 0) {
+	while (header->state < state && header->state >= 0) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
 		assets_step();

@@ -844,7 +844,7 @@ void ui_default_aura_mesh(mesh_t *mesh, float tube_diameter, float corner_radius
 			inds[ind++] = off  + cn;
 		}
 	}
-	mesh_set_data(*mesh, verts, vert_count, inds, ind_count);
+	mesh_set_data(*mesh, verts, vert_count, inds, ind_count, mesh_data_calc_bounds);
 
 	sk_free(verts);
 	sk_free(inds);
@@ -995,7 +995,7 @@ void _ui_gen_quadrant_mesh(mesh_t *mesh, ui_corner_ rounded_corners, float corne
 
 	if (*mesh == nullptr)
 		*mesh = mesh_create();
-	mesh_set_data(*mesh, verts.data, verts.count, inds.data, inds.count);
+	mesh_set_data(*mesh, verts.data, verts.count, inds.data, inds.count, mesh_data_calc_bounds);
 	verts.free();
 	inds .free();
 }

@@ -24,9 +24,10 @@ namespace StereoKit
 	public class Model : IAsset
 	{
 		internal IntPtr _inst;
-		private ModelNodeCollection   _nodeCollection;
-		private ModelVisualCollection _visualCollection;
-		private ModelAnimCollection   _animCollection;
+		private ModelNodeCollection       _nodeCollection;
+		private ModelVisualCollection     _visualCollection;
+		private ModelAnimCollection       _animCollection;
+		private List<Assets.CallbackData> _callbacks;
 
 		/// <summary>Gets or sets the unique identifier of this asset resource!
 		/// This can be helpful for debugging, managing your assets, or finding
@@ -40,23 +41,28 @@ namespace StereoKit
 		/// <summary>This is an enumerable collection of all the nodes in this
 		/// Model, ordered non-hierarchically by when they were added. You can
 		/// do Linq stuff with it, foreach it, or just treat it like a List or
-		/// array!</summary>
+		/// array! Accessing Count or iterating will block until the Model's
+		/// metadata has finished loading.</summary>
 		public ModelNodeCollection Nodes => _nodeCollection;
 		/// <summary>This is an enumerable collection of all the nodes with
 		/// Mesh/Material data in this Model, ordered non-hierarchically by
 		/// when they were added. You can do Linq stuff with it, foreach it, or
-		/// just treat it like a List or array!</summary>
+		/// just treat it like a List or array! Accessing Count or iterating
+		/// will block until the Model's metadata has finished loading.
+		/// </summary>
 		public ModelVisualCollection Visuals => _visualCollection;
 		/// <summary>An enumerable collection of animations attached to this
 		/// Model. You can do Linq stuff with it, foreach it, or just treat it
-		/// like a List or array!</summary>
+		/// like a List or array! Accessing Count or iterating will block until
+		/// the Model has fully finished loading.</summary>
 		public ModelAnimCollection Anims => _animCollection;
 
 		/// <summary>This is a bounding box that encapsulates the Model and
 		/// all its subsets! It's used for collision, visibility testing, UI
 		/// layout, and probably other things. While it's normally calculated
 		/// from the mesh bounds, you can also override this to suit your
-		/// needs.</summary>
+		/// needs. If the Model is still loading, this returns a default
+		/// 10cm cube.</summary>
 		public Bounds Bounds
 		{
 			get => NativeAPI.model_get_bounds(_inst);
@@ -66,7 +72,8 @@ namespace StereoKit
 		/// <summary>Returns the first root node in the Model's hierarchy.
 		/// There may be additional root nodes, and these will be Siblings
 		/// of this ModelNode. If there are no nodes present on the Model,
-		/// this will be null.</summary>
+		/// this will be null. This will block until the Model's metadata
+		/// has finished loading.</summary>
 		public ModelNode RootNode
 		{
 			get
@@ -75,6 +82,33 @@ namespace StereoKit
 				return nodeId >= 0
 					? new ModelNode(this, nodeId)
 					: null;
+			}
+		}
+
+		/// <summary>This tells you the current state of the Model asset.
+		/// A Model starts in the Loading state when created from a file,
+		/// transitions to LoadedMeta when the hierarchy is available, and
+		/// Loaded once all mesh and texture data has been submitted for
+		/// upload. This also reflects if an error occured while loading the
+		/// Model with a variety of asset error codes!</summary>
+		public AssetState AssetState => NativeAPI.model_asset_state(_inst);
+
+		/// <summary>This event fires when the Model has finished loading
+		/// its hierarchy and submitted all mesh and texture data for
+		/// upload.</summary>
+		public event Action<Model> OnLoaded {
+			add {
+				if (_callbacks == null) _callbacks = new List<Assets.CallbackData>();
+				AssetOnLoadCallback callback = (a, _) => { NativeAPI.model_addref(a); value(new Model(a)); };
+				_callbacks.Add(new Assets.CallbackData { action = value, callback = callback });
+				NativeAPI.model_on_load(_inst, callback, IntPtr.Zero);
+			}
+			remove {
+				if (_callbacks == null) throw new NullReferenceException();
+				int i = _callbacks.FindIndex(d => (Action<Model>)d.action == value);
+				if (i < 0) throw new KeyNotFoundException();
+				NativeAPI.model_on_load_remove(_inst, _callbacks[i].callback);
+				_callbacks.RemoveAt(i);
 			}
 		}
 
@@ -132,6 +166,12 @@ namespace StereoKit
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Model()
 		{
+			if (_callbacks != null)
+			{
+				foreach (var cb in _callbacks)
+					NativeAPI.model_on_load_remove(_inst, cb.callback);
+				_callbacks = null;
+			}
 			if (_inst != IntPtr.Zero)
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
@@ -173,7 +213,8 @@ namespace StereoKit
 		/// addition to Draw.</summary>
 		public void StepAnim() => NativeAPI.model_step_anim(_inst);
 		/// <summary>Searches the list of animations for the first one matching
-		/// the given name.</summary>
+		/// the given name. This will block until the Model has fully
+		/// finished loading.</summary>
 		/// <param name="name">Case sensitive name of the animation.</param>
 		/// <returns>A link to the animation, or null if none is found.</returns>
 		public Anim FindAnim(string name)
@@ -217,12 +258,13 @@ namespace StereoKit
 		public AnimMode AnimMode => NativeAPI.model_anim_active_mode(_inst);
 
 
-		/// <summary>Checks the intersection point of this ray and a Model's 
+		/// <summary>Checks the intersection point of this ray and a Model's
 		/// visual nodes. This will skip any node that is not flagged as Solid,
-		/// as well as any Mesh without collision data. Ray must be in model 
+		/// as well as any Mesh without collision data. Ray must be in model
 		/// space, intersection point will be in model space too. You can use
 		/// the inverse of the mesh's world transform matrix to bring the ray
-		/// into model space, see the example in the docs!</summary>
+		/// into model space, see the example in the docs! If the Model is
+		/// still loading, this returns false immediately.</summary>
 		/// <param name="modelSpaceRay">Ray must be in model space, the
 		/// intersection point will be in model space too. You can use the
 		/// inverse of the mesh's world transform matrix to bring the ray
@@ -273,8 +315,9 @@ namespace StereoKit
 
 		/// <summary>Searches the entire list of Nodes, and will return the
 		/// first on that matches this name exactly. If no ModelNode is found,
-		/// then this will return null. Node Names are not guaranteed to be 
-		/// unique.</summary>
+		/// then this will return null. Node Names are not guaranteed to be
+		/// unique. This will block until the Model's metadata is loaded.
+		/// </summary>
 		/// <param name="name">Exact name to match against. ASCII only for now.
 		/// </param>
 		/// <returns>The first matching ModelNode, or null if none are found.
@@ -350,12 +393,12 @@ namespace StereoKit
 		/// <param name="shader">The shader to use for the model's materials!
 		/// If null, this will
 		/// automatically determine the best shader available to use.</param>
-		/// <returns>A Model created from the file, or null if the file 
-		/// failed to load!</returns>
-		public static Model FromFile(string file, Shader shader = null)
+		/// <returns>Always returns a valid Model created from the file, check
+		/// the AssetState to see if a failure occurred.</returns>
+		public static Model FromFile(string file, Shader shader = null, int loadPriority = 10)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_file(file, final);
+			IntPtr inst = NativeAPI.model_create_file(file, final, loadPriority);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -372,12 +415,12 @@ namespace StereoKit
 		/// <param name="shader">The shader to use for the model's materials!
 		/// If null, this will automatically determine the best shader 
 		/// available to use.</param>
-		/// <returns>A Model created from the file, or null if the file
-		/// failed to load!</returns>
-		public static Model FromMemory(string filename, in byte[] data, Shader shader = null)
+		/// <returns>Always returns a valid Model created from the file, check
+		/// the AssetState to see if a failure occurred.</returns>
+		public static Model FromMemory(string filename, in byte[] data, Shader shader = null, int loadPriority = 10)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final);
+			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final, loadPriority);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -485,18 +528,20 @@ namespace StereoKit
 			set => NativeAPI.model_node_set_transform_local(_model._inst, _nodeId, value);
 		}
 		/// <summary>The Mesh associated with this node. May be null, or may
-		/// also be re-used elsewhere.</summary>
+		/// also be re-used elsewhere. Getting this will block until the
+		/// Model has fully finished loading.</summary>
 		public Mesh Mesh
 		{
 			get { IntPtr ptr = NativeAPI.model_node_get_mesh(_model._inst, _nodeId); return ptr == IntPtr.Zero ? null : new Mesh(ptr); }
-			set => NativeAPI.model_node_set_mesh(_model._inst, _nodeId, value._inst);
+			set => NativeAPI.model_node_set_mesh(_model._inst, _nodeId, value?._inst ?? IntPtr.Zero);
 		}
-		/// <summary>The Model associated with this node. May be null, or may
-		/// also be re-used elsewhere.</summary>
+		/// <summary>The Material associated with this node. May be null, or
+		/// may also be re-used elsewhere. Getting this will block until
+		/// the Model's metadata has finished loading.</summary>
 		public Material Material
 		{
 			get { IntPtr ptr = NativeAPI.model_node_get_material(_model._inst, _nodeId); return ptr == IntPtr.Zero ? null : new Material(ptr); }
-			set => NativeAPI.model_node_set_material(_model._inst, _nodeId, value._inst);
+			set => NativeAPI.model_node_set_material(_model._inst, _nodeId, value?._inst ?? IntPtr.Zero);
 		}
 
 		internal ModelNode(Model model, int nodeId)
@@ -685,7 +730,9 @@ namespace StereoKit
 	public class ModelNodeCollection : IEnumerable<ModelNode>
 	{
 		Model _model;
-		/// <summary>This is the total number of nodes in the Model.</summary>
+		/// <summary>This is the total number of nodes in the Model. This
+		/// will block until the Model's metadata has finished loading.
+		/// </summary>
 		public int Count => NativeAPI.model_node_count(_model._inst);
 		/// <summary>Allows you to retrieve a node from this collection via its
 		/// index.</summary>
@@ -736,7 +783,8 @@ namespace StereoKit
 	{
 		Model _model;
 		/// <summary>This is the total number of nodes with visual data
-		/// attached to them.</summary>
+		/// attached to them. This will block until the Model's metadata
+		/// has finished loading.</summary>
 		public int Count => NativeAPI.model_node_visual_count(_model._inst);
 		/// <summary>Allows you to retrieve a node from this collection via its
 		/// index.</summary>
@@ -787,7 +835,8 @@ namespace StereoKit
 	{
 		Model _model;
 		/// <summary>This is the total number of animations attached to the
-		/// model.</summary>
+		/// model. This will block until the Model has fully finished
+		/// loading.</summary>
 		public int Count => NativeAPI.model_anim_count(_model._inst);
 		/// <summary>Allows you to retrieve a node from this collection via its
 		/// index.</summary>

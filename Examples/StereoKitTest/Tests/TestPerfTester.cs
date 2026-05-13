@@ -1,5 +1,4 @@
 ﻿using StereoKit;
-using System;
 using System.Collections.Generic;
 
 /// <summary>
@@ -12,7 +11,7 @@ class TestPerfTester : ITest
 	Material[] mat;
 	Mesh       mesh;
 
-	const int   layers            = 819/2; // 819 is the largest batch size
+	const int   layers            = 100;
 	const float spacing           = 0.0f;  // Z distance between each layer
 	      float scale             = Tests.IsTesting ? 2 : 0.2f;     // Size of the quad we're rendering on
 	const int   testDuration      = 20;    // Run the test for X frames
@@ -20,7 +19,8 @@ class TestPerfTester : ITest
 
 	int      testIdx   = 0;
 	int      testFrame = 0;
-	DateTime testTime;
+	ulong    testGpuUs = 0;
+	double   baselineFrameAvg = 0;
 	int      frame = 0;
 
 	public void Initialize()
@@ -28,10 +28,12 @@ class TestPerfTester : ITest
 		Tex t = Tex.FromFile("floor.png");
 		mesh = Mesh.GeneratePlane(Vec2.One, -Vec3.Forward, Vec3.Up, 0);
 
+		// Default must be first — it sets the baseline that all others are
+		// compared against in the output.
 		List<Material> mats = new List<Material>();
+		mats.Add(Material.Default.Copy());
 		mats.Add(Material.Unlit.Copy());
 		mats.Add(Material.UnlitClip.Copy());
-		mats.Add(Material.Default.Copy());
 		mats.Add(Material.PBR.Copy());
 		mats.Add(Material.PBRClip.Copy());
 		mats.Add(Material.UI.Copy());
@@ -67,23 +69,26 @@ class TestPerfTester : ITest
 	{
 		if (Tests.IsTesting)
 		{
-			DateTime now = DateTime.Now;
 			Tests.RunContinue();
 			if (testIdx >= 0) {
 				for (int i = 0; i < layers; i++)
 					mesh.Draw(mat[testIdx], Matrix.TS(V.XYZ(0, 0, -0.5f + layers * -spacing + i * spacing), scale));
 			}
 			testFrame -= 1;
+			if (testFrame < (testDuration-testDurationStart))
+				testGpuUs += Time.PerfGPUus;
 			if (testFrame == 0)
 			{
 				if (testIdx >= 0)
 				{
-					double elapsed  = (now-testTime).TotalSeconds;
+					double elapsed  = testGpuUs / 1_000_000.0;
 					double frameAvg = elapsed/(testDuration-testDurationStart);
-					Log.Info($"{frameAvg * 1000:00.000}ms {frameAvg/(1.0/60.0):0.00}x Material #{testIdx} ({mat[testIdx].Shader.Id})");
+					if (testIdx == 0) baselineFrameAvg = frameAvg;
+					Log.Info($"{frameAvg * 1000:00.000}ms ({frameAvg/baselineFrameAvg:0.00}x default) Material #{testIdx} ({mat[testIdx].Shader.Id})");
 				}
 				testIdx  += 1;
 				testFrame = testDuration;
+				testGpuUs = 0;
 
 				if (testIdx >= mat.Length)
 				{
@@ -91,8 +96,6 @@ class TestPerfTester : ITest
 					testIdx = 0;
 				}
 			}
-			if (testFrame == (testDuration-testDurationStart))
-				testTime = now;
 		}
 		else
 		{
