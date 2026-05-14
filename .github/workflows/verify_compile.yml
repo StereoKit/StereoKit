@@ -28,6 +28,15 @@ jobs:
         cmake --preset Win32_x64_Release
         cmake --build --preset Win32_x64_Release
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Run Tests
+      working-directory: Examples/StereoKitTest
+      run: dotnet run -c Release -- -headless -test
+
   native-macos:
     runs-on: macos-14
     env:
