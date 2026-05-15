@@ -42,8 +42,11 @@ jobs:
         7z x mesa.7z -omesa -y
         $icd = (Get-ChildItem -Path mesa -Recurse -Filter "lvp_icd.x86_64.json" | Select-Object -First 1).FullName
         if (-not $icd) { throw "lavapipe ICD JSON not found in extracted archive" }
+        $icdDir = Split-Path -Parent $icd
         Write-Host "Using ICD: $icd"
-        "VK_DRIVER_FILES=$icd" >> $env:GITHUB_ENV
+        "VK_DRIVER_FILES=$icd"     >> $env:GITHUB_ENV
+        "VK_ICD_FILENAMES=$icd"    >> $env:GITHUB_ENV
+        "PATH=$icdDir;$env:PATH"   >> $env:GITHUB_ENV
 
     - name: Run Tests
       working-directory: Examples/StereoKitTest
