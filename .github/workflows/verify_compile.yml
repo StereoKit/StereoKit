@@ -82,6 +82,15 @@ jobs:
         cmake --preset MacOS_Arm64_Release
         cmake --build --preset MacOS_Arm64_Release
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Run Tests
+      working-directory: Examples/StereoKitTest
+      run: dotnet run -c Release -- -headless -test
+
   native-linux-android-dotnet:
     runs-on: ubuntu-22.04
     env:
@@ -101,7 +110,7 @@ jobs:
     - name: Install Prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get install clang llvm lld ninja-build libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libfontconfig-dev
+        sudo apt-get install clang llvm lld ninja-build libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libfontconfig-dev mesa-vulkan-drivers
 
     - name: Build Native Linux x64
       run: |
@@ -137,8 +146,9 @@ jobs:
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
-      with: 
-        dotnet-version: 7.0.x
+      with:
+        dotnet-version: 10.0.x
 
-    - name: Build Sample Project
-      run: dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Release
+    - name: Run Tests
+      working-directory: Examples/StereoKitTest
+      run: dotnet run -c Release -- -headless -test
