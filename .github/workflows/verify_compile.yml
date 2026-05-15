@@ -33,6 +33,18 @@ jobs:
       with:
         dotnet-version: 10.0.x
 
+    - name: Install Mesa lavapipe (software Vulkan)
+      shell: pwsh
+      run: |
+        $version = "26.0.7"
+        $url = "https://github.com/pal1000/mesa-dist-win/releases/download/$version/mesa3d-$version-release-msvc.7z"
+        Invoke-WebRequest -Uri $url -OutFile mesa.7z
+        7z x mesa.7z -omesa -y
+        $icd = (Get-ChildItem -Path mesa -Recurse -Filter "lvp_icd.x86_64.json" | Select-Object -First 1).FullName
+        if (-not $icd) { throw "lavapipe ICD JSON not found in extracted archive" }
+        Write-Host "Using ICD: $icd"
+        "VK_DRIVER_FILES=$icd" >> $env:GITHUB_ENV
+
     - name: Run Tests
       working-directory: Examples/StereoKitTest
       run: dotnet run -c Release -- -headless -test
