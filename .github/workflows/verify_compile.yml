@@ -44,25 +44,18 @@ jobs:
         if (-not $icd) { throw "lavapipe ICD JSON not found in extracted archive" }
         $icdDir = Split-Path -Parent $icd
         Write-Host "Using ICD: $icd"
-        Write-Host "ICD directory contents:"
-        Get-ChildItem $icdDir | Format-Table Name, Length
-        Write-Host "ICD JSON contents:"
-        Get-Content $icd
-        "VK_DRIVER_FILES=$icd"     >> $env:GITHUB_ENV
-        "VK_ICD_FILENAMES=$icd"    >> $env:GITHUB_ENV
-        "PATH=$icdDir;$env:PATH"   >> $env:GITHUB_ENV
-        "VK_LOADER_DEBUG=all"      >> $env:GITHUB_ENV
 
-    - name: Verify Vulkan Loader Sees lavapipe
-      shell: pwsh
-      run: |
-        Write-Host "VK_DRIVER_FILES     = $env:VK_DRIVER_FILES"
-        Write-Host "VK_ICD_FILENAMES    = $env:VK_ICD_FILENAMES"
-        Write-Host "ICD JSON exists?    $([System.IO.File]::Exists($env:VK_DRIVER_FILES))"
-        # Check that the loader DLL is present so we know which one we're hitting
-        $loader = (Get-Command vulkan-1.dll -ErrorAction SilentlyContinue).Source
-        if ($loader) { Write-Host "Vulkan loader found at: $loader" }
-        else         { Write-Host "Vulkan loader (vulkan-1.dll) NOT on PATH" }
+        # The Vulkan loader on GH Actions runs elevated and ignores VK_DRIVER_FILES /
+        # VK_ICD_FILENAMES for security reasons. Register the ICD in the registry
+        # instead — the loader reads HKLM\SOFTWARE\Khronos\Vulkan\Drivers regardless
+        # of elevation. Value name is the absolute ICD JSON path, value data is a
+        # DWORD 0 meaning "enabled".
+        $regKey = "HKLM:\SOFTWARE\Khronos\Vulkan\Drivers"
+        New-Item -Path $regKey -Force | Out-Null
+        New-ItemProperty -Path $regKey -Name $icd -PropertyType DWord -Value 0 -Force | Out-Null
+
+        # Mesa folder on PATH so vulkan_lvp.dll's dependencies resolve.
+        "PATH=$icdDir;$env:PATH" >> $env:GITHUB_ENV
 
     - name: Run Tests
       working-directory: Examples/StereoKitTest
