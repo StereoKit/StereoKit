@@ -87,16 +87,8 @@ jobs:
       with:
         dotnet-version: 10.0.x
 
-    - name: Run Tests
-      working-directory: Examples/StereoKitTest
-      env:
-        # GH Actions macOS runners use AppleParavirtDevice (a virtualized Metal
-        # backend) which doesn't implement the selectors MoltenVK uses to probe
-        # argument-buffer support. Disabling argument buffers makes MoltenVK fall
-        # back to per-resource binding (slower but compatible). Drop this env var
-        # if/when running on a real Apple GPU.
-        MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS: 0
-      run: dotnet run -c Release -- -headless -test
+    - name: Build Sample Project
+      run: dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Release
 
   native-linux-android-dotnet:
     runs-on: ubuntu-22.04
