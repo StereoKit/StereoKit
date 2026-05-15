@@ -28,6 +28,39 @@ jobs:
         cmake --preset Win32_x64_Release
         cmake --build --preset Win32_x64_Release
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Install Mesa lavapipe (software Vulkan)
+      shell: pwsh
+      run: |
+        $version = "26.0.7"
+        $url = "https://github.com/pal1000/mesa-dist-win/releases/download/$version/mesa3d-$version-release-msvc.7z"
+        Invoke-WebRequest -Uri $url -OutFile mesa.7z
+        7z x mesa.7z -omesa -y
+        $icd = (Get-ChildItem -Path mesa -Recurse -Filter "lvp_icd.x86_64.json" | Select-Object -First 1).FullName
+        if (-not $icd) { throw "lavapipe ICD JSON not found in extracted archive" }
+        $icdDir = Split-Path -Parent $icd
+        Write-Host "Using ICD: $icd"
+
+        # The Vulkan loader on GH Actions runs elevated and ignores VK_DRIVER_FILES /
+        # VK_ICD_FILENAMES for security reasons. Register the ICD in the registry
+        # instead — the loader reads HKLM\SOFTWARE\Khronos\Vulkan\Drivers regardless
+        # of elevation. Value name is the absolute ICD JSON path, value data is a
+        # DWORD 0 meaning "enabled".
+        $regKey = "HKLM:\SOFTWARE\Khronos\Vulkan\Drivers"
+        New-Item -Path $regKey -Force | Out-Null
+        New-ItemProperty -Path $regKey -Name $icd -PropertyType DWord -Value 0 -Force | Out-Null
+
+        # Mesa folder on PATH so vulkan_lvp.dll's dependencies resolve.
+        "PATH=$icdDir;$env:PATH" >> $env:GITHUB_ENV
+
+    - name: Run Tests
+      working-directory: Examples/StereoKitTest
+      run: dotnet run -c Release -- -headless -test
+
   native-macos:
     runs-on: macos-14
     env:
@@ -49,6 +82,14 @@ jobs:
         cmake --preset MacOS_Arm64_Release
         cmake --build --preset MacOS_Arm64_Release
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Build Sample Project
+      run: dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Release
+
   native-linux-android-dotnet:
     runs-on: ubuntu-22.04
     env:
@@ -68,7 +109,7 @@ jobs:
     - name: Install Prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get install clang llvm lld ninja-build libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libfontconfig-dev
+        sudo apt-get install clang llvm lld ninja-build libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libfontconfig-dev mesa-vulkan-drivers
 
     - name: Build Native Linux x64
       run: |
@@ -104,8 +145,9 @@ jobs:
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
-      with: 
-        dotnet-version: 7.0.x
+      with:
+        dotnet-version: 10.0.x
 
-    - name: Build Sample Project
-      run: dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Release
+    - name: Run Tests
+      working-directory: Examples/StereoKitTest
+      run: dotnet run -c Release -- -headless -test
