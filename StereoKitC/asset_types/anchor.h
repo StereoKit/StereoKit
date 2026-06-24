@@ -22,6 +22,7 @@ typedef enum anchor_system_ {
 	anchor_system_none,
 	anchor_system_stage,
 	anchor_system_openxr_msft,
+	anchor_system_openxr_android,
 } anchor_system_;
 
 void           anchor_destroy         (anchor_t anchor);

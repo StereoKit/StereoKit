@@ -209,7 +209,7 @@ include("cmake/CPM.cmake")
 #### OpenXR - https://www.khronos.org/openxr/ ####
 if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
-    NAME openxr_loader # 1.1.49
+    NAME openxr_loader # 1.1.60
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
     GIT_TAG release-1.1.60
     GIT_SHALLOW 1
@@ -560,6 +560,8 @@ set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/oculus_audio.cpp
   StereoKitC/xr_backends/extensions/msft_anchors.h
   StereoKitC/xr_backends/extensions/msft_anchors.cpp
+  StereoKitC/xr_backends/extensions/android_anchors.h
+  StereoKitC/xr_backends/extensions/android_anchors.cpp
   StereoKitC/xr_backends/extensions/msft_bridge.h
   StereoKitC/xr_backends/extensions/msft_bridge.cpp
   StereoKitC/xr_backends/extensions/msft_observer.h
