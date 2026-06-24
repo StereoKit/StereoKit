@@ -5,6 +5,9 @@
 //--diffuse = white
 Texture2DArray diffuse   : register(t0);
 SamplerState   diffuse_s : register(s0);
+//--confidence = white
+Texture2DArray confidence   : register(t1);
+SamplerState   confidence_s : register(s1);
 
 //--color:color = 1,1,1,1
 float4 color;
@@ -26,8 +29,14 @@ float eye_layer;
 float4x4 eye_pose;
 //--near_clip = 0.1
 float near_clip;
-//--color_by_depth = 0
-float color_by_depth;
+//--color_mode = 0
+float color_mode;
+//--conf_scale = 1
+float conf_scale;
+//--flip_v = 0
+float flip_v;
+//--depth_format = 0
+float depth_format;
 
 struct vsIn {
 	float4 pos       : SV_POSITION;
@@ -41,10 +50,15 @@ struct psIn {
 	float4 color   : COLOR0;
 };
 
-float decode_depth(float z, float nearZ, float farZ, float scale, float invalidValue)
+// Converts a sampled depth value to metric meters. format 0 = ndc (linearized via
+// near/far), 1 = metric meters (used directly). 0 and +inf are treated as invalid.
+float decode_depth(float format, float z, float nearZ, float farZ, float scale)
 {
+	if (format >= 0.5)
+		return (z <= 0 || isinf(z)) ? 0.0 : z * scale;
+
 	if (z <= 0 || z >= 1)
-		return invalidValue;
+		return 0.0;
 
 	float d = isinf(farZ)
         ? nearZ / (1.0 - z)
@@ -57,10 +71,12 @@ psIn vs(vsIn input, sk_ids_t ids) {
 	psIn o;
 
 	float2 sample_uv = input.sample_uv.xy;
-	float3 tex_coord = float3(sample_uv.x, 1.0 - sample_uv.y, eye_layer);
+	// flip the texture row order (independent of depth_format); set by the consumer
+	float  tex_v     = flip_v > 0.5 ? sample_uv.y : (1.0 - sample_uv.y);
+	float3 tex_coord = float3(sample_uv.x, tex_v, eye_layer);
 
 	float depth_raw = diffuse.SampleLevel(diffuse_s, tex_coord, 0).r;
-	float depth_m   = decode_depth(depth_raw, depth_near, depth_far, depth_scale, 0.0);
+	float depth_m   = decode_depth(depth_format, depth_raw, depth_near, depth_far, depth_scale);
 
 	// Cull invalid/near points by pushing outside the clip volume
 	if (depth_m <= near_clip) {
@@ -87,8 +103,11 @@ psIn vs(vsIn input, sk_ids_t ids) {
 		o.pos.xy = (point_size * input.off / float2(aspect, 1)) * o.pos.w + o.pos.xy;
 	}
 
-	// Optional: Map depth to a color gradient over a fixed 0-5m range for visualizing depth
-	if (color_by_depth > 0.5) {
+	// color_mode: 0 = vertex/eye color, 1 = depth gradient, 2 = confidence gradient
+	if (color_mode > 1.5) {
+		float conf = saturate(confidence.SampleLevel(confidence_s, tex_coord, 0).r * conf_scale);
+		o.color = float4(1.0 - conf, conf, 0, (input.color * color).a);
+	} else if (color_mode > 0.5) {
 		float t = saturate(depth_m / 5.0);
 		o.color = float4(1.0 - t, 1.0 - abs(t - 0.5) * 2.0, t, (input.color * color).a);
 	} else {

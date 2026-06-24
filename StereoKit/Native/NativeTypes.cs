@@ -161,6 +161,14 @@ namespace StereoKit
 		/// <summary>Per-eye depth camera metadata. Index 0 is left, index 1 is right.</summary>
 		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
 		public SensorDepthView[] views;
+		/// <summary>How the depth buffer values should be interpreted.</summary>
+		public SensorDepthFormat depthFormat;
+		/// <summary>Whether the images live in a GPU texture or in CPU buffers.</summary>
+		public SensorDepthStorage storage;
+		/// <summary>Number of valid views: 1 mono, 2 stereo (views[0]=left, [1]=right).</summary>
+		public uint viewCount;
+		/// <summary>Bitmask of (1 &lt;&lt; sensor_depth_image_) present this frame.</summary>
+		public uint availableImages;
 	}
 
 	/// <summary>A point on a lathe for a mesh generation algorithm. This is the 'silhouette'

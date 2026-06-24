@@ -16,6 +16,17 @@
 
 #include <stdint.h>
 
+// XR_META_environment_depth v2 adds captureTime (XrEnvironmentDepthImageTimestampMETA). Guard on
+// SPEC_VERSION, not #ifndef: its struct-type value is an enumerator, invisible to the preprocessor.
+#if !defined(XR_META_environment_depth) || (XR_META_environment_depth_SPEC_VERSION < 2)
+#define XR_TYPE_ENVIRONMENT_DEPTH_IMAGE_TIMESTAMP_META ((XrStructureType)1000291008)
+typedef struct XrEnvironmentDepthImageTimestampMETA {
+	XrStructureType    type;
+	const void*        next;
+	XrTime             captureTime;
+} XrEnvironmentDepthImageTimestampMETA;
+#endif
+
 #define XR_META_ENVIRONMENT_DEPTH_FUNCTIONS(X)             \
 	X(xrCreateEnvironmentDepthProviderMETA)                \
 	X(xrDestroyEnvironmentDepthProviderMETA)               \
@@ -405,6 +416,10 @@ void xr_ext_meta_environment_depth_update_frame(XrTime display_time) {
 	frame.views[0].fov      = xr_to_fov (image_info.views[0].fov );
 	frame.views[1].pose     = xr_to_pose(image_info.views[1].pose);
 	frame.views[1].fov      = xr_to_fov (image_info.views[1].fov );
+	frame.depth_format      = sensor_depth_format_ndc_d16;
+	frame.storage           = sensor_depth_storage_gpu_texture;
+	frame.view_count        = 2;
+	frame.available_images  = 1u << sensor_depth_image_smooth_depth;
 
 	local.latest_frame     = frame;
 	local.has_latest_frame = true;

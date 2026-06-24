@@ -151,10 +151,23 @@ static void depth_step() {
 		(float)frame.width, (float)frame.height,
 		1.0f / (float)frame.width, 1.0f / (float)frame.height });
 
-	matrix depth_vp_l = depth_build_vp(&frame.views[0], frame.near_z, frame.far_z);
-	matrix depth_vp_r = depth_build_vp(&frame.views[1], frame.near_z, frame.far_z);
-	material_set_matrix(depth_prepass_mat, "depth_view_proj_inv_l", matrix_invert(depth_vp_l));
-	material_set_matrix(depth_prepass_mat, "depth_view_proj_inv_r", matrix_invert(depth_vp_r));
+	if (frame.depth_format == sensor_depth_format_meters_r32) {
+		// Metric depth has no near/far z-buffer encoding, so the inverse-VP is
+		// degenerate. Reconstruct from per-eye fov tangents + pose instead.
+		material_set_float(depth_prepass_mat, "depth_format", 1.0f);
+		for (int32_t i = 0; i < 2; i++) {
+			fov_info_t f = frame.views[i].fov;
+			vec4 tans = { tanf(f.left * deg2rad), tanf(f.right * deg2rad), tanf(f.top * deg2rad), tanf(f.bottom * deg2rad) };
+			material_set_vector4(depth_prepass_mat, i == 0 ? "depth_tans_l" : "depth_tans_r", tans);
+			material_set_matrix (depth_prepass_mat, i == 0 ? "depth_pose_l"  : "depth_pose_r",  pose_matrix(frame.views[i].pose));
+		}
+	} else {
+		material_set_float(depth_prepass_mat, "depth_format", 0.0f);
+		matrix depth_vp_l = depth_build_vp(&frame.views[0], frame.near_z, frame.far_z);
+		matrix depth_vp_r = depth_build_vp(&frame.views[1], frame.near_z, frame.far_z);
+		material_set_matrix(depth_prepass_mat, "depth_view_proj_inv_l", matrix_invert(depth_vp_l));
+		material_set_matrix(depth_prepass_mat, "depth_view_proj_inv_r", matrix_invert(depth_vp_r));
+	}
 
 	render_add_mesh(depth_grid_mesh, depth_prepass_mat, matrix_identity, {1,1,1,1}, render_layer_0);
 }
