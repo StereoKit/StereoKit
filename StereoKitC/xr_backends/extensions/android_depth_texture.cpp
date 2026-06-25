@@ -230,10 +230,6 @@ void xr_ext_android_depth_texture_destroy() {
 
 	android_depth_free_buffers();
 
-	if (local.depth_tex != nullptr) {
-		tex_release(local.depth_tex);
-		local.depth_tex = nullptr;
-	}
 	local.tex_wanted = false;
 	local.frame_seq  = 0;
 	local.tex_seq    = 0;
@@ -256,6 +252,10 @@ void xr_ext_android_depth_texture_destroy() {
 
 void xr_ext_android_depth_texture_shutdown(void*) {
 	xr_ext_android_depth_texture_destroy();
+	if (local.depth_tex != nullptr) {
+		tex_release(local.depth_tex);
+		local.depth_tex = nullptr;
+	}
 	OPENXR_CLEAR_FN(XR_ANDROID_DEPTH_TEXTURE_FUNCTIONS);
 	local = {};
 }
@@ -490,7 +490,7 @@ tex_t xr_ext_android_depth_texture_get_texture() {
 		return nullptr;
 
 	if (local.depth_tex == nullptr) {
-		local.depth_tex = tex_create(tex_type_image_nomips, tex_format_r32);
+		local.depth_tex = tex_create(tex_type_image_nomips | tex_type_dynamic, tex_format_r32);
 		tex_set_id     (local.depth_tex, "sk/sensor_depth/android");
 		tex_set_sample (local.depth_tex, tex_sample_point);
 		tex_set_address(local.depth_tex, tex_address_clamp);

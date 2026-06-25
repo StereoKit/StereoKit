@@ -51,9 +51,9 @@ class DemoSensorDepth : ITest
 	float    opacity      = 0.25f;
 	float    depthScale   = 1.0f;
 	ColorMode colorMode   = ColorMode.Eye;
-	bool      useRawDepth = false;
-	bool      flipVertical = true;
+	bool     useRawDepth  = false;
 	bool     handToggle   = true;
+	bool     wantRunning  = true;
 
 	SensorDepthCaps  caps;
 	bool             hasFrame;
@@ -95,10 +95,16 @@ class DemoSensorDepth : ITest
 
 	public void Step()
 	{
-		if (Sensor.Depth.IsAvailable && !Sensor.Depth.IsRunning)
-			Sensor.Depth.Start();
+		if (caps == SensorDepthCaps.None && Sensor.Depth.IsAvailable)
+			caps = Sensor.Depth.GetCapabilities();
 
-		caps = Sensor.Depth.GetCapabilities();
+		if (wantRunning && Sensor.Depth.IsAvailable && !Sensor.Depth.IsRunning)
+		{
+			Sensor.Depth.Start();
+			// Restore the demo's Raw/Confidence/hand-removal selection.
+			if (demoMode == DemoMode.PointCloud)
+				ApplyDepthCaps();
+		}
 
 		if (demoMode == DemoMode.PointCloud)
 		{
@@ -210,7 +216,8 @@ class DemoSensorDepth : ITest
 		mat["eye_layer"]      = (float)eyeLayer;
 		mat["eye_pose"]       = eye.pose.ToMatrix();
 		mat["color_mode"]     = (float)(int)colorMode;
-		mat["flip_v"]         = flipVertical ? 1.0f : 0.0f;
+		// Meta (ndc) and Android (meters) depth textures have opposite row order.
+		mat["flip_v"]         = latestFrame.depthFormat == SensorDepthFormat.MetersR32 ? 1.0f : 0.0f;
 
 		float leftTan   = MathF.Tan(eye.fov.left   * Units.deg2rad);
 		float rightTan  = MathF.Tan(eye.fov.right  * Units.deg2rad);
@@ -295,7 +302,13 @@ class DemoSensorDepth : ITest
 		demoMode = newMode;
 
 		if (newMode == DemoMode.Occlusion)
+		{
+			// Occlusion needs live depth; un-pause so returning to the point cloud resumes live.
+			wantRunning     = true;
 			World.Occlusion = OcclusionCaps.Depth | (handToggle ? OcclusionCaps.Hands : OcclusionCaps.None);
+		}
+		else
+			ApplyDepthCaps();
 	}
 
 	void DrawControls()
@@ -304,7 +317,12 @@ class DemoSensorDepth : ITest
 
 		UI.Label($"Available: {Sensor.Depth.IsAvailable} | Running: {Sensor.Depth.IsRunning}");
 		if (hasFrame)
-			UI.Label($"Size: {latestFrame.width}x{latestFrame.height}  Near/Far: {latestFrame.nearZ:0.##}/{latestFrame.farZ:0.##}");
+		{
+			string range = latestFrame.depthFormat == SensorDepthFormat.MetersR32
+				? "Metric (m)"
+				: $"Near/Far: {latestFrame.nearZ:0.##}/{latestFrame.farZ:0.##}";
+			UI.Label($"Size: {latestFrame.width}x{latestFrame.height}  {range}");
+		}
 
 		// Mode selector
 		UI.HSeparator();
@@ -373,12 +391,13 @@ class DemoSensorDepth : ITest
 			if (!Sensor.Depth.IsRunning)
 			{
 				if (UI.Button("Start Depth Capture"))
-					Sensor.Depth.Start();
+					wantRunning = true;
 			}
 			else
 			{
 				if (UI.Button("Stop Depth Capture"))
 				{
+					wantRunning = false;
 					Sensor.Depth.Stop();
 					depthTex = null;
 				}
