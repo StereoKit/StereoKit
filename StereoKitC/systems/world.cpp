@@ -110,7 +110,7 @@ static void depth_ensure_grid(uint32_t w, uint32_t h) {
 static void depth_init() {
 	depth_prepass_mat = material_create(sk_default_shader_depth_prepass);
 	material_set_id          (depth_prepass_mat, "default/material_depth_prepass");
-	material_set_depth_test  (depth_prepass_mat, depth_test_always);
+	material_set_depth_test  (depth_prepass_mat, depth_test_less_or_eq);
 	material_set_depth_write (depth_prepass_mat, true);
 	material_set_cull        (depth_prepass_mat, cull_none);
 	material_set_queue_offset(depth_prepass_mat, -200);
