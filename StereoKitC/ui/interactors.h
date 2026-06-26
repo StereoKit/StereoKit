@@ -10,11 +10,12 @@ struct _interactor_t {
 	interactor_event_      events;
 	interactor_activation_ activation_type;
 	interactor_type_       shape_type;
-	// A unique ID per-source used to prevent multiple interactors from
-	// re-using a source when it's already interacting with an element. A
-	// negative id indicates this source is unique, and does not need to check
-	// on other interactors.
-	int32_t                input_source_id;
+	// The physical source this interactor's input comes from. Interactors that
+	// share a source won't interact at the same time, this is how the poke,
+	// pinch, and aim interactors of a single hand avoid fighting over an
+	// element. `interactor_source_unique` (0) opts out, indicating a source
+	// that does not need to check against other interactors.
+	interactor_source_     source;
 	// While generally static, this does change for some interactors! For
 	// example, with hand far-rays, the minimum distance reduces as the hand
 	// get further from the head.
@@ -53,6 +54,9 @@ struct _interactor_t {
 	vec3                   interaction_secondary_motion_total;
 	// This is local to the motion pose
 	vec3                   interaction_intersection_local;
+	// Flat-screen ui_move_face_user: the grab point's depth in front of the camera at
+	// grab time, so a dragged window can hold a constant depth (interaction_handle).
+	float                  interaction_start_flat_depth;
 
 
 	int32_t                focus_priority;
@@ -78,8 +82,8 @@ void             interaction_update         ();
 void             interaction_shutdown       ();
 
 void             interaction_1h_box         (id_hash_t id, interactor_event_ event_mask, int32_t priority, vec3 box_unfocused_start, vec3 box_unfocused_size, vec3 box_focused_start, vec3 box_focused_size, button_state_* out_focus_candidacy, interactor_t* out_interactor);
-void             interaction_1h_plate       (id_hash_t id, interactor_event_ event_mask, int32_t priority, vec3 plate_start, vec3 plate_size, button_state_* out_focus_candidacy, interactor_t* out_interactor, vec3* out_interaction_at_local);
-bool32_t         interaction_handle         (id_hash_t id, int32_t priority, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures);
+void             interaction_1h_plate       (id_hash_t id, interactor_event_ event_mask, int32_t priority, vec3 plate_start, vec3 plate_size, button_state_* out_focus_candidacy, interactor_t* out_interactor, vec3* out_interaction_at_local, float* out_cancel_dist);
+bool32_t         interaction_handle         (id_hash_t id, int32_t priority, pose_t* ref_handle_pose, bounds_t handle_bounds, ui_move_ move_type, ui_gesture_ allowed_gestures, float* opt_ref_scale);
 
 _interactor_t*   _interactor_get            (interactor_t interactor);
 bool32_t         interactor_is_preoccupied  (const _interactor_t* interactor, id_hash_t for_el_id, interactor_event_ event_mask, bool32_t include_focused);

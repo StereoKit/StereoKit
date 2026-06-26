@@ -23,6 +23,7 @@
 #include "fb_haptic.h"
 #include "fb_render_model.h"
 #include "future.h"
+#include "view_config_views_change.h"
 #include "vulkan_enable.h"
 #include "hand_tracking.h"
 #include "hand_mesh.h"
@@ -67,6 +68,7 @@ bool ext_registration() {
 	xr_ext_fb_colorspace_register();
 	xr_ext_msft_observer_register();
 	xr_ext_composition_depth_register();
+	xr_ext_view_config_views_change_register();
 	xr_ext_meta_environment_depth_register();
 	xr_ext_overlay_register();
 	xr_ext_oculus_audio_register();

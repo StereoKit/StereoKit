@@ -326,7 +326,7 @@ void file_picker_update() {
 		for (int32_t i = start; i < fp_path.fragments.count; i++) {
 			ui_push_idi(i);
 			vec2 curr_size = { fminf(max_width / 4, text_size_layout(fp_path.fragments[i]).x + padding * 2), line_height };
-			if (ui_button_sz(fp_path.fragments[i], curr_size) && i < fp_path.fragments.count - 1) {
+			if (ui_button(fp_path.fragments[i], curr_size) && i < fp_path.fragments.count - 1) {
 				char* new_path = string_copy(fp_path.folder);
 				for (int32_t p = i; p < fp_path.fragments.count - 1; p++)
 				{
@@ -368,7 +368,7 @@ void file_picker_update() {
 			ui_push_enabled(fp_active != nullptr);
 			if (ui_button("Open")) { snprintf(fp_filename, sizeof(fp_filename), "%s%c%s", fp_path.folder, platform_path_separator_c, fp_active); fp_call = true; fp_call_status = true; }
 			ui_sameline();
-			ui_text(fp_active ? fp_active : "None selected...", nullptr, ui_scroll_none, ui_line_height(), align_center_left, text_fit_none);
+			ui_text(fp_active ? fp_active : "None selected...", nullptr, ui_scroll_none, vec2{ 0, ui_line_height() }, align_center_left, text_fit_none);
 			ui_pop_enabled();
 		} break;
 		}
@@ -385,13 +385,13 @@ void file_picker_update() {
 			ui_btn_layout_ layout   = ui_btn_layout_left;
 			vec2           btn_size = { 2 * size.x + ui_get_gutter(), 0.0f };
 			if (fp_sortby == fp_sort_by_name) {
-				if (ui_button_img_sz("Name", fp_sort_order_asc ? spr_up : spr_down, layout, btn_size)) {
+				if (ui_button_img("Name", fp_sort_order_asc ? spr_up : spr_down, layout, btn_size)) {
 					fp_sortby             = fp_sort_by_name;
 					fp_sort_order_changed = true;
 					fp_sort_order_asc     = !fp_sort_order_asc;
 				}
 			} else {
-				if (ui_button_sz("Name", btn_size)) {
+				if (ui_button("Name", btn_size)) {
 					fp_sortby             = fp_sort_by_name;
 					fp_sort_order_changed = true;
 					fp_sort_order_asc     = true;
@@ -399,13 +399,13 @@ void file_picker_update() {
 			}
 			ui_sameline();
 			if (fp_sortby == fp_sort_by_size) {
-				if (ui_button_img_sz("Size", fp_sort_order_asc ? spr_up : spr_down, layout, { size.x, 0.0f })) {
+				if (ui_button_img("Size", fp_sort_order_asc ? spr_up : spr_down, layout, { size.x, 0.0f })) {
 					fp_sortby             = fp_sort_by_size;
 					fp_sort_order_changed = true;
 					fp_sort_order_asc     = !fp_sort_order_asc;
 				}
 			} else {
-				if (ui_button_sz("Size", { size.x, 0.0f })) {
+				if (ui_button("Size", { size.x, 0.0f })) {
 					fp_sortby             = fp_sort_by_size;
 					fp_sort_order_changed = true;
 					fp_sort_order_asc     = true;
@@ -414,7 +414,7 @@ void file_picker_update() {
 			ui_sameline();
 		}
 		ui_hspace(ui_layout_remaining().x - (max_width - right));
-		if (ui_button_img_sz("List", fp_list_mode ? spr_list : spr_grid, ui_btn_layout_center_no_text, { max_width - right, 0})) {
+		if (ui_button_img("List", fp_list_mode ? spr_list : spr_grid, ui_btn_layout_center_no_text, { max_width - right, 0})) {
 			should_change_list_mode = true;
 			fp_scroll_offset = 0;
 		}
@@ -437,20 +437,20 @@ void file_picker_update() {
 			}
 
 			if (fp_list_mode) {
-				if (ui_button_img_sz(fp_items[i].name, sprite, layout, { 2*size.x+ui_get_gutter(), size.y })) {
+				if (ui_button_img(fp_items[i].name, sprite, layout, { 2*size.x+ui_get_gutter(), size.y })) {
 					file_picker_click_item(fp_items[i]);
 				}
 				ui_sameline();
 				if (fp_items[i].is_file) {
 					char buffer[128];
 					snprintf(buffer, sizeof(buffer), "%d KB ", (int32_t)(fp_items[i].size / 1024));
-					ui_text_sz(buffer, nullptr, ui_scroll_none, size, align_center_right, text_fit_clip);
+					ui_text(buffer, nullptr, ui_scroll_none, size, align_center_right, text_fit_clip);
 					ui_sameline();
 				} else {
 					ui_layout_reserve(size);
 				}
 			} else {
-				if (ui_button_img_sz(fp_items[i].name, sprite, layout, size)) {
+				if (ui_button_img(fp_items[i].name, sprite, layout, size)) {
 					file_picker_click_item(fp_items[i]);
 				}
 			}

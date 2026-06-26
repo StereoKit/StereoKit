@@ -67,18 +67,27 @@ class DemoLines : ITest
 			drawList  .Clear();
 			drawPoints.Clear();
 		}
+
+		if (ColorButton("White", new Vec3(4, 7, 0) * U.cm)) SetColor(Color.White);
+		if (ColorButton("Red",   new Vec3(9, 3, 0) * U.cm)) SetColor(new Color(1, 0, 0));
+		if (ColorButton("Green", new Vec3(9,-3, 0) * U.cm)) SetColor(new Color(0, 1, 0));
+		if (ColorButton("Blue",  new Vec3(3,-6, 0) * U.cm)) SetColor(new Color(0, 0, 1));
 		UI.PopSurface();
 
-		if (UI.VolumeAt("White", new Bounds(new Vec3(4, 0, 7) * U.cm, new Vec3(4,2,4) * U.cm), UIConfirm.Push).IsJustActive())
-			SetColor(Color.White);
-		if (UI.VolumeAt("Red",   new Bounds(new Vec3(9, 0, 3) * U.cm, new Vec3(4,2,4) * U.cm), UIConfirm.Push).IsJustActive())
-			SetColor(new Color(1,0,0));
-		if (UI.VolumeAt("Green", new Bounds(new Vec3(9, 0,-3) * U.cm, new Vec3(4,2,4) * U.cm), UIConfirm.Push).IsJustActive())
-			SetColor(new Color(0,1,0));
-		if (UI.VolumeAt("Blue",  new Bounds(new Vec3(3, 0,-6) * U.cm, new Vec3(4,2,4) * U.cm), UIConfirm.Push).IsJustActive())
-			SetColor(new Color(0,0,1));
-
 		UI.HandleEnd();
+	}
+	// An invisible swatch over a painted blob on the palette model. There's
+	// no visual to draw - just the click sound - and the caller decides what
+	// the press does, the same way the custom button samples work.
+	static bool ColorButton(string id, Vec3 center)
+	{
+		IdHash hash = UI.StackHash(id);
+		Vec2   size = new Vec2(4, 4) * U.cm;
+		Vec3   tlc  = center + new Vec3(size.x, size.y, 0) / 2;
+		UI.ButtonBehavior(tlc, size, id, out _, out BtnState state, out _, out _);
+		if (state.IsJustActive())
+			UI.PlaySoundOnOff(UIVisual.Button, hash, center);
+		return state.IsJustInactive();
 	}
 	void SetColor(Color color)
 	{
@@ -95,7 +104,8 @@ class DemoLines : ITest
 		Hand hand = Input.Hand(handed);
 		Vec3 tip  = Vec3.Lerp(prevTip, hand.pinchPt, 0.3f);
 
-		if (hand.IsJustPinched && !UI.IsInteracting(handed)) { 
+		InteractorSource handSource = handed == Handed.Right ? InteractorSource.HandRight : InteractorSource.HandLeft;
+		if (hand.IsJustPinched && !Interactor.IsInteracting(handSource)) {
 			if (drawPoints.Count > 0)
 				drawList.Add(drawPoints.ToArray());
 			drawPoints.Clear();

@@ -46,6 +46,7 @@ $size_x64_and    = File-Length "$rootFolder/Android/x86_64/Release/libStereoKitC
 $size_x64_linux  = File-Length "$rootFolder/Linux/x64/Release/libStereoKitC.so"
 $size_arm64_and  = File-Length "$rootFolder/Android/arm64-v8a/Release/libStereoKitC.so"
 $size_arm64_linux= File-Length "$rootFolder/Linux/arm64/Release/libStereoKitC.so"
+$size_arm64_mac  = File-Length "$rootFolder/MacOS/arm64/Release/libStereoKitC.dylib"
 
 $build_sizes = (@"
 ## Build Sizes:
@@ -58,12 +59,14 @@ $build_sizes = (@"
 | Linux    | ARM64 | {6,8:N0} | {7,11:N0} |
 | Android  | x64   | {8,8:N0} | {9,11:N0} |
 | Android  | ARM64 | {10,8:N0} | {11,11:N0} |
+| macOS    | ARM64 | {12,8:N0} | {13,11:N0} |
 "@ -f ([math]::Round($size_x64        /1kb), $size_x64,
        [math]::Round($size_arm64      /1kb), $size_arm64,
        [math]::Round($size_x64_linux  /1kb), $size_x64_linux,
        [math]::Round($size_arm64_linux/1kb), $size_arm64_linux,
        [math]::Round($size_x64_and    /1kb), $size_x64_and,
-       [math]::Round($size_arm64_and  /1kb), $size_arm64_and
+       [math]::Round($size_arm64_and  /1kb), $size_arm64_and,
+       [math]::Round($size_arm64_mac  /1kb), $size_arm64_mac
        ))
 
 $linux_x64_report = ''

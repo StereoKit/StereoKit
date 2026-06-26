@@ -16,17 +16,6 @@
 
 #include <stdint.h>
 
-// XR_META_environment_depth v2: captureTime support.
-// Manually defined because the OpenXR headers are v1.
-#ifndef XR_TYPE_ENVIRONMENT_DEPTH_IMAGE_TIMESTAMP_META
-#define XR_TYPE_ENVIRONMENT_DEPTH_IMAGE_TIMESTAMP_META ((XrStructureType)1000291008)
-typedef struct XrEnvironmentDepthImageTimestampMETA {
-	XrStructureType    type;
-	const void*        next;
-	XrTime             captureTime;
-} XrEnvironmentDepthImageTimestampMETA;
-#endif
-
 #define XR_META_ENVIRONMENT_DEPTH_FUNCTIONS(X)             \
 	X(xrCreateEnvironmentDepthProviderMETA)                \
 	X(xrDestroyEnvironmentDepthProviderMETA)               \

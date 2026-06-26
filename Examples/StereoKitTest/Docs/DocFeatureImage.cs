@@ -12,6 +12,9 @@ class DocFeatureImage : ITest
 	Vec3 screenshotFrom = new Vec3(0.103f, -0.032f, -0.308f);
 	Vec3 screenshotAt   = new Vec3(0.297f, -0.536f, -1.149f);
 
+	bool oldFingerGlow;
+	bool oldHandVisible;
+
 	// Oculus hand joints have a twisted thumb
 	static void FixHand(HandJoint[] joints, Quat rot, Vec3 translate)
 	{
@@ -35,10 +38,19 @@ class DocFeatureImage : ITest
 		FixHand(rightHand, Quat.FromAngles(0, 0, 90), Vec3.Zero);
 		Tests.Hand(Handed.Right, rightHand);
 		Tests.Hand(Handed.Left,  leftHand);
+
+		// Force hands visible and glowing for the screenshot, restoring the
+		// previous state in Shutdown.
+		oldFingerGlow  = Input.FingerGlow;
+		oldHandVisible = Input.HandGetVisible(Handed.Max);
+		Input.HandVisible(Handed.Max, true);
+		Input.FingerGlow = true;
 	}
 
 	public void Shutdown()
 	{
+		Input.HandVisible(Handed.Max, oldHandVisible);
+		Input.FingerGlow = oldFingerGlow;
 	}
 
 	public void Step()

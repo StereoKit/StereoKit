@@ -6,6 +6,8 @@ class TestUIHSliders : ITest
 	float pushValue  = 0;
 	float pinchValue = 0;
 
+	DefaultInteractors oldInteractors;
+
 	DemoAnim<HandJoint[]> anim;
 
 	bool TestPush()
@@ -23,6 +25,9 @@ class TestUIHSliders : ITest
 	}
 
 	public void Initialize() {
+		oldInteractors = Interaction.DefaultInteractors;
+		Interaction.DefaultInteractors = DefaultInteractors.All;
+
 		anim = new DemoAnim<HandJoint[]>(DebugToolWindow.JointsLerp, DebugToolWindow.ReadHandAnim("test_hsliders_anim.bin"));
 
 		if (Tests.IsTesting) {
@@ -40,6 +45,8 @@ class TestUIHSliders : ITest
 
 		Tests.Test(TestPush);
 		Tests.Test(TestPinch);
+
+		Interaction.DefaultInteractors = oldInteractors;
 	}
 	public void Step()
 	{

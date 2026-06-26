@@ -166,7 +166,7 @@ void demo_shadows_update() {
 
 	// UI handle for the model
 	bounds_t model_bounds = model_get_bounds(shadow_model);
-	ui_handle_begin("ShadowModel", shadow_model_pose, model_bounds, false, ui_move_exact);
+	ui_handle_begin("ShadowModel", shadow_model_pose, nullptr, model_bounds, false, ui_move_exact);
 	model_draw(shadow_model, matrix_identity);
 	ui_handle_end();
 }

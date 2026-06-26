@@ -16,10 +16,11 @@ class Program
 	// The base settings we use for this test app. Some of these, like mode,
 	// are overridden, particularly when running tests.
 	static SKSettings settings = new SKSettings {
-		appName         = "StereoKit C#",
-		blendPreference = DisplayBlend.AnyTransparent,
-		mode            = AppMode.XR,
-		renderScaling   = 1.5f,
+		appName           = "StereoKit C#",
+		blendPreference   = DisplayBlend.AnyTransparent,
+		mode              = AppMode.XR,
+		renderScaling     = 1.2f,
+		defaultFontFamily = "builtin, sans-serif", // We rely on the builtin Aileron font for test screenshot consistency!
 	};
 
 	static Mesh      floorMesh;

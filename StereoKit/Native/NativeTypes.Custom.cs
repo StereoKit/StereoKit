@@ -10,6 +10,7 @@ namespace StereoKit
 	{
 		private IntPtr _appName;
 		private IntPtr _assetsFolder;
+		private IntPtr _defaultFontFamily;
 
 		/// <summary>Which operation mode should we use for this app? Default
 		/// is XR, and by default the app will fall back to Simulator if XR
@@ -164,6 +165,28 @@ namespace StereoKit
 			}
 			get => Marshal.PtrToStringAnsi(_assetsFolder);
 		}
+		/// <summary>A CSS-style comma-separated list of font families to use
+		/// for StereoKit's default font, e.g. "Segoe UI, Arial, sans-serif".
+		/// The first family that resolves on the host system is used, with
+		/// the remainder acting as fallbacks for missing glyphs. If null,
+		/// empty, or unresolvable, StereoKit falls back to its built-in
+		/// per-platform default font selection.</summary>
+		public string defaultFontFamily {
+			set {
+				if (_defaultFontFamily != IntPtr.Zero) Marshal.FreeHGlobal(_defaultFontFamily);
+
+				if (string.IsNullOrEmpty(value))
+				{
+					_defaultFontFamily = IntPtr.Zero;
+					return;
+				}
+
+				byte[] str = NativeHelper.ToUtf8(value);
+				_defaultFontFamily = Marshal.AllocHGlobal(str.Length);
+				Marshal.Copy(str, 0, _defaultFontFamily, str.Length);
+			}
+			get => Marshal.PtrToStringAnsi(_defaultFontFamily);
+		}
 	}
 
 	public partial struct SystemInfo
@@ -287,6 +310,10 @@ namespace StereoKit
 		/// <summary>Has the button just been released this frame?</summary>
 		/// <returns>True if released, false if not.</returns>
 		public static bool IsJustInactive(this BtnState state) => (state & BtnState.JustInactive) > 0;
+		/// <summary>Was a button activation just canceled this frame, ending
+		/// without firing because the interactor moved too far away?</summary>
+		/// <returns>True if just canceled, false if not.</returns>
+		public static bool IsJustCanceled(this BtnState state) => (state & BtnState.JustCanceled) > 0;
 		/// <summary>Was the button either presses or released this frame?
 		/// </summary>
 		/// <returns>True if the state just changed this frame, false if not.

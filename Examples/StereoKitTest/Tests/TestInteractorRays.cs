@@ -69,7 +69,7 @@ class TestInteractorRays : ITest
 		prevDefault = Interaction.DefaultInteractors;
 		Interaction.DefaultInteractors = DefaultInteractors.None;
 
-		ray = Interactor.Create(InteractorType.Line, InteractorEvent.Pinch | InteractorEvent.Poke, InteractorActivation.State, -1, 0.001f, 0);
+		ray = Interactor.Create(InteractorType.Line, InteractorEvent.Pinch | InteractorEvent.Poke, InteractorActivation.State, InteractorSource.Unique, 0.001f, 0);
 
 		// This puts us alll the way back to test == 0, so we know we've
 		// executed all our interactor tests.
@@ -111,7 +111,7 @@ class TestInteractorRays : ITest
 			if (testIdx == i && frameIdx >= 0)
 			{
 				if (!testUpdates[i].expects(frameIdx))
-					Log.Err($"Failed interactor test {testUpdates[i].name} frame {frameIdx}");
+					Tests.Fail($"Failed interactor test {testUpdates[i].name} frame {frameIdx}");
 			}
 		}
 		UI.WindowEnd();
@@ -122,7 +122,7 @@ class TestInteractorRays : ITest
 		for (int i = 0; i < testUpdates.Length; i++)
 		{
 			if (UI.Button("Don't Press " + i))
-				Log.Err($"Pressed occluded button {i}!");
+				Tests.Fail($"Pressed occluded button {i}!");
 		}
 		UI.WindowEnd();
 

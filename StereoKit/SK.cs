@@ -215,10 +215,12 @@ namespace StereoKit
 		{
 			if (NativeAPI.sk_step(null) == false) return false;
 
-			_steppers.Step();
+			_steppers.StepPreApp();
 			while (_mainThreadInvoke.TryDequeue(out Action a)) a();
 
 			if (onStep != null) onStep();
+
+			_steppers.StepPostApp();
 
 			return true;
 		}
@@ -241,8 +243,7 @@ namespace StereoKit
 		/// StereoKit shuts down.</param>
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
-			while (Step())
-				if (onStep != null) onStep();
+			while (Step(onStep)) { }
 
 			if (onShutdown != null) onShutdown();
 			Shutdown();

@@ -719,9 +719,11 @@ static inline hdr_image_t hdr_decode_pixels_rgb9e5(const void *data, size_t size
 	free(scanline);
 	goto done_rgb9e5;
 fail_rgb9e5:
-	free(scanline);
-	free(result.pixels);
-	hdr_image_t empty = {0}; return empty;
+	{
+		free(scanline);
+		free(result.pixels);
+		hdr_image_t empty = {0}; return empty;
+	}
 done_rgb9e5:;
 #endif
 
@@ -825,9 +827,11 @@ static inline hdr_image_t hdr_decode_pixels_rg11b10(const void *data, size_t siz
 	free(scanline);
 	goto done_rg11b10;
 fail_rg11b10:
-	free(scanline);
-	free(result.pixels);
-	hdr_image_t empty = {0}; return empty;
+	{
+		free(scanline);
+		free(result.pixels);
+		hdr_image_t empty = {0}; return empty;
+	}
 done_rg11b10:;
 #endif
 

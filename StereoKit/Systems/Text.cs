@@ -23,6 +23,16 @@ namespace StereoKit
 		/// Material may not be unique to this style.</summary>
 		public Material Material => new Material(NativeAPI.text_style_get_material(this));
 
+		/// <summary>The RenderLayer that text drawn with this style is rendered
+		/// on. This defaults to RenderLayer.Vfx. Note that text styles are
+		/// batched per layer, so changing this will re-point the style at a
+		/// different internal text buffer.</summary>
+		public RenderLayer RenderLayer
+		{
+			get => NativeAPI.text_style_get_render_layer(this);
+			set => NativeAPI.text_style_set_render_layer(this, value);
+		}
+
 		/// <summary>Returns the maximum height of a text character using
 		/// this style, in meters.</summary>
 		[Obsolete("Use TextStyle.LayoutHeight")]

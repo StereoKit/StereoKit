@@ -485,7 +485,7 @@ bool _mesh_set_skin(mesh_t mesh, const bone_weight_t *bone_weights, uint32_t bon
 
 ///////////////////////////////////////////
 
-void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count) {
+void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_count, const vec4 *bone_weights, int32_t bone_weight_count, const matrix *in_arr_bone_resting_transforms, int32_t bone_count) {
 	if (bone_weight_count != bone_id_4_count || bone_weight_count != (int32_t)mesh->vert_count) {
 		log_err("mesh_set_skin: bone_weights, bone_ids_4 and vertex counts must match exactly");
 		return;
@@ -494,16 +494,16 @@ void mesh_set_skin(mesh_t mesh, const uint16_t *bone_ids_4, int32_t bone_id_4_co
 	if (_mesh_set_skin(mesh, nullptr, bone_weight_count, bone_count)) {
 		_mesh_set_weights(mesh, bone_ids_4, bone_id_4_count, bone_weights, bone_weight_count);
 		for (int32_t i = 0; i < bone_count; i++) {
-			mesh->skin_data.bone_inverse_transforms[i] = matrix_invert(bone_resting_transforms[i]);
+			mesh->skin_data.bone_inverse_transforms[i] = matrix_invert(in_arr_bone_resting_transforms[i]);
 		}
 	}
 }
 
 ///////////////////////////////////////////
 
-void mesh_set_skin_inv(mesh_t mesh, const bone_weight_t* bone_weights, uint32_t bone_weight_count, const matrix *bone_resting_transforms_inverted, int32_t bone_count) {
+void mesh_set_skin_inv(mesh_t mesh, const bone_weight_t* bone_weights, uint32_t bone_weight_count, const matrix *in_arr_bone_resting_transforms_inverted, int32_t bone_count) {
 	if (_mesh_set_skin(mesh, bone_weights, bone_weight_count, bone_count)) {
-		memcpy(mesh->skin_data.bone_inverse_transforms, bone_resting_transforms_inverted, sizeof(matrix) * bone_count);
+		memcpy(mesh->skin_data.bone_inverse_transforms, in_arr_bone_resting_transforms_inverted, sizeof(matrix) * bone_count);
 	}
 }
 
@@ -514,8 +514,10 @@ void mesh_update_skin(mesh_t mesh, const matrix *bone_transforms, int32_t bone_c
 		mesh->skin_data.bone_transforms[i] = mesh->skin_data.bone_inverse_transforms[i] * bone_transforms[i];
 	}
 
-	XMVECTOR max = g_XMFltMin;
-	XMVECTOR min = g_XMFltMax;
+	XMFLOAT3 xmmin = {  FLT_MAX,   FLT_MAX,   FLT_MAX };
+	XMFLOAT3 xmmax = { -FLT_MAX,  -FLT_MAX,  -FLT_MAX };
+	XMVECTOR min   = XMLoadFloat3(&xmmin);
+	XMVECTOR max   = XMLoadFloat3(&xmmax);
 	for (uint32_t i = 0; i < mesh->vert_count; i++) {
 		XMVECTOR pos  = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].pos);
 		XMVECTOR norm = XMLoadFloat3((XMFLOAT3 *)&mesh->verts[i].norm);

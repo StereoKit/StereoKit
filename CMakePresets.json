@@ -32,11 +32,10 @@
     },
     {
       "name":        "Win32_Release_MT_Flags",
-      "description": "Static runtime flags for Win32 Release builds",
+      "description": "Static CRT for Win32 Release builds (requires CMP0091 NEW)",
       "hidden":      true,
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS_RELEASE": "/MT",
-        "CMAKE_C_FLAGS_RELEASE": "/MT"
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
       }
     },
     {

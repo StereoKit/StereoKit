@@ -71,8 +71,11 @@ tex_t _tex_get_error_fallback(tex_t texture) {
 
 bool tex_format_is_mippable(tex_format_ format) {
 	// Block-compressed formats can't be rendered into, so runtime mip
-	// generation is not possible for them.
-	return format < tex_format_bc1_rgb_srgb || format > tex_format_atc_rgba;
+	// generation is not possible for them. YUV/multi-plane formats are
+	// read-only via YCbCr conversion samplers and can't be mipped either.
+	if (format >= tex_format_bc1_rgb_srgb && format <= tex_format_atc_rgba) return false;
+	if (format >= tex_format_nv12         && format <= tex_format_yuv420p) return false;
+	return true;
 }
 
 ///////////////////////////////////////////

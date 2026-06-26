@@ -2,16 +2,18 @@
 
 namespace sk {
 
-extern color128 skui_tint;
+extern color128      skui_tint;
+extern render_layer_ skui_render_layer;
 
-extern sprite_t skui_toggle_off;
-extern sprite_t skui_toggle_on;
-extern sprite_t skui_radio_off;
-extern sprite_t skui_radio_on;
+extern sprite_t      skui_toggle_off;
+extern sprite_t      skui_toggle_on;
+extern sprite_t      skui_radio_off;
+extern sprite_t      skui_radio_on;
 
-extern mesh_t     skui_box_dbg;
-extern material_t skui_mat_dbg;
-extern material_t skui_mat;
+extern mesh_t        skui_box_dbg;
+extern material_t    skui_mat_dbg;
+extern material_t    skui_mat;
+extern text_style_t  skui_font_style;
 
 extern const float skui_aura_radius;
 

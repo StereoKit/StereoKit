@@ -319,6 +319,76 @@ namespace StereoKit
 			return result;
 		}
 		
+		/// <summary>Indicates whether this Mesh has CPU skinning data
+		/// attached. A Mesh gains skin data when SetSkin is called, or
+		/// when it's loaded from a skinned glTF.</summary>
+		public bool HasSkin => NativeAPI.mesh_has_skin(_inst);
+
+		/// <summary>Creates an independent duplicate of this Mesh.
+		/// Vertices, indices, bounds, and (if present) skin data are
+		/// copied; the new Mesh has its own GPU buffers and shares no
+		/// state with the source.
+		///
+		/// This is useful when one source mesh is shared across N
+		/// animated entities: UpdateSkin mutates the target mesh's
+		/// vertex buffer in place, so each entity needs its own Mesh
+		/// instance to deform independently.
+		///
+		/// The source Mesh must have KeepData set to true.</summary>
+		/// <returns>A new Mesh that shares no GPU state with this one.
+		/// </returns>
+		public Mesh Copy()
+			=> new Mesh(NativeAPI.mesh_copy(_inst));
+
+		/// <summary>Attaches CPU skinning data to this Mesh. Once skin
+		/// data is set, call UpdateSkin each frame with the current
+		/// bone palette to deform the vertex buffer.
+		///
+		/// KeepData must be true and vertex data must already be set
+		/// before calling this — the deformation runs on the CPU and
+		/// needs a copy of the rest-pose vertices to work from.
+		///
+		/// The bone palette passed to UpdateSkin is expected to be
+		/// bone world transforms in the same coordinate system the
+		/// resting transforms were authored in. The skinning matrix
+		/// for bone `i` is computed as
+		/// `bonePalette[i] * inverse(boneRestingTransforms[i])`.
+		/// </summary>
+		/// <param name="boneIds">Per-vertex bone indices, packed 4 per
+		/// vertex (so this array has length VertCount * 4). Each index
+		/// references a slot in the bone palette and resting transforms.
+		/// </param>
+		/// <param name="boneWeights">Per-vertex bone weights, one Vec4
+		/// per vertex (length must equal VertCount). The four
+		/// components correspond to the four bone ids for that vertex.
+		/// Weights should sum to ~1 for a stable result.</param>
+		/// <param name="boneRestingTransforms">Bind-pose transform for
+		/// each bone, expressed in the mesh's model space. StereoKit
+		/// inverts these internally to produce the inverse-bind
+		/// matrices used by the skinning math.</param>
+		public void SetSkin(ushort[] boneIds, Vec4[] boneWeights, Matrix[] boneRestingTransforms)
+			=> NativeAPI.mesh_set_skin(_inst, boneIds, boneIds.Length / 4, boneWeights, boneWeights.Length, boneRestingTransforms, boneRestingTransforms.Length);
+
+		/// <summary>Drives the per-frame CPU deformation for a skinned
+		/// Mesh. SetSkin must have been called first. This walks every
+		/// vertex, blends the bone transforms by weight, and re-uploads
+		/// the deformed vertices to the GPU.
+		///
+		/// `bonePalette` holds the current world-space transform for
+		/// each bone, in the same coordinate system the resting
+		/// transforms passed to SetSkin were authored in. Its length
+		/// must match the bone count supplied to SetSkin.
+		///
+		/// Because deformation mutates this Mesh's vertex buffer in
+		/// place, two entities driven by different bone palettes need
+		/// their own Mesh instance — use Copy on a shared source mesh
+		/// to get per-instance deformation.</summary>
+		/// <param name="bonePalette">World-space transform per bone for
+		/// this frame. Length must match the bone count supplied to
+		/// SetSkin.</param>
+		public void UpdateSkin(Matrix[] bonePalette)
+			=> NativeAPI.mesh_update_skin(_inst, bonePalette, bonePalette.Length);
+
 		/// <summary>Retrieves the vertices associated with a particular
 		/// triangle on the Mesh.</summary>
 		/// <param name="triangleIndex">Starting index of the triangle, should

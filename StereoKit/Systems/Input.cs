@@ -796,12 +796,14 @@ namespace StereoKit
 		/// flag.</param>
 		/// <returns>The number of Pointers StereoKit knows about that matches
 		/// the given filter.</returns>
-		public static int PointerCount(InputSource filter = InputSource.Any) 
+		[Obsolete("The Pointer system is superseded by the Interactor system, use Interactor.All instead.")]
+		public static int PointerCount(InputSource filter = InputSource.Any)
 			=> NativeAPI.input_pointer_count(filter);
 		/// <summary>This gets the pointer by filter based index.</summary>
 		/// <param name="index">Index of the pointer.</param>
 		/// <param name="filter">Filter used to search for the Pointer.</param>
 		/// <returns>The Pointer data.</returns>
+		[Obsolete("The Pointer system is superseded by the Interactor system, use Interactor.All and Interactor.Source instead.")]
 		public static Pointer Pointer(int index, InputSource filter = InputSource.Any)
 			=> NativeAPI.input_pointer(index, filter);
 

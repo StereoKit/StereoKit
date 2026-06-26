@@ -656,7 +656,7 @@ asset_type_ asset_get_type(asset_t asset) {
 ///////////////////////////////////////////
 
 void asset_set_id(asset_t asset, const char* id) {
-	assets_set_id((asset_header_t*)asset, hash_string(id));
+	assets_set_id((asset_header_t*)asset, id);
 }
 
 ///////////////////////////////////////////

@@ -124,19 +124,19 @@ void demo_bvh_update() {
 
 	// Model being intersected
 
-	ui_handle_begin("model", model_pose, model_to_intersection_bounds, false);
+	ui_handle_begin("model", model_pose, nullptr, model_to_intersection_bounds, false);
 	model_draw     (model_to_intersect, model_scale_matrix);
 	ui_handle_end  ();
 
 	// World-space ray defined by two endpoint handles
 
-	ui_handle_begin("from", from_pose, mesh_get_bounds(mesh_from), false, ui_move_pos_only);
+	ui_handle_begin("from", from_pose, nullptr, mesh_get_bounds(mesh_from), false, ui_move_pos_only);
 	mesh_draw      (mesh_from, ray_material, matrix_identity);
 	ui_handle_end  ();
 
 	to_pose.orientation = quat_lookat(from_pose.position, to_pose.position);
 
-	ui_handle_begin("to", to_pose, mesh_get_bounds(mesh_to), false, ui_move_pos_only);
+	ui_handle_begin("to", to_pose, nullptr, mesh_get_bounds(mesh_to), false, ui_move_pos_only);
 	mesh_draw      (mesh_to, ray_material, matrix_identity);
 	ui_handle_end  ();
 

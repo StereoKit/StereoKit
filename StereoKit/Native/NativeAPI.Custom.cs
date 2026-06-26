@@ -22,26 +22,26 @@ namespace StereoKit
 			if (libraryName != dll)
 				return 0;
 
+			string arch     = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x64";
+			string basePath = AppContext.BaseDirectory;
+
+			// On macOS, MoltenVK must be present in the process before sk_renderer
+			// initializes, so volk/sk_app's dlopen("libMoltenVK.dylib") (by leaf
+			// name) finds the already-loaded image.
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+				NativeLibrary.TryLoad(Path.Combine(basePath, "runtimes", $"osx-{arch}", "native", "libMoltenVK.dylib"), out _);
+
 			// The default resolver handles runtimes/{rid}/native/ automatically
 			if (NativeLibrary.TryLoad(libraryName, assembly, searchPath, out nint handle))
 				return handle;
 
 			// Fallback: try platform-specific paths from the app base directory
-			string arch = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x64";
-			string basePath = AppContext.BaseDirectory;
-
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 				NativeLibrary.TryLoad(Path.Combine(basePath, "runtimes", $"win-{arch}", "native", "StereoKitC.dll"), out handle);
 			else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 				NativeLibrary.TryLoad(Path.Combine(basePath, "runtimes", $"linux-{arch}", "native", "libStereoKitC.so"), out handle);
 			else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-			{
-				// Pre-load MoltenVK so native dlopen("libMoltenVK.dylib")
-				// from volk/sk_app can find it already in the process.
-				string osxNative = Path.Combine(basePath, "runtimes", $"osx-{arch}", "native");
-				NativeLibrary.TryLoad(Path.Combine(osxNative, "libMoltenVK.dylib"), out _);
-				NativeLibrary.TryLoad(Path.Combine(osxNative, "libStereoKitC.dylib"), out handle);
-			}
+				NativeLibrary.TryLoad(Path.Combine(basePath, "runtimes", $"osx-{arch}", "native", "libStereoKitC.dylib"), out handle);
 
 			return handle;
 		}
@@ -144,11 +144,7 @@ namespace StereoKit
 		// UI text functions with ref Vec2 scroll, opt/nullable
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)]
-		public static extern bool ui_text_16([MarshalAs(UnmanagedType.LPWStr)] string text, ref Vec2 opt_ref_scroll, UIScroll scroll_direction, float height, Align text_align, TextFit fit);
-
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)]
-		public static extern bool ui_text_sz_16([MarshalAs(UnmanagedType.LPWStr)] string text, ref Vec2 opt_ref_scroll, UIScroll scroll_direction, Vec2 size, Align text_align, TextFit fit);
+		public static extern bool ui_text_16([MarshalAs(UnmanagedType.LPWStr)] string text, ref Vec2 opt_ref_scroll, UIScroll scroll_direction, Vec2 size, Align text_align, TextFit fit);
 
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)]
@@ -159,14 +155,17 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)]
 		public static extern void ui_window_begin_16([MarshalAs(UnmanagedType.LPWStr)] string text, ref Pose opt_pose, Vec2 size, UIWin window_type, UIMove move_type);
 
+		// ref-float overload of the IntPtr-based generated binding, for passing a
+		// present (non-null) opt_ref_scale.
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)]
+		public static extern bool ui_handle_begin_16([MarshalAs(UnmanagedType.LPWStr)] string text, ref Pose movement, ref float opt_ref_scale, Bounds handle, [MarshalAs(UnmanagedType.Bool)] bool draw, UIMove move_type, UIGesture allowed_gestures);
+
 		// UI button/slider behavior - opt/nullable
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void ui_button_behavior(Vec3 window_relative_pos, Vec2 size, IdHash id, out float out_finger_offset, out BtnState out_button_state, out BtnState out_focus_state, out int out_opt_hand);
-
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void ui_button_behavior_depth(Vec3 window_relative_pos, Vec2 size, IdHash id, float button_depth, float button_activation_depth, out float out_finger_offset, out BtnState out_button_state, out BtnState out_focus_state, out int out_opt_hand);
+		public static extern void ui_button_behavior(Vec3 window_relative_pos, Vec2 size, IdHash id, float button_depth, float button_activation_depth, UIBtnFlag flags, out float out_finger_offset, out BtnState out_button_state, out BtnState out_focus_state, out Interactor out_opt_interactor);
 
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)]
-		public static extern BtnState ui_volume_at_16([MarshalAs(UnmanagedType.LPWStr)] string id, Bounds bounds, UIConfirm interact_type, out int out_opt_hand, out BtnState out_opt_focus_state);
+		public static extern BtnState ui_volume_at_16([MarshalAs(UnmanagedType.LPWStr)] string id, Bounds bounds, UIConfirm interact_type, out Interactor out_opt_interactor, out BtnState out_opt_focus_state);
 	}
 }

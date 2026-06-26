@@ -25,6 +25,14 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
   cmake_policy(SET CMP0135 NEW)
 endif()
 
+# CMP0091 (CMake 3.15+): pick the MSVC runtime through the
+# CMAKE_MSVC_RUNTIME_LIBRARY abstraction instead of hard-coding /MD or /MT into
+# the default *_FLAGS_<CONFIG>. Our presets rely on this, and NEW keeps the MSVC
+# runtime flag from leaking onto non-MSVC toolchains (e.g. MinGW GCC).
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.15.0")
+  cmake_policy(SET CMP0091 NEW)
+endif()
+
 project(StereoKit VERSION "0.4.0" LANGUAGES CXX C)
 
 # Add this repository's cmake modules to CMAKE_MODULE_PATH
@@ -203,7 +211,7 @@ if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage( # We're scraping the comment after the NAME for some other scripts
     NAME openxr_loader # 1.1.49
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG release-1.1.49
+    GIT_TAG release-1.1.60
     GIT_SHALLOW 1
     OPTIONS
     "BUILD_ALL_EXTENSIONS OFF" # Only need Vulkan, not Metal/OpenGL
@@ -213,6 +221,14 @@ if (SK_BUILD_OPENXR_LOADER)
   )
   target_compile_options(openxr_loader PRIVATE $<$<CXX_COMPILER_ID:GNU>:-w> $<$<CXX_COMPILER_ID:Clang>:-w> $<$<CXX_COMPILER_ID:MSVC>:/W0>)
   
+  # OpenXR-SDK pins the loader to the dynamic CRT (/MD) when it's built as a
+  # static lib, which collides (LNK2038) with our static-CRT build. Re-assert
+  # our runtime on the target so both sides match.
+  if (CMAKE_MSVC_RUNTIME_LIBRARY)
+    set_target_properties(openxr_loader PROPERTIES
+      MSVC_RUNTIME_LIBRARY "${CMAKE_MSVC_RUNTIME_LIBRARY}")
+  endif()
+
   set(OPENXR_LIB openxr_loader)
 endif()
 
@@ -276,7 +292,7 @@ if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.5.12
+    GIT_TAG v2026.5.28
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to your
@@ -295,7 +311,7 @@ if (NOT SK_LOCAL_SK_APP)
   CPMAddPackage(
     NAME sk_app
     GITHUB_REPOSITORY StereoKit/sk_app
-    GIT_TAG v2026.4.21
+    GIT_TAG v2026.5.20
   )
 else()
   # For building directly with in-progress sk_app changes, point this to your
@@ -500,6 +516,8 @@ set(SK_SRC_XR_BACKENDS
 set(SK_SRC_XR_EXTS
   StereoKitC/xr_backends/extensions/composition_depth.h
   StereoKitC/xr_backends/extensions/composition_depth.cpp
+  StereoKitC/xr_backends/extensions/view_config_views_change.h
+  StereoKitC/xr_backends/extensions/view_config_views_change.cpp
   StereoKitC/xr_backends/extensions/meta_detached_controllers.h
   StereoKitC/xr_backends/extensions/meta_detached_controllers.cpp
   StereoKitC/xr_backends/extensions/meta_environment_depth.h
@@ -604,6 +622,11 @@ add_library(StereoKitC ${LIBRARY_TYPE}
 
 if (ANDROID)
   set_property(TARGET StereoKitC PROPERTY CXX_STANDARD 11)
+  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD_REQUIRED ON)
+elseif (MSVC)
+  # C++/WinRT (isac_spatial_sound.cpp) needs C++20's <coroutine>, the
+  # <experimental/coroutine> it falls back to in C++17 is removed in VS2026.
+  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD 20)
   set_property(TARGET StereoKitC PROPERTY CXX_STANDARD_REQUIRED ON)
 else()
   set_property(TARGET StereoKitC PROPERTY CXX_STANDARD 17)
@@ -756,7 +779,7 @@ if (WIN32)
 elseif(ANDROID)
   set(SK_BIN_OS "Android")
 elseif(APPLE)
-  set(SK_BIN_OS "macOS")
+  set(SK_BIN_OS "MacOS")
 elseif(UNIX)
   set(SK_BIN_OS "Linux")
 elseif(EMSCRIPTEN)
@@ -796,6 +819,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   endif()
   if (SK_ARCH STREQUAL "x86_64")
     set(SK_ARCH "x64")
+  elseif (SK_ARCH STREQUAL "aarch64")
+    set(SK_ARCH "arm64")
   endif()
 else()
   set(SK_ARCH "Unknown")
@@ -854,6 +879,8 @@ if (SK_BUILD_TESTS)
 
   target_sources( StereoKitCTest PRIVATE
     Examples/StereoKitCTest/main.cpp
+    Examples/StereoKitCTest/log_window.h
+    Examples/StereoKitCTest/log_window.cpp
     Examples/StereoKitCTest/demo_envmap.h
     Examples/StereoKitCTest/demo_envmap.cpp
     Examples/StereoKitCTest/demo_shadows.h

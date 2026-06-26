@@ -36,7 +36,7 @@ class TestModel : ITest
 		Tests.Test(TestProceduralDrawReady);
 
 		// -- Async file loads for each format --
-		asyncGltf = Model.FromFile("DamagedHelmet.glb");
+		asyncGltf = Model.FromFile("DamagedHelmet.gltf");
 		asyncStl  = Model.FromFile("suzanne_bin.stl");
 		asyncObj  = Model.FromFile("suzanne.obj");
 		asyncGltf.OnLoaded += m => gltfOnLoadedFired = true;
@@ -401,6 +401,6 @@ class TestModel : ITest
 	public void Shutdown()
 	{
 		if (!asyncTestsRun)
-			Log.Err("TestModel: async tests never ran! Models may not have finished loading in time.");
+			Tests.Fail("TestModel: async tests never ran! Models may not have finished loading in time.");
 	}
 }

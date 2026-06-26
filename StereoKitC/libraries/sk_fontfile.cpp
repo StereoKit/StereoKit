@@ -141,12 +141,19 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 			if (data == nullptr) return;
 
 			strncpy(data[count].name, trimmed, sizeof(data[count].name));
-			char* folder = fontfile_folder();
-			snprintf(data[count].filepath, 256, "%s/%s", folder, file);
+			// fontfile_name_to_path may return either a basename (Win/macOS)
+			// or an absolute path (Android via AFontMatcher); only prepend the
+			// font folder when it's actually a basename.
+			if (file[0] == '/' || (file[0] != '\0' && file[1] == ':')) {
+				snprintf(data[count].filepath, 256, "%s",    file);
+			} else {
+				char* folder = fontfile_folder();
+				snprintf(data[count].filepath, 256, "%s/%s", folder, file);
+				free(folder);
+			}
 			data[count].scale = 1;
 			count += 1;
 
-			free(folder);
 			free(file);
 
 			int32_t               link_count;

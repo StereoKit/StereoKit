@@ -1,6 +1,7 @@
 #include "defaults.h"
 #include "../platforms/platform.h"
 #include "../stereokit.h"
+#include "../_stereokit.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"
 #include "../asset_types/texture_.h"
@@ -332,7 +333,15 @@ bool defaults_init() {
 	material_set_transparency(sk_default_material_ui_box, transparency_msaa);
 
 	// Text!
-	sk_default_font = platform_default_font();
+	const sk_settings_t* settings = sk_get_settings_ref();
+	sk_default_font = nullptr;
+	if (settings->default_font_family != nullptr && settings->default_font_family[0] != '\0') {
+		sk_default_font = font_create_family(settings->default_font_family);
+		if (sk_default_font == nullptr)
+			log_warnf("Default font family '%s' could not be resolved, falling back to platform default.", settings->default_font_family);
+	}
+	if (sk_default_font == nullptr)
+		sk_default_font = platform_default_font();
 	if (sk_default_font == nullptr) {
 		log_warn("Failed to create default font!");
 		return false;

@@ -128,6 +128,6 @@ class TestMesh : ITest
 	public void Shutdown()
 	{
 		if (!asyncChecked)
-			Log.Err("TestMesh: async tests never ran! Mesh may not have finished loading in time.");
+			Tests.Fail("TestMesh: async tests never ran! Mesh may not have finished loading in time.");
 	}
 }

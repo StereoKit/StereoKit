@@ -43,6 +43,7 @@ render_layer_6 Layer6
 render_layer_7 Layer7
 render_layer_8 Layer8
 render_layer_9 Layer9
+render_layer_ui UI
 
 compute_buffer_type_readwrite ReadWrite
 
@@ -80,7 +81,6 @@ sk_settings_t SKSettings
 vind_t uint
 vert_t Vertex
 model_node_id int
-interactor_t int
 sh_light_t SHLight
 openxr_handle_t ulong
 asset_t IntPtr
@@ -103,6 +103,7 @@ ui_color_ UIColor
 ui_color_state_ UIColorState
 ui_pad_ UIPad
 ui_btn_layout_ UIBtnLayout
+ui_btn_flag_ UIBtnFlag
 ui_cut_ UICut
 ui_dir_ UIDir
 ui_corner_ UICorner

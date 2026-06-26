@@ -46,7 +46,7 @@ inline bounds_t size_box(vec3 top_left, vec3 dimensions) {
 ///////////////////////////////////////////
 
 template<typename C>
-button_state_ ui_volume_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) {
+button_state_ ui_volume_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_type, interactor_t *out_opt_interactor, button_state_ *out_opt_focus_state) {
 	id_hash_t     id_hash = ui_stack_hash(id);
 	button_state_ result  = button_state_inactive;
 	button_state_ focus   = button_state_inactive;
@@ -62,59 +62,72 @@ button_state_ ui_volume_at_g(const C *id, bounds_t bounds, ui_confirm_ interact_
 	if (actor != nullptr) {
 		result = interactor_set_active(actor, id_hash, actor->activation_type == interactor_activation_position
 			? (bool32_t)((focus              & button_state_active) != 0)
-			: (bool32_t)((actor->pinch_state & button_state_active) != 0));
+			: (bool32_t)((actor->pinch_state & button_state_just_active) != 0 ||
+			             ((actor->pinch_state & button_state_active) != 0 && actor->active_prev == id_hash)));
 	}
 
-	if (out_opt_hand        != nullptr) *out_opt_hand        = (handed_)interactor;
+	if (out_opt_interactor  != nullptr) *out_opt_interactor  = interactor;
 	if (out_opt_focus_state != nullptr) *out_opt_focus_state = focus;
 	return result;
 }
-button_state_ ui_volume_at   (const char     *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) { return ui_volume_at_g<char    >(id, bounds, interact_type, out_opt_hand, out_opt_focus_state); }
-button_state_ ui_volume_at_16(const char16_t *id, bounds_t bounds, ui_confirm_ interact_type, handed_ *out_opt_hand, button_state_ *out_opt_focus_state) { return ui_volume_at_g<char16_t>(id, bounds, interact_type, out_opt_hand, out_opt_focus_state); }
+button_state_ ui_volume_at   (const char     *id, bounds_t bounds, ui_confirm_ interact_type, interactor_t *out_opt_interactor, button_state_ *out_opt_focus_state) { return ui_volume_at_g<char    >(id, bounds, interact_type, out_opt_interactor, out_opt_focus_state); }
+button_state_ ui_volume_at_16(const char16_t *id, bounds_t bounds, ui_confirm_ interact_type, interactor_t *out_opt_interactor, button_state_ *out_opt_focus_state) { return ui_volume_at_g<char16_t>(id, bounds, interact_type, out_opt_interactor, out_opt_focus_state); }
 
 ///////////////////////////////////////////
 
-void ui_button_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, float& out_finger_offset, button_state_& out_button_state, button_state_& out_focus_state, int32_t* out_opt_hand) {
-	ui_button_behavior_depth(window_relative_pos, size, id, skui_settings.depth, skui_settings.depth / 2, out_finger_offset, out_button_state, out_focus_state, out_opt_hand);
-}
+// A pinch/ray button activation cancels (ends without firing) once the
+// interactor moves more than this far from the button.
+static const float skui_button_cancel_dist = 15 * cm2m;
 
-///////////////////////////////////////////
+void ui_button_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, float button_depth, float button_activation_depth, ui_btn_flag_ flags, float &out_finger_offset, button_state_ &out_button_state, button_state_ &out_focus_state, interactor_t* out_opt_interactor) {
+	// A depth of 0 falls back to the current theme's default button depth.
+	if (button_depth == 0) {
+		button_depth            = skui_settings.depth;
+		button_activation_depth = skui_settings.depth / 2;
+	}
 
-void ui_button_behavior_depth(vec3 window_relative_pos, vec2 size, id_hash_t id, float button_depth, float button_activation_depth, float &out_finger_offset, button_state_ &out_button_state, button_state_ &out_focus_state, int32_t* out_opt_hand) {
 	out_button_state  = button_state_inactive;
 	out_focus_state   = button_state_inactive;
 	out_finger_offset = button_depth;
 
 	int32_t       interactor = -1;
 	vec3          interaction_at;
+	float         cancel_dist = 0;
 	button_state_ focus_candidacy = button_state_inactive;
 	interaction_1h_plate(id, interactor_event_poke, 0,
 		{ window_relative_pos.x, window_relative_pos.y, window_relative_pos.z - button_depth }, { size.x, size.y, button_depth },
-		&focus_candidacy, &interactor, &interaction_at);
+		&focus_candidacy, &interactor, &interaction_at, &cancel_dist);
 
 	// If a hand is interacting, adjust the button surface accordingly
 	_interactor_t* actor = _interactor_get(interactor);
 	if (actor) {
 		if (focus_candidacy & button_state_active) {
 			bool pressed;
+			bool canceled = false;
 			if (actor->activation_type == interactor_activation_position) {
 				out_finger_offset = -(interaction_at.z + actor->capsule_radius) - window_relative_pos.z;
 				pressed = out_finger_offset < button_activation_depth;
 			} else {
-				pressed = (actor->pinch_state & button_state_active) && actor->focused_prev == id;
+				pressed = (actor->pinch_state & button_state_just_active) ||
+				          (actor->pinch_state & button_state_active && actor->active_prev == id);
 				if (pressed) out_finger_offset = 0;
+				// A pinch/ray pulled too far cancels: the activation ends and won't
+				// fire on release. Opt-out via ui_btn_flag_no_cancel.
+				canceled = pressed && (flags & ui_btn_flag_no_cancel) == 0 && cancel_dist > skui_button_cancel_dist;
+				if (canceled) out_finger_offset = button_depth;
 			}
 			const float min_press_depth = 2 * mm2m;
 			out_finger_offset = fminf(fmaxf(min_press_depth, out_finger_offset), button_depth);
-			out_button_state  = interactor_set_active(actor, id, pressed);
+			out_button_state  = interactor_set_active(actor, id, pressed && !canceled);
+			if (canceled) out_button_state = button_state_just_canceled;
 		} else if (focus_candidacy & button_state_just_inactive) {
 			out_button_state = interactor_set_active(actor, id, false);
 		}
 		out_focus_state = button_make_state(actor->focused_prev_prev == id, actor->focused_prev == id);
 	}
 
-	if (out_opt_hand)
-		*out_opt_hand = interactor;
+	if (out_opt_interactor)
+		*out_opt_interactor = interactor;
 }
 
 ///////////////////////////////////////////
@@ -170,13 +183,13 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 	}
 
 	if (confirm_method == ui_confirm_push) {
-		ui_button_behavior_depth(activation_start, { activation_size.x, activation_size.y }, id, button_depth, button_depth / 2, out->finger_offset, out->active_state, out->focus_state, &out->interactor);
+		ui_button_behavior(activation_start, { activation_size.x, activation_size.y }, id, button_depth, button_depth / 2, ui_btn_flag_no_cancel, out->finger_offset, out->active_state, out->focus_state, &out->interactor);
 
 		actor = _interactor_get(out->interactor);
 		
 	} else if (confirm_method == ui_confirm_pinch || confirm_method == ui_confirm_variable_pinch) {
 		activation_start.z += skui_settings.depth;
-		activation_size.z  += skui_settings.depth;
+		activation_size.z  += skui_settings.depth * 2;
 		interaction_1h_box(id, interactor_event_pinch, 0,
 			activation_start, activation_size,
 			activation_start, activation_size,
@@ -186,7 +199,9 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 		// drag it around the slider.
 		actor = _interactor_get(out->interactor);
 		if (actor != nullptr) {
-			out->active_state = interactor_set_active(actor, id, actor->pinch_state & button_state_active);
+			out->active_state = interactor_set_active(actor, id,
+				(actor->pinch_state & button_state_just_active) ||
+				(actor->pinch_state & button_state_active && actor->active_prev == id));
 		}
 	}
 
@@ -248,19 +263,30 @@ void ui_slider_behavior(vec3 window_relative_pos, vec2 size, id_hash_t id, vec2*
 
 ///////////////////////////////////////////
 
-bool32_t _ui_handle_begin(id_hash_t id, pose_t* handle_pose, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
-	bool result = interaction_handle(id, -2, handle_pose, handle_bounds, move_type, allowed_gestures);
+bool32_t _ui_handle_begin(id_hash_t id, pose_t* handle_pose, float* opt_ref_scale, bounds_t handle_bounds, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
+	// When a scale is present, ensure the bounds scale with it
+	bounds_t bounds = handle_bounds;
+	if (opt_ref_scale != nullptr) {
+		bounds.center     = handle_bounds.center     * *opt_ref_scale;
+		bounds.dimensions = handle_bounds.dimensions * *opt_ref_scale;
+	}
+	bool result = interaction_handle(id, -2, handle_pose, bounds, move_type, allowed_gestures, opt_ref_scale);
 	ui_push_surface(*handle_pose);
+
+	if (opt_ref_scale != nullptr) {
+		bounds.center     = handle_bounds.center     * *opt_ref_scale;
+		bounds.dimensions = handle_bounds.dimensions * *opt_ref_scale;
+	}
 
 	float color_blend = 0;
 	if (ui_id_focused(id)) color_blend = 1;
 	if (ui_id_active_state(id) & button_state_just_active)
-		ui_play_sound_on_off(ui_vis_handle, id, handle_bounds.center);
+		ui_play_sound_on_off(ui_vis_handle, id, bounds.center);
 
 	if (draw) {
 		ui_draw_element(ui_vis_handle,
-			handle_bounds.center+handle_bounds.dimensions/2,
-			handle_bounds.dimensions,
+			bounds.center+bounds.dimensions/2,
+			bounds.dimensions,
 			color_blend);
 		ui_nextline();
 	}
@@ -269,11 +295,11 @@ bool32_t _ui_handle_begin(id_hash_t id, pose_t* handle_pose, bounds_t handle_bou
 
 ///////////////////////////////////////////
 
-bool32_t ui_handle_begin(const char *text, pose_t& movement, bounds_t handle, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
-	return _ui_handle_begin(ui_stack_hash(text), &movement, handle, draw, move_type, allowed_gestures);
+bool32_t ui_handle_begin(const char *text, pose_t& movement, float* opt_ref_scale, bounds_t handle, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
+	return _ui_handle_begin(ui_stack_hash(text), &movement, opt_ref_scale, handle, draw, move_type, allowed_gestures);
 }
-bool32_t ui_handle_begin_16(const char16_t *text, pose_t& movement, bounds_t handle, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
-	return _ui_handle_begin(ui_stack_hash_16(text), &movement, handle, draw, move_type, allowed_gestures);
+bool32_t ui_handle_begin_16(const char16_t *text, pose_t& movement, float* opt_ref_scale, bounds_t handle, bool32_t draw, ui_move_ move_type, ui_gesture_ allowed_gestures) {
+	return _ui_handle_begin(ui_stack_hash_16(text), &movement, opt_ref_scale, handle, draw, move_type, allowed_gestures);
 }
 
 ///////////////////////////////////////////

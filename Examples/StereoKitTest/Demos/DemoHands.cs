@@ -120,12 +120,12 @@ class DemoHands : ITest
 	}
 
 	Pose optionsPose = new Pose(-0.2f, 0, 0);
-	bool showJoints    = false;
-	bool showAxes      = true;
-	bool showPointers  = true;
-	bool showHandMenus = true;
-	bool showHandSize  = true;
-	bool showPinchPt   = true;
+	bool showJoints      = false;
+	bool showAxes        = true;
+	bool showInteractors = true;
+	bool showHandMenus   = true;
+	bool showHandSize    = true;
+	bool showPinchPt     = true;
 	void ShowHandOptions()
 	{
 		Vec2 size = V.XY(8, 0) * U.cm;
@@ -144,18 +144,18 @@ class DemoHands : ITest
 		if (UI.Toggle("Glow", ref glow, size))
 			Input.FingerGlow = glow;
 		UI.SameLine();
-		UI.Toggle("Joints",    ref showJoints,    size);
+		UI.Toggle("Joints",      ref showJoints,      size);
 
 
-		UI.Toggle("Hand Size", ref showHandSize,  size);
+		UI.Toggle("Hand Size",   ref showHandSize,    size);
 		UI.SameLine();
-		UI.Toggle("Pointers",  ref showPointers,  size);
+		UI.Toggle("Interactors", ref showInteractors, size);
 		UI.SameLine();
-		UI.Toggle("Menu",      ref showHandMenus, size);
+		UI.Toggle("Menu",        ref showHandMenus,   size);
 
-		UI.Toggle("Pinch Pt" , ref showPinchPt,   size);
+		UI.Toggle("Pinch Pt",    ref showPinchPt,     size);
 		UI.SameLine();
-		UI.Toggle("Axes",      ref showAxes,      size);
+		UI.Toggle("Axes",        ref showAxes,        size);
 		UI.PanelEnd();
 
 		UI.HSeparator();
@@ -224,7 +224,7 @@ class DemoHands : ITest
 
 		if (showJoints)   DrawJoints(Mesh.Sphere, Default.Material);
 		if (showAxes)     DrawAxes();
-		if (showPointers) DrawPointers();
+		if (showInteractors) DrawInteractors();
 		if (showHandSize) DrawHandSize();
 		if (showHandMenus) 
 		{ 
@@ -381,21 +381,26 @@ class DemoHands : ITest
 	}
 
 	/// :CodeDoc: Guides Using Hands
-	/// ## Pointers
+	/// ## Interactors
 	/// 
-	/// And lastly, StereoKit also has a pointer system! This applies to
-	/// more than just hands. Head, mouse, and other devices will also
-	/// create pointers into the scene. You can filter pointers based on
-	/// source family and device capabilities, so this is a great way to 
-	/// abstract a few more input sources nicely!
-	public static void DrawPointers()
+	/// StereoKit's interactions are driven by Interactors - capsules of
+	/// input that can come from hands, controllers, the mouse, and more!
+	/// You can enumerate every Interactor with `Interactor.All` and filter
+	/// them using `Interactor.Source`, which makes it a great way to find
+	/// input rays like the hand's aim ray here.
+	public static void DrawInteractors()
 	{
-		int hands = Input.PointerCount(InputSource.Hand);
-		for (int i = 0; i < hands; i++)
+		foreach (Interactor actor in Interactor.All)
 		{
-			Pointer pointer = Input.Pointer(i, InputSource.Hand);
-			Lines.Add    (pointer.ray, 0.5f, Color.White, Units.mm2m);
-			Lines.AddAxis(pointer.Pose);
+			// We only want the hand aim rays here: Line shaped interactors
+			// that come from a hand source.
+			bool isHand = (actor.Source & (InteractorSource.HandLeft | InteractorSource.HandRight)) != 0;
+			if (!isHand || actor.Type != InteractorType.Line || !actor.Tracked.IsActive())
+				continue;
+
+			Vec3 dir = (actor.End - actor.Start).Normalized;
+			Lines.Add    (actor.Start, actor.Start + dir * 0.5f, Color.White, Units.mm2m);
+			Lines.AddAxis(actor.Motion);
 		}
 	}
 	/// :End:

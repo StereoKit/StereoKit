@@ -18,22 +18,23 @@ class DemoRayMesh : ITest
 	/// 
 	/// ![Ray Mesh Intersection]({{site.url}}/img/screenshots/RayMeshIntersect.jpg)
 	///
-	Mesh sphereMesh = Default.MeshSphere;
-	Mesh boxMesh    = Mesh.GenerateRoundedCube(Vec3.One*0.2f, 0.05f);
-	Pose boxPose    = (Demo.contentPose * Matrix.T(0, -0.1f, 0)).Pose;
-	Pose castPose   = (Demo.contentPose * Matrix.T(0.25f, 0.11f, 0.2f)).Pose;
+	Mesh  sphereMesh = Default.MeshSphere;
+	Mesh  boxMesh    = Mesh.GenerateRoundedCube(Vec3.One*0.2f, 0.05f);
+	Pose  boxPose    = (Demo.contentPose * Matrix.T(0, -0.1f, 0)).Pose;
+	float boxScale   = 1;
+	Pose  castPose   = (Demo.contentPose * Matrix.T(0.25f, 0.11f, 0.2f)).Pose;
 
 	public void StepRayMesh()
 	{
 		// Draw our setup, and make the visuals grab/moveable!
-		UI.Handle("Box",  ref boxPose,  boxMesh.Bounds);
+		UI.Handle("Box",  ref boxPose, boxMesh.Bounds, ref boxScale);
 		UI.Handle("Cast", ref castPose, sphereMesh.Bounds*0.03f);
-		boxMesh   .Draw(Default.MaterialUI, boxPose .ToMatrix());
+		boxMesh   .Draw(Default.MaterialUI, boxPose .ToMatrix(boxScale));
 		sphereMesh.Draw(Default.MaterialUI, castPose.ToMatrix(0.03f));
 		Lines.Add(castPose.position, boxPose.position, Color.White, 0.005f);
 
 		// Create a ray that's in the Mesh's model space
-		Matrix transform = boxPose.ToMatrix();
+		Matrix transform = boxPose.ToMatrix(boxScale);
 		Ray    ray       = transform
 			.Inverse
 			.Transform(Ray.FromTo(castPose.position, boxPose.position));

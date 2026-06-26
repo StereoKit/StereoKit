@@ -109,7 +109,7 @@ void demo_picker_update() {
 
 	ui_window_end();
 	if (picker_model) {
-		ui_handle_begin("picker model", picker_pose, picker_bounds, false);
+		ui_handle_begin("picker model", picker_pose, nullptr, picker_bounds, false);
 		render_add_model(picker_model, matrix_trs(vec3_zero, quat_identity, vec3_one * picker_scale));
 		ui_handle_end();
 	}

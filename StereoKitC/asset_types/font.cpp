@@ -173,11 +173,14 @@ bool font_source_load_data(font_source_t* font) {
 		return false;
 	}
 
-	// Check if cmap format is supported by stb_truetype (0, 4, 6, 12, 13)
-	// Formats 2, 10, 14, etc. will cause assertions when calling glyph functions
+	// Reject fonts whose cmap format isn't supported by stb_truetype (0, 4,
+	// 6, 12, 13). Formats 2, 10, 14, etc. would cause assertions or bad reads
+	// when calling glyph functions, so we don't accept them as a source.
 	uint8_t      *data       = (uint8_t*)font->file;
 	uint16_t      cmap_fmt   = (data[font->info.index_map] << 8) | data[font->info.index_map + 1];
 	bool          cmap_ok    = cmap_fmt == 0 || cmap_fmt == 4 || cmap_fmt == 6 || cmap_fmt == 12 || cmap_fmt == 13;
+	if (!cmap_ok)
+		return false;
 
 	font->scale = stbtt_ScaleForPixelHeight(&font->info, (float)font_resolution);
 
@@ -197,8 +200,8 @@ bool font_source_load_data(font_source_t* font) {
 	font->render_ascender  = ceilf(y1      * font->scale);
 	font->render_descender = ceilf(abs(y0) * font->scale);
 
-	// Get cap height from 'T' if cmap is supported, otherwise use ascender
-	if (cmap_ok && stbtt_FindGlyphIndex(&font->info, 'T') != 0) {
+	// Get cap height from 'T' if the font has it, otherwise use ascender
+	if (stbtt_FindGlyphIndex(&font->info, 'T') != 0) {
 		stbtt_GetCodepointBitmapBox(&font->info, 'T', font->scale, font->scale, &x0, &y0, &x1, &y1);
 		font->cap_height = (float)(y1-y0);
 	} else {
@@ -252,7 +255,7 @@ bool font_setup(font_t font) {
 	font->atlas_data = sk_malloc_t(uint8_t, font->atlas.w * font->atlas.h);
 	memset(font->atlas_data, 0, font->atlas.w * font->atlas.h);
 
-	for (char32_t i = 65; i < 128; i++) font_add_character(font, i);
+	for (char32_t i = 65; i < 127; i++) font_add_character(font, i);
 	for (char32_t i = 32; i < 65;  i++) font_add_character(font, i);
 	font_update_cache(font);
 
@@ -584,7 +587,11 @@ void font_update_texture(font_t font) {
 
 font_glyph_t font_find_glyph(font_t font, char32_t character) {
 	for (int32_t i = 0; i < font->font_ids.count; i++) {
-		int32_t glyph = stbtt_FindGlyphIndex(&font_sources[font->font_ids[i]].info, character);
+		font_source_t *src = &font_sources[font->font_ids[i]];
+		// A source with no data never loaded successfully - skip it rather
+		// than letting stb_truetype dereference a null font pointer.
+		if (src->info.data == nullptr) continue;
+		int32_t glyph = stbtt_FindGlyphIndex(&src->info, character);
 		if (glyph > 0) {
 			return { glyph, font->font_ids[i] };
 		}
@@ -652,23 +659,106 @@ void font_update_fonts() {
 
 ///////////////////////////////////////////
 
-font_t font_create_family(const char* font_family) {
-	font_fallback_info_t* info;
-	int32_t               info_count;
-	fontfile_from_css(font_family, &info, &info_count);
+enum fam_kind_ { fam_kind_family, fam_kind_builtin, fam_kind_path };
+struct fam_token_t { stref_t text; fam_kind_ kind; };
 
-	if (info_count == 0) {
-		log_errf("No font files provided for the font_family %s.", font_family);
+static int32_t font_source_add_token(const fam_token_t &t) {
+	if (t.kind == fam_kind_builtin)
+		return font_source_add_data("sk/builtin/aileron", aileron_font_ttf, aileron_font_ttf_len);
+
+	char*   path = stref_copy(t.text);
+	int32_t id   = font_source_add(path);
+		
+	sk_free(path);
+	return id;
+}
+
+font_t font_create_family(const char* font_family) {
+	if (font_family == nullptr || font_family[0] == '\0') {
+		log_err("font_create_family: no font family provided.");
 		return nullptr;
 	}
-	const char** files = sk_malloc_t(const char*, info_count);
+
+	// Cache identical requests by hashing the full input.
+	char file_id[64];
+	snprintf(file_id, sizeof(file_id), "sk/font/%" PRIu64, hash_string(font_family));
+	font_t cached = font_find(file_id);
+	if (cached != nullptr) return cached;
+
+	// Walk comma-separated tokens via stref. Each token is classified as the
+	// "builtin" sentinel (the bundled Aileron, case-sensitive), a file path
+	// (contains / or \, or ends in a recognized font extension), or a family
+	// name (resolved via fontfile_from_css). A bare '.' is not enough to
+	// classify as a path, since family names like "PT Sans 1.1" contain dots.
+	array_t<fam_token_t> tokens       = {};
+	int32_t              family_count = 0;
+	stref_t              line         = stref_make(font_family);
+	stref_t              word         = {};
+	while (stref_nextword(line, word, ',')) {
+		stref_trim(word);
+		if (word.length == 0) continue;
+
+		fam_token_t t = {};
+		t.text = word;
+		if (stref_equals(word, "builtin")) {
+			t.kind = fam_kind_builtin;
+		} else if (stref_indexof(word, '/') >= 0 || stref_indexof(word, '\\') >= 0) {
+			t.kind = fam_kind_path;
+		} else if (stref_indexof(word, '.') >= 0) {
+			char* tmp = stref_copy(word);
+			t.kind = font_is_valid_extension(tmp) ? fam_kind_path : fam_kind_family;
+			sk_free(tmp);
+			if (t.kind == fam_kind_family) family_count++;
+		} else {
+			t.kind = fam_kind_family;
+			family_count++;
+		}
+		tokens.add(t);
+	}
+
+	// If any family-name tokens are present, hand the original input to
+	// fontfile_from_css. Unknown tokens (builtin, paths) just don't match on
+	// any backend and are silently dropped from the resolved list.
+	font_fallback_info_t* info       = nullptr;
+	int32_t               info_count = 0;
+	if (family_count > 0) fontfile_from_css(font_family, &info, &info_count);
+
+	// Construct the font. Position rules: the leading run of special tokens
+	// (builtin/path, before any family name) takes priority over the css-
+	// resolved set. Anything from the first family token onwards is treated
+	// as trailing - css-resolved family files first, then any remaining
+	// specials in their original order.
+	font_t result = (font_t)assets_allocate(asset_type_font);
+	assets_set_id(&result->header, file_id);
+
+	int32_t leading_end = tokens.count;
+	for (int32_t i = 0; i < tokens.count; i++) {
+		if (tokens[i].kind == fam_kind_family) { leading_end = i; break; }
+	}
+
+	for (int32_t i = 0; i < leading_end; i++) {
+		int32_t id = font_source_add_token(tokens[i]);
+		if (id >= 0) result->font_ids.add(id);
+	}
 	for (int32_t i = 0; i < info_count; i++) {
-		files[i] = string_copy(info[i].filepath);
+		int32_t id = font_source_add(info[i].filepath);
+		if (id >= 0) result->font_ids.add(id);
+	}
+	for (int32_t i = leading_end; i < tokens.count; i++) {
+		if (tokens[i].kind == fam_kind_family) continue;
+		int32_t id = font_source_add_token(tokens[i]);
+		if (id >= 0) result->font_ids.add(id);
 	}
 
 	free(info);
-	font_t font = font_create_files(files, info_count);
-	return font;
+	tokens.free();
+
+	if (!font_setup(result)) {
+		font_release(result);
+		return nullptr;
+	}
+	font_list.add(result);
+	return result;
 }
 
 } // namespace sk

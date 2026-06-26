@@ -40,6 +40,7 @@ struct text_buffer_t {
 	mesh_t         mesh;
 	vert_t        *verts; // TODO: potentially change this to array_t
 	uint32_t       id;
+	render_layer_  layer;
 	int32_t        vert_count;
 	int32_t        vert_cap;
 	bool32_t       dirty_inds;
@@ -133,48 +134,51 @@ text_style_t text_make_style_shader(font_t font, float layout_height, shader_t s
 
 ///////////////////////////////////////////
 
-text_style_t text_make_style_mat(font_t font, float layout_height, material_t material, color128 color) {
-	uint32_t       id     = (uint32_t)(font->header.id << 16 | ((asset_header_t*)material)->id);
-	int32_t        index  = 0;
-	text_buffer_t *buffer = nullptr;
+// Text is batched into a buffer per font+material+layer combination, since a
+// buffer is flushed to the renderer as a single mesh on a single layer.
+int32_t text_buffer_find(font_t font, material_t material, render_layer_ layer) {
+	uint32_t id = (uint32_t)(font->header.id << 16 | ((asset_header_t*)material)->id);
 
+	for (int32_t i = 0; i < text_buffers.count; i++) {
+		if (text_buffers[i].id == id && text_buffers[i].layer == layer)
+			return i;
+	}
+
+	int32_t        index  = text_buffers.add({});
+	text_buffer_t *buffer = &text_buffers[index];
+
+	buffer->mesh     = mesh_create();
+	buffer->id       = id;
+	buffer->font     = font;
+	buffer->material = material;
+	buffer->layer    = layer;
+	font_addref    (font);
+	material_addref(material);
+
+	char mesh_id[64];
+	snprintf(mesh_id, sizeof(mesh_id), "sk/text_style/%d/mesh", index);
+	mesh_set_id(buffer->mesh, mesh_id);
+
+	tex_t font_tex = font_get_tex(font);
+	material_set_texture     (material, "diffuse", font_tex);
+	material_set_cull        (material, cull_none);
+	material_set_transparency(material, transparency_blend);
+	material_set_depth_test  (material, depth_test_less_or_eq);
+
+	mesh_set_keep_data(buffer->mesh, false);
+
+	tex_release(font_tex);
+	return index;
+}
+
+///////////////////////////////////////////
+
+text_style_t text_make_style_mat(font_t font, float layout_height, material_t material, color128 color) {
 	if (font == nullptr) {
 		log_err("text_make_style was given a null font!");
 	}
-	
-	// Find or make a buffer for this style
-	for (int32_t i = 0; i < text_buffers.count; i++) {
-		if (text_buffers[i].id == id) {
-			buffer = &text_buffers[i];
-			index  = i;
-			break;
-		}
-	}
-	if (buffer == nullptr) {
-		index  = text_buffers.add({});
-		buffer = &text_buffers[index];
 
-		buffer->mesh     = mesh_create();
-		buffer->id       = id;
-		buffer->font     = font;
-		buffer->material = material;
-		font_addref    (font);
-		material_addref(material);
-
-		char mesh_id[64];
-		snprintf(mesh_id, sizeof(mesh_id), "sk/text_style/%d/mesh", index);
-		mesh_set_id(buffer->mesh, mesh_id);
-
-		tex_t font_tex = font_get_tex(font);
-		material_set_texture     (material, "diffuse", font_tex);
-		material_set_cull        (material, cull_none);
-		material_set_transparency(material, transparency_blend);
-		material_set_depth_test  (material, depth_test_less_or_eq);
-
-		mesh_set_keep_data(buffer->mesh, false);
-
-		tex_release(font_tex);
-	}
+	int32_t index = text_buffer_find(font, material, render_layer_vfx);
 
 	// Create the style
 	_text_style_t style;
@@ -196,6 +200,19 @@ material_t text_style_get_material(text_style_t style) {
 	material_t result = text_buffers[text_styles[style].buffer_index].material;
 	material_addref(result);
 	return result;
+}
+
+///////////////////////////////////////////
+
+render_layer_ text_style_get_render_layer(text_style_t style) {
+	return text_buffers[text_styles[style].buffer_index].layer;
+}
+
+///////////////////////////////////////////
+
+void text_style_set_render_layer(text_style_t style, render_layer_ layer) {
+	text_buffer_t *buffer = &text_buffers[text_styles[style].buffer_index];
+	text_styles[style].buffer_index = (uint32_t)text_buffer_find(buffer->font, buffer->material, layer);
 }
 
 ///////////////////////////////////////////
@@ -728,7 +745,7 @@ void text_step() {
 		text_buffer_check_dirty_inds(buffer);
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);
 
-		render_add_mesh(buffer.mesh, buffer.material, matrix_identity);
+		render_add_mesh(buffer.mesh, buffer.material, matrix_identity, {1,1,1,1}, buffer.layer);
 		buffer.vert_count = 0;
 	}
 }

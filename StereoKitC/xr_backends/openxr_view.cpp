@@ -13,6 +13,7 @@
 #include "extensions/fb_colorspace.h"
 #include "extensions/composition_depth.h"
 #include "extensions/meta_environment_depth.h"
+#include "extensions/view_config_views_change.h"
 
 #include "../stereokit.h"
 #include "../_stereokit.h"
@@ -384,8 +385,11 @@ void openxr_views_destroy() {
 	// Wait for all GPU work to complete before destroying swapchain resources.
 	// The textures have ImageViews/Framebuffers that may still be referenced
 	// by in-flight command buffers, and OpenXR swapchain images can't be
-	// destroyed while in use.
-	vkDeviceWaitIdle(skr_get_vk_device());
+	// destroyed while in use. The device may not exist yet, since cleanup can
+	// run during an early failed openxr_create_system probe, before skr_init.
+	VkDevice vk_device = skr_get_vk_device();
+	if (vk_device != VK_NULL_HANDLE)
+		vkDeviceWaitIdle(vk_device);
 
 	for (int32_t i = 0; i < xr_displays.count; i++) {
 		device_display_delete(&xr_displays[i]);
@@ -793,20 +797,26 @@ bool openxr_render_frame() {
 	// Don't track sync time, start the frame timer after xrWaitFrame
 	xr_render_sys->profile_frame_start = stm_now();
 
-	// Check each secondary display to see if it's active or not
+	// Check each secondary display to see if it's active or not. Also refresh
+	// any active display whose recommended view config values the runtime has
+	// reported as changed (XR_EXT_view_configuration_views_change).
 	for (int32_t i = 0; i < xr_displays_2nd.count; i++) {
+		bool became_active = false;
 		if (xr_displays_2nd[i].active != (bool32_t)xr_display_2nd_states[i].active) {
 			xr_displays_2nd[i].active = (bool32_t)xr_display_2nd_states[i].active;
-
-			if (xr_displays_2nd[i].active) {
-				openxr_display_swapchain_update(&xr_displays_2nd[i]);
-			}
+			became_active = xr_displays_2nd[i].active;
+		}
+		bool views_changed = xr_ext_view_config_views_change_consume(xr_displays_2nd[i].type);
+		if (xr_displays_2nd[i].active && (became_active || views_changed)) {
+			openxr_display_swapchain_update(&xr_displays_2nd[i]);
 		}
 	}
-	if (xr_displays[xr_display_primary_idx].render_scale != render_get_scaling() || xr_displays[xr_display_primary_idx].multisample != render_get_multisample()) {
-		xr_displays[xr_display_primary_idx].render_scale = render_get_scaling();
-		xr_displays[xr_display_primary_idx].multisample  = render_get_multisample();
-		openxr_display_swapchain_update(&xr_displays[xr_display_primary_idx]);
+	device_display_t* primary = &xr_displays[xr_display_primary_idx];
+	if (primary->render_scale != render_get_scaling() || primary->multisample != render_get_multisample() ||
+		xr_ext_view_config_views_change_consume(primary->type)) {
+		primary->render_scale = render_get_scaling();
+		primary->multisample  = render_get_multisample();
+		openxr_display_swapchain_update(primary);
 	}
 
 	// Must be called before any rendering is done! This can return some

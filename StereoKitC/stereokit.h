@@ -184,220 +184,397 @@ typedef enum depth_mode_ {
 	depth_mode_stencil,
 } depth_mode_;
 
-/*What type of color information will the texture contain? A
-  good default here is Rgba32.*/
-typedef enum tex_format_ {
-	/*A default zero value for TexFormat! Uninitialized formats
-	  will get this value and **** **** up so you know to assign it
-	  properly :)*/
-	tex_format_none = 0,
-	/*Red/Green/Blue/Transparency data channels, at 8 bits
-	  per-channel in sRGB color space. This is what you'll want most of
-	  the time you're dealing with color images! Matches well with the
-	  Color32 struct! If you're storing normals, rough/metal, or
-	  anything else, use Rgba32Linear.*/
-	tex_format_rgba32_srgb = 1,
-	/*Alias for tex_format_rgba32_srgb for backwards compatibility.*/
-	tex_format_rgba32 = tex_format_rgba32_srgb,
-	/*Red/Green/Blue/Transparency data channels, at 8 bits
-	  per-channel in linear color space. This is what you'll want most
-	  of the time you're dealing with color data! Matches well with the
-	  Color32 struct.*/
-	tex_format_rgba32_linear = 2,
-	/*Blue/Green/Red/Transparency data channels, at 8 bits
-	  per-channel in sRGB color space. This is a common swapchain format
-	  on Windows.*/
-	tex_format_bgra32_srgb = 3,
-	/*Alias for tex_format_bgra32_srgb for backwards compatibility.*/
-	tex_format_bgra32 = tex_format_bgra32_srgb,
-	/*Blue/Green/Red/Transparency data channels, at 8 bits
-	  per-channel in linear color space. This is a common swapchain
-	  format on Windows.*/
-	tex_format_bgra32_linear = 4,
-	/*Red/Green/Blue data channels, with 11 bits for R and G,
-	  and 10 bits for blue. This is a great presentation format for high
-	  bit depth displays that still fits in 32 bits! This format has no
-	  alpha channel.*/
-	tex_format_rg11b10 = 5,
-	/*Red/Green/Blue/Transparency data channels, with 10 
-	  bits for R, G, and B, and 2 for alpha. This is a great presentation
-	  format for high bit depth displays that still fits in 32 bits, and
-	  also includes at least a bit of transparency!*/
-	tex_format_rgb10a2 = 6,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. TODO: remove during major version
-	  update, prefer s, f, or u postfixed versions of this format.*/
-	tex_format_rgba64 = 7,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. The u postfix indicates that the raw
-	  color data is stored as an unsigned 16 bit integer, which is then
-	  normalized into the 0, 1 floating point range on the GPU.*/
-	tex_format_rgba64u = tex_format_rgba64,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. The s postfix indicates that the raw
-	  color data is stored as a signed 16 bit integer, which is then
-	  normalized into the -1, +1 floating point range on the GPU.*/
-	tex_format_rgba64s = 8,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. The f postfix indicates that the raw
-	  color data is stored as 16 bit floats, which may be tricky to work
-	  with in most languages.*/
-	tex_format_rgba64f = 9,
-	/*Red/Green/Blue/Transparency data channels at 32 bits
-	  per-channel! Basically 4 floats per color, which is bonkers
-	  expensive. Don't use this unless you know -exactly- what you're
-	  doing.*/
-	tex_format_rgba128 = 10,
-	/*A single channel of data, with 8 bits per-pixel! This
-	  can be great when you're only using one channel, and want to
-	  reduce memory usage. Values in the shader are always 0.0-1.0.*/
-	tex_format_r8 = 11,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The "un" postfix indicates "unsigned normalized",
-	  where the raw color data is stored as an unsigned 16 bit integer,
-	  which is then normalized into the 0, 1 floating point range on the
-	  GPU.*/
-	tex_format_r16un = 12,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The "sn" postfix indicates "signed normalized",
-	  where the raw color data is stored as a signed 16 bit integer, which
-	  is then normalized into the -1, +1 floating point range on the GPU.*/
-	tex_format_r16sn = 13,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for index or id data, since it stores values as
-	  raw unsigned integers. The "ui" postfix indicates "unsigned integer",
-	  where the data is stored and accessed as an unsigned 16 bit integer
-	  without any normalization.*/
-	tex_format_r16ui = 14,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for index or id data, since it stores values as
-	  raw signed integers. The "si" postfix indicates "signed integer",
-	  where the data is stored and accessed as a signed 16 bit integer
-	  without any normalization.*/
-	tex_format_r16si = 15,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The f postfix indicates that the raw color
-	  data is stored as 16 bit floats, which may be tricky to work with
-	  in most languages.*/
-	tex_format_r16f = 16,
-	/*Alias for R16un for backwards compatibility.*/
-	tex_format_r16  = tex_format_r16un,
-	/*Alias for R16un for backwards compatibility.*/
-	tex_format_r16u = tex_format_r16un,
-	/*Alias for R16sn for backwards compatibility.*/
-	tex_format_r16s = tex_format_r16sn,
-	/*A single channel of data, with 32 bits per-pixel! This
-	  basically treats each pixel as a generic float, so you can do all
-	  sorts of strange and interesting things with this.*/
-	tex_format_r32f = 17,
-	/*Alias for tex_format_r32f for backwards compatibility.*/
-	tex_format_r32 = tex_format_r32f,
-	/*A depth data format, 24 bits for depth data, and 8 bits
-	  to store stencil information! Stencil data can be used for things
-	  like clipping effects, deferred rendering, or shadow effects.*/
-	tex_format_depth24s8 = 18,
-	/*Alias for tex_format_depth24s8 for backwards compatibility.*/
-	tex_format_depthstencil = tex_format_depth24s8,
-	/*32 bits of data per depth value! This is pretty detailed,
-	  and is excellent for experiences that have a very far view
-	  distance.*/
-	tex_format_depth32 = 19,
-	/*16 bits of depth is not a lot, but it can be enough if
-	  your far clipping plane is pretty close. If you're seeing lots of
-	  flickering where two objects overlap, you either need to bring
-	  your far clip in, or switch to 32/24 bit depth.*/
-	tex_format_depth16 = 20,
-	/*A double channel of data that supports 8 bits for the red
-	  channel and 8 bits for the green channel.*/
-	tex_format_r8g8 = 21,
-	/*A shared exponent format with 9 bits each for R, G, B, and
-	  5 bits for the shared exponent. This is a compact HDR format.*/
-	tex_format_rgb9e5 = 22,
-	/*A depth data format with 32 bits for depth and 8 bits for
-	  stencil. The extra stencil bits provide more precision than
-	  depth24s8 while still offering stencil support.*/
-	tex_format_depth32s8,
-	/*A depth data format with 16 bits for depth and 8 bits for
-	  stencil. This is a more compact depth-stencil format.*/
-	tex_format_depth16s8,
+/*What type of color information will the texture contain? A good
+  default here is Rgba32, which gives 8-bit sRGB color with alpha!
 
-	/*BC1/DXT1 block compression with sRGB color. 4 bits per pixel,
-	  great for opaque textures on desktop/console GPUs.*/
+  Most format names end in a short suffix telling you how the GPU
+  interprets the bits when sampled in a shader:
+
+  - no suffix or "un": unsigned normalized. Raw unsigned integers
+    get normalized into the [0,1] floating point range on read.
+    The default flavor for most color and data formats.
+  - "sn": signed normalized. Raw signed integers get normalized
+    into the [-1,1] floating point range on read.
+  - "ui": unsigned integer. Raw unsigned integers, no
+    normalization! Great for IDs, counters, and exact-integer data.
+  - "si": signed integer. Raw signed integers, no normalization.
+  - "f":  signed float, typically an IEEE half or single precision
+    float.
+  - "uf": unsigned float, used by some HDR-leaning compact formats
+    that can only represent non-negative values.
+  - "_srgb": stored in sRGB color space! The GPU auto-converts to
+    linear when sampled and back to sRGB when written. Use this
+    for images viewed by humans, like photos and UI artwork.
+  - "_linear": stored in linear color space, no color-space
+    conversion at sample time. Use this for data textures, like
+    normals, masks, roughness, and metallic. Any format that is
+    _not_ "_srgb" is generally linear.
+
+  Block-compressed formats (BC, ETC, ASTC, PVRTC, ATC) trade a
+  little quality for a big drop in memory and bandwidth: each
+  format packs an NxN block of pixels into a fixed payload, so
+  cost is measured in bits-per-pixel rather than bits-per-channel.
+  Hardware support varies - prefer BC on desktop/console, ASTC on
+  modern mobile. They're sample-only; you can't render to them.*/
+typedef enum tex_format_ {
+	/*Default zero value for TexFormat! Uninitialized formats land
+	  here and **** **** up so you know to assign one properly :)*/
+	tex_format_none = 0,
+
+	/*8-bit sRGB R/G/B/A. The default for human-viewed color
+	  images, and a clean match for the Color32 struct! For data
+	  textures (normals, masks, rough/metal) use Rgba32Linear
+	  instead.*/
+	tex_format_rgba32_srgb,
+	/*8-bit sRGB R/G/B/A. The default for human-viewed color
+	  images, and a clean match for the Color32 struct! For data
+	  textures (normals, masks, rough/metal) use Rgba32Linear
+	  instead.*/
+	tex_format_rgba32 = tex_format_rgba32_srgb,
+	/*8-bit linear R/G/B/A. Use this for data textures (normals,
+	  masks, rough/metal) where you don't want the GPU's automatic
+	  sRGB conversion getting in the way.*/
+	tex_format_rgba32_linear,
+	/*8-bit sRGB B/G/R/A. Same as Rgba32Srgb but with R and B
+	  swapped to match the byte order some GPUs and Windows
+	  swapchains prefer. Most code can stick with Rgba32Srgb!*/
+	tex_format_bgra32_srgb,
+	/*8-bit sRGB B/G/R/A. Same as Rgba32Srgb but with R and B
+	  swapped to match the byte order some GPUs and Windows
+	  swapchains prefer. Most code can stick with Rgba32Srgb!*/
+	tex_format_bgra32 = tex_format_bgra32_srgb,
+	/*8-bit linear B/G/R/A. Same as Rgba32Linear but with R and B
+	  swapped, mostly for compatibility with BGRA-preferring APIs
+	  like Windows swapchains.*/
+	tex_format_bgra32_linear,
+
+	/*16-bit unsigned-normalized R/G/B/A (64 bpp). Doubling the
+	  bit depth over Rgba32 gives much smoother gradients!*/
+	tex_format_rgba64un,
+	/*16-bit unsigned-normalized R/G/B/A (64 bpp). Doubling the
+	  bit depth over Rgba32 gives much smoother gradients!*/
+	tex_format_rgba64    = tex_format_rgba64un,
+	/*16-bit signed-normalized R/G/B/A (64 bpp).*/
+	tex_format_rgba64sn,
+	/*16-bit unsigned-integer R/G/B/A (64 bpp). Great for ID
+	  textures, counters, or any discrete-integer data. For [0,1]
+	  sampling, use Rgba64un instead.*/
+	tex_format_rgba64ui,
+	/*16-bit signed-integer R/G/B/A (64 bpp). For [-1,1] sampling,
+	  use Rgba64sn instead.*/
+	tex_format_rgba64si,
+	/*16-bit half-float R/G/B/A (64 bpp). A common HDR
+	  render-target format - full RGBA float precision at half the
+	  memory of Rgba128. Almost always supported as a render
+	  target, so a reliable fallback for formats like Rg11b10.*/
+	tex_format_rgba64f,
+
+	/*32-bit float R/G/B/A - basically 4 single-precision floats
+	  per pixel, which is bonkers expensive at 128 bpp! Don't
+	  reach for this unless you know -exactly- what you're doing.
+	  Useful for scientific data or compute buffers where you
+	  really need full 32-bit float precision per channel.*/
+	tex_format_rgba128,
+	/*32-bit float R/G/B/A - basically 4 single-precision floats
+	  per pixel, which is bonkers expensive at 128 bpp! Don't
+	  reach for this unless you know -exactly- what you're doing.
+	  Useful for scientific data or compute buffers where you
+	  really need full 32-bit float precision per channel.*/
+	tex_format_rgba128f  = tex_format_rgba128,
+
+	/*Packed HDR R/G/B as unsigned floats - 11 bits for R and G,
+	  10 for B, no alpha. A great compact HDR format: holds values
+	  way beyond the [0,1] range that Rgba32 maxes out at, while
+	  still fitting in 32 bpp! Great for HDR render targets and
+	  intermediate compute buffers. Not universally supported as a
+	  render target, so watch for that!*/
+	tex_format_rg11b10,
+	/*Packed HDR R/G/B as unsigned floats - 11 bits for R and G,
+	  10 for B, no alpha. A great compact HDR format: holds values
+	  way beyond the [0,1] range that Rgba32 maxes out at, while
+	  still fitting in 32 bpp! Great for HDR render targets and
+	  intermediate compute buffers. Not universally supported as a
+	  render target, so watch for that!*/
+	tex_format_rg11b10uf = tex_format_rg11b10,
+	/*Packed unsigned-normalized R/G/B/A with 10 bits per color
+	  channel and 2 bits for alpha. A great presentation format
+	  for high bit-depth displays that still fits in 32 bpp, and
+	  you get a bit of transparency too! Alpha is effectively
+	  on/off/halfway though, so skip this if you need smooth alpha.
+	  Not universally supported as a render target!*/
+	tex_format_rgb10a2,
+	/*Shared-exponent HDR R/G/B with 9-bit mantissa per channel
+	  and a 5-bit shared exponent. A compact HDR format that packs
+	  values way beyond the [0,1] range into just 32 bpp! No alpha
+	  though, and sharing the exponent means all three channels
+	  need similar magnitudes - perfect for environment maps!
+	  Usually sample-only; GPUs typically can't render to it.*/
+	tex_format_rgb9e5,
+	/*Shared-exponent HDR R/G/B with 9-bit mantissa per channel
+	  and a 5-bit shared exponent. A compact HDR format that packs
+	  values way beyond the [0,1] range into just 32 bpp! No alpha
+	  though, and sharing the exponent means all three channels
+	  need similar magnitudes - perfect for environment maps!
+	  Usually sample-only; GPUs typically can't render to it.*/
+	tex_format_rgb9e5uf  = tex_format_rgb9e5,
+
+	/*8-bit unsigned-normalized single channel. Great when you
+	  only need one channel and want to keep memory down.*/
+	tex_format_r8,
+	/*8-bit signed-normalized single channel. Useful for a single
+	  signed value like an elevation difference or signed mask.*/
+	tex_format_r8sn,
+	/*8-bit unsigned-integer single channel. Good for small IDs,
+	  indices, or stencil-like data accessed as exact integers.*/
+	tex_format_r8ui,
+	/*8-bit signed-integer single channel.*/
+	tex_format_r8si,
+	/*8-bit sRGB single channel. Useful for single-channel sRGB
+	  data like a luminance map that should be linearized before
+	  lighting math.*/
+	tex_format_r8_srgb,
+
+	/*Two 8-bit unsigned-normalized channels (R, G). Useful for
+	  two-component data like compressed normals where the third
+	  axis is reconstructed in the shader, or two grayscale
+	  signals stored side by side.*/
+	tex_format_r8g8,
+
+	/*16-bit unsigned-normalized single channel. A good format for
+	  height maps, since it stores a fair bit of information!*/
+	tex_format_r16un,
+	/*16-bit unsigned-normalized single channel. A good format for
+	  height maps, since it stores a fair bit of information!*/
+	tex_format_r16  = tex_format_r16un,
+	/*16-bit unsigned-normalized single channel. A good format for
+	  height maps, since it stores a fair bit of information!*/
+	tex_format_r16u = tex_format_r16un,
+	/*16-bit signed-normalized single channel. Good for signed
+	  height data or signed distance fields.*/
+	tex_format_r16sn,
+	/*16-bit signed-normalized single channel. Good for signed
+	  height data or signed distance fields.*/
+	tex_format_r16s = tex_format_r16sn,
+	/*16-bit unsigned-integer single channel. A great format for
+	  index or ID data, since values are accessed as raw
+	  integers.*/
+	tex_format_r16ui,
+	/*16-bit signed-integer single channel. Good for signed
+	  integer or ID data.*/
+	tex_format_r16si,
+	/*16-bit half-float single channel. Good for HDR height/depth
+	  data that needs a range beyond what normalized formats give
+	  you.*/
+	tex_format_r16f,
+
+	/*32-bit unsigned-integer single channel. Useful for counters,
+	  IDs, and atomic compute operations.*/
+	tex_format_r32ui,
+	/*32-bit signed-integer single channel.*/
+	tex_format_r32si,
+	/*32-bit single-precision float single channel. Treats each
+	  pixel as a generic float, so you can do all sorts of strange
+	  and interesting things with this! Great for scientific data,
+	  signed distance fields, or detailed height fields where 16
+	  bits of precision aren't enough.*/
+	tex_format_r32f,
+	/*32-bit single-precision float single channel. Treats each
+	  pixel as a generic float, so you can do all sorts of strange
+	  and interesting things with this! Great for scientific data,
+	  signed distance fields, or detailed height fields where 16
+	  bits of precision aren't enough.*/
+	tex_format_r32 = tex_format_r32f,
+
+	/*16-bit depth - not a lot, but it can be enough if your far
+	  clipping plane is pretty close. If you're seeing z-fighting,
+	  either bring your far clip in or switch to 24/32-bit depth.*/
+	tex_format_depth16,
+	/*16-bit depth + 8-bit stencil. A compact depth-with-stencil
+	  option for when precision needs are modest and memory is
+	  tight. If you see z-fighting, step up to Depth24s8 or
+	  Depth32s8.*/
+	tex_format_depth16s8,
+	/*24-bit depth + 8-bit stencil. Depth tracks how close to the
+	  camera each pixel is so near objects correctly occlude far
+	  ones. Stencil data can be used for clipping effects,
+	  deferred rendering, or shadow effects. A sensible default
+	  for most scenes!*/
+	tex_format_depth24s8,
+	/*24-bit depth + 8-bit stencil. Depth tracks how close to the
+	  camera each pixel is so near objects correctly occlude far
+	  ones. Stencil data can be used for clipping effects,
+	  deferred rendering, or shadow effects. A sensible default
+	  for most scenes!*/
+	tex_format_depthstencil = tex_format_depth24s8,
+	/*32-bit depth. Pretty detailed, and excellent for experiences
+	  with very far view distances. No stencil bits though - if
+	  you need stencil too, use Depth32s8 instead.*/
+	tex_format_depth32,
+	/*32-bit depth + 8-bit stencil (40 bpp). More depth precision
+	  than Depth24s8 but heavier on memory. Use this when you need
+	  both 32-bit depth precision and a stencil channel for
+	  masking effects.*/
+	tex_format_depth32s8,
+
+	/*BC1/DXT1 sRGB RGB, no alpha, 4 bpp. Each 4x4 block of pixels
+	  gets squished into 8 bytes, so a texture only takes a
+	  quarter of Rgba32's memory. Quality is good for opaque
+	  diffuse textures, though artifacts can show up in smooth
+	  gradients. Widely supported on desktop and console GPUs -
+	  not so much on mobile.*/
 	tex_format_bc1_rgb_srgb,
-	/*BC1/DXT1 block compression, linear color. 4 bits per pixel,
-	  great for opaque textures on desktop/console GPUs.*/
+	/*BC1/DXT1 linear RGB, no alpha, 4 bpp. Great for compressed
+	  data textures (normals, masks) on desktop and console GPUs.
+	  For color images for humans, use Bc1RgbSrgb.*/
 	tex_format_bc1_rgb,
-	/*BC3/DXT5 block compression with sRGB color. 8 bits per pixel,
-	  good for textures with alpha on desktop/console GPUs.*/
+	/*BC1/DXT1 sRGB with 1-bit alpha, 4 bpp. Alpha is either fully
+	  on or fully off per pixel - great for cutout effects like
+	  foliage or chain-link fences. Smooth fade-outs will band
+	  hard though; reach for Bc3 or Bc7 for smooth alpha.*/
+	tex_format_bc1_rgba_srgb,
+	/*BC1/DXT1 linear with 1-bit alpha, 4 bpp. Good for opaque
+	  data textures with a sharp cutout mask on desktop and
+	  console GPUs. For smooth alpha, reach for Bc3 or Bc7
+	  instead.*/
+	tex_format_bc1_rgba,
+	/*BC2/DXT3 sRGB with explicit 4-bit alpha, 8 bpp. Alpha gets
+	  16 discrete levels - fine for blocky or dithered alpha but
+	  bands hard on smooth gradients. Bc3 is usually a better
+	  choice for smooth alpha; Bc2 is mostly historical.*/
+	tex_format_bc2_rgba_srgb,
+	/*BC2/DXT3 linear with explicit 4-bit alpha, 8 bpp. Bc3 is
+	  usually preferred for smooth alpha gradients; Bc2 is mostly
+	  historical.*/
+	tex_format_bc2_rgba,
+	/*BC3/DXT5 sRGB color with smooth alpha, 8 bpp. Alpha is
+	  BC4-compressed, giving much better gradients than Bc1 or
+	  Bc2. A solid default for color-with-alpha textures on
+	  desktop and console GPUs!*/
 	tex_format_bc3_rgba_srgb,
-	/*BC3/DXT5 block compression, linear color. 8 bits per pixel,
-	  good for textures with alpha on desktop/console GPUs.*/
+	/*BC3/DXT5 linear color with smooth alpha, 8 bpp. Great for
+	  compressed data textures with alpha (RGBA masks) on desktop
+	  and console GPUs.*/
 	tex_format_bc3_rgba,
-	/*BC4 single-channel block compression. 4 bits per pixel, ideal
-	  for grayscale textures like heightmaps on desktop/console GPUs.*/
+	/*BC4 unsigned-normalized single channel [0,1], 4 bpp. Ideal
+	  for compressed grayscale textures like heightmaps, ambient
+	  occlusion, or single-channel masks. Quality is excellent for
+	  smooth single-channel data.*/
 	tex_format_bc4_r,
-	/*BC5 two-channel block compression. 8 bits per pixel, commonly
-	  used for normal maps on desktop/console GPUs.*/
+	/*BC4 signed-normalized single channel [-1,1], 4 bpp. Useful
+	  when your data is naturally signed, like signed distance
+	  fields or elevation difference maps.*/
+	tex_format_bc4_rsn,
+	/*BC5 unsigned-normalized two channels, 8 bpp. Effectively two
+	  BC4 textures packed together. The standard format for
+	  compressed two-channel data on desktop/console - most
+	  commonly used for tangent-space normal maps where the Z
+	  component is reconstructed in the shader!*/
 	tex_format_bc5_rg,
-	/*BC7 high-quality block compression with sRGB color. 8 bits per
-	  pixel, best quality for color textures on desktop/console GPUs.*/
+	/*BC5 signed-normalized two channels ([-1,1] per channel), 8
+	  bpp. Useful for signed two-channel data, like normal maps
+	  stored as [-1,1] directly rather than the typical [0,1]
+	  packed form.*/
+	tex_format_bc5_rgsn,
+	/*BC6H HDR RGB, unsigned float (positive values only), 8 bpp.
+	  16-bit half-float per channel, no alpha. The go-to format
+	  for compressing HDR cubemaps and environment maps - stores
+	  high-dynamic-range data at a fraction of the cost of
+	  Rgba64f.*/
+	tex_format_bc6h_rgbuf,
+	/*BC6H HDR RGB, signed float (can store negative values), 8
+	  bpp. 16-bit half-float per channel, no alpha. Use this when
+	  your HDR data can contain negatives, like signed spherical
+	  harmonics coefficients.*/
+	tex_format_bc6h_rgbf,
+	/*BC7 sRGB color with full alpha, 8 bpp. The highest-quality
+	  BC format - noticeably better than Bc3 at the same
+	  compression ratio. Compression takes longer than Bc3 though,
+	  so reach for this when quality matters more than encoding
+	  speed.*/
 	tex_format_bc7_rgba_srgb,
-	/*BC7 high-quality block compression, linear color. 8 bits per
-	  pixel, best quality for color textures on desktop/console GPUs.*/
+	/*BC7 linear color with full alpha, 8 bpp. Highest-quality BC
+	  format - excellent for compressed RGBA data textures when
+	  Bc3 quality isn't enough.*/
 	tex_format_bc7_rgba,
 
-	/*ETC1 compression for RGB, widely supported on older Android
-	  devices. 4 bits per pixel, no alpha support.*/
+	/*ETC1 RGB, no alpha, 4 bpp. Widely supported on older Android
+	  devices and OpenGL ES 2.0+ GPUs. Quality is acceptable for
+	  diffuse color but it's been superseded - prefer Etc2 or Astc
+	  on newer hardware!*/
 	tex_format_etc1_rgb,
-	/*ETC2 compression with sRGB color and alpha. 8 bits per pixel,
-	  standard on OpenGL ES 3.0+ mobile devices.*/
+	/*ETC2 sRGB color with full alpha, 8 bpp. The standard
+	  compressed RGBA format on OpenGL ES 3.0+ mobile devices, and
+	  mandatory in the spec - so it's widely available. A great
+	  default for sRGB color textures on mobile!*/
 	tex_format_etc2_rgba_srgb,
-	/*ETC2 compression with linear color and alpha. 8 bits per pixel,
-	  standard on OpenGL ES 3.0+ mobile devices.*/
+	/*ETC2 linear color with full alpha, 8 bpp. Standard
+	  compressed format for data textures with alpha on OpenGL ES
+	  3.0+ mobile devices.*/
 	tex_format_etc2_rgba,
-	/*ETC2 single-channel compression. 4 bits per pixel, good for
-	  grayscale data on mobile.*/
+	/*ETC2/EAC single 11-bit unsigned-normalized channel, 4 bpp.
+	  The ETC equivalent of Bc4 - great for compressed grayscale
+	  or heightmap data on mobile GPUs!*/
 	tex_format_etc2_r11,
-	/*ETC2 two-channel compression. 8 bits per pixel, useful for
-	  normal maps on mobile.*/
+	/*ETC2/EAC two 11-bit unsigned-normalized channels, 8 bpp. The
+	  ETC equivalent of Bc5 - great for compressed two-channel
+	  data like tangent-space normal maps on mobile GPUs!*/
 	tex_format_etc2_rg11,
-	/*PVRTC1 RGB compression with sRGB color. 4 bits per pixel,
-	  supported on iOS and PowerVR GPUs.*/
+	/*PVRTC1 sRGB RGB, 2 bpp. Used on iOS and other PowerVR GPUs.
+	  The 2bpp bitrate is super compact but quality is lower than
+	  ETC/BC - acceptable for low-detail or background textures.
+	  Requires power-of-two square textures!*/
 	tex_format_pvrtc1_rgb_srgb,
-	/*PVRTC1 RGB compression, linear color. 4 bits per pixel,
-	  supported on iOS and PowerVR GPUs.*/
+	/*PVRTC1 linear RGB, 2 bpp. PowerVR GPUs only, requires
+	  power-of-two square textures.*/
 	tex_format_pvrtc1_rgb,
-	/*PVRTC1 RGBA compression with sRGB color. 4 bits per pixel,
-	  supported on iOS and PowerVR GPUs.*/
+	/*PVRTC1 sRGB with full alpha, 4 bpp. The 4bpp variant is
+	  higher quality than the 2bpp variants. PowerVR GPUs only,
+	  requires power-of-two square textures.*/
 	tex_format_pvrtc1_rgba_srgb,
-	/*PVRTC1 RGBA compression, linear color. 4 bits per pixel,
-	  supported on iOS and PowerVR GPUs.*/
+	/*PVRTC1 linear with full alpha, 4 bpp. PowerVR GPUs only,
+	  requires power-of-two square textures.*/
 	tex_format_pvrtc1_rgba,
-	/*PVRTC2 RGBA compression with sRGB color. 4 bits per pixel,
-	  improved quality over PVRTC1 on PowerVR GPUs.*/
+	/*PVRTC2 sRGB with full alpha, 4 bpp. An update to PVRTC1 with
+	  better quality and fewer restrictions - works with
+	  non-power-of-two and non-square textures. Still
+	  PowerVR-specific though.*/
 	tex_format_pvrtc2_rgba_srgb,
-	/*PVRTC2 RGBA compression, linear color. 4 bits per pixel,
-	  improved quality over PVRTC1 on PowerVR GPUs.*/
+	/*PVRTC2 linear with full alpha, 4 bpp. Better quality and
+	  more flexible texture sizes than PVRTC1. PowerVR GPUs only.*/
 	tex_format_pvrtc2_rgba,
-	/*ASTC 4x4 block compression with sRGB color. 8 bits per pixel,
-	  high quality format supported on modern mobile GPUs.*/
+	/*ASTC 4x4 sRGB color with full alpha, 8 bpp. ASTC is the
+	  modern mobile-standard compressed format - excellent
+	  quality, broadly supported. The 4x4 block size is the
+	  highest-quality (and largest-size) ASTC variant.*/
 	tex_format_astc4x4_rgba_srgb,
-	/*ASTC 4x4 block compression, linear color. 8 bits per pixel,
-	  high quality format supported on modern mobile GPUs.*/
+	/*ASTC 4x4 linear color with full alpha, 8 bpp. High-quality
+	  compressed format for data textures on modern mobile GPUs.*/
 	tex_format_astc4x4_rgba,
-	/*ATC RGB compression for Qualcomm Adreno GPUs. 4 bits per pixel,
-	  found on many Android devices.*/
+	/*ATC RGB on Qualcomm Adreno GPUs, 4 bpp. Historical
+	  Qualcomm-specific format - prefer Astc or Etc2 on newer
+	  Adreno hardware.*/
 	tex_format_atc_rgb,
-	/*ATC RGBA compression for Qualcomm Adreno GPUs. 8 bits per pixel,
-	  found on many Android devices.*/
+	/*ATC with alpha on Qualcomm Adreno GPUs, 8 bpp. Historical
+	  Qualcomm-specific format - prefer Astc or Etc2 on newer
+	  Adreno hardware.*/
 	tex_format_atc_rgba,
+
+	/*NV12 video format - a 2-plane 4:2:0 YUV layout! Plane 1 is a
+	  full-resolution Y (luminance) plane at 8 bpp, plane 2 is a
+	  half-resolution UV (chrominance) plane with U and V
+	  interleaved at 8 bits each. The most common output format
+	  from hardware video decoders!*/
+	tex_format_nv12,
+	/*P010 video format - like NV12 but with 10-bit channels
+	  stored in 16-bit fields. Full-resolution 10-bit Y plane plus
+	  a half-resolution interleaved 10-bit UV plane. Used for
+	  10-bit HDR video!*/
+	tex_format_p010,
+	/*A 3-plane 4:2:0 YUV layout - separate Y, U, and V planes
+	  each at 8 bpp, with U and V at half resolution. Common in
+	  software video decoders but less common from hardware
+	  decoders (which usually output NV12).*/
+	tex_format_yuv420p,
 } tex_format_;
 
 /*This describes the way the display's content blends with
@@ -478,7 +655,12 @@ typedef enum log_ {
   the primary display. See `Renderer.LayerFilter` for configuring what
   the primary display renders.
   
-  Render layers can also be mixed and matched like bit-flags!*/
+  Render layers can also be mixed and matched like bit-flags!
+
+  Note that while this enum is 32 bits wide, render layers are stored
+  internally in 16 bits when items are queued for drawing. Only the low
+  16 bits are usable as layers, so any custom flags above bit 15 will be
+  silently truncated.*/
 typedef enum render_layer_ {
 	/*The default render layer. All Draw use this layer unless
 	  otherwise specified.*/
@@ -512,6 +694,10 @@ typedef enum render_layer_ {
 	  perspective. By default, this is enabled for renders that
 	  are from a 3rd person viewpoint.*/
 	render_layer_third_person     = 1 << 12,
+	/*The default layer for StereoKit's UI. Mesh and model content
+	  drawn by the UI system uses this layer, see `UI.RenderLayer`
+	  to change it.*/
+	render_layer_ui               = 1 << 13,
 	/*This is a flag that specifies all possible layers. If you
 	  want to render all layers, then this is the layer filter
 	  you would use. This is the default for render filtering.*/
@@ -624,6 +810,7 @@ typedef enum standby_mode_ {
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
+	const char    *default_font_family;
 	app_mode_      mode;
 	display_blend_ blend_preference;
 	bool32_t       no_flatscreen_fallback;
@@ -1200,7 +1387,7 @@ SK_API void         mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
 SK_API void         mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);
 SK_API bounds_t     mesh_get_bounds      (mesh_t mesh);
 SK_API bool32_t     mesh_has_skin        (mesh_t mesh);
-SK_API void         mesh_set_skin        (mesh_t mesh, const uint16_t *in_arr_bone_ids_4, int32_t bone_id_4_count, const vec4 *in_arr_bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
+SK_API void         mesh_set_skin        (mesh_t mesh, const uint16_t *in_arr_bone_ids_4, int32_t bone_id_4_count, const vec4 *in_arr_bone_weights, int32_t bone_weight_count, const matrix *in_arr_bone_resting_transforms, int32_t bone_count);
 SK_API void         mesh_update_skin     (mesh_t mesh, const matrix *in_arr_bone_transforms, int32_t bone_count);
 SK_API bool32_t     mesh_ray_intersect    (mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_opt_start_inds sk_default(nullptr));
 SK_API bool32_t     mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr));
@@ -1718,6 +1905,9 @@ SK_DEPRECATED typedef enum text_align_ {
   without an axis listed in their names, 'TopLeft', 'BottomCenter',
   etc.*/
 typedef enum align_ {
+	/*No alignment specified. For elements that have a natural default
+	  alignment (such as image buttons), this falls back to that default.*/
+	align_none = 0,
 	/*On the x axis, this item should start on the left.*/
 	align_x_left = 1 << 0,
 	/*On the y axis, this item should start at the top.*/
@@ -1834,6 +2024,8 @@ SK_API void          text_style_set_layout_height   (text_style_t style, float h
 SK_API float         text_style_get_total_height    (text_style_t style);
 SK_API void          text_style_set_total_height    (text_style_t style, float height_meters);
 SK_API material_t    text_style_get_material        (text_style_t style);
+SK_API render_layer_ text_style_get_render_layer    (text_style_t style);
+SK_API void          text_style_set_render_layer    (text_style_t style, render_layer_ layer);
 SK_API float         text_style_get_ascender        (text_style_t style);
 SK_API float         text_style_get_descender       (text_style_t style);
 SK_API float         text_style_get_cap_height      (text_style_t style);
@@ -1960,7 +2152,7 @@ SK_API float       sprite_get_aspect (sprite_t sprite);
 SK_API int32_t     sprite_get_width  (sprite_t sprite);
 SK_API int32_t     sprite_get_height (sprite_t sprite);
 SK_API vec2        sprite_get_dimensions_normalized(sprite_t sprite);
-SK_API void        sprite_draw       (sprite_t sprite, matrix transform, pivot_ pivot_position, color32 color sk_default({255,255,255,255}));
+SK_API void        sprite_draw       (sprite_t sprite, matrix transform, pivot_ pivot_position, color32 color sk_default({255,255,255,255}), render_layer_ layer sk_default(render_layer_0));
 
 ///////////////////////////////////////////
 
@@ -2263,9 +2455,11 @@ typedef enum interactor_event_ {
 } interactor_event_;
 SK_MakeFlag(interactor_event_);
 
-// TODO: is this redundant with interactor_type_?
-/*This describes how an interactor activates elements. Does it use the physical
-  position of the interactor, or the activation state?*/
+/*This describes how an interactor commits an interaction with an element - does
+  it activate from the physical position of the interactor (like a finger poking
+  through a button), or from its activation/button state (like a pinch or a
+  trigger click)? This is independent of `InteractorType`, which describes the
+  interactor's shape rather than what triggers it.*/
 typedef enum interactor_activation_ {
 	/*This interactor uses its `active` state to determine element
 	  activation.*/
@@ -2274,6 +2468,38 @@ typedef enum interactor_activation_ {
 	  activation.*/
 	interactor_activation_position,
 } interactor_activation_;
+
+/*A bit-flag describing the physical source an interactor's input comes from,
+  such as a specific hand, controller, or the mouse. Interactors that share a
+  source are mutually exclusive: while one is actively interacting, the others
+  won't begin a new interaction. This is how the poke, pinch, and aim
+  interactors of a single hand avoid fighting over the same element. The bits
+  at and above `InteractorSource.Max` are free for your own custom sources.*/
+typedef enum interactor_source_ {
+	/*A unique, independent source. Interactors with this source never group
+	  with any other interactor, and are invisible to source queries like
+	  `Interactor.IsInteracting`. This is the default 'shares nothing' source.*/
+	interactor_source_unique           = 0,
+	/*The left hand.*/
+	interactor_source_hand_left        = 1 << 0,
+	/*The right hand.*/
+	interactor_source_hand_right       = 1 << 1,
+	/*The left motion controller.*/
+	interactor_source_controller_left  = 1 << 2,
+	/*The right motion controller.*/
+	interactor_source_controller_right = 1 << 3,
+	/*Gaze or eye tracking based input.*/
+	interactor_source_gaze             = 1 << 4,
+	/*A mouse pointer.*/
+	interactor_source_mouse            = 1 << 5,
+	/*Matches with all sources!*/
+	interactor_source_any              = 0x7FFFFFFF,
+	/*The first bit available for your own custom interactor sources. Bits at
+	  and above this are unused by StereoKit, so you can define your own
+	  relative to it, for example `(InteractorSource)((int)InteractorSource.Max << 1)`.*/
+	interactor_source_max              = 1 << 6,
+} interactor_source_;
+SK_MakeFlag(interactor_source_);
 
 /*A bit-flag for the current state of a button input.*/
 typedef enum button_state_ {
@@ -2285,8 +2511,10 @@ typedef enum button_state_ {
 	button_state_just_inactive = 1 << 1,
 	/*Has the button just been pressed? Only true for a single frame.*/
 	button_state_just_active   = 1 << 2,
-	/*Has the button just changed state this frame?*/
-	button_state_changed       = button_state_just_inactive | button_state_just_active,
+	/*Was a button activation just canceled this frame, ending without firing because the interactor moved too far away? Only true for a single frame.*/
+	button_state_just_canceled = 1 << 3,
+	/*Has the button just changed state this frame? Includes presses, releases, and canceled activations.*/
+	button_state_changed       = button_state_just_inactive | button_state_just_active | button_state_just_canceled,
 	/*Matches with all states!*/
 	button_state_any           = 0x7FFFFFFF,
 } button_state_;
@@ -2315,7 +2543,7 @@ typedef enum default_interactors_ {
 
 typedef int32_t interactor_t;
 
-SK_API interactor_t          interactor_create                  (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, int32_t input_source_id, float capsule_radius, int32_t secondary_motion_dimensions);
+SK_API interactor_t          interactor_create                  (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, interactor_source_ source, float capsule_radius, int32_t secondary_motion_dimensions);
 SK_API void                  interactor_destroy                 (      interactor_t interactor);
 SK_API void                  interactor_update                  (      interactor_t interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
 SK_API void                  interactor_set_min_distance        (      interactor_t interactor, float min_distance);
@@ -2329,9 +2557,16 @@ SK_API id_hash_t             interactor_get_focused             (const interacto
 SK_API id_hash_t             interactor_get_active              (const interactor_t interactor);
 SK_API bool32_t              interactor_get_focus_bounds        (const interactor_t interactor, pose_t* out_pose_world, bounds_t* out_bounds_local, vec3* out_at_local);
 SK_API pose_t                interactor_get_motion              (const interactor_t interactor);
+SK_API interactor_type_      interactor_get_type                (const interactor_t interactor);
+SK_API interactor_event_     interactor_get_events              (const interactor_t interactor);
+SK_API interactor_activation_ interactor_get_activation         (const interactor_t interactor);
+SK_API interactor_source_    interactor_get_source              (const interactor_t interactor);
+SK_API int32_t               interactor_get_secondary_dims      (const interactor_t interactor);
 
 SK_API int32_t               interactor_count                   (void);
 SK_API interactor_t          interactor_get                     (int32_t index);
+
+SK_API bool32_t              interactor_is_interacting          (interactor_source_ source);
 
 SK_API void                  interaction_set_default_interactors(default_interactors_ default_interactors);
 SK_API default_interactors_  interaction_get_default_interactors();
@@ -3082,12 +3317,12 @@ SK_API bool32_t              world_raycast                   (ray_t ray, ray_t *
 SK_API void                  world_set_occlusion             (occlusion_caps_ flags);
 SK_API occlusion_caps_       world_get_occlusion             (void);
 SK_API occlusion_caps_       world_occlusion_capabilities    (void);
-SK_DEPRECATED SK_API void    world_set_occlusion_enabled     (bool32_t enabled);
-SK_DEPRECATED SK_API bool32_t world_get_occlusion_enabled    (void);
+SK_API SK_DEPRECATED void    world_set_occlusion_enabled     (bool32_t enabled);
+SK_API SK_DEPRECATED bool32_t world_get_occlusion_enabled    (void);
 SK_API void                  world_set_raycast_enabled       (bool32_t enabled);
 SK_API bool32_t              world_get_raycast_enabled       (void);
-SK_DEPRECATED SK_API void    world_set_occlusion_material    (material_t material);
-SK_DEPRECATED SK_API material_t world_get_occlusion_material (void);
+SK_API SK_DEPRECATED void    world_set_occlusion_material    (material_t material);
+SK_API SK_DEPRECATED material_t world_get_occlusion_material (void);
 SK_API void                  world_set_refresh_type          (world_refresh_ refresh_type);
 SK_API world_refresh_        world_get_refresh_type          (void);
 SK_API void                  world_set_refresh_radius        (float radius_meters);

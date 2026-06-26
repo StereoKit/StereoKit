@@ -94,7 +94,7 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 
 ///////////////////////////////////////////
 
-void sprite_drawer_add_at(sprite_t sprite, matrix at, pivot_ pivot_position, color32 color) {
+void sprite_drawer_add_at(sprite_t sprite, matrix at, pivot_ pivot_position, color32 color, render_layer_ layer) {
 	// Check if this one does get batched
 	if (sprite->buffer_index == -1) {
 		// Just plop a quad onto the render queue
@@ -104,7 +104,7 @@ void sprite_drawer_add_at(sprite_t sprite, matrix at, pivot_ pivot_position, col
 		else if (pivot_position & pivot_x_right ) offset.x =  aspect/2;
 		if      (pivot_position & pivot_y_bottom) offset.y =  0.5f;
 		else if (pivot_position & pivot_y_top   ) offset.y = -0.5f;
-		render_add_mesh(sprite_quad, sprite->material, matrix_ts(offset, {aspect, 1, 1}) * at, { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
+		render_add_mesh(sprite_quad, sprite->material, matrix_ts(offset, {aspect, 1, 1}) * at, { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f }, layer);
 		return;
 	} else {
 		log_err("Not implemented");
@@ -151,7 +151,7 @@ void sprite_drawer_step() {
 		}
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);
 
-		render_add_mesh(buffer.mesh, buffer.material, matrix_identity);
+		render_add_mesh(buffer.mesh, buffer.material, matrix_identity, {1,1,1,1}, render_layer_vfx);
 		buffer.vert_count = 0;
 	}
 }

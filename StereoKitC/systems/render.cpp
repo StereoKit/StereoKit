@@ -447,24 +447,74 @@ void render_update_projection() {
 
 const char *render_fmt_name(tex_format_ format) {
 	switch (format) {
-	case tex_format_bgra32:        return "bgra32_sRGB";
-	case tex_format_bgra32_linear: return "bgra32_linear";
-	case tex_format_rgba32:        return "rgba32_sRGB";
-	case tex_format_rgba32_linear: return "rgba32_linear";
-	case tex_format_rgb10a2:       return "rgb10a2";
-	case tex_format_rg11b10:       return "rg11b10";
-	case tex_format_rgba64u:       return "rgba64u";
-	case tex_format_rgba64s:       return "rgba64s";
-	case tex_format_rgba64f:       return "rgba64f";
-	case tex_format_rgba128:       return "rgba128";
-	case tex_format_r8:            return "r8";
-	case tex_format_r16:           return "r16";
-	case tex_format_r32:           return "r32";
-	case tex_format_depthstencil:  return "depth24_stencil8";
-	case tex_format_depth32:       return "depth32";
-	case tex_format_depth16:       return "depth16";
-	case tex_format_none:          return "none";
-	default:                       return "Unknown";
+	case tex_format_bgra32:           return "bgra32_sRGB";
+	case tex_format_bgra32_linear:    return "bgra32_linear";
+	case tex_format_rgba32:           return "rgba32_sRGB";
+	case tex_format_rgba32_linear:    return "rgba32_linear";
+	case tex_format_rgb10a2:          return "rgb10a2";
+	case tex_format_rg11b10:          return "rg11b10";
+	case tex_format_rgba64un:         return "rgba64un";
+	case tex_format_rgba64sn:         return "rgba64sn";
+	case tex_format_rgba64ui:         return "rgba64ui";
+	case tex_format_rgba64si:         return "rgba64si";
+	case tex_format_rgba64f:          return "rgba64f";
+	case tex_format_rgba128:          return "rgba128";
+	case tex_format_r8:               return "r8";
+	case tex_format_r8sn:             return "r8sn";
+	case tex_format_r8ui:             return "r8ui";
+	case tex_format_r8si:             return "r8si";
+	case tex_format_r8_srgb:          return "r8_sRGB";
+	case tex_format_r8g8:             return "r8g8";
+	case tex_format_r16:              return "r16";
+	case tex_format_r16sn:            return "r16sn";
+	case tex_format_r16ui:            return "r16ui";
+	case tex_format_r16si:            return "r16si";
+	case tex_format_r16f:             return "r16f";
+	case tex_format_r32:              return "r32";
+	case tex_format_r32ui:            return "r32ui";
+	case tex_format_r32si:            return "r32si";
+	case tex_format_rgb9e5:           return "rgb9e5";
+	case tex_format_depthstencil:     return "depth24_stencil8";
+	case tex_format_depth32:          return "depth32";
+	case tex_format_depth16:          return "depth16";
+	case tex_format_depth32s8:        return "depth32_stencil8";
+	case tex_format_depth16s8:        return "depth16_stencil8";
+	case tex_format_bc1_rgb_srgb:     return "bc1_rgb_sRGB";
+	case tex_format_bc1_rgb:          return "bc1_rgb";
+	case tex_format_bc1_rgba_srgb:    return "bc1_rgba_sRGB";
+	case tex_format_bc1_rgba:         return "bc1_rgba";
+	case tex_format_bc2_rgba_srgb:    return "bc2_rgba_sRGB";
+	case tex_format_bc2_rgba:         return "bc2_rgba";
+	case tex_format_bc3_rgba_srgb:    return "bc3_rgba_sRGB";
+	case tex_format_bc3_rgba:         return "bc3_rgba";
+	case tex_format_bc4_r:            return "bc4_r";
+	case tex_format_bc4_rsn:          return "bc4_rsn";
+	case tex_format_bc5_rg:           return "bc5_rg";
+	case tex_format_bc5_rgsn:         return "bc5_rgsn";
+	case tex_format_bc6h_rgbuf:       return "bc6h_rgbuf";
+	case tex_format_bc6h_rgbf:        return "bc6h_rgbf";
+	case tex_format_bc7_rgba_srgb:    return "bc7_rgba_sRGB";
+	case tex_format_bc7_rgba:         return "bc7_rgba";
+	case tex_format_etc1_rgb:         return "etc1_rgb";
+	case tex_format_etc2_rgba_srgb:   return "etc2_rgba_sRGB";
+	case tex_format_etc2_rgba:        return "etc2_rgba";
+	case tex_format_etc2_r11:         return "etc2_r11";
+	case tex_format_etc2_rg11:        return "etc2_rg11";
+	case tex_format_pvrtc1_rgb_srgb:  return "pvrtc1_rgb_sRGB";
+	case tex_format_pvrtc1_rgb:       return "pvrtc1_rgb";
+	case tex_format_pvrtc1_rgba_srgb: return "pvrtc1_rgba_sRGB";
+	case tex_format_pvrtc1_rgba:      return "pvrtc1_rgba";
+	case tex_format_pvrtc2_rgba_srgb: return "pvrtc2_rgba_sRGB";
+	case tex_format_pvrtc2_rgba:      return "pvrtc2_rgba";
+	case tex_format_astc4x4_rgba_srgb:return "astc4x4_rgba_sRGB";
+	case tex_format_astc4x4_rgba:     return "astc4x4_rgba";
+	case tex_format_atc_rgb:          return "atc_rgb";
+	case tex_format_atc_rgba:         return "atc_rgba";
+	case tex_format_nv12:             return "nv12";
+	case tex_format_p010:             return "p010";
+	case tex_format_yuv420p:          return "yuv420p";
+	case tex_format_none:             return "none";
+	default:                          return "Unknown";
 	}
 }
 
@@ -1238,6 +1288,10 @@ void render_list_add_to(render_list_t list, const render_item_t *item) {
 static void render_list_execute(render_list_t list, render_layer_ filter, int32_t material_variant, int32_t queue_start, int32_t queue_end) {
 	list->state = render_list_state_rendering;
 
+	// Clear the sk_renderer render list before populating it
+	skr_render_list_t* gpu_list = &local.gpu_render_list;
+	skr_render_list_clear(gpu_list);
+
 	if (list->queue.count == 0) {
 		list->state = render_list_state_rendered;
 		return;
@@ -1258,10 +1312,6 @@ static void render_list_execute(render_list_t list, render_layer_ filter, int32_
 	// Calculate sort_id range for queue filtering
 	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
 	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
-
-	// Clear and populate the sk_renderer render list
-	skr_render_list_t* gpu_list = &local.gpu_render_list;
-	skr_render_list_clear(gpu_list);
 
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
