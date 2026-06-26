@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2026 Nick Klingensmith
+ * Copyright (c) 2026 Austin Hale
  */
 
 #include "android_depth_texture.h"
@@ -121,8 +121,8 @@ typedef struct xr_android_depth_state_t {
 	int32_t                       height;
 	uint32_t                      image_count;
 	XrDepthSwapchainImageANDROID* images;
-	int32_t                       resolution_pref;
-	int32_t                       resolutions_px[8];
+	sensor_depth_resolution_t     resolution_pref;
+	sensor_depth_resolution_t     resolutions[8];
 	int32_t                       resolutions_count;
 	void*                         image_buffers   [4];
 	size_t                        image_buffer_len[4];
@@ -408,7 +408,7 @@ bool xr_ext_android_depth_texture_start(sensor_depth_caps_ flags) {
 	int32_t                        chosen_px = resolution_to_pixels(chosen);
 	for (uint32_t i = 0; i < resolution_count; i++) {
 		int32_t px = resolution_to_pixels(resolutions[i]);
-		if (local.resolution_pref > 0 && px == local.resolution_pref) { chosen = resolutions[i]; chosen_px = px; break; }
+		if (local.resolution_pref.width == px && local.resolution_pref.height == px) { chosen = resolutions[i]; chosen_px = px; break; }
 		if (px > chosen_px) { chosen = resolutions[i]; chosen_px = px; }
 	}
 	if (chosen_px == 0) {
@@ -541,7 +541,7 @@ bool xr_ext_android_depth_texture_try_get_image(sensor_depth_image_ image, senso
 	return android_depth_copy_image(image, out_frame, out_data, out_data_size, view_index);
 }
 
-void xr_ext_android_depth_texture_get_resolutions(const int32_t** out_arr_resolutions, int32_t* out_count) {
+void xr_ext_android_depth_texture_get_resolutions(const sensor_depth_resolution_t** out_arr_resolutions, int32_t* out_count) {
 	local.resolutions_count = 0;
 	if (local.available && xrEnumerateDepthResolutionsANDROID != nullptr) {
 		XrDepthCameraResolutionANDROID resolutions[8] = {};
@@ -549,17 +549,20 @@ void xr_ext_android_depth_texture_get_resolutions(const int32_t** out_arr_resolu
 		if (XR_SUCCEEDED(xrEnumerateDepthResolutionsANDROID(xr_session, 0, &count, nullptr)) && count > 0) {
 			if (count > 8) count = 8;
 			if (XR_SUCCEEDED(xrEnumerateDepthResolutionsANDROID(xr_session, count, &count, resolutions))) {
-				for (uint32_t i = 0; i < count; i++)
-					local.resolutions_px[i] = resolution_to_pixels(resolutions[i]);
+				for (uint32_t i = 0; i < count; i++) {
+					int32_t px = resolution_to_pixels(resolutions[i]);
+					local.resolutions[i].width  = px;
+					local.resolutions[i].height = px;
+				}
 				local.resolutions_count = (int32_t)count;
 			}
 		}
 	}
-	if (out_arr_resolutions) *out_arr_resolutions = local.resolutions_px;
+	if (out_arr_resolutions) *out_arr_resolutions = local.resolutions;
 	if (out_count)           *out_count           = local.resolutions_count;
 }
 
-void xr_ext_android_depth_texture_set_resolution(int32_t resolution) {
+void xr_ext_android_depth_texture_set_resolution(sensor_depth_resolution_t resolution) {
 	local.resolution_pref = resolution;
 }
 
@@ -572,8 +575,10 @@ void xr_ext_android_depth_texture_update_frame(XrTime display_time) {
 	// Apply a pending raw/smooth switch here (render thread, between acquires).
 	if (local.pending_recreate) {
 		local.pending_recreate = false;
-		if (!android_depth_build_swapchain())
+		if (!android_depth_build_swapchain()) {
 			log_warn("XR_ANDROID_depth_texture: depth source recreate failed.");
+			xr_ext_android_depth_texture_destroy();
+		}
 		return; // acquire from the new swapchain next frame
 	}
 
@@ -641,7 +646,6 @@ void xr_ext_android_depth_texture_update_frame(XrTime display_time) {
 	frame.views[1].pose = xr_to_pose(acquire_result.views[1].pose);
 	frame.views[1].fov  = xr_to_fov (acquire_result.views[1].fov );
 	frame.depth_format     = sensor_depth_format_meters_r32;
-	frame.storage          = sensor_depth_storage_cpu_buffer;
 	frame.view_count       = 2;
 	frame.available_images = avail;
 

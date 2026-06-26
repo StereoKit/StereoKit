@@ -8,17 +8,19 @@ namespace StereoKit
 	/// planned for the future.</summary>
 	public static class Sensor
 	{
-		/// <summary>Provides access to real-time environment depth sensing from
-		/// the device, if available, with per-frame metadata including each eye's
-		/// pose and field of view. Depending on the backend, depth is delivered
-		/// either as a GPU texture or as CPU
-		/// buffers; check
-		/// SensorDepthFrame.storage and use Texture or TryGetLatestData
-		/// accordingly. A backend may expose raw and/or smooth depth plus their
-		/// confidence images (see SensorDepthImage). View poses are reprojected to
-		/// display time (not the raw capture pose) - mind that when registering depth
-		/// against another sensor such as a color camera.
-		/// If no depth provider is available, calls gracefully return false or no-op.</summary>
+		/// <summary>Provides access to real-time environment depth
+		/// sensing from the device, if available, with per-frame metadata
+		/// including each eye's pose and field of view. Depending on the
+		/// backend, depth is delivered either as a GPU texture or as CPU
+		/// buffers; prefer <see cref="Texture"/> on GPU-native backends and
+		/// <see cref="TryGetLatestData"/> on CPU-native backends (either
+		/// accessor works, but the off-native path incurs an upload or a
+		/// readback). A backend may expose raw and/or smooth depth plus
+		/// their confidence images (see <see cref="SensorDepthImage"/>).
+		/// View poses are reprojected to display time (not the raw capture
+		/// pose), so mind that when registering depth against another
+		/// sensor such as a color camera. If no depth provider is
+		/// available, calls gracefully return false or no-op.</summary>
 		public static class Depth
 		{
 			/// <summary>True when the depth system is available on the current
@@ -56,10 +58,11 @@ namespace StereoKit
 			/// data.</summary>
 			/// <param name="capabilities">Optional capabilities to configure features like
 			/// hand removal, raw/smooth depth, or confidence.</param>
-			/// <param name="resolution">Preferred square resolution (pixels per eye); 0 = the
-			/// runtime's highest. See GetResolutions. Ignored where not selectable.</param>
+			/// <param name="resolution">Preferred resolution (pixels per eye), chosen from
+			/// <see cref="GetResolutions"/>; default (0x0) = the runtime's highest. Ignored
+			/// where not selectable.</param>
 			/// <returns>True on success.</returns>
-			public static bool Start(SensorDepthCaps capabilities = SensorDepthCaps.None, int resolution = 0)
+			public static bool Start(SensorDepthCaps capabilities = SensorDepthCaps.None, SensorDepthResolution resolution = default)
 				=> NativeAPI.sensor_depth_start(capabilities, resolution);
 
 			/// <summary>Stops the depth provider.</summary>
@@ -116,15 +119,17 @@ namespace StereoKit
 				return result;
 			}
 
-			/// <summary>The square depth resolutions (pixels per eye) the current
-			/// backend supports, highest first. Empty where not selectable.</summary>
+			/// <summary>The depth resolutions (pixels per eye) the current backend
+			/// advertises, highest first. Empty where not selectable.</summary>
 			/// <returns>Supported pixel sizes per eye.</returns>
-			public static int[] GetResolutions()
+			public static SensorDepthResolution[] GetResolutions()
 			{
 				NativeAPI.sensor_depth_get_resolutions(out IntPtr ptr, out int count);
-				if (ptr == IntPtr.Zero || count <= 0) return Array.Empty<int>();
-				int[] resolutions = new int[count];
-				Marshal.Copy(ptr, resolutions, 0, count);
+				if (ptr == IntPtr.Zero || count <= 0) return Array.Empty<SensorDepthResolution>();
+				SensorDepthResolution[] resolutions = new SensorDepthResolution[count];
+				int stride = Marshal.SizeOf<SensorDepthResolution>();
+				for (int i = 0; i < count; i++)
+					resolutions[i] = Marshal.PtrToStructure<SensorDepthResolution>(ptr + i * stride);
 				return resolutions;
 			}
 

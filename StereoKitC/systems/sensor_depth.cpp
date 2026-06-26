@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
  * Copyright (c) 2026 Nick Klingensmith
+ * Copyright (c) 2026 Austin Hale
  */
 
 #include "sensor.h"
@@ -91,7 +92,7 @@ sensor_depth_caps_ sensor_depth_get_capabilities() {
 
 ///////////////////////////////////////////
 
-bool32_t sensor_depth_start(sensor_depth_caps_ flags, int32_t resolution) {
+bool32_t sensor_depth_start(sensor_depth_caps_ flags, sensor_depth_resolution_t resolution) {
 	switch (sensor_depth_sys) {
 	case sensor_depth_system_openxr_meta:    return xr_ext_meta_environment_depth_start(flags);
 	case sensor_depth_system_openxr_android:
@@ -173,14 +174,14 @@ bool32_t sensor_depth_try_get_latest_data(sensor_depth_frame_t* out_frame, void*
 
 ///////////////////////////////////////////
 
-void sensor_depth_get_resolutions(sk_ref_arr(int32_t) out_arr_resolutions, sk_ref(int32_t) out_count) {
-	const int32_t* arr   = nullptr;
-	int32_t        count = 0;
+void sensor_depth_get_resolutions(sk_ref_arr(sensor_depth_resolution_t) out_arr_resolutions, sk_ref(int32_t) out_count) {
+	const sensor_depth_resolution_t* arr   = nullptr;
+	int32_t                          count = 0;
 	switch (sensor_depth_sys) {
 	case sensor_depth_system_openxr_android: xr_ext_android_depth_texture_get_resolutions(&arr, &count); break;
 	default: break;
 	}
-	out_arr_resolutions = (int32_t*)arr;
+	out_arr_resolutions = (sensor_depth_resolution_t*)arr;
 	out_count           = count;
 }
 

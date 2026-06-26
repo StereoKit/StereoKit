@@ -43,7 +43,8 @@ psIn vs(uint id : SV_VertexID, sk_ids_t ids) {
 		float3   eye_p  = float3(tan_xy * depth_raw, -depth_raw);
 		world_pos = mul(pose, float4(eye_p, 1)).xyz;
 	} else {
-		// ndc z-buffer value in [0,1]; unproject via inverse depth VP
+		// Unproject depth texel to world space via inverse depth VP
+		// depth_raw is a z-buffer value in [0,1], convert to NDC [-1,1]
 		if (depth_raw <= 0 || depth_raw >= 1) {
 			o.pos = asfloat(0x7FC00000);
 			return o;

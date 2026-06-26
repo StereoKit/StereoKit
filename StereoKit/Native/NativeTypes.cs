@@ -163,12 +163,22 @@ namespace StereoKit
 		public SensorDepthView[] views;
 		/// <summary>How the depth buffer values should be interpreted.</summary>
 		public SensorDepthFormat depthFormat;
-		/// <summary>Whether the images live in a GPU texture or in CPU buffers.</summary>
-		public SensorDepthStorage storage;
 		/// <summary>Number of valid views: 1 mono, 2 stereo (views[0]=left, [1]=right).</summary>
 		public uint viewCount;
 		/// <summary>Bitmask of (1 &lt;&lt; sensor_depth_image_) present this frame.</summary>
 		public uint availableImages;
+	}
+
+	/// <summary>A depth image resolution in pixels per eye. width and height are tracked
+	/// separately so non-square resolutions are representable; today's backends
+	/// advertise square sizes (equal width and height).</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public partial struct SensorDepthResolution
+	{
+		/// <summary>Width of the depth image, in pixels per eye.</summary>
+		public int width;
+		/// <summary>Height of the depth image, in pixels per eye.</summary>
+		public int height;
 	}
 
 	/// <summary>A point on a lathe for a mesh generation algorithm. This is the 'silhouette'

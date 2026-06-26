@@ -761,8 +761,11 @@ namespace StereoKit
 		/// environment depth textures. This is typically an interactive permission
 		/// that the user will need to explicitly approve.
 		/// This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
-		/// but varies per-runtime. Granting fine does not grant scene (coarse);
-		/// request both if you need coarse scene data and fine depth.</summary>
+		/// but varies per-runtime. On runtimes where coarse and fine are distinct
+		/// permissions (such as Android XR), granting fine does not grant coarse, so
+		/// request both if you need coarse scene data and fine depth. Where a runtime
+		/// backs both with a single underlying permission, requesting fine alone covers
+		/// coarse as well.</summary>
 		SceneFine,
 		/// <summary>This enum is for tracking the number of value in this enum.</summary>
 		Max,
@@ -2033,30 +2036,21 @@ namespace StereoKit
 		MetersR32    = 1,
 	}
 
-	/// <summary>Where a depth image natively lives. Both accessors (sensor_depth_get_texture
-	/// and sensor_depth_try_get_latest_data) work regardless of this; it only marks
-	/// the zero-copy path - the other incurs an upload or a readback.</summary>
-	public enum SensorDepthStorage {
-		/// <summary>Natively a GPU texture; sensor_depth_get_texture is zero-copy.</summary>
-		GpuTexture   = 0,
-		/// <summary>Natively CPU buffers; sensor_depth_try_get_latest_data is zero-copy.</summary>
-		CpuBuffer    = 1,
-	}
-
-	/// <summary>The depth images a backend may provide for a frame. Check
-	/// sensor_depth_frame_t.available_images for which are present. Confidence images
-	/// are CPU-only (read with sensor_depth_try_get_latest_data); only the primary
-	/// depth image is materialized into the GPU texture.</summary>
+	/// <summary>The kinds of depth images a backend may provide for a single frame. Not every
+	/// image is present each frame; a frame reports which it actually contains.
+	/// Confidence images are provided as CPU data only, while the primary depth image
+	/// is also available as a GPU texture.</summary>
 	public enum SensorDepthImage {
-		/// <summary>Smooth (temporally filtered) depth; the default source. On backends without
-		/// a raw/smooth split this is simply the single depth image.</summary>
+		/// <summary>Smooth, temporally filtered depth. The default when a backend offers a
+		/// raw/smooth split, or the only image when it doesn't.</summary>
 		SmoothDepth  = 0,
-		/// <summary>Raw (unfiltered, lower-latency) depth.</summary>
+		/// <summary>Raw, unfiltered depth.</summary>
 		RawDepth     = 1,
 		/// <summary>Confidence for the smooth depth: a uint8 whose range and direction are
-		/// runtime-defined (the extension does not specify them); for relative use only.</summary>
+		/// runtime-defined; for relative use only.</summary>
 		SmoothConfidence = 2,
-		/// <summary>Confidence for the raw depth (uint8, see above).</summary>
+		/// <summary>Confidence for the raw depth: a uint8 whose range and direction are
+		/// runtime-defined; for relative use only.</summary>
 		RawConfidence = 3,
 	}
 
@@ -2070,10 +2064,8 @@ namespace StereoKit
 		/// <summary>Enable hand removal filtering on depth data, removing hands from
 		/// the depth image.</summary>
 		HandRemoval  = 1 << 0,
-		/// <summary>Request the raw (unfiltered, lower-latency) depth image. With neither
-		/// raw_depth nor smooth_depth set, the smooth depth is provided by default.
-		/// Not all backends provide raw; check
-		/// sensor_depth_get_capabilities. Can be toggled via sensor_depth_set_capabilities.</summary>
+		/// <summary>Request the raw, unfiltered depth image, where the backend provides one. If
+		/// neither raw nor smooth is requested, the smooth depth is provided by default.</summary>
 		RawDepth     = 1 << 1,
 		/// <summary>Request the smooth depth image, so raw and smooth can be read from the
 		/// same frame where supported.</summary>

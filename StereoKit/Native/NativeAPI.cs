@@ -906,7 +906,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_running();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SensorDepthCaps sensor_depth_get_capabilities();
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_start(SensorDepthCaps flags, int resolution);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_start(SensorDepthCaps flags, SensorDepthResolution resolution);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sensor_depth_stop();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_set_capabilities(SensorDepthCaps flags);

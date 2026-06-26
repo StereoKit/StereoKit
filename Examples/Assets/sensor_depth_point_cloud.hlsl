@@ -71,7 +71,7 @@ psIn vs(vsIn input, sk_ids_t ids) {
 	psIn o;
 
 	float2 sample_uv = input.sample_uv.xy;
-	// flip the texture row order (independent of depth_format); set by the consumer
+	// Flip the texture row order (independent of depth_format)
 	float  tex_v     = flip_v > 0.5 ? sample_uv.y : (1.0 - sample_uv.y);
 	float3 tex_coord = float3(sample_uv.x, tex_v, eye_layer);
 

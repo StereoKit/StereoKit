@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
  * Copyright (c) 2026 Nick Klingensmith
+ * Copyright (c) 2026 Austin Hale
  */
 
 #include "meta_environment_depth.h"
@@ -15,17 +16,6 @@
 #include "ext_management.h"
 
 #include <stdint.h>
-
-// XR_META_environment_depth v2 adds captureTime (XrEnvironmentDepthImageTimestampMETA). Guard on
-// SPEC_VERSION, not #ifndef: its struct-type value is an enumerator, invisible to the preprocessor.
-#if !defined(XR_META_environment_depth) || (XR_META_environment_depth_SPEC_VERSION < 2)
-#define XR_TYPE_ENVIRONMENT_DEPTH_IMAGE_TIMESTAMP_META ((XrStructureType)1000291008)
-typedef struct XrEnvironmentDepthImageTimestampMETA {
-	XrStructureType    type;
-	const void*        next;
-	XrTime             captureTime;
-} XrEnvironmentDepthImageTimestampMETA;
-#endif
 
 #define XR_META_ENVIRONMENT_DEPTH_FUNCTIONS(X)             \
 	X(xrCreateEnvironmentDepthProviderMETA)                \
@@ -196,6 +186,18 @@ bool xr_ext_meta_environment_depth_start(sensor_depth_caps_ flags) {
 		return false;
 	if (local.running)
 		return true;
+
+	// USE_SCENE must be granted before creating the depth provider/swapchain.
+	// Request it if it's not yet granted and return false; call start() again
+	// once the async grant resolves.
+	permission_state_ scene_perm = permission_state(permission_type_scene);
+	if (scene_perm != permission_state_granted) {
+		if (scene_perm == permission_state_capable)
+			permission_request(permission_type_scene);
+		else
+			log_warn("XR_META_environment_depth: USE_SCENE is not in the app manifest; depth cannot start.");
+		return false;
+	}
 
 	if (local.provider == XR_NULL_HANDLE) {
 		XrEnvironmentDepthProviderCreateInfoMETA provider_info = { XR_TYPE_ENVIRONMENT_DEPTH_PROVIDER_CREATE_INFO_META };
@@ -417,7 +419,6 @@ void xr_ext_meta_environment_depth_update_frame(XrTime display_time) {
 	frame.views[1].pose     = xr_to_pose(image_info.views[1].pose);
 	frame.views[1].fov      = xr_to_fov (image_info.views[1].fov );
 	frame.depth_format      = sensor_depth_format_ndc_d16;
-	frame.storage           = sensor_depth_storage_gpu_texture;
 	frame.view_count        = 2;
 	frame.available_images  = 1u << sensor_depth_image_smooth_depth;
 

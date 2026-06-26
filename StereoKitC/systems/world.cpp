@@ -152,8 +152,8 @@ static void depth_step() {
 		1.0f / (float)frame.width, 1.0f / (float)frame.height });
 
 	if (frame.depth_format == sensor_depth_format_meters_r32) {
-		// Metric depth has no near/far z-buffer encoding, so the inverse-VP is
-		// degenerate. Reconstruct from per-eye fov tangents + pose instead.
+		// Metric depth: values are linear meters, so reconstruct each eye's
+		// view ray from its fov tangents + pose.
 		material_set_float(depth_prepass_mat, "depth_format", 1.0f);
 		for (int32_t i = 0; i < 2; i++) {
 			fov_info_t f = frame.views[i].fov;
@@ -162,6 +162,8 @@ static void depth_step() {
 			material_set_matrix (depth_prepass_mat, i == 0 ? "depth_pose_l"  : "depth_pose_r",  pose_matrix(frame.views[i].pose));
 		}
 	} else {
+		// NDC depth: values are z-buffer encoded, so undo the projection with
+		// the inverse view-proj per eye.
 		material_set_float(depth_prepass_mat, "depth_format", 0.0f);
 		matrix depth_vp_l = depth_build_vp(&frame.views[0], frame.near_z, frame.far_z);
 		matrix depth_vp_r = depth_build_vp(&frame.views[1], frame.near_z, frame.far_z);

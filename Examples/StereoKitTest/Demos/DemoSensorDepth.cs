@@ -150,18 +150,11 @@ class DemoSensorDepth : ITest
 		if (!Sensor.Depth.TryGetLatestData(out SensorDepthFrame _, ref confLeft,  0, image)) return;
 		if (!Sensor.Depth.TryGetLatestData(out SensorDepthFrame _, ref confRight, 1, image)) return;
 
-		// Confidence range/direction are runtime-defined (the extension leaves them
-		// unspecified), so normalize to the observed max for a usable gradient.
-		byte max = 1;
-		foreach (byte v in confLeft)  if (v > max) max = v;
-		foreach (byte v in confRight) if (v > max) max = v;
-		float confScale = 255.0f / max;
-
 		if (confidenceTex == null)
 			confidenceTex = new Tex(TexType.Image, TexFormat.R8) { SampleMode = TexSample.Point, AddressMode = TexAddress.Clamp };
 		confidenceTex.SetColors((int)frame.width, (int)frame.height, new byte[][] { confLeft, confRight }, 1);
-		pointCloudMatL["confidence"] = confidenceTex; pointCloudMatL["conf_scale"] = confScale;
-		pointCloudMatR["confidence"] = confidenceTex; pointCloudMatR["conf_scale"] = confScale;
+		pointCloudMatL["confidence"] = confidenceTex;
+		pointCloudMatR["confidence"] = confidenceTex;
 	}
 
 	void ApplyDepthCaps()
