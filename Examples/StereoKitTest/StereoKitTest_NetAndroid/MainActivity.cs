@@ -1,5 +1,6 @@
 using Android.App;
 using Android.Content;
+using Android.Content.PM;
 using Android.Graphics;
 using Android.OS;
 using Android.Runtime;
@@ -9,7 +10,7 @@ using System;
 using System.Reflection;
 using System.Threading;
 
-[Activity(Label = "@string/app_name", MainLauncher = true, Exported = true)]
+[Activity(Label = "@string/app_name", MainLauncher = true, Exported = true, LaunchMode = LaunchMode.SingleTask)]
 [IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "org.khronos.openxr.intent.category.IMMERSIVE_HMD", "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
 public class MainActivity : Activity, ISurfaceHolderCallback2
 {

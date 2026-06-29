@@ -10,7 +10,6 @@ namespace sk {
 
 void xr_profile_ext_hp_mr_controller_register     ();
 void xr_profile_ext_hand_interaction_register     ();
-void xr_profile_msft_hand_interaction_register    ();
 void xr_profile_bd_controller_interaction_register();
 
 }

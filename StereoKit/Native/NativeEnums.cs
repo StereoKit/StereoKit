@@ -1801,12 +1801,26 @@ namespace StereoKit
 		/// hold something like a sword hilt or a tool handle.</summary>
 		LGrip,
 		/// <summary>The left hand/controller palm pose, located at the surface of the
-		/// palm facing outward. This uses the palm pose OpenXR extension when
-		/// available, and falls back to an approximation when it's not.</summary>
+		/// palm. Forward points along the fingers and Up toward the thumb, with
+		/// X+ into the palm on the right hand, and out of the palm on the left.
+		/// This is the controller's palm orientation, which faces along the
+		/// fingers rather than out from the palm. Uses the palm pose OpenXR
+		/// extension when available, and falls back to an approximation when
+		/// it's not.</summary>
 		LPalm,
 		/// <summary>The left hand/controller aim pose. This points forward from the hand
 		/// like a laser pointer, useful for UI interaction at a distance.</summary>
 		LAim,
+		/// <summary>The left poke pose, located at the tip of the index finger. This is
+		/// provided by hand interaction systems such as the OpenXR hand
+		/// interaction extension, and may be present even when full articulated
+		/// hand tracking is not.</summary>
+		LPoke,
+		/// <summary>The left pinch pose, located between the tips of the thumb and index
+		/// finger. This is provided by hand interaction systems such as the
+		/// OpenXR hand interaction extension, and may be present even when full
+		/// articulated hand tracking is not.</summary>
+		LPinch,
 		/// <summary>The left pose of a "detached controller", when the user has both hands
 		/// and controllers active in the scene.</summary>
 		LDetached,
@@ -1814,13 +1828,27 @@ namespace StereoKit
 		/// you'd hold something like a sword hilt or a tool handle.</summary>
 		RGrip,
 		/// <summary>The right hand/controller palm pose, located at the surface of the
-		/// palm facing outward. This uses the palm pose OpenXR extension when
-		/// available, and falls back to an approximation when it's not.</summary>
+		/// palm. Forward points along the fingers and Up toward the thumb, with
+		/// X+ into the palm on the right hand, and out of the palm on the left.
+		/// This is the controller's palm orientation, which faces along the
+		/// fingers rather than out from the palm. Uses the palm pose OpenXR
+		/// extension when available, and falls back to an approximation when
+		/// it's not.</summary>
 		RPalm,
 		/// <summary>The right hand/controller aim pose. This points forward from the
 		/// hand like a laser pointer, useful for UI interaction at a
 		/// distance.</summary>
 		RAim,
+		/// <summary>The right poke pose, located at the tip of the index finger. This is
+		/// provided by hand interaction systems such as the OpenXR hand
+		/// interaction extension, and may be present even when full articulated
+		/// hand tracking is not.</summary>
+		RPoke,
+		/// <summary>The right pinch pose, located between the tips of the thumb and index
+		/// finger. This is provided by hand interaction systems such as the
+		/// OpenXR hand interaction extension, and may be present even when full
+		/// articulated hand tracking is not.</summary>
+		RPinch,
 		/// <summary>The right pose of a "detached controller", when the user has both hands
 		/// and controllers active in the scene.</summary>
 		RDetached,

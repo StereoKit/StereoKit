@@ -82,7 +82,6 @@ bool ext_registration() {
 	xr_fb_haptic_register                        ();
 	xr_profile_ext_hp_mr_controller_register     ();
 	xr_profile_ext_hand_interaction_register     ();
-	xr_profile_msft_hand_interaction_register    ();
 	xr_profile_bd_controller_interaction_register();
 	xr_profile_ext_eye_gaze_register             ();
 	xr_profile_meta_detached_controllers_register();

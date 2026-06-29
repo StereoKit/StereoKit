@@ -537,8 +537,18 @@ void oxri_update_poses() {
 		track_state_ tr_pos = (space_location.locationFlags & XR_SPACE_LOCATION_POSITION_TRACKED_BIT   ) ? track_state_known : ((space_location.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT   ) ? track_state_inferred : track_state_lost);
 		track_state_ tr_rot = (space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT) ? track_state_known : ((space_location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) ? track_state_inferred : track_state_lost);
 		pose_t       pose   = input_pose_get_local((input_pose_)i);
-		if (tr_pos != track_state_lost) memcpy(&pose.position,    &space_location.pose.position,    sizeof(vec3));
-		if (tr_rot != track_state_lost) memcpy(&pose.orientation, &space_location.pose.orientation, sizeof(quat));
+		// Orientation is updated before position so the poke offset below can
+		// use this frame's orientation.
+		if (tr_rot != track_state_lost)
+			memcpy(&pose.orientation, &space_location.pose.orientation, sizeof(quat));
+		if (tr_pos != track_state_lost) {
+			memcpy(&pose.position, &space_location.pose.position, sizeof(vec3));
+
+			// SK models poke as a sphere centered at the joint, so pull the
+			// fingertip-surface poke pose back one tip radius along +Z.
+			if (i == input_pose_l_poke || i == input_pose_r_poke)
+				pose.position = pose.position + (pose.orientation * vec3{ 0,0,1 }) * 0.007f;
+		}
 		input_pose_inject((input_pose_)i, pose, tr_pos, tr_rot);
 
 		if (i == input_pose_eyes && xr_ext_eye_gaze_available()) {
@@ -717,6 +727,10 @@ XrAction oxri_get_or_create_action(xra_type_ type, uint32_t xra_val) {
 			case input_pose_r_palm:        oxri_make_action_name(&action_info, handed_right, "palm_pose",    "Palm pose");     break;
 			case input_pose_l_aim:         oxri_make_action_name(&action_info, handed_left,  "aim_pose",     "Aim pose");      break;
 			case input_pose_r_aim:         oxri_make_action_name(&action_info, handed_right, "aim_pose",     "Aim pose");      break;
+			case input_pose_l_poke:        oxri_make_action_name(&action_info, handed_left,  "poke_pose",    "Poke pose");     break;
+			case input_pose_r_poke:        oxri_make_action_name(&action_info, handed_right, "poke_pose",    "Poke pose");     break;
+			case input_pose_l_pinch:       oxri_make_action_name(&action_info, handed_left,  "pinch_pose",   "Pinch pose");    break;
+			case input_pose_r_pinch:       oxri_make_action_name(&action_info, handed_right, "pinch_pose",   "Pinch pose");    break;
 			case input_pose_eyes:          oxri_make_action_name(&action_info, 2,            "eyegaze_pose", "Eye gaze pose"); break;
 			default:                       oxri_make_action_default(&action_info, 2, "pose", xra_val); break;
 			}

@@ -3015,12 +3015,26 @@ typedef enum input_pose_ {
 	  hold something like a sword hilt or a tool handle.*/
 	input_pose_l_grip,
 	/*The left hand/controller palm pose, located at the surface of the
-	  palm facing outward. This uses the palm pose OpenXR extension when
-	  available, and falls back to an approximation when it's not.*/
+	  palm. Forward points along the fingers and Up toward the thumb, with
+	  X+ into the palm on the right hand, and out of the palm on the left.
+	  This is the controller's palm orientation, which faces along the
+	  fingers rather than out from the palm. Uses the palm pose OpenXR
+	  extension when available, and falls back to an approximation when
+	  it's not.*/
 	input_pose_l_palm,
 	/*The left hand/controller aim pose. This points forward from the hand
 	  like a laser pointer, useful for UI interaction at a distance.*/
 	input_pose_l_aim,
+	/*The left poke pose, located at the tip of the index finger. This is
+	  provided by hand interaction systems such as the OpenXR hand
+	  interaction extension, and may be present even when full articulated
+	  hand tracking is not.*/
+	input_pose_l_poke,
+	/*The left pinch pose, located between the tips of the thumb and index
+	  finger. This is provided by hand interaction systems such as the
+	  OpenXR hand interaction extension, and may be present even when full
+	  articulated hand tracking is not.*/
+	input_pose_l_pinch,
 	/*The left pose of a "detached controller", when the user has both hands
 	  and controllers active in the scene.*/
 	input_pose_l_detached,
@@ -3028,13 +3042,27 @@ typedef enum input_pose_ {
 	  you'd hold something like a sword hilt or a tool handle.*/
 	input_pose_r_grip,
 	/*The right hand/controller palm pose, located at the surface of the
-	  palm facing outward. This uses the palm pose OpenXR extension when
-	  available, and falls back to an approximation when it's not.*/
+	  palm. Forward points along the fingers and Up toward the thumb, with
+	  X+ into the palm on the right hand, and out of the palm on the left.
+	  This is the controller's palm orientation, which faces along the
+	  fingers rather than out from the palm. Uses the palm pose OpenXR
+	  extension when available, and falls back to an approximation when
+	  it's not.*/
 	input_pose_r_palm,
 	/*The right hand/controller aim pose. This points forward from the
 	  hand like a laser pointer, useful for UI interaction at a
 	  distance.*/
 	input_pose_r_aim,
+	/*The right poke pose, located at the tip of the index finger. This is
+	  provided by hand interaction systems such as the OpenXR hand
+	  interaction extension, and may be present even when full articulated
+	  hand tracking is not.*/
+	input_pose_r_poke,
+	/*The right pinch pose, located between the tips of the thumb and index
+	  finger. This is provided by hand interaction systems such as the
+	  OpenXR hand interaction extension, and may be present even when full
+	  articulated hand tracking is not.*/
+	input_pose_r_pinch,
 	/*The right pose of a "detached controller", when the user has both hands
 	  and controllers active in the scene.*/
 	input_pose_r_detached,
