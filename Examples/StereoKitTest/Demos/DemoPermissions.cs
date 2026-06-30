@@ -4,6 +4,7 @@
 // Copyright (c) 2025 Qualcomm Technologies, Inc.
 
 using StereoKit;
+using System.Collections.Generic;
 
 class DemoPermissions : ITest
 {
@@ -57,6 +58,20 @@ class DemoPermissions : ITest
 			UI.PopEnabled();
 
 			UI.PopId();
+		}
+
+		// Requesting several at once chains them into a single OS prompt.
+		UI.HSeparator();
+		if (UI.Button("Request All Capable"))
+		{
+			List<PermissionType> capable = new List<PermissionType>();
+			for (int i = 0; i < (int)PermissionType.Max; i++)
+			{
+				PermissionType permission = (PermissionType)i;
+				if (Permission.State(permission) == PermissionState.Capable)
+					capable.Add(permission);
+			}
+			Permission.Request(capable.ToArray());
 		}
 		UI.WindowEnd();
 

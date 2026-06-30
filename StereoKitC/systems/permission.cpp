@@ -40,7 +40,6 @@ const int32_t PROTECTION_MASK_BASE = 0x0000000f;
 
 bool        _permission_check_app_permission      (const char* permission);
 void        _permission_check_manifest_permissions(void);
-void        _permission_request_permission        (const char* permission);
 bool        _permission_manifest_has              (JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals, const char* permission_str);
 const char* _permission_check_string              (permission_type_ type, xr_runtime_ runtime, JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals);
 
@@ -177,13 +176,42 @@ permission_state_ permission_state(permission_type_ permission) {
 
 ///////////////////////////////////////////
 
-void permission_request(permission_type_ permission) {
-	if (local.permission_str[permission] == NULL) {
-		log_warnf("Permission string for 0x%X unknown on current platform", permission);
-		return;
+void permission_request(const permission_type_* in_arr_permissions, int32_t permission_count) {
+	// Resolve early so unknown-permission warnings fire even for non-Activity
+	// contexts, and we can skip the JNI work when nothing valid was requested.
+	const char** permission_strs = permission_count > 0 ? sk_malloc_t(const char*, permission_count) : nullptr;
+	int32_t      valid_count     = 0;
+	for (int32_t i = 0; i < permission_count; i++) {
+		permission_type_ p = in_arr_permissions[i];
+		if (p < 0 || p >= permission_type_max || local.permission_str[p] == NULL)
+			log_warnf("Permission string for 0x%X unknown on current platform", p);
+		else
+			permission_strs[valid_count++] = local.permission_str[p];
 	}
 
-	_permission_request_permission(local.permission_str[permission]);
+	// We can only actually request if we're an Activity. Services or other
+	// Android contexts will have to manage permission requests themselves.
+	if (valid_count > 0 && local.context_is_activity) {
+		JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env ();
+		jobject activity = (jobject)backend_android_get_activity();
+
+		jclass       class_string         = env->FindClass    ("java/lang/String");
+		jobjectArray jobj_permission_list = env->NewObjectArray(valid_count, class_string, NULL);
+
+		static const jint SK_REQUEST_CODE_PERMS = 0x534B;
+
+		for (int32_t i = 0; i < valid_count; i++) {
+			jstring jobj_permission = env->NewStringUTF(permission_strs[i]);
+			env->SetObjectArrayElement(jobj_permission_list, i, jobj_permission);
+			env->DeleteLocalRef       (jobj_permission);
+		}
+		env->CallVoidMethod(activity, local.activity_requestPermissions, jobj_permission_list, SK_REQUEST_CODE_PERMS);
+
+		env->DeleteLocalRef(jobj_permission_list);
+		env->DeleteLocalRef(class_string);
+	}
+
+	sk_free(permission_strs);
 }
 
 ///////////////////////////////////////////
@@ -314,30 +342,6 @@ void _permission_check_manifest_permissions() {
 
 ///////////////////////////////////////////
 
-void _permission_request_permission(const char* permission) {
-	// We can't request permission unless we're an Activity, Services or other
-	// Android contexts will have to manage permission requests themselves.
-	if (local.context_is_activity == false) return;
-
-	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env ();
-	jobject activity = (jobject)backend_android_get_activity();
-
-	jclass       class_string         = env->FindClass("java/lang/String");
-	jstring      jobj_permission      = env->NewStringUTF  (permission);
-	jobjectArray jobj_permission_list = env->NewObjectArray(1, class_string, NULL);
-
-	static const jint SK_REQUEST_CODE_PERMS = 0x534B;
-
-	env->SetObjectArrayElement(jobj_permission_list, 0, jobj_permission);
-	env->CallVoidMethod       (activity, local.activity_requestPermissions, jobj_permission_list, SK_REQUEST_CODE_PERMS);
-
-	env->DeleteLocalRef(jobj_permission);
-	env->DeleteLocalRef(jobj_permission_list);
-	env->DeleteLocalRef(class_string);
-}
-
-///////////////////////////////////////////
-
 #else
 
 ///////////////////////////////////////////
@@ -365,7 +369,7 @@ bool32_t permission_is_interactive(permission_type_ permission) {
 
 ///////////////////////////////////////////
 
-void permission_request(permission_type_ permission) {
+void permission_request(const permission_type_* in_arr_permissions, int32_t permission_count) {
 }
 
 #endif

@@ -95,14 +95,26 @@
 		<None Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\libMoltenVK.dylib" Include="$(SKSDKBinDir)libMoltenVK.dylib" />
 	</ItemGroup>
 
-	<!-- Android binaries are included differently. -->
+	<!-- Android binaries are included differently. libStereoKitC.so and the jar
+	     are literal paths, so MSBuild keeps them in the item list even before the
+	     native build produces them. -->
 	<ItemGroup Condition="'$(SKSDKBuildOS)'=='Android'">
 		<!-- <None                 Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKDbgPath)" /> -->
 		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKLibPath)" />
-		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKBinDir)$(SKOpenXRLoader.ToLower())/*.so" />
-		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKOpenXRLoaderFolder)/$(SKOpenXRLoader)/$(SKSDKBuildMode.ToLower())/*.so" />
 		<AndroidJavaLibrary   Visible="false" Include="$(SKSDKFolder)\bin\distribute\bin\Android\sk_app.jar" />
 	</ItemGroup>
+
+	<!-- Resolve the OpenXR loader wildcards in a target, so they expand after the
+	     native build instead of at evaluation time (when the .so doesn't exist yet). -->
+	<Target Name="StereoKit_AddAndroidNativeLibraries"
+	        Condition="'$(SKSDKBuildOS)'=='Android'"
+	        AfterTargets="StereoKit_BuildNative"
+	        BeforeTargets="BeforeBuild">
+		<ItemGroup>
+			<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKBinDir)$(SKOpenXRLoader.ToLower())/*.so" />
+			<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKOpenXRLoaderFolder)/$(SKOpenXRLoader)/$(SKSDKBuildMode.ToLower())/*.so" />
+		</ItemGroup>
+	</Target>
 
 	<!-- Full rebuilds of this project should also be full rebuilds of StereoKit. -->
 	<Target Name="SKSDKRebuild" AfterTargets="Clean">

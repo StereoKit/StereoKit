@@ -1037,7 +1037,7 @@ typedef enum permission_state_ {
 
 SK_API permission_state_ permission_state         (permission_type_ permission);
 SK_API bool32_t          permission_is_interactive(permission_type_ permission);
-SK_API void              permission_request       (permission_type_ permission);
+SK_API void              permission_request       (const permission_type_* in_arr_permissions, int32_t permission_count);
 
 ///////////////////////////////////////////
 

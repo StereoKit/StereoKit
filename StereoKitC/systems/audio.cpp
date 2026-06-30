@@ -324,7 +324,8 @@ bool32_t mic_start(const char *device_name) {
 	permission_state_ state = permission_state(permission_type_microphone);
 	if (state == permission_state_capable) {
 		// We can record, but we need to ask permission first!
-		permission_request(permission_type_microphone);
+		permission_type_ mic_permission = permission_type_microphone;
+		permission_request(&mic_permission, 1);
 		// Chances are good that we'll fail this, mic permission is
 		// interactive, and that takes time.
 		if (permission_state(permission_type_microphone) != permission_state_granted)
