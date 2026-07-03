@@ -47,9 +47,15 @@ class DemoAnchors : ITest
 		UI.PushEnabled(storable || stability);
 		if (UI.Button("Create New"))
 		{
+			// Anchor creation can fail, such as when the anchoring system
+			// hasn't finished starting up yet!
 			Anchor anchor = Anchor.FromPose(new Pose(wandTip, Quat.Identity));
-			anchor.TrySetPersistent(true);
-			anchors.Add(anchor);
+			if (anchor != null)
+			{
+				anchor.TrySetPersistent(true);
+				anchors.Add(anchor);
+			}
+			else Log.Warn("Failed to create an anchor!");
 		}
 		UI.PopEnabled();
 
@@ -59,7 +65,7 @@ class DemoAnchors : ITest
 		UI.Label(selected?.Name ?? "None selected");
 		if (UI.Button("Delete"))
 		{
-			selected.TrySetPersistent(false);
+			selected.Delete();
 			anchors.Remove(selected);
 			selected = null;
 		}

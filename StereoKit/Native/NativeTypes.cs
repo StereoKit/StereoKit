@@ -128,6 +128,27 @@ namespace StereoKit
 		public float scrollChange;
 	}
 
+	/// <summary>Configuration for marker tracking capabilities, used with
+	/// `SpatialEntity.Enable`. A zero-initialized struct is a valid default
+	/// configuration. Accurate values here let the system detect and track
+	/// markers with better pose and size accuracy, but unsupported options
+	/// are quietly ignored, so treat these as hints rather than guarantees.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public partial struct SpatialMarkerConfig
+	{
+		/// <summary>For `SpatialCapability.Aruco`: the marker dictionary to detect.</summary>
+		public ArucoDict arucoDict;
+		/// <summary>For `SpatialCapability.AprilTag`: the marker dictionary to
+		/// detect.</summary>
+		public AprilTagDict aprilTagDict;
+		/// <summary>The physical side length of all markers, in meters. Use 0 if
+		/// marker sizes are unknown or mixed.</summary>
+		public float markerSize;
+		/// <summary>True if all markers stay fixed in the environment, allowing the
+		/// system to optimize tracking.</summary>
+		[MarshalAs(UnmanagedType.Bool)] public bool staticMarkers;
+	}
+
 	/// <summary>Per-eye view metadata for a sensor depth frame, providing the
 	/// camera pose and field of view used to capture that eye's depth.</summary>
 	[StructLayout(LayoutKind.Sequential)]

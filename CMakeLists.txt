@@ -460,8 +460,11 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/sprite_drawer.cpp
   StereoKitC/systems/system.h
   StereoKitC/systems/system.cpp
+  StereoKitC/systems/spatial_anchors.cpp
+  StereoKitC/systems/spatial_entity.h
+  StereoKitC/systems/spatial_entity.cpp
   StereoKitC/systems/text.h
-  StereoKitC/systems/text.cpp  
+  StereoKitC/systems/text.cpp
   StereoKitC/systems/world.h
   StereoKitC/systems/world.cpp )
 
@@ -881,6 +884,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/main.cpp
     Examples/StereoKitCTest/log_window.h
     Examples/StereoKitCTest/log_window.cpp
+    Examples/StereoKitCTest/demo_spatial.h
+    Examples/StereoKitCTest/demo_spatial.cpp
     Examples/StereoKitCTest/demo_envmap.h
     Examples/StereoKitCTest/demo_envmap.cpp
     Examples/StereoKitCTest/demo_shadows.h

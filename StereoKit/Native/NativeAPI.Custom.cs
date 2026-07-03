@@ -167,5 +167,17 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)]
 		public static extern BtnState ui_volume_at_16([MarshalAs(UnmanagedType.LPWStr)] string id, Bounds bounds, UIConfirm interact_type, out Interactor out_opt_interactor, out BtnState out_opt_focus_state);
+
+		// spatial_entity_get_polygon returns a pointer to registry-owned
+		// vertex data, the generated binding misreads it as a caller array.
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
+		public static extern bool spatial_entity_get_polygon(uint entity, out Pose out_origin, out IntPtr out_verts, out int out_count);
+
+		// The uuid is a caller-provided 16 byte buffer, the generated binding
+		// misreads it as a single out byte.
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
+		public static extern bool spatial_entity_get_persist_id(uint entity, [Out] byte[] out_uuid_16);
 	}
 }

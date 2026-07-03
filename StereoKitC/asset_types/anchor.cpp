@@ -8,6 +8,7 @@
 #include "../xr_backends/extensions/ext_management.h"
 #include "../xr_backends/extensions/msft_anchors.h"
 #include "../xr_backends/anchor_stage.h"
+#include "../systems/spatial_entity.h"
 
 namespace sk {
 
@@ -37,7 +38,9 @@ bool anchors_init() {
 		return false;
 	}
 
-	if (xr_ext_msft_spatial_anchors_available())
+	if (spatial_anchors_available())
+		anch_sys = anchor_system_spatial;
+	else if (xr_ext_msft_spatial_anchors_available())
 		anch_sys = anchor_system_openxr_msft;
 	else if (backend_xr_get_type() == backend_xr_type_simulator)
 		anch_sys = anchor_system_stage;
@@ -46,8 +49,9 @@ bool anchors_init() {
 
 	bool32_t result = false;
 	switch (anch_sys) {
-	case anchor_system_stage:       result = anchor_stage_init(); break;
-	case anchor_system_openxr_msft: result = true;                break;
+	case anchor_system_stage:       result = anchor_stage_init();    break;
+	case anchor_system_openxr_msft: result = true;                   break;
+	case anchor_system_spatial:     result = spatial_anchors_init(); break;
 	default: break;
 	}
 
@@ -56,6 +60,7 @@ bool anchors_init() {
 
 	switch (anch_sys) {
 	case anchor_system_openxr_msft: log_diagf("Using MSFT spatial anchors."); break;
+	case anchor_system_spatial:     log_diagf("Using spatial entity anchors."); break;
 	case anchor_system_stage:       log_diagf("Using fallback stage spatial anchors."); break;
 	default:                        log_diagf("NOT using spatial anchors."); break;
 	}
@@ -72,7 +77,8 @@ void anchors_shutdown(void*) {
 	for (int32_t i = anch_changed.count-1; i>=0; i--) anchor_release(anch_changed[i]);
 
 	switch (anch_sys) {
-	case anchor_system_stage: anchor_stage_shutdown(); break;
+	case anchor_system_stage:   anchor_stage_shutdown();    break;
+	case anchor_system_spatial: spatial_anchors_shutdown(); break;
 	default: break;
 	}
 
@@ -86,7 +92,7 @@ void anchors_shutdown(void*) {
 
 void anchors_step_begin(void*) {
 	switch (anch_sys) {
-	case anchor_system_stage: break;
+	case anchor_system_spatial: spatial_anchors_step(); break;
 	default: break;
 	}
 }
@@ -124,6 +130,7 @@ anchor_t anchor_create(pose_t pose) {
 	switch (anch_sys) {
 	case anchor_system_openxr_msft: return xr_ext_msft_spatial_anchors_create(pose, name);
 	case anchor_system_stage:       return anchor_stage_create               (pose, name);
+	case anchor_system_spatial:     return spatial_anchors_create            (pose, name);
 	default: return nullptr;
 	}
 }
@@ -149,6 +156,7 @@ anchor_t anchor_create_manual(anchor_type_id system_id, pose_t pose, const char 
 void anchor_destroy(anchor_t anchor) {
 	switch (anch_sys) {
 	case anchor_system_openxr_msft: xr_ext_msft_spatial_anchors_destroy(anchor); break;
+	case anchor_system_spatial:     spatial_anchors_destroy            (anchor); break;
 	//case anchor_system_stage:       anchor_stage_destroy               (anchor); break;
 	default: break;
 	}
@@ -210,10 +218,31 @@ void anchor_update_manual(anchor_t anchor, pose_t pose) {
 
 ///////////////////////////////////////////
 
+// User-held references remain valid after deletion, but the anchor
+// reports as untracked.
+void anchor_delete(anchor_t anchor) {
+	switch (anch_sys) {
+	// Destroying the entity also unpersists it
+	case anchor_system_spatial: spatial_anchors_delete(anchor); break;
+	// Other systems keep tracking until the asset is destroyed, so
+	// unpersist and list removal is the best available approximation
+	default: anchor_try_set_persistent(anchor, false); break;
+	}
+	anchor->tracked = button_state_inactive;
+
+	int32_t idx = anch_list.index_of(anchor);
+	if (idx >= 0) { anch_list.remove(idx); anchor_release(anchor); }
+	idx = anch_changed.index_of(anchor);
+	if (idx >= 0) { anch_changed.remove(idx); anchor_release(anchor); }
+}
+
+///////////////////////////////////////////
+
 bool32_t anchor_try_set_persistent(anchor_t anchor, bool32_t persistent) {
 	switch (anch_sys) {
 	case anchor_system_openxr_msft: return xr_ext_msft_spatial_anchors_persist(anchor, persistent);
 	case anchor_system_stage:       return anchor_stage_persist               (anchor, persistent);
+	case anchor_system_spatial:     return spatial_anchors_persist            (anchor, persistent);
 	default: return false;
 	}
 }
@@ -269,7 +298,8 @@ void anchor_mark_dirty(anchor_t anchor) {
 void anchor_clear_stored() {
 	switch (anch_sys) {
 	case anchor_system_openxr_msft: xr_ext_msft_spatial_anchors_clear_stored(); break;
-	case anchor_system_stage:       anchor_stage_clear_stored(); break;
+	case anchor_system_stage:       anchor_stage_clear_stored  (); break;
+	case anchor_system_spatial:     spatial_anchors_clear_stored(); break;
 	default: break;
 	}
 }
@@ -280,6 +310,7 @@ anchor_caps_ anchor_get_capabilities() {
 	switch (anch_sys) {
 	case anchor_system_openxr_msft: return xr_ext_msft_spatial_anchors_capabilities();
 	case anchor_system_stage:       return anchor_caps_storable;
+	case anchor_system_spatial:     return spatial_anchors_capabilities();
 	default: return (anchor_caps_)0;
 	}
 }

@@ -107,6 +107,12 @@ namespace StereoKit {
 		/// <returns>Success or failure of setting persistence.</returns>
 		public bool TrySetPersistent(bool persistent) => NativeAPI.anchor_try_set_persistent(_inst, persistent);
 
+		/// <summary>Removes this Anchor from the world: it's unpersisted if
+		/// persistent, the system stops tracking it, and it's removed from
+		/// `Anchor.Anchors`. This Anchor object remains safe to use, but
+		/// reports as untracked.</summary>
+		public void Delete() => NativeAPI.anchor_delete(_inst);
+
 		/// <summary>This creates a new Anchor from a world space pose.</summary>
 		/// <param name="pose">A world space pose for the new Anchor.</param>
 		/// <returns>A new Anchor at the Pose provided. This Anchor is not

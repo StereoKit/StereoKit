@@ -757,6 +757,14 @@ namespace StereoKit
 		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
 		/// but varies per-runtime.</summary>
 		Scene,
+		/// <summary>For creating and persisting spatial anchors. On some runtimes this is a
+		/// soft permission that just needs to be present in the manifest, while
+		/// others treat anchors as user-approved scene data, so this can vary from
+		/// invisible to interactive per-runtime.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
+		/// and horizonos.permission.USE_ANCHOR_API on Meta, where it must be in the
+		/// manifest for spatial entity features to be present at all.</summary>
+		Anchors,
 		/// <summary>This enum is for tracking the number of value in this enum.</summary>
 		Max,
 	}
@@ -2008,6 +2016,181 @@ namespace StereoKit
 		/// remain fixed in the correct physical space, instead of drifting with the
 		/// virtual content.</summary>
 		Stability    = 1 << 1,
+	}
+
+	/// <summary>A spatial capability is a unit of scene understanding functionality
+	/// that a device may provide, such as plane tracking, or QR code
+	/// tracking. Check what the device supports with `Spatial.Capabilities`,
+	/// enable what you need, and StereoKit will maintain a list of the
+	/// spatial entities the system discovers.
+	/// The top 4 bits of this flag are reserved for vendor and experimental
+	/// capabilities.</summary>
+	[Flags]
+	public enum SpatialCapability {
+		/// <summary>No spatial capabilities.</summary>
+		None         = 0,
+		/// <summary>Spatial anchors, poses the system keeps as stable as it can
+		/// relative to the physical world. This allows creating new anchor
+		/// entities via `SpatialEntity.CreateAnchor`.</summary>
+		Anchor       = 1 << 0,
+		/// <summary>Detection and tracking of flat surfaces in the environment, like
+		/// floors, walls, and tables.</summary>
+		PlaneTracking = 1 << 1,
+		/// <summary>Detection and tracking of QR codes, including their decoded
+		/// data.</summary>
+		QrCode       = 1 << 2,
+		/// <summary>Detection and tracking of Micro QR codes, including their decoded
+		/// data.</summary>
+		MicroQr      = 1 << 3,
+		/// <summary>Detection and tracking of ArUco fiducial markers.</summary>
+		Aruco        = 1 << 4,
+		/// <summary>Detection and tracking of AprilTag fiducial markers.</summary>
+		AprilTag     = 1 << 5,
+	}
+
+	/// <summary>Spatial entities are composed of components, where each component is
+	/// a chunk of data or behavior the entity provides. This flag describes
+	/// a set of components, and each component has a matching accessor on
+	/// the entity.
+	/// The top 4 bits of this flag are reserved for vendor and experimental
+	/// components.</summary>
+	[Flags]
+	public enum SpatialComponent {
+		/// <summary>No components.</summary>
+		None         = 0,
+		/// <summary>A center pose and XY size describing a 2D rectangle, such as the
+		/// extents of a detected plane, or the shape of a marker. The pose
+		/// faces out of the surface: Forward (-Z) is the surface normal,
+		/// matching how quads and text face in StereoKit.</summary>
+		Bounds2d     = 1 << 0,
+		/// <summary>A center pose and XYZ size describing an oriented bounding
+		/// volume.</summary>
+		Bounds3d     = 1 << 1,
+		/// <summary>A reference to a parent spatial entity this entity is attached
+		/// to.</summary>
+		Parent       = 1 << 2,
+		/// <summary>A 3D triangle mesh representing the entity's shape.</summary>
+		Mesh         = 1 << 3,
+		/// <summary>A pose the system actively keeps stable relative to the physical
+		/// world.</summary>
+		Anchor       = 1 << 4,
+		/// <summary>A durable identity that allows the entity to be recognized across
+		/// sessions and reboots.</summary>
+		Persistence  = 1 << 5,
+		/// <summary>The general orientation category of a detected plane, see
+		/// `PlaneAlign`.</summary>
+		PlaneAlignment = 1 << 6,
+		/// <summary>A 2D triangle mesh of the entity's surface, on the XY plane of
+		/// its bounds2d pose.</summary>
+		Mesh2d       = 1 << 7,
+		/// <summary>A 2D boundary polygon outlining the entity's surface.</summary>
+		Polygon      = 1 << 8,
+		/// <summary>A semantic category for a detected plane, see `PlaneLabel`.</summary>
+		PlaneLabel   = 1 << 9,
+		/// <summary>Marker information: the marker's type, numeric id, and any
+		/// decoded data.</summary>
+		Marker       = 1 << 10,
+	}
+
+	/// <summary>The general orientation of a detected plane.</summary>
+	public enum PlaneAlign {
+		/// <summary>Alignment is not known.</summary>
+		None         = 0,
+		/// <summary>A horizontal surface facing up, like a floor or table top.</summary>
+		HorizontalUp = 1,
+		/// <summary>A horizontal surface facing down, like a ceiling.</summary>
+		HorizontalDown = 2,
+		/// <summary>A vertical surface, like a wall.</summary>
+		Vertical     = 3,
+		/// <summary>A surface at some other arbitrary angle, like a ramp.</summary>
+		Arbitrary    = 4,
+	}
+
+	/// <summary>A semantic category the system has assigned to a detected plane.</summary>
+	public enum PlaneLabel {
+		/// <summary>No label information available.</summary>
+		None         = 0,
+		/// <summary>The system recognizes this plane, but it doesn't fit any of the
+		/// categories it knows.</summary>
+		Uncategorized = 1,
+		/// <summary>A floor.</summary>
+		Floor        = 2,
+		/// <summary>A wall.</summary>
+		Wall         = 3,
+		/// <summary>A ceiling.</summary>
+		Ceiling      = 4,
+		/// <summary>A table, or table-like surface.</summary>
+		Table        = 5,
+	}
+
+	/// <summary>The type of a detected marker.</summary>
+	public enum MarkerType {
+		/// <summary>Not a marker.</summary>
+		None         = 0,
+		/// <summary>A QR code, data is typically a decoded string.</summary>
+		QrCode       = 1,
+		/// <summary>A Micro QR code, data is typically a decoded string.</summary>
+		MicroQr      = 2,
+		/// <summary>An ArUco fiducial marker, identified by its numeric id.</summary>
+		Aruco        = 3,
+		/// <summary>An AprilTag fiducial marker, identified by its numeric id.</summary>
+		AprilTag     = 4,
+	}
+
+	/// <summary>Predefined ArUco marker dictionaries. A dictionary describes the grid
+	/// size of the markers, and how many unique marker ids it contains. The
+	/// tracker can only detect markers from the dictionary it's configured
+	/// for.</summary>
+	public enum ArucoDict {
+		/// <summary>Let StereoKit pick, currently 4x4, 50 ids.</summary>
+		Default      = 0,
+		/// <summary>4x4 grid, 50 unique ids.</summary>
+		Dict4x4_50   = 1,
+		/// <summary>4x4 grid, 100 unique ids.</summary>
+		Dict4x4_100  = 2,
+		/// <summary>4x4 grid, 250 unique ids.</summary>
+		Dict4x4_250  = 3,
+		/// <summary>4x4 grid, 1000 unique ids.</summary>
+		Dict4x4_1000 = 4,
+		/// <summary>5x5 grid, 50 unique ids.</summary>
+		Dict5x5_50   = 5,
+		/// <summary>5x5 grid, 100 unique ids.</summary>
+		Dict5x5_100  = 6,
+		/// <summary>5x5 grid, 250 unique ids.</summary>
+		Dict5x5_250  = 7,
+		/// <summary>5x5 grid, 1000 unique ids.</summary>
+		Dict5x5_1000 = 8,
+		/// <summary>6x6 grid, 50 unique ids.</summary>
+		Dict6x6_50   = 9,
+		/// <summary>6x6 grid, 100 unique ids.</summary>
+		Dict6x6_100  = 10,
+		/// <summary>6x6 grid, 250 unique ids.</summary>
+		Dict6x6_250  = 11,
+		/// <summary>6x6 grid, 1000 unique ids.</summary>
+		Dict6x6_1000 = 12,
+		/// <summary>7x7 grid, 50 unique ids.</summary>
+		Dict7x7_50   = 13,
+		/// <summary>7x7 grid, 100 unique ids.</summary>
+		Dict7x7_100  = 14,
+		/// <summary>7x7 grid, 250 unique ids.</summary>
+		Dict7x7_250  = 15,
+		/// <summary>7x7 grid, 1000 unique ids.</summary>
+		Dict7x7_1000 = 16,
+	}
+
+	/// <summary>Predefined AprilTag marker dictionaries. The name describes the tag
+	/// family: grid bits, and the minimum hamming distance between ids.</summary>
+	public enum AprilTagDict {
+		/// <summary>Let StereoKit pick, currently 36h11.</summary>
+		Default      = 0,
+		/// <summary>4x4 bits, hamming distance 5, 30 ids.</summary>
+		Tag16h5      = 1,
+		/// <summary>5x5 bits, hamming distance 9, 35 ids.</summary>
+		Tag25h9      = 2,
+		/// <summary>6x6 bits, hamming distance 10, 2320 ids.</summary>
+		Tag36h10     = 3,
+		/// <summary>6x6 bits, hamming distance 11, 587 ids. The most common choice.</summary>
+		Tag36h11     = 4,
 	}
 
 	/// <summary>A settings flag that lets you describe the behavior of how

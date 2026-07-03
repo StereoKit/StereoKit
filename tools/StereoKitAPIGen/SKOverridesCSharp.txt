@@ -14,6 +14,7 @@ float float
 double double
 void void
 char32_t uint
+spatial_entity_t uint
 
 # Keyboard keys by default resolve to just numbers, no bueno
 key_0 N0
@@ -146,3 +147,24 @@ picker_callback PickerCallback
 
 # Public API delegates that need XML documentation (hand-written in NativeTypes.cs)
 @noimpl AppStep AppShutdown AssetOnLoadCallback AudioGenerator InputEventCallback
+# Marker dictionary names start with digits, which C# identifiers can't
+aruco_dict_4x4_50   Dict4x4_50
+aruco_dict_4x4_100  Dict4x4_100
+aruco_dict_4x4_250  Dict4x4_250
+aruco_dict_4x4_1000 Dict4x4_1000
+aruco_dict_5x5_50   Dict5x5_50
+aruco_dict_5x5_100  Dict5x5_100
+aruco_dict_5x5_250  Dict5x5_250
+aruco_dict_5x5_1000 Dict5x5_1000
+aruco_dict_6x6_50   Dict6x6_50
+aruco_dict_6x6_100  Dict6x6_100
+aruco_dict_6x6_250  Dict6x6_250
+aruco_dict_6x6_1000 Dict6x6_1000
+aruco_dict_7x7_50   Dict7x7_50
+aruco_dict_7x7_100  Dict7x7_100
+aruco_dict_7x7_250  Dict7x7_250
+aruco_dict_7x7_1000 Dict7x7_1000
+april_tag_dict_16h5  Tag16h5
+april_tag_dict_25h9  Tag25h9
+april_tag_dict_36h10 Tag36h10
+april_tag_dict_36h11 Tag36h11

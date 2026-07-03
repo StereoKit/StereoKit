@@ -17,6 +17,7 @@
 #include "sprite_drawer.h"
 #include "line_drawer.h"
 #include "world.h"
+#include "spatial_entity.h"
 #include "defaults.h"
 #include "permission.h"
 
@@ -135,6 +136,15 @@ bool stereokit_systems_register() {
 	sys_world.func_step       = world_step;
 	sys_world.func_shutdown   = world_shutdown;
 	systems_add(&sys_world);
+
+	// Spatial entity registry maintenance runs after app code so the app
+	// gets one full frame to see new/changed/stopped marks.
+	system_t sys_spatial = { "Spatial" };
+	system_set_step_deps(sys_spatial, "App", "Tools");
+	sys_spatial.func_initialize = spatial_init;
+	sys_spatial.func_step       = spatial_step;
+	sys_spatial.func_shutdown   = spatial_shutdown;
+	systems_add(&sys_spatial);
 
 	system_t sys_tools = { "Tools" };
 	system_set_initialize_deps(sys_tools, "Platform", "Defaults", "UI");

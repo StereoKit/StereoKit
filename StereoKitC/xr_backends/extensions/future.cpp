@@ -79,7 +79,16 @@ void xr_ext_future_step_begin(void*) {
 	for (int32_t i = 0; i < local.callbacks.count; i++) {
 		const xr_future_callback_t* cb = &local.callbacks[i];
 		info.future = cb->future;
-		if (xrPollFutureEXT(xr_instance, &info, &result) == XR_SUCCESS && result.state == XR_FUTURE_STATE_READY_EXT) {
+
+		XrResult poll = xrPollFutureEXT(xr_instance, &info, &result);
+		if (XR_FAILED(poll)) {
+			// A dead future will never complete, no point polling it forever
+			log_warnf("%s [%s]", "xrPollFutureEXT", openxr_string(poll));
+			local.callbacks.remove(i);
+			i--;
+			continue;
+		}
+		if (result.state == XR_FUTURE_STATE_READY_EXT) {
 			cb->on_finish(cb->context, cb->future);
 			local.callbacks.remove(i);
 			i--;

@@ -12,6 +12,7 @@ using namespace sk;
 #include "demo_picker.h"
 #include "demo_mixed_reality.h"
 #include "demo_anchors.h"
+#include "demo_spatial.h"
 #include "demo_lighting.h"
 #include "demo_draw.h"
 #include "demo_envmap.h"
@@ -66,6 +67,11 @@ scene_t demos[] = {
 		demo_anchors_init,
 		demo_anchors_update,
 		demo_anchors_shutdown,
+	}, {
+		"Spatial",
+		demo_spatial_init,
+		demo_spatial_update,
+		demo_spatial_shutdown,
 	}, {
 		"Lighting",
 		demo_lighting_init,

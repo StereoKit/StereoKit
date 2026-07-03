@@ -611,14 +611,14 @@ namespace StereoKit
 		/// <param name="a">Source TextAlign.</param>
 		/// <returns>An equivalent Align.</returns>
 		[Obsolete("Use Align instead")]
-		public static implicit operator Align(TextAlign a) => (Align)a;
+		public static implicit operator Align(TextAlign a) => (Align)a.value;
 		/// <summary>For back compatibility, allows conversion from a TextAlign
 		/// into a Pivot while providing a good obsolescence message for it.
 		/// </summary>
 		/// <param name="a">Source TextAlign.</param>
 		/// <returns>An equivalent Pivot.</returns>
 		[Obsolete("Use Pivot instead")]
-		public static implicit operator Pivot(TextAlign a) => (Pivot)a;
+		public static implicit operator Pivot(TextAlign a) => (Pivot)a.value;
 	}
 
 }

@@ -68,6 +68,8 @@
 	<uses-permission android:name="com.oculus.permission.EYE_TRACKING"/>
 	<uses-permission android:name="com.oculus.permission.USE_SCENE"/>
 	<uses-permission android:name="com.oculus.permission.RENDER_MODEL"/>
+	<uses-permission android:name="horizonos.permission.USE_ANCHOR_API"/>
+	<uses-permission android:name="horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA"/>
 	<uses-feature    android:name="com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP" android:required="false" />
 	<uses-feature    android:name="com.oculus.feature.PASSTHROUGH"    android:required="false"/>
 	<uses-feature    android:name="com.oculus.feature.RENDER_MODEL"   android:required="false"/>
