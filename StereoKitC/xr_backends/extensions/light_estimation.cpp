@@ -3,8 +3,6 @@
 #include "ext_management.h"
 #include "light_estimation.h"
 
-#include "xr_android_light_estimation.h"
-
 #define XR_EXT_FUNCTIONS( X )  \
 	X(xrCreateLightEstimatorANDROID)  \
 	X(xrDestroyLightEstimatorANDROID) \

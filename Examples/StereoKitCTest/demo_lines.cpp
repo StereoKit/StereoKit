@@ -47,7 +47,7 @@ bool swatch_button(const char* id, vec2 c, vec2 size) {
 	float offset;
 	button_state_ state= button_state_inactive, focus=button_state_inactive;
 	ui_button_behavior(vec3{ c.x+size.x/2.0f, c.y+ size.y/2.0f, 0}, size, ui_stack_hash(id),
-		offset, state, focus);
+		0, 0, ui_btn_flag_none, offset, state, focus);
 	return (state & button_state_just_inactive) != 0;
 }
 
@@ -55,7 +55,7 @@ bool swatch_button(const char* id, vec2 c, vec2 size) {
 
 void demo_lines_palette()
 {
-	ui_handle_begin("PaletteMenu", line_palette_pose, model_get_bounds( line_palette_model ), false);
+	ui_handle_begin("PaletteMenu", line_palette_pose, nullptr, model_get_bounds( line_palette_model ), false);
 	render_add_model(line_palette_model, matrix_identity);
 	ui_push_surface({ {}, quat_from_angles(90,0,0) });
 
@@ -82,7 +82,7 @@ void demo_lines_draw() {
 	vec3          tip  = hand->fingers[1][4].position;
 	tip = line_prev_tip + (tip-line_prev_tip) * 0.3f;
 
-	if ((hand->pinch_state & button_state_just_active) && !ui_is_interacting(handed_right)) {
+	if ((hand->pinch_state & button_state_just_active) && !interactor_is_interacting(interactor_source_any)) {
 		
 		if (line_draw.size() > 0)
 			line_list.push_back(line_draw);

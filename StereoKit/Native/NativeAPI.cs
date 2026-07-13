@@ -51,6 +51,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DeviceTracking device_get_tracking();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       device_get_name();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       device_get_runtime();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        device_get_runtime_version();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       device_get_gpu();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         device_has_eye_gaze();
@@ -62,7 +63,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern PermissionState permission_state(PermissionType permission);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         permission_is_interactive(PermissionType permission);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         permission_request(PermissionType permission);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         permission_request([In] PermissionType[] in_arr_permissions, int permission_count);
 
 		///////////////////////////////////////////
 
@@ -78,6 +79,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         time_scale(double scale);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         time_set_time(double total_seconds, double frame_elapsed_seconds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        time_frame();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        time_perf_cpu_us();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        time_perf_gpu_us();
 
 		///////////////////////////////////////////
 
@@ -214,13 +217,20 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       mesh_get_id(IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_addref(IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_release(IntPtr mesh);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AssetState   mesh_asset_state(IntPtr mesh);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_on_load(IntPtr mesh, [MarshalAs(UnmanagedType.FunctionPtr)] AssetOnLoadCallback asset_on_load_callback, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_on_load_remove(IntPtr mesh, [MarshalAs(UnmanagedType.FunctionPtr)] AssetOnLoadCallback asset_on_load_callback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_draw(IntPtr mesh, IntPtr material, Matrix transform, Color color_linear, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_set_keep_data(IntPtr mesh, [MarshalAs(UnmanagedType.Bool)] bool keep_data);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         mesh_get_keep_data(IntPtr mesh);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_set_data(IntPtr mesh, [In] Vertex[] in_arr_vertices, int vertex_count, [In] uint[] in_arr_indices, int index_count, [MarshalAs(UnmanagedType.Bool)] bool calculate_bounds);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_set_data(IntPtr mesh, [In] Vertex[] in_arr_vertices, int vertex_count, [In] uint[] in_arr_indices, int index_count, MeshData flags, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_set_data_fmt(IntPtr mesh, [In] VertComponent[] in_arr_format, int component_count, IntPtr vertex_data, int vertex_count, [In] uint[] in_arr_indices, int index_count, MeshData flags, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_set_verts(IntPtr mesh, [In] Vertex[] in_arr_vertices, int vertex_count, [MarshalAs(UnmanagedType.Bool)] bool calculate_bounds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_get_verts(IntPtr mesh, out IntPtr out_arr_vertices, out int out_vertex_count, Memory reference_mode);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_set_verts_fmt(IntPtr mesh, [In] VertComponent[] in_arr_format, int component_count, IntPtr vertex_data, int vertex_count, [MarshalAs(UnmanagedType.Bool)] bool calculate_bounds);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_get_verts_fmt(IntPtr mesh, out IntPtr out_arr_format, out int out_component_count, out IntPtr out_vertex_data, out int out_vertex_count, Memory reference_mode);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          mesh_fmt_stride([In] VertComponent[] in_arr_format, int component_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          mesh_get_vert_count(IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_set_inds(IntPtr mesh, [In] uint[] in_arr_indices, int index_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_get_inds(IntPtr mesh, out IntPtr out_arr_indices, out int out_index_count, Memory reference_mode);
@@ -230,7 +240,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Bounds       mesh_get_bounds(IntPtr mesh);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         mesh_has_skin(IntPtr mesh);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_set_skin(IntPtr mesh, [In] ushort[] in_arr_bone_ids_4, int bone_id_4_count, [In] Vec4[] in_arr_bone_weights, int bone_weight_count, in Matrix bone_resting_transforms, int bone_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_set_skin(IntPtr mesh, [In] ushort[] in_arr_bone_ids_4, int bone_id_4_count, [In] Vec4[] in_arr_bone_weights, int bone_weight_count, [In] Matrix[] in_arr_bone_resting_transforms, int bone_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_update_skin(IntPtr mesh, [In] Matrix[] in_arr_bone_transforms, int bone_count);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         mesh_ray_intersect(IntPtr mesh, Ray model_space_ray, Cull cull_mode, out Ray out_pt, IntPtr out_opt_start_inds);
@@ -274,6 +284,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_colors(IntPtr texture, int width, int height, IntPtr data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_color_arr(IntPtr texture, int width, int height, IntPtr array_data, int array_count, int multisample, out SphericalHarmonics out_sh_lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_color_arr_mips(IntPtr texture, int width, int height, IntPtr array_data, int array_count, int mip_count, int multisample, out SphericalHarmonics out_sh_lighting_info);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_colors_3d(IntPtr texture, int width, int height, int depth, IntPtr data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_mem(IntPtr texture, IntPtr data, UIntPtr data_size, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, [MarshalAs(UnmanagedType.Bool)] bool blocking, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_add_zbuffer(IntPtr texture, TexFormat format);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_zbuffer(IntPtr texture, IntPtr depth_texture);
@@ -286,6 +297,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexFormat    tex_get_format(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_width(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_height(IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_depth(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_sample(IntPtr texture, TexSample sample);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexSample    tex_get_sample(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_sample_comp(IntPtr texture, TexSampleComp compare);
@@ -372,6 +384,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         material_set_texture(IntPtr material, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, IntPtr value);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         material_set_texture_id(IntPtr material, IdHash id, IntPtr value);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         material_set_storage(IntPtr material, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, IntPtr buffer);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         material_set_constant(IntPtr material, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, IntPtr buffer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        material_get_float(IntPtr material, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2         material_get_vector2(IntPtr material, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3         material_get_vector3(IntPtr material, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
@@ -405,6 +421,57 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       compute_buffer_create(ComputeBufferType type, int element_count, int element_size, IntPtr opt_initial_data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_buffer_set_id(IntPtr buffer, [MarshalAs(UnmanagedType.LPUTF8Str)] string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       compute_buffer_get_id(IntPtr buffer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_buffer_set_data(IntPtr buffer, IntPtr data, int element_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_buffer_get_data(IntPtr buffer, IntPtr out_data, int element_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          compute_buffer_get_count(IntPtr buffer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          compute_buffer_get_stride(IntPtr buffer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_buffer_addref(IntPtr buffer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_buffer_release(IntPtr buffer);
+
+		///////////////////////////////////////////
+
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       compute_create(IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       compute_find([MarshalAs(UnmanagedType.LPUTF8Str)] string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_set_id(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       compute_get_id(IntPtr compute);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       compute_get_shader(IntPtr compute);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_set_float(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, float value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_set_int(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, int value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_set_uint(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_set_vector2(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, Vec2 value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_set_vector3(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, Vec3 value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_set_vector4(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, Vec4 value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_set_color(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, Color color_gamma);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_set_bool(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, [MarshalAs(UnmanagedType.Bool)] bool value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_set_matrix(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, Matrix value);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        compute_get_float(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          compute_get_int(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint         compute_get_uint(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2         compute_get_vector2(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3         compute_get_vector3(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec4         compute_get_vector4(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         compute_get_bool(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color        compute_get_color(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix       compute_get_matrix(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         compute_set_texture(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, IntPtr texture);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         compute_set_storage(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, IntPtr buffer);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         compute_set_constant(IntPtr compute, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, IntPtr buffer);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_dispatch(IntPtr compute, uint group_count_x, uint group_count_y, uint group_count_z);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_dispatch_now(IntPtr compute, uint group_count_x, uint group_count_y, uint group_count_z);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          compute_get_param_count(IntPtr compute);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_get_param_info(IntPtr compute, int index, out IntPtr out_name, out MaterialParam out_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_addref(IntPtr compute);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         compute_release(IntPtr compute);
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle    text_make_style(IntPtr font, float layout_height, Color color_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle    text_make_style_shader(IntPtr font, float layout_height, IntPtr shader, Color color_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TextStyle    text_make_style_mat(IntPtr font, float layout_height, IntPtr material, Color color_gamma);
@@ -429,6 +496,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        text_style_get_total_height(TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         text_style_set_total_height(TextStyle style, float height_meters);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       text_style_get_material(TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern RenderLayer  text_style_get_render_layer(TextStyle style);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         text_style_set_render_layer(TextStyle style, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        text_style_get_ascender(TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        text_style_get_descender(TextStyle style);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        text_style_get_cap_height(TextStyle style);
@@ -440,12 +509,15 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_copy(IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create_mesh(IntPtr mesh, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, IntPtr data, UIntPtr data_size, IntPtr shader);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create_file([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, IntPtr shader);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, IntPtr data, UIntPtr data_size, IntPtr shader, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create_file([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, IntPtr shader, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_set_id(IntPtr model, [MarshalAs(UnmanagedType.LPUTF8Str)] string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_get_id(IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_addref(IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_release(IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AssetState   model_asset_state(IntPtr model);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_on_load(IntPtr model, [MarshalAs(UnmanagedType.FunctionPtr)] AssetOnLoadCallback asset_on_load_callback, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_on_load_remove(IntPtr model, [MarshalAs(UnmanagedType.FunctionPtr)] AssetOnLoadCallback asset_on_load_callback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_draw(IntPtr model, Matrix transform, Color color_linear, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_draw_mat(IntPtr model, IntPtr material_override, Matrix transform, Color color_linear, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_recalculate_bounds(IntPtr model);
@@ -525,7 +597,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          sprite_get_width(IntPtr sprite);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          sprite_get_height(IntPtr sprite);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2         sprite_get_dimensions_normalized(IntPtr sprite);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sprite_draw(IntPtr sprite, Matrix transform, Pivot pivot_position, Color32 color);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sprite_draw(IntPtr sprite, Matrix transform, Pivot pivot_position, Color32 color, RenderLayer layer);
 
 		///////////////////////////////////////////
 
@@ -581,14 +653,14 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_screenshot([MarshalAs(UnmanagedType.LPUTF8Str)] string file_utf8, int file_quality_100, Pose viewpoint, int width, int height, float field_of_view_degrees);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_screenshot_capture([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Pose viewpoint, int width, int height, float field_of_view_degrees, TexFormat tex_format, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_screenshot_viewpoint([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Matrix camera, Matrix projection, int width, int height, RenderLayer layer_filter, RenderClear clear, Rect viewport, TexFormat tex_format, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_to(IntPtr to_rendertarget, int to_target_index, in Matrix camera, in Matrix projection, RenderLayer layer_filter, int material_variant, RenderClear clear, Rect viewport);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_to(IntPtr to_rendertarget, int to_target_index, [In] Matrix[] in_arr_cameras, [In] Matrix[] in_arr_projections, int view_count, RenderLayer layer_filter, int material_variant, RenderClear clear, Rect viewport);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_get_device(IntPtr device, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_primary_list();
 
 		///////////////////////////////////////////
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_list_find([MarshalAs(UnmanagedType.LPUTF8Str)] string id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_list_create();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_list_create(RenderListRefs refs);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_set_id(IntPtr list, [MarshalAs(UnmanagedType.LPUTF8Str)] string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_list_get_id(IntPtr list);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_addref(IntPtr list);
@@ -599,7 +671,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_add_mesh(IntPtr list, IntPtr mesh, IntPtr material, Matrix world_transform, Color color_linear, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_add_model(IntPtr list, IntPtr model, Matrix world_transform, Color color_linear, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_add_model_mat(IntPtr list, IntPtr model, IntPtr material_override, Matrix world_transform, Color color_linear, RenderLayer layer);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_draw_now(IntPtr list, IntPtr to_rendertarget, Matrix camera, Matrix projection, Color clear_color, RenderClear clear, Rect viewport_pct, RenderLayer layer_filter, int material_variant);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_draw_now(IntPtr list, IntPtr to_rendertarget, [In] Matrix[] in_arr_cameras, [In] Matrix[] in_arr_projections, int view_count, Color clear_color, RenderClear clear, Rect viewport_pct, RenderLayer layer_filter, int material_variant);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_push(IntPtr list);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_list_pop();
 
@@ -702,23 +774,30 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          interactor_create(InteractorType shape_type, InteractorEvent events, InteractorActivation activation_type, int input_source_id, float capsule_radius, int secondary_motion_dimensions);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         interactor_destroy(int interactor);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         interactor_update(int interactor, Vec3 capsule_start, Vec3 capsule_end, Pose motion, Vec3 motion_anchor, Vec3 secondary_motion, BtnState active, BtnState tracked);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         interactor_set_min_distance(int interactor, float min_distance);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        interactor_get_min_distance(int interactor);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3         interactor_get_capsule_start(int interactor);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3         interactor_get_capsule_end(int interactor);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         interactor_set_radius(int interactor, float radius);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        interactor_get_radius(int interactor);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     interactor_get_tracked(int interactor);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IdHash       interactor_get_focused(int interactor);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IdHash       interactor_get_active(int interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Interactor   interactor_create(InteractorType shape_type, InteractorEvent events, InteractorActivation activation_type, InteractorSource source, float capsule_radius, int secondary_motion_dimensions);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         interactor_destroy(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         interactor_update(Interactor interactor, Vec3 capsule_start, Vec3 capsule_end, Pose motion, Vec3 motion_anchor, Vec3 secondary_motion, BtnState active, BtnState tracked);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         interactor_set_min_distance(Interactor interactor, float min_distance);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        interactor_get_min_distance(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3         interactor_get_capsule_start(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec3         interactor_get_capsule_end(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         interactor_set_radius(Interactor interactor, float radius);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        interactor_get_radius(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     interactor_get_tracked(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IdHash       interactor_get_focused(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IdHash       interactor_get_active(Interactor interactor);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         interactor_get_focus_bounds(int interactor, out Pose out_pose_world, out Bounds out_bounds_local, out Vec3 out_at_local);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         interactor_get_motion(int interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         interactor_get_focus_bounds(Interactor interactor, out Pose out_pose_world, out Bounds out_bounds_local, out Vec3 out_at_local);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         interactor_get_motion(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern InteractorType interactor_get_type(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern InteractorEvent interactor_get_events(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern InteractorActivation interactor_get_activation(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern InteractorSource interactor_get_source(Interactor interactor);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          interactor_get_secondary_dims(Interactor interactor);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          interactor_count();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          interactor_get(int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Interactor   interactor_get(int index);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         interactor_is_interacting(InteractorSource source);
 
 		///////////////////////////////////////////
 
@@ -730,8 +809,6 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          input_pointer_count(InputSource filter);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pointer      input_pointer(int index, InputSource filter);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       input_hand(Handed hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_hand_override(Handed hand, [In] HandJoint[] in_arr_hand_joints);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern HandSource   input_hand_source(Handed hand);
@@ -739,24 +816,40 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     input_controller_menu();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_controller_model_set(Handed hand, IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       input_controller_model_get(Handed hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         input_controller_detached(Handed hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         input_head();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         input_eyes();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     input_eyes_tracked();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       input_mouse();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     input_key(Key key);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_key_inject_press(Key key);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_key_inject_release(Key key);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint         input_text_consume();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_text_reset();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_text_inject_char(uint character);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_hand_visible(Handed hand, [MarshalAs(UnmanagedType.Bool)] bool visible);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         input_hand_get_visible(Handed hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_hand_material(Handed hand, IntPtr material);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         input_get_finger_glow();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_set_finger_glow([MarshalAs(UnmanagedType.Bool)] bool visible);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         input_pose(InputPose pose_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern PoseState    input_pose_state(InputPose pose_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        input_float(InputFloat float_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     input_button(InputButton button_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Vec2         input_xy(InputXY xy_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     input_key(Key key);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern InputHapticCaps input_haptic_caps(InputHaptic haptic_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        input_haptic_preferred_rate(InputHaptic haptic_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_haptic_pulse(InputHaptic haptic_type, float frequency, float amplitude, float duration_seconds);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_haptic_waveform(InputHaptic haptic_type, [In] float[] in_arr_samples, int sample_count, float sample_rate_hz, [MarshalAs(UnmanagedType.Bool)] bool append, out int out_prev_samples_consumed);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_haptic_curve(InputHaptic haptic_type, [In] float[] in_arr_amplitudes, int sample_count, float sample_rate_hz);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_haptic_stop(InputHaptic haptic_type);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern HandSimId    input_hand_sim_pose_add([In] Pose[] in_arr_palm_relative_hand_joints_25, ControllerKey button1, ControllerKey and_button2, Key or_hotkey1, Key and_hotkey2);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_hand_sim_pose_remove(HandSimId id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_hand_sim_pose_clear();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          input_pointer_count(InputSource filter);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pointer      input_pointer(int index, InputSource filter);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_subscribe(InputSource source, BtnState input_event, [MarshalAs(UnmanagedType.FunctionPtr)] InputEventCallback input_event_callback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_unsubscribe(InputSource source, BtnState input_event, [MarshalAs(UnmanagedType.FunctionPtr)] InputEventCallback input_event_callback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_fire_event(InputSource source, BtnState input_event, in Pointer pointer);
@@ -801,6 +894,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         world_try_from_perception_anchor(IntPtr perception_spatial_anchor, out Pose out_pose);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         world_raycast(Ray ray, out Ray out_intersection);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         world_set_occlusion(OcclusionCaps flags);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern OcclusionCaps world_get_occlusion();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern OcclusionCaps world_occlusion_capabilities();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         world_set_occlusion_enabled([MarshalAs(UnmanagedType.Bool)] bool enabled);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         world_get_occlusion_enabled();
@@ -822,6 +918,24 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_available();
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_running();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SensorDepthCaps sensor_depth_get_capabilities();
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_start(SensorDepthCaps flags);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sensor_depth_stop();
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_set_capabilities(SensorDepthCaps flags);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       sensor_depth_get_texture();
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_try_get_latest_frame(out SensorDepthFrame out_frame);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_try_get_latest_data(out SensorDepthFrame out_frame, IntPtr out_data, out UIntPtr out_data_size, int view_index);
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BackendXRType backend_xr_get_type();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BackendPlatform backend_platform_get();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BackendGraphics backend_graphics_get();
@@ -832,6 +946,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        backend_openxr_get_session();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        backend_openxr_get_system_id();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        backend_openxr_get_space();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        backend_openxr_get_head_space();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern long         backend_openxr_get_time();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern long         backend_openxr_get_eyes_sample_time();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       backend_openxr_get_function([MarshalAs(UnmanagedType.LPUTF8Str)] string function_name);
@@ -896,6 +1011,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          assets_total_tasks();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          assets_current_task_priority();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         assets_block_for_priority(int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         assets_block_until(IntPtr asset, AssetState state);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          assets_count();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       assets_get_index(int index);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AssetType    assets_get_type(int index);
@@ -919,6 +1035,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_far_interact_enabled();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UIMove       ui_system_get_move_type();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_system_set_move_type(UIMove move_type);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern RenderLayer  ui_get_render_layer();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_set_render_layer(RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_settings(UISettings settings);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern UISettings   ui_get_settings();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        ui_get_margin();
@@ -973,60 +1091,43 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_layout_push(Vec3 start, Vec2 dimensions, [MarshalAs(UnmanagedType.Bool)] bool add_margin);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_layout_push_cut(UICut cut_to, float size, [MarshalAs(UnmanagedType.Bool)] bool add_margin);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_layout_pop();
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_is_interacting(Handed hand);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     ui_last_element_hand_active(Handed hand);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     ui_last_element_hand_focused(Handed hand);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     ui_last_element_active();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     ui_last_element_focused();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     ui_last_element_source_active(InteractorSource source);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     ui_last_element_source_focused(InteractorSource source);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_nextline();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_sameline();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        ui_line_height();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_button_behavior(Vec3 window_relative_pos, Vec2 size, IdHash id, out float out_finger_offset, out BtnState out_button_state, out BtnState out_focus_state, IntPtr out_opt_hand);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_button_behavior_depth(Vec3 window_relative_pos, Vec2 size, IdHash id, float button_depth, float button_activation_depth, out float out_finger_offset, out BtnState out_button_state, out BtnState out_focus_state, IntPtr out_opt_hand);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_button_behavior(Vec3 window_relative_pos, Vec2 size, IdHash id, float button_depth, float button_activation_depth, UIBtnFlag flags, out float out_finger_offset, out BtnState out_button_state, out BtnState out_focus_state, IntPtr out_opt_interactor);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_slider_behavior(Vec3 window_relative_pos, Vec2 size, IdHash id, ref Vec2 ref_value, Vec2 min, Vec2 max, Vec2 button_size_visual, Vec2 button_size_interact, UIConfirm confirm_method, out UISliderData out_slider_data);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     ui_volume_at([MarshalAs(UnmanagedType.LPUTF8Str)] string id, Bounds bounds, UIConfirm interact_type, IntPtr out_opt_hand, IntPtr out_opt_focus_state);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern BtnState     ui_volume_at_16([MarshalAs(UnmanagedType.LPWStr)] string id, Bounds bounds, UIConfirm interact_type, IntPtr out_opt_hand, IntPtr out_opt_focus_state);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_label([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] bool use_padding);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void         ui_label_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] bool use_padding);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_label_sz([MarshalAs(UnmanagedType.LPUTF8Str)] string text, Vec2 size, [MarshalAs(UnmanagedType.Bool)] bool use_padding);
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void         ui_label_sz_16([MarshalAs(UnmanagedType.LPWStr)] string text, Vec2 size, [MarshalAs(UnmanagedType.Bool)] bool use_padding);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     ui_volume_at([MarshalAs(UnmanagedType.LPUTF8Str)] string id, Bounds bounds, UIConfirm interact_type, IntPtr out_opt_interactor, IntPtr out_opt_focus_state);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern BtnState     ui_volume_at_16([MarshalAs(UnmanagedType.LPWStr)] string id, Bounds bounds, UIConfirm interact_type, IntPtr out_opt_interactor, IntPtr out_opt_focus_state);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_label([MarshalAs(UnmanagedType.LPUTF8Str)] string text, Vec2 size, [MarshalAs(UnmanagedType.Bool)] bool use_padding, Align text_align);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void         ui_label_16([MarshalAs(UnmanagedType.LPWStr)] string text, Vec2 size, [MarshalAs(UnmanagedType.Bool)] bool use_padding, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_text([MarshalAs(UnmanagedType.LPUTF8Str)] string text, IntPtr opt_ref_scroll, UIScroll scroll_direction, float height, Align text_align, TextFit fit);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_text([MarshalAs(UnmanagedType.LPUTF8Str)] string text, IntPtr opt_ref_scroll, UIScroll scroll_direction, Vec2 size, Align text_align, TextFit fit);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_text_16([MarshalAs(UnmanagedType.LPWStr)] string text, IntPtr opt_ref_scroll, UIScroll scroll_direction, float height, Align text_align, TextFit fit);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_text_sz([MarshalAs(UnmanagedType.LPUTF8Str)] string text, IntPtr opt_ref_scroll, UIScroll scroll_direction, Vec2 size, Align text_align, TextFit fit);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_text_sz_16([MarshalAs(UnmanagedType.LPWStr)] string text, IntPtr opt_ref_scroll, UIScroll scroll_direction, Vec2 size, Align text_align, TextFit fit);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_text_16([MarshalAs(UnmanagedType.LPWStr)] string text, IntPtr opt_ref_scroll, UIScroll scroll_direction, Vec2 size, Align text_align, TextFit fit);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_text_at([MarshalAs(UnmanagedType.LPUTF8Str)] string text, IntPtr opt_ref_scroll, UIScroll scroll_direction, Align text_align, TextFit fit, Vec3 window_relative_pos, Vec2 size);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_text_at_16([MarshalAs(UnmanagedType.LPWStr)] string text, IntPtr opt_ref_scroll, UIScroll scroll_direction, Align text_align, TextFit fit, Vec3 window_relative_pos, Vec2 size);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button([MarshalAs(UnmanagedType.LPUTF8Str)] string text);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button([MarshalAs(UnmanagedType.LPUTF8Str)] string text, Vec2 size, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_16([MarshalAs(UnmanagedType.LPWStr)] string text);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_16([MarshalAs(UnmanagedType.LPWStr)] string text, Vec2 size, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button_sz([MarshalAs(UnmanagedType.LPUTF8Str)] string text, Vec2 size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button_at([MarshalAs(UnmanagedType.LPUTF8Str)] string text, Vec3 window_relative_pos, Vec2 size, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_sz_16([MarshalAs(UnmanagedType.LPWStr)] string text, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_at_16([MarshalAs(UnmanagedType.LPWStr)] string text, Vec3 window_relative_pos, Vec2 size, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button_at([MarshalAs(UnmanagedType.LPUTF8Str)] string text, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button_img([MarshalAs(UnmanagedType.LPUTF8Str)] string text, IntPtr image, UIBtnLayout image_layout, Vec2 size, Color image_tint, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_at_16([MarshalAs(UnmanagedType.LPWStr)] string text, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_img_16([MarshalAs(UnmanagedType.LPWStr)] string text, IntPtr image, UIBtnLayout image_layout, Vec2 size, Color image_tint, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button_img([MarshalAs(UnmanagedType.LPUTF8Str)] string text, IntPtr image, UIBtnLayout image_layout, Color image_tint);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button_img_at([MarshalAs(UnmanagedType.LPUTF8Str)] string text, IntPtr image, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size, Color image_tint, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_img_16([MarshalAs(UnmanagedType.LPWStr)] string text, IntPtr image, UIBtnLayout image_layout, Color image_tint);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button_img_sz([MarshalAs(UnmanagedType.LPUTF8Str)] string text, IntPtr image, UIBtnLayout image_layout, Vec2 size, Color image_tint);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_img_sz_16([MarshalAs(UnmanagedType.LPWStr)] string text, IntPtr image, UIBtnLayout image_layout, Vec2 size, Color image_tint);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button_img_at([MarshalAs(UnmanagedType.LPUTF8Str)] string text, IntPtr image, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size, Color image_tint);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_img_at_16([MarshalAs(UnmanagedType.LPWStr)] string text, IntPtr image, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size, Color image_tint);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_img_at_16([MarshalAs(UnmanagedType.LPWStr)] string text, IntPtr image, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size, Color image_tint, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_button_round([MarshalAs(UnmanagedType.LPUTF8Str)] string id, IntPtr image, float diameter);
 		[return: MarshalAs(UnmanagedType.Bool)]
@@ -1036,61 +1137,37 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_button_round_at_16([MarshalAs(UnmanagedType.LPWStr)] string id, IntPtr image, Vec3 window_relative_pos, float diameter);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_toggle([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_toggle([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, Vec2 size, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_toggle_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_toggle_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, Vec2 size, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_toggle_sz([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, Vec2 size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_toggle_at([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, Vec3 window_relative_pos, Vec2 size, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_toggle_sz_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_toggle_at_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, Vec3 window_relative_pos, Vec2 size, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_toggle_at([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_toggle_img([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec2 size, Color image_tint, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_toggle_at_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_toggle_img_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec2 size, Color image_tint, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_toggle_img([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_toggle_img_at([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size, Color image_tint, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_toggle_img_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_toggle_img_sz([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec2 size);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_toggle_img_sz_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec2 size);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_toggle_img_at([MarshalAs(UnmanagedType.LPUTF8Str)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_toggle_img_at_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_toggle_img_at_16([MarshalAs(UnmanagedType.LPWStr)] string text, [MarshalAs(UnmanagedType.Bool)] ref bool pressed, IntPtr toggle_off, IntPtr toggle_on, UIBtnLayout image_layout, Vec3 window_relative_pos, Vec2 size, Color image_tint, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_hslider([MarshalAs(UnmanagedType.LPUTF8Str)] string id, ref float value, float min, float max, float step, float width, UIConfirm confirm_method, UINotify notify_on);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_hslider_16([MarshalAs(UnmanagedType.LPWStr)] string id, ref float value, float min, float max, float step, float width, UIConfirm confirm_method, UINotify notify_on);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_hslider_f64([MarshalAs(UnmanagedType.LPUTF8Str)] string id, ref double value, double min, double max, double step, float width, UIConfirm confirm_method, UINotify notify_on);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_hslider_f64_16([MarshalAs(UnmanagedType.LPWStr)] string id, ref double value, double min, double max, double step, float width, UIConfirm confirm_method, UINotify notify_on);
-		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_hslider_at([MarshalAs(UnmanagedType.LPUTF8Str)] string id, ref float value, float min, float max, float step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_hslider_at_16([MarshalAs(UnmanagedType.LPWStr)] string id, ref float value, float min, float max, float step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_hslider_at_f64([MarshalAs(UnmanagedType.LPUTF8Str)] string id, ref double value, double min, double max, double step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_hslider_at_f64_16([MarshalAs(UnmanagedType.LPWStr)] string id, ref double value, double min, double max, double step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_vslider([MarshalAs(UnmanagedType.LPUTF8Str)] string id, ref float value, float min, float max, float step, float height, UIConfirm confirm_method, UINotify notify_on);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_vslider_16([MarshalAs(UnmanagedType.LPWStr)] string id, ref float value, float min, float max, float step, float height, UIConfirm confirm_method, UINotify notify_on);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_vslider_f64([MarshalAs(UnmanagedType.LPUTF8Str)] string id, ref double value, double min, double max, double step, float height, UIConfirm confirm_method, UINotify notify_on);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_vslider_f64_16([MarshalAs(UnmanagedType.LPWStr)] string id, ref double value, double min, double max, double step, float height, UIConfirm confirm_method, UINotify notify_on);
-		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_vslider_at([MarshalAs(UnmanagedType.LPUTF8Str)] string id, ref float value, float min, float max, float step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_vslider_at_16([MarshalAs(UnmanagedType.LPWStr)] string id, ref float value, float min, float max, float step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_vslider_at_f64([MarshalAs(UnmanagedType.LPUTF8Str)] string id, ref double value, double min, double max, double step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_vslider_at_f64_16([MarshalAs(UnmanagedType.LPWStr)] string id, ref double value, double min, double max, double step, Vec3 window_relative_pos, Vec2 size, UIConfirm confirm_method, UINotify notify_on);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_input([MarshalAs(UnmanagedType.LPUTF8Str)] string id, [MarshalAs(UnmanagedType.LPUTF8Str)] string buffer, int buffer_size, Vec2 size, TextContext type);
 		[return: MarshalAs(UnmanagedType.Bool)]
@@ -1109,9 +1186,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_hspace(float horizontal_space);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_vspace(float vertical_space);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_handle_begin([MarshalAs(UnmanagedType.LPUTF8Str)] string text, ref Pose movement, Bounds handle, [MarshalAs(UnmanagedType.Bool)] bool draw, UIMove move_type, UIGesture allowed_gestures);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         ui_handle_begin([MarshalAs(UnmanagedType.LPUTF8Str)] string text, ref Pose movement, IntPtr opt_ref_scale, Bounds handle, [MarshalAs(UnmanagedType.Bool)] bool draw, UIMove move_type, UIGesture allowed_gestures);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_handle_begin_16([MarshalAs(UnmanagedType.LPWStr)] string text, ref Pose movement, Bounds handle, [MarshalAs(UnmanagedType.Bool)] bool draw, UIMove move_type, UIGesture allowed_gestures);
+		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern bool         ui_handle_begin_16([MarshalAs(UnmanagedType.LPWStr)] string text, ref Pose movement, IntPtr opt_ref_scale, Bounds handle, [MarshalAs(UnmanagedType.Bool)] bool draw, UIMove move_type, UIGesture allowed_gestures);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_handle_end();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_window_begin([MarshalAs(UnmanagedType.LPUTF8Str)] string text, IntPtr opt_pose, Vec2 size, UIWin window_type, UIMove move_type);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void         ui_window_begin_16([MarshalAs(UnmanagedType.LPWStr)] string text, IntPtr opt_pose, Vec2 size, UIWin window_type, UIMove move_type);

@@ -46,6 +46,12 @@ namespace StereoKit
 		/// soft keyboard.</summary>
 		public static UIMove SystemMoveType { get => NativeAPI.ui_system_get_move_type(); set { NativeAPI.ui_system_set_move_type(value); } }
 
+		/// <summary>This is the RenderLayer that the UI system draws on. It
+		/// applies to the UI's mesh and model geometry, as well as the text and
+		/// single sprites that StereoKit's UI manages. This is RenderLayer.UI
+		/// by default.</summary>
+		public static RenderLayer RenderLayer { get => NativeAPI.ui_get_render_layer(); set { NativeAPI.ui_set_render_layer(value); } }
+
 		/// <summary>This is the height of a single line of text with padding
 		/// in the UI's layout system!</summary>
 		public static float LineHeight => NativeAPI.ui_line_height();
@@ -158,6 +164,14 @@ namespace StereoKit
 		/// previously added using LayoutPush, or LayoutPushCut.</summary>
 		public static void LayoutPop() => NativeAPI.ui_layout_pop();
 
+		// Maps the legacy Handed concept onto interactor sources: a side covers
+		// its hand and controller, and the right side also covers the mouse
+		// (which historically reported as the right hand). Used to back the
+		// deprecated hand-based functions with the interactor source system.
+		static InteractorSource HandToSource(Handed hand) => hand == Handed.Left
+			? InteractorSource.HandLeft  | InteractorSource.ControllerLeft
+			: InteractorSource.HandRight | InteractorSource.ControllerRight | InteractorSource.Mouse;
+
 		/// <summary>Tells if the hand was involved in the active state of the
 		/// most recently called UI element using an id. Active state is
 		/// frequently a single frame in the case of Buttons, but could be many
@@ -166,7 +180,8 @@ namespace StereoKit
 		/// <returns>A BtnState that indicated the hand was "just active" this
 		/// frame, is currently "active" or if it "just became inactive" this
 		/// frame.</returns>
-		public static BtnState LastElementHandActive(Handed hand) => NativeAPI.ui_last_element_hand_active(hand);
+		[Obsolete("Use UI.LastElementSourceActive(InteractorSource) instead.")]
+		public static BtnState LastElementHandActive(Handed hand) => NativeAPI.ui_last_element_source_active(HandToSource(hand));
 		/// <summary>Tells if the hand was involved in the focus state of the
 		/// most recently called UI element using an id. Focus occurs when the
 		/// hand is in or near an element, in such a way that indicates the
@@ -175,13 +190,36 @@ namespace StereoKit
 		/// <returns>A BtnState that indicated the hand was "just focused" this
 		/// frame, is currently "focused" or if it "just became focused" this
 		/// frame.</returns>
-		public static BtnState LastElementHandFocused(Handed hand) => NativeAPI.ui_last_element_hand_focused(hand);
+		[Obsolete("Use UI.LastElementSourceFocused(InteractorSource) instead.")]
+		public static BtnState LastElementHandFocused(Handed hand) => NativeAPI.ui_last_element_source_focused(HandToSource(hand));
 		/// <summary>Tells the Active state of the most recently called UI
 		/// element that used an id.</summary>
 		public static BtnState LastElementActive => NativeAPI.ui_last_element_active();
 		/// <summary>Tells the Focused state of the most recently called UI
 		/// element that used an id.</summary>
 		public static BtnState LastElementFocused => NativeAPI.ui_last_element_focused();
+		/// <summary>Tells if an interactor from the given source was involved in
+		/// the active state of the most recently called UI element using an id.
+		/// Active state is frequently a single frame in the case of Buttons, but
+		/// could be many in the case of Sliders or Handles. Sources can be
+		/// combined as a bit-flag to ask about several at once.</summary>
+		/// <param name="source">The source, or combination of sources, to check.
+		/// </param>
+		/// <returns>A BtnState that indicates the source was "just active" this
+		/// frame, is currently "active", or if it "just became inactive" this
+		/// frame.</returns>
+		public static BtnState LastElementSourceActive(InteractorSource source) => NativeAPI.ui_last_element_source_active(source);
+		/// <summary>Tells if an interactor from the given source was involved in
+		/// the focus state of the most recently called UI element using an id.
+		/// Focus occurs when the interactor is in or near an element, in such a
+		/// way that indicates the user may be about to interact with it. Sources
+		/// can be combined as a bit-flag to ask about several at once.</summary>
+		/// <param name="source">The source, or combination of sources, to check.
+		/// </param>
+		/// <returns>A BtnState that indicates the source was "just focused" this
+		/// frame, is currently "focused", or if it "just became unfocused" this
+		/// frame.</returns>
+		public static BtnState LastElementSourceFocused(InteractorSource source) => NativeAPI.ui_last_element_source_focused(source);
 
 		/// <summary>Tells if the user is currently interacting with a UI
 		/// element! This will be true if the hand has an active or focused UI
@@ -189,8 +227,9 @@ namespace StereoKit
 		/// <param name="hand">Which hand is interacting?</param>
 		/// <returns>True if the hand has an active or focused UI element.
 		/// False otherwise.</returns>
+		[Obsolete("Use Interactor.IsInteracting(InteractorSource) instead.")]
 		public static bool IsInteracting(Handed hand)
-			=> NativeAPI.ui_is_interacting(hand);
+			=> NativeAPI.interactor_is_interacting(HandToSource(hand));
 
 		/// <summary>This allows you to explicitly set a theme color, for finer
 		/// grained control over the UI appearance. Each theme type is still
@@ -305,36 +344,32 @@ namespace StereoKit
 			=> NativeAPI.ui_hspace(horizontalSpace);
 
 		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
-		/// <param name="hand">This will be the last unpreoccupied hand found
-		/// inside the volume, and is the hand controlling the interaction.
-		/// </param>
-		/// <param name="focusState">The focus state tells if the element has
-		/// a hand inside of the volume that qualifies for focus.</param>
-		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand, out BtnState focusState)
-		{
-			BtnState result = NativeAPI.ui_volume_at_16(id, bounds, interactType, out int handInt, out focusState);
-			hand = (Handed)handInt;
-			return result;
-		}
+		/// <param name="interactor">The `Interactor` that is interacting with
+		/// the volume. If nothing is interacting, this will be
+		/// `Interactor.None`.</param>
+		/// <param name="focusState">The focus state tells if the element has an
+		/// interactor inside of the volume that qualifies for focus.</param>
+		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Interactor interactor, out BtnState focusState)
+			=> NativeAPI.ui_volume_at_16(id, bounds, interactType, out interactor, out focusState);
 
 		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
-		/// <param name="hand">This will be the last unpreoccupied hand found
-		/// inside the volume, and is the hand controlling the interaction.
-		/// </param>
-		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Handed hand)
-			=> VolumeAt(id, bounds, interactType, out hand, out _);
-		/// <summary>A volume for helping to build one handed interactions.
-		/// This checks for the presence of a hand inside the bounds, and if
-		/// found, return that hand along with activation and focus 
-		/// information defined by the interactType.</summary>
+		/// <param name="interactor">The `Interactor` that is interacting with
+		/// the volume. If nothing is interacting, this will be
+		/// `Interactor.None`.</param>
+		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType, out Interactor interactor)
+			=> VolumeAt(id, bounds, interactType, out interactor, out _);
+		/// <summary>A volume for helping to build interactions. This checks for
+		/// the presence of an interactor inside the bounds, and if found,
+		/// returns that interactor along with activation and focus information
+		/// defined by the interactType.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
 		/// <param name="bounds">Size and position of the volume, relative to
 		/// the current Hierarchy.</param>
 		/// <param name="interactType">UIConfirm.Pinch will activate when the
-		/// hand performs a 'pinch' gesture. UIConfirm.Push will activate 
-		/// when the hand enters the volume, and behave the same as element's
-		/// focusState.</param>
+		/// interactor performs a 'pinch' gesture inside the volume.
+		/// UIConfirm.Push will activate when the interactor enters the volume,
+		/// and behave the same as the element's focusState.</param>
 		/// <returns>Based on the interactType, this is a BtnState that tells
 		/// the activation state of the interaction.</returns>
 		public static BtnState VolumeAt(string id, Bounds bounds, UIConfirm interactType)
@@ -354,7 +389,7 @@ namespace StereoKit
 		/// positioning this text? Sometimes you just want un-padded text!
 		/// </param>
 		public static void Label (string text, bool usePadding = true)
-			=> NativeAPI.ui_label_16(text, usePadding);
+			=> NativeAPI.ui_label_16(text, Vec2.Zero, usePadding, Align.None);
 
 		/// <summary>Adds some text to the layout, but this overload allows you
 		/// can specify the size that you want it to use. Text uses the UI's
@@ -369,8 +404,11 @@ namespace StereoKit
 		/// <param name="usePadding">Should padding be included for
 		/// positioning this text? Sometimes you just want un-padded text!
 		/// </param>
-		public static void Label(string text, Vec2 size, bool usePadding = true)
-			=> NativeAPI.ui_label_sz_16(text, size, usePadding);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static void Label(string text, Vec2 size, bool usePadding = true, Align textAlign = Align.None)
+			=> NativeAPI.ui_label_16(text, size, usePadding, textAlign);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -383,7 +421,7 @@ namespace StereoKit
 		/// within its bounds? Align.TopLeft is how most English text is
 		/// aligned.</param>
 		public static void Text(string text, Align textAlign = Align.TopLeft)
-			=> NativeAPI.ui_text_16(text, IntPtr.Zero, UIScroll.None, 0, textAlign, TextFit.Wrap);
+			=> NativeAPI.ui_text_16(text, IntPtr.Zero, UIScroll.None, Vec2.Zero, textAlign, TextFit.Wrap);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -403,7 +441,7 @@ namespace StereoKit
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
 		public static void Text(string text, Align textAlign, TextFit fit, Vec2 size)
-			=> NativeAPI.ui_text_sz_16(text, IntPtr.Zero, UIScroll.None, size, textAlign, fit);
+			=> NativeAPI.ui_text_16(text, IntPtr.Zero, UIScroll.None, size, textAlign, fit);
 
 		/// <summary>Displays a large chunk of text on the current layout.
 		/// This can include new lines and spaces, and will properly wrap
@@ -449,7 +487,7 @@ namespace StereoKit
 		/// <returns>Returns true if any of the scroll bars have changed this
 		/// frame.</returns>
 		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, Vec2 size, Align textAlign = Align.TopLeft, TextFit fit = TextFit.Wrap)
-			=> NativeAPI.ui_text_sz_16(text, ref scroll, scrollDirection, size, textAlign, fit);
+			=> NativeAPI.ui_text_16(text, ref scroll, scrollDirection, size, textAlign, fit);
 
 		/// <summary>A scrolling text element! This is for reading large chunks
 		/// of text that may be too long to fit in the available space. It
@@ -476,7 +514,7 @@ namespace StereoKit
 		/// <returns>Returns true if any of the scroll bars have changed this
 		/// frame.</returns>
 		public static bool Text(string text, ref Vec2 scroll, UIScroll scrollDirection, float height, Align textAlign = Align.TopLeft, TextFit fit = TextFit.Wrap)
-			=> NativeAPI.ui_text_16(text, ref scroll, scrollDirection, height, textAlign, fit);
+			=> NativeAPI.ui_text_16(text, ref scroll, scrollDirection, new Vec2(0, height), textAlign, fit);
 
 		/// <inheritdoc cref="Text(string, ref Vec2, UIScroll, Vec2, Align, TextFit)"/>
 		/// <param name="topLeftCorner">This is the top left corner of the UI
@@ -503,16 +541,19 @@ namespace StereoKit
 		/// </param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
-		public static bool Button (string text) 
-			=> NativeAPI.ui_button_16(text);
+		public static bool Button (string text)
+			=> NativeAPI.ui_button_16(text, Vec2.Zero, Align.None);
 
 		/// <inheritdoc cref="Button(string)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space. If an axis is left as zero, it will be auto-calculated. For
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
-		public static bool Button(string text, Vec2 size)
-			=> NativeAPI.ui_button_sz_16(text, size);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool Button(string text, Vec2 size, Align textAlign = Align.None)
+			=> NativeAPI.ui_button_16(text, size, textAlign);
 
 		/// <summary>A variant of UI.Button that doesn't use the layout system,
 		/// and instead goes exactly where you put it.</summary>
@@ -525,8 +566,11 @@ namespace StereoKit
 		/// space.</param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
-		public static bool ButtonAt(string text, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_button_at_16(text, topLeftCorner, size);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool ButtonAt(string text, Vec3 topLeftCorner, Vec2 size, Align textAlign = Align.None)
+			=> NativeAPI.ui_button_at_16(text, topLeftCorner, size, textAlign);
 
 		/// <summary>A pressable button accompanied by an image! The button
 		/// will expand to fit the text provided to it, horizontally. Text is
@@ -543,7 +587,7 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
-			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, new Color(1,1,1,1));
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, Vec2.Zero, new Color(1,1,1,1), Align.None);
 
 		/// <summary>A pressable button accompanied by an image! The button
 		/// will expand to fit the text provided to it, horizontally. Text is
@@ -562,23 +606,29 @@ namespace StereoKit
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
 		public static bool ButtonImg(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout = UIBtnLayout.Left)
-			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, imageTint);
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, Vec2.Zero, imageTint, Align.None);
 
 		/// <inheritdoc cref="ButtonImg(string,Sprite,UIBtnLayout)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space. If an axis is left as zero, it will be auto-calculated. For
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
-		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1,1,1,1));
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool ButtonImg(string text, Sprite image, UIBtnLayout imageLayout, Vec2 size, Align textAlign = Align.None)
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1,1,1,1), textAlign);
 
 		/// <inheritdoc cref="ButtonImg(string,Sprite,Color,UIBtnLayout)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space. If an axis is left as zero, it will be auto-calculated. For
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
-		public static bool ButtonImg(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec2 size)
-			=> NativeAPI.ui_button_img_sz_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, imageTint);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool ButtonImg(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec2 size, Align textAlign = Align.None)
+			=> NativeAPI.ui_button_img_16(text, image?._inst ?? IntPtr.Zero, imageLayout, size, imageTint, textAlign);
 
 		/// <summary>A variant of UI.ButtonImg that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -596,14 +646,20 @@ namespace StereoKit
 		/// space.</param>
 		/// <returns>Will return true only on the first frame it is pressed!
 		/// </returns>
-		public static bool ButtonImgAt(string text, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_button_img_at_16(text, image?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, new Color(1, 1, 1, 1));
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool ButtonImgAt(string text, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size, Align textAlign = Align.None)
+			=> NativeAPI.ui_button_img_at_16(text, image?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, new Color(1, 1, 1, 1), textAlign);
 
-		/// <inheritdoc cref="ButtonImgAt(string,Sprite,UIBtnLayout,Vec3,Vec2)"/>
+		/// <inheritdoc cref="ButtonImgAt(string,Sprite,UIBtnLayout,Vec3,Vec2,Align)"/>
 		/// <param name="imageTint">The Sprite's color will be multiplied by
 		/// this tint. The default is White(1,1,1,1).</param>
-		public static bool ButtonImgAt(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_button_img_at_16(text, image?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, imageTint);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool ButtonImgAt(string text, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size, Align textAlign = Align.None)
+			=> NativeAPI.ui_button_img_at_16(text, image?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, imageTint, textAlign);
 
 		/// <summary>A Radio is similar to a button, except you can specify if
 		/// it looks pressed or not regardless of interaction. This can be
@@ -627,7 +683,7 @@ namespace StereoKit
 			// NativeAPI.ui_toggle_img_16(text, ref active, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left) && active;
 
 			bool value = active;
-			return NativeAPI.ui_toggle_img_16(text, ref value, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left) && !active;
+			return NativeAPI.ui_toggle_img_16(text, ref value, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left, Vec2.Zero, new Color(1,1,1,1), Align.None) && !active;
 		}
 
 		/// <inheritdoc cref="Radio(string, bool)"/>
@@ -635,10 +691,13 @@ namespace StereoKit
 		/// space. If an axis is left as zero, it will be auto-calculated. For
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
-		public static bool Radio(string text, bool active, Vec2 size)
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool Radio(string text, bool active, Vec2 size, Align textAlign = Align.None)
 		{
 			bool value = active;
-			return NativeAPI.ui_toggle_img_sz_16(text, ref value, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left, size) && !active;
+			return NativeAPI.ui_toggle_img_16(text, ref value, Default.SpriteRadioOff._inst, Default.SpriteRadioOn._inst, UIBtnLayout.Left, size, new Color(1,1,1,1), textAlign) && !active;
 		}
 
 		/// <summary>A Radio is similar to a button, except you can specify if
@@ -664,7 +723,16 @@ namespace StereoKit
 		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout = UIBtnLayout.Left)
 		{
 			bool value = active;
-			return NativeAPI.ui_toggle_img_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout) && !active;
+			return NativeAPI.ui_toggle_img_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, Vec2.Zero, new Color(1,1,1,1), Align.None) && !active;
+		}
+
+		/// <inheritdoc cref="Radio(string, bool, Sprite, Sprite, UIBtnLayout)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, Color imageTint, UIBtnLayout imageLayout = UIBtnLayout.Left)
+		{
+			bool value = active;
+			return NativeAPI.ui_toggle_img_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, Vec2.Zero, imageTint, Align.None) && !active;
 		}
 
 		/// <inheritdoc cref="Radio(string, bool, Sprite, Sprite, UIBtnLayout)"/>
@@ -672,10 +740,22 @@ namespace StereoKit
 		/// space. If an axis is left as zero, it will be auto-calculated. For
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
-		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout, Vec2 size)
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout, Vec2 size, Align textAlign = Align.None)
 		{
 			bool value = active;
-			return NativeAPI.ui_toggle_img_sz_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, size) && !active;
+			return NativeAPI.ui_toggle_img_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1,1,1,1), textAlign) && !active;
+		}
+
+		/// <inheritdoc cref="Radio(string, bool, Sprite, Sprite, UIBtnLayout, Vec2, Align)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool Radio(string text, bool active, Sprite imageOff, Sprite imageOn, Color imageTint, UIBtnLayout imageLayout, Vec2 size, Align textAlign = Align.None)
+		{
+			bool value = active;
+			return NativeAPI.ui_toggle_img_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, size, imageTint, textAlign) && !active;
 		}
 
 		/// <inheritdoc cref="Radio(string, bool, Sprite, Sprite, UIBtnLayout)"/>
@@ -683,10 +763,22 @@ namespace StereoKit
 		/// element relative to the current Hierarchy.</param>
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space.</param>
-		public static bool RadioAt(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool RadioAt(string text, bool active, Sprite imageOff, Sprite imageOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size, Align textAlign = Align.None)
 		{
 			bool value = active;
-			return NativeAPI.ui_toggle_img_at_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size) && !active;
+			return NativeAPI.ui_toggle_img_at_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, new Color(1,1,1,1), textAlign) && !active;
+		}
+
+		/// <inheritdoc cref="RadioAt(string, bool, Sprite, Sprite, UIBtnLayout, Vec3, Vec2, Align)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool RadioAt(string text, bool active, Sprite imageOff, Sprite imageOn, Color imageTint, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size, Align textAlign = Align.None)
+		{
+			bool value = active;
+			return NativeAPI.ui_toggle_img_at_16(text, ref value, imageOff?._inst ?? IntPtr.Zero, imageOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, imageTint, textAlign) && !active;
 		}
 
 		/// <summary>A pressable round button! This button has a square layout,
@@ -730,7 +822,7 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool Toggle (string text, ref bool value)
-			=> NativeAPI.ui_toggle_16(text, ref value);
+			=> NativeAPI.ui_toggle_16(text, ref value, Vec2.Zero, Align.None);
 
 
 		/// <summary>A toggleable button! A button will expand to fit the
@@ -753,6 +845,12 @@ namespace StereoKit
 		public static bool Toggle(string text, ref bool value, Sprite image, UIBtnLayout imageLayout = UIBtnLayout.Left)
 			=> Toggle(text, ref value, image, image, imageLayout);
 
+		/// <inheritdoc cref="Toggle(string, ref bool, Sprite, UIBtnLayout)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool Toggle(string text, ref bool value, Sprite image, Color imageTint, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> Toggle(text, ref value, image, image, imageTint, imageLayout);
+
 
 		/// <summary>A toggleable button! A button will expand to fit the
 		/// text provided to it, vertically and horizontally. Text is re-used 
@@ -774,7 +872,13 @@ namespace StereoKit
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
 		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout = UIBtnLayout.Left)
-			=> NativeAPI.ui_toggle_img_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout);
+			=> NativeAPI.ui_toggle_img_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, Vec2.Zero, new Color(1,1,1,1), Align.None);
+
+		/// <inheritdoc cref="Toggle(string, ref bool, Sprite, Sprite, UIBtnLayout)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, Color imageTint, UIBtnLayout imageLayout = UIBtnLayout.Left)
+			=> NativeAPI.ui_toggle_img_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, Vec2.Zero, imageTint, Align.None);
 
 		/// <summary>A toggleable button! A button will expand to fit the
 		/// text provided to it, vertically and horizontally. Text is re-used 
@@ -797,8 +901,17 @@ namespace StereoKit
 		/// is UI.LineHeight.</param>
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
-		public static bool Toggle(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec2 size)
-			=> Toggle(text, ref value, image, image, imageLayout, size);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool Toggle(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec2 size, Align textAlign = Align.None)
+			=> Toggle(text, ref value, image, image, imageLayout, size, textAlign);
+
+		/// <inheritdoc cref="Toggle(string, ref bool, Sprite, UIBtnLayout, Vec2, Align)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool Toggle(string text, ref bool value, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec2 size, Align textAlign = Align.None)
+			=> Toggle(text, ref value, image, image, imageTint, imageLayout, size, textAlign);
 
 		/// <summary>A toggleable button! A button will expand to fit the
 		/// text provided to it, vertically and horizontally. Text is re-used 
@@ -823,16 +936,28 @@ namespace StereoKit
 		/// is UI.LineHeight.</param>
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
-		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec2 size)
-			=> NativeAPI.ui_toggle_img_sz_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, size);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec2 size, Align textAlign = Align.None)
+			=> NativeAPI.ui_toggle_img_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, size, new Color(1,1,1,1), textAlign);
+
+		/// <inheritdoc cref="Toggle(string, ref bool, Sprite, Sprite, UIBtnLayout, Vec2, Align)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool Toggle(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, Color imageTint, UIBtnLayout imageLayout, Vec2 size, Align textAlign = Align.None)
+			=> NativeAPI.ui_toggle_img_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, size, imageTint, textAlign);
 
 		/// <inheritdoc cref="Toggle(string, ref bool)"/>
 		/// <param name="size">The layout size for this element in Hierarchy
 		/// space. If an axis is left as zero, it will be auto-calculated. For
 		/// X this is the remaining width of the current layout, and for Y this
 		/// is UI.LineHeight.</param>
-		public static bool Toggle(string text, ref bool value, Vec2 size)
-			=> NativeAPI.ui_toggle_sz_16(text, ref value, size);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool Toggle(string text, ref bool value, Vec2 size, Align textAlign = Align.None)
+			=> NativeAPI.ui_toggle_16(text, ref value, size, textAlign);
 
 		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
 		/// and instead goes exactly where you put it.</summary>
@@ -847,8 +972,11 @@ namespace StereoKit
 		/// space.</param>
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
-		public static bool ToggleAt(string text, ref bool value, Vec3 topLeftCorner, Vec2 size)
-			=> NativeAPI.ui_toggle_at_16(text, ref value, topLeftCorner, size);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool ToggleAt(string text, ref bool value, Vec3 topLeftCorner, Vec2 size, Align textAlign = Align.None)
+			=> NativeAPI.ui_toggle_at_16(text, ref value, topLeftCorner, size, textAlign);
 
 		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
 		/// and instead goes exactly where you put it.</summary>
@@ -868,8 +996,17 @@ namespace StereoKit
 		/// space.</param>
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
-		public static bool ToggleAt(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
-			=> ToggleAt(text, ref value, image, image, imageLayout, topLeftCorner, size);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool ToggleAt(string text, ref bool value, Sprite image, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size, Align textAlign = Align.None)
+			=> ToggleAt(text, ref value, image, image, imageLayout, topLeftCorner, size, textAlign);
+
+		/// <inheritdoc cref="ToggleAt(string, ref bool, Sprite, UIBtnLayout, Vec3, Vec2, Align)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool ToggleAt(string text, ref bool value, Sprite image, Color imageTint, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size, Align textAlign = Align.None)
+			=> ToggleAt(text, ref value, image, image, imageTint, imageLayout, topLeftCorner, size, textAlign);
 
 		/// <summary>A variant of UI.Toggle that doesn't use the layout system,
 		/// and instead goes exactly where you put it.</summary>
@@ -891,8 +1028,17 @@ namespace StereoKit
 		/// space.</param>
 		/// <returns>Will return true any time the toggle value changes, NOT
 		/// the toggle value itself!</returns>
-		public static bool ToggleAt(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size)
-		=> NativeAPI.ui_toggle_img_at_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size);
+		/// <param name="textAlign">Where the text aligns within its allotted box.
+		/// `Align.None` falls back to the element's natural alignment, which is
+		/// generally what you want.</param>
+		public static bool ToggleAt(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size, Align textAlign = Align.None)
+		=> NativeAPI.ui_toggle_img_at_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, new Color(1,1,1,1), textAlign);
+
+		/// <inheritdoc cref="ToggleAt(string, ref bool, Sprite, Sprite, UIBtnLayout, Vec3, Vec2, Align)"/>
+		/// <param name="imageTint">The Sprite's color will be multiplied by
+		/// this tint. The default is White(1,1,1,1).</param>
+		public static bool ToggleAt(string text, ref bool value, Sprite toggleOff, Sprite toggleOn, Color imageTint, UIBtnLayout imageLayout, Vec3 topLeftCorner, Vec2 size, Align textAlign = Align.None)
+		=> NativeAPI.ui_toggle_img_at_16(text, ref value, toggleOff?._inst ?? IntPtr.Zero, toggleOn?._inst ?? IntPtr.Zero, imageLayout, topLeftCorner, size, imageTint, textAlign);
 
 		/// <summary>This adds a non-interactive Model to the UI panel layout.
 		/// </summary>
@@ -1064,7 +1210,12 @@ namespace StereoKit
 		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
 		public static bool HSlider(string id, ref double value, double min, double max, double step = 0, float width = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
-			=> NativeAPI.ui_hslider_f64_16(id, ref value, min, max, step, width, confirmMethod, notifyOn);
+		{
+			float v      = (float)value;
+			bool  result = NativeAPI.ui_hslider_16(id, ref v, (float)min, (float)max, (float)step, width, confirmMethod, notifyOn);
+			value = v;
+			return result;
+		}
 
 		/// <summary>A variant of UI.HSlider that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -1116,7 +1267,12 @@ namespace StereoKit
 		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
 		public static bool HSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
-			=> NativeAPI.ui_hslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
+		{
+			float v      = (float)value;
+			bool  result = NativeAPI.ui_hslider_at_16(id, ref v, (float)min, (float)max, (float)step, topLeftCorner, size, confirmMethod, notifyOn);
+			value = v;
+			return result;
+		}
 
 		/// <summary>A vertical slider element! You can stick your finger
 		/// in it, and slide the value up and down.</summary>
@@ -1164,7 +1320,12 @@ namespace StereoKit
 		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
 		public static bool VSlider(string id, ref double value, double min, double max, double step = 0, float height = 0, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
-			=> NativeAPI.ui_vslider_f64_16(id, ref value, min, max, step, height, confirmMethod, notifyOn);
+		{
+			float v      = (float)value;
+			bool  result = NativeAPI.ui_vslider_16(id, ref v, (float)min, (float)max, (float)step, height, confirmMethod, notifyOn);
+			value = v;
+			return result;
+		}
 
 		/// <summary>A variant of UI.VSlider that doesn't use the layout
 		/// system, and instead goes exactly where you put it.</summary>
@@ -1215,7 +1376,14 @@ namespace StereoKit
 		/// return value.</param>
 		/// <returns>Returns true any time the value changes.</returns>
 		public static bool VSliderAt(string id, ref double value, double min, double max, double step, Vec3 topLeftCorner, Vec2 size, UIConfirm confirmMethod = UIConfirm.Push, UINotify notifyOn = UINotify.Change)
-			=> NativeAPI.ui_vslider_at_f64_16(id, ref value, min, max, step, topLeftCorner, size, confirmMethod, notifyOn);
+		{
+			// See HSlider(ref double, ...) — the slider's visual mapping is
+			// float-bound, so we demote and roundtrip.
+			float v      = (float)value;
+			bool  result = NativeAPI.ui_vslider_at_16(id, ref v, (float)min, (float)max, (float)step, topLeftCorner, size, confirmMethod, notifyOn);
+			value = v;
+			return result;
+		}
 
 		/// <summary>This begins a new UI group with its own layout! Much like
 		/// a window, except with a more flexible handle, and no header. You
@@ -1241,7 +1409,41 @@ namespace StereoKit
 		/// <returns>Returns true for every frame the user is grabbing the
 		/// handle.</returns>
 		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
-			=> NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType, allowedGestures);
+			=> NativeAPI.ui_handle_begin_16(id, ref pose, IntPtr.Zero, handle, drawHandle, moveType, allowedGestures);
+
+		/// <summary>This is a variant of `UI.HandleBegin` that additionally
+		/// supports uniform scaling when two or more interactors grab the handle
+		/// at the same time. With a single interactor the handle behaves exactly
+		/// like the normal handle. With multiple interactors, their motion is
+		/// combined into a translation, rotation, and a uniform scale. Interactors
+		/// may freely join or leave the interaction without the handle jumping.
+		/// Providing a scale here enables scaling; pass `UIMove.ExactNoscale` as
+		/// the moveType if you want multi-interactor translate/rotate but no
+		/// scaling.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="pose">The pose state for the handle! The user will be
+		/// able to grab this handle and move it around. The pose is relative
+		/// to the current hierarchy stack.</param>
+		/// <param name="handle">Size and location of the handle, relative to
+		/// the pose. When a `scale` is provided, the handle multiplies these
+		/// Bounds by it - so pass your unscaled base size, and the grab volume
+		/// and drawn handle grow and shrink to match your scaled content.</param>
+		/// <param name="scale">A uniform scale multiplier that gets accumulated
+		/// as the user scales the handle with multiple interactors. Seed this
+		/// with 1 (or your starting scale). Since the Pose has no scale of its
+		/// own, apply this value to your content - the `handle` Bounds are scaled
+		/// by it for you, so the grab volume and drawn handle stay matched.</param>
+		/// <param name="drawHandle">Should this function draw the handle
+		/// visual for you, or will you draw that yourself?</param>
+		/// <param name="moveType">Describes how the handle will move when
+		/// dragged around. Use `UIMove.ExactNoscale` to disable scaling.</param>
+		/// <param name="allowedGestures">Which hand gestures are used for
+		/// interacting with this Handle?</param>
+		/// <returns>Returns true for every frame the user is grabbing the
+		/// handle.</returns>
+		public static bool HandleBegin (string id, ref Pose pose, Bounds handle, ref float scale, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
+			=> NativeAPI.ui_handle_begin_16(id, ref pose, ref scale, handle, drawHandle, moveType, allowedGestures);
 
 		/// <summary>Finishes a handle! Must be called after UI.HandleBegin()
 		/// and all elements have been drawn. Pops the pose transform pushed
@@ -1271,7 +1473,43 @@ namespace StereoKit
 		/// handle.</returns>
 		public static bool Handle(string id, ref Pose pose, Bounds handle, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
 		{
-			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, handle, drawHandle, moveType, allowedGestures);
+			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, IntPtr.Zero, handle, drawHandle, moveType, allowedGestures);
+			NativeAPI.ui_handle_end();
+			return result;
+		}
+
+		/// <summary>This begins and ends a handle, like `UI.Handle`, but with
+		/// support for multi-interactor uniform scaling. With two or more
+		/// interactors grabbing the handle, their motion is combined into a
+		/// translation, rotation, and a uniform scale. Interactors may freely
+		/// join or leave the interaction without the handle jumping. Providing a
+		/// scale here enables scaling; pass `UIMove.ExactNoscale` as the moveType
+		/// if you want multi-interactor translate/rotate but no scaling.</summary>
+		/// <param name="id">An id for tracking element state. MUST be unique
+		/// within current hierarchy.</param>
+		/// <param name="pose">The pose state for the handle! The user will
+		/// be able to grab this handle and move it around. The pose is relative
+		/// to the current hierarchy stack.</param>
+		/// <param name="handle">Size and location of the handle, relative to
+		/// the pose. When a `scale` is provided, the handle multiplies these
+		/// Bounds by it - so pass your unscaled base size, and the grab volume
+		/// and drawn handle grow and shrink to match your scaled content.</param>
+		/// <param name="scale">A uniform scale multiplier that gets accumulated
+		/// as the user scales the handle with multiple interactors. Seed this
+		/// with 1 (or your starting scale). Since the Pose has no scale of its
+		/// own, apply this value to your content - the `handle` Bounds are scaled
+		/// by it for you, so the grab volume and drawn handle stay matched.</param>
+		/// <param name="drawHandle">Should this function draw the handle for
+		/// you, or will you draw that yourself?</param>
+		/// <param name="moveType">Describes how the handle will move when
+		/// dragged around. Use `UIMove.ExactNoscale` to disable scaling.</param>
+		/// <param name="allowedGestures">Which hand gestures are used for
+		/// interacting with this Handle?</param>
+		/// <returns>Returns true for every frame the user is grabbing the
+		/// handle.</returns>
+		public static bool Handle(string id, ref Pose pose, Bounds handle, ref float scale, bool drawHandle = false, UIMove moveType = UIMove.Exact, UIGesture allowedGestures = UIGesture.Pinch)
+		{
+			bool result = NativeAPI.ui_handle_begin_16(id, ref pose, ref scale, handle, drawHandle, moveType, allowedGestures);
 			NativeAPI.ui_handle_end();
 			return result;
 		}
@@ -1697,13 +1935,14 @@ namespace StereoKit
 		/// <param name="focusState">This is the current frame's "focus" state
 		/// for the button.</param>
 		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState)
-			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState, out _);
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), 0, 0, UIBtnFlag.None, out fingerOffset, out buttonState, out focusState, out _);
 
 		/// <inheritdoc cref="ButtonBehavior(Vec3, Vec2, string, out float, out BtnState, out BtnState)"/>
-		/// <param name="hand">Id of the hand that interacted with the button.
-		/// This will be -1 if no interaction has occurred.</param>
-		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out int hand)
-			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), out fingerOffset, out buttonState, out focusState, out hand);
+		/// <param name="interactor">The Interactor that interacted with the
+		/// button. If nothing is interacting, this will be `Interactor.None`.
+		/// </param>
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out Interactor interactor)
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), 0, 0, UIBtnFlag.None, out fingerOffset, out buttonState, out focusState, out interactor);
 
 		/// <summary>This is the core functionality of StereoKit's buttons,
 		/// without any of the rendering parts! If you're trying to create your
@@ -1728,10 +1967,17 @@ namespace StereoKit
 		/// state for the button.</param>
 		/// <param name="focusState">This is the current frame's "focus" state
 		/// for the button.</param>
-		/// <param name="hand">Id of the hand that interacted with the button.
-		/// This will be -1 if no interaction has occurred.</param>
-		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, float buttonDepth, float buttonActivationDepth, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out int hand)
-			=> NativeAPI.ui_button_behavior_depth(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), buttonDepth, buttonActivationDepth, out fingerOffset, out buttonState, out focusState, out hand);
+		/// <param name="interactor">The Interactor that interacted with the
+		/// button. If nothing is interacting, this will be `Interactor.None`.
+		/// </param>
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, float buttonDepth, float buttonActivationDepth, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out Interactor interactor)
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), buttonDepth, buttonActivationDepth, UIBtnFlag.None, out fingerOffset, out buttonState, out focusState, out interactor);
+
+		/// <inheritdoc cref="ButtonBehavior(Vec3, Vec2, string, float, float, out float, out BtnState, out BtnState, out Interactor)"/>
+		/// <param name="flags">Flags for modifying the button's behavior, such
+		/// as opting out of pull-away cancellation.</param>
+		public static void ButtonBehavior(Vec3 windowRelativePos, Vec2 size, string id, float buttonDepth, float buttonActivationDepth, UIBtnFlag flags, out float fingerOffset, out BtnState buttonState, out BtnState focusState, out Interactor interactor)
+			=> NativeAPI.ui_button_behavior(windowRelativePos, size, NativeAPI.ui_stack_hash_16(id), buttonDepth, buttonActivationDepth, flags, out fingerOffset, out buttonState, out focusState, out interactor);
 
 		/// <summary>This is the core functionality of StereoKit's slider
 		/// elements, without any of the rendering parts! If you're trying to

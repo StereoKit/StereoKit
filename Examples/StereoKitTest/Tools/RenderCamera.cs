@@ -81,9 +81,8 @@ namespace StereoKit.Framework
 				Text.Add(""+(int)fov, Matrix.TS(-0.03f,0,0, 0.5f), Pivot.CenterLeft);
 				Hierarchy.Pop();
 
-				Matrix glFix = Backend.Graphics == BackendGraphics.D3D11 ? Matrix.Identity : Matrix.R(0,0,180);
 				Renderer.RenderTo(_frameSurface,
-					glFix * _renderFrom.ToMatrix(),
+					_renderFrom.ToMatrix(),
 					Matrix.Perspective(fov, (float)Width/Height, 0.01f, 100));
 			}
 			if (_recording)

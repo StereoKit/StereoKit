@@ -32,20 +32,17 @@ struct psIn {
 	float  shadow_ndotl : TEXCOORD3;
 	float4 color        : COLOR0;
 	float3 ambient      : COLOR1;
-	uint   view_id      : SV_RenderTargetArrayIndex;
 };
 
 ///////////////////////////////////////////
 
-psIn vs(vsIn input, uint id : SV_InstanceID) {
+psIn vs(vsIn input, sk_ids_t ids) {
 	psIn o;
-	o.view_id = id % sk_view_count;
-	id        = id / sk_view_count;
 
-	float4 world = mul(input.pos, sk_inst[id].world);
-	o.pos        = mul(world,     sk_viewproj[o.view_id]);
+	float4 world = mul(input.pos, sk_inst[ids.inst].world);
+	o.pos        = mul(world,     sk_viewproj[ids.view]);
 
-	float3 normal = normalize(mul(input.norm, (float3x3) sk_inst[id].world));
+	float3 normal = normalize(mul(input.norm, (float3x3) sk_inst[ids.inst].world));
 	o.shadow_ndotl = dot(normal, light_direction);
 
 	// Apply bias to the shadow map position directly in world space:
@@ -65,7 +62,7 @@ psIn vs(vsIn input, uint id : SV_InstanceID) {
 
 	o.world      = world.xyz;
 	o.uv         = (input.uv * tex_trans.zw) + tex_trans.xy;
-	o.color      = color * input.col * sk_inst[id].color;
+	o.color      = color * input.col * sk_inst[ids.inst].color;
 	// We darken the ambient light by 0.5, since in the sample this shader is
 	// mixed with other materials that don't have the extra directional light.
 	// For real applications, this would be 1.0, but all Materials would use

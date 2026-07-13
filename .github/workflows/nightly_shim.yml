@@ -1,0 +1,27 @@
+name: Nightly Build Shim
+on:
+  workflow_dispatch:
+    inputs:
+      skip_time_check:
+        description: 'Skip check for builds in the last day'
+        type: boolean
+        required: false
+        default: true
+  schedule:
+  - cron: '0 9 * * *'
+
+permissions:
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Trigger nightly on develop
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh workflow run nightly_build.yml \
+          --repo ${{ github.repository }} \
+          --ref develop \
+          --field skip_time_check=${{ inputs.skip_time_check || 'false' }}

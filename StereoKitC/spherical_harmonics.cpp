@@ -192,24 +192,43 @@ vec3 sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics) {
 
 ///////////////////////////////////////////
 
-inline vec4 to_vec4(const vec3& vec) { return { vec.x, vec.y, vec.z, 0 }; }
-
-void sh_to_fast(const spherical_harmonics_t& lookup, vec4* fast_9) {
+void sh_to_fast(const spherical_harmonics_t& lookup, vec4* fast_7) {
 	static const float CosineA0 = 3.141592654f;
 	static const float CosineA1 = (2.0f * CosineA0) / 3.0f;
 	static const float CosineA2 = CosineA0 * 0.25f;
 
-	fast_9[0] = to_vec4(lookup.coefficients[0] * (0.282095f * CosineA0));
+	// Pre-bake SH basis constants into coefficients
+	vec3 sh0 = lookup.coefficients[0] * (0.282095f * CosineA0);
+	vec3 sh1 = lookup.coefficients[1] * (0.488603f * CosineA1);
+	vec3 sh2 = lookup.coefficients[2] * (0.488603f * CosineA1);
+	vec3 sh3 = lookup.coefficients[3] * (0.488603f * CosineA1);
+	vec3 sh4 = lookup.coefficients[4] * (1.092548f * CosineA2);
+	vec3 sh5 = lookup.coefficients[5] * (1.092548f * CosineA2);
+	vec3 sh6 = lookup.coefficients[6] * (0.315392f * CosineA2);
+	vec3 sh7 = lookup.coefficients[7] * (1.092548f * CosineA2);
+	vec3 sh8 = lookup.coefficients[8] * (0.546274f * CosineA2);
 
-	fast_9[1] = to_vec4(lookup.coefficients[1] * (0.488603f * CosineA1));
-	fast_9[2] = to_vec4(lookup.coefficients[2] * (0.488603f * CosineA1));
-	fast_9[3] = to_vec4(lookup.coefficients[3] * (0.488603f * CosineA1));
+	// Pack into dot-product form for efficient GPU evaluation.
+	// Shader evaluates as:
+	//   vA = float4(normal, 1)
+	//   vB = float4(n.x*n.y, n.y*n.z, n.z*n.z, n.z*n.x)
+	//   vC = n.x*n.x - n.y*n.y
+	//   result.c = dot(shA[c], vA) + dot(shB[c], vB) + shC.c * vC
+	// The (3*nz^2-1) term is split: 3*sh6 goes into shB.z, -sh6 folds
+	// into shA.w alongside the band 0 constant.
 
-	fast_9[4] = to_vec4(lookup.coefficients[4] * (1.092548f * CosineA2));
-	fast_9[5] = to_vec4(lookup.coefficients[5] * (1.092548f * CosineA2));
-	fast_9[6] = to_vec4(lookup.coefficients[6] * (0.315392f * CosineA2));
-	fast_9[7] = to_vec4(lookup.coefficients[7] * (1.092548f * CosineA2));
-	fast_9[8] = to_vec4(lookup.coefficients[8] * (0.546274f * CosineA2));
+	// Band 0+1 per channel: dot(shA, float4(normal, 1))
+	fast_7[0] = { sh3.x, sh1.x, sh2.x, sh0.x - sh6.x };
+	fast_7[1] = { sh3.y, sh1.y, sh2.y, sh0.y - sh6.y };
+	fast_7[2] = { sh3.z, sh1.z, sh2.z, sh0.z - sh6.z };
+
+	// Band 2 per channel: dot(shB, float4(n.x*n.y, n.y*n.z, n.z*n.z, n.z*n.x))
+	fast_7[3] = { sh4.x, sh5.x, 3.0f*sh6.x, sh7.x };
+	fast_7[4] = { sh4.y, sh5.y, 3.0f*sh6.y, sh7.y };
+	fast_7[5] = { sh4.z, sh5.z, 3.0f*sh6.z, sh7.z };
+
+	// Last band 2 term: (n.x^2 - n.y^2)
+	fast_7[6] = { sh8.x, sh8.y, sh8.z, 0 };
 }
 
 }

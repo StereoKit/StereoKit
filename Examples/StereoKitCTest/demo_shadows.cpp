@@ -89,7 +89,7 @@ void demo_shadows_init() {
 	material_release(floor_mat);
 
 	// Set up initial pose
-	shadow_model_pose.position    = vec3{0, -0.4f, -0.5f};
+	shadow_model_pose.position    = vec3{0, -0.5f, -0.5f};
 	shadow_model_pose.orientation = quat_identity;
 
 	// Save old lighting
@@ -153,7 +153,7 @@ static void setup_shadow_map(vec3 light_direction) {
 
 	// Render to shadow map (filter out VFX layer)
 	render_layer_ layer_filter = (render_layer_)(render_layer_all & ~render_layer_vfx);
-	render_to(shadow_map, 0, view, proj, layer_filter, shadow_map_variant, render_clear_all, rect_t{});
+	render_to(shadow_map, 0, &view, &proj, 1, layer_filter, shadow_map_variant, render_clear_all, rect_t{});
 
 	// Rebind the shadow map for reading
 	render_global_texture(shadow_buffer_slot, shadow_map);
@@ -166,7 +166,7 @@ void demo_shadows_update() {
 
 	// UI handle for the model
 	bounds_t model_bounds = model_get_bounds(shadow_model);
-	ui_handle_begin("ShadowModel", shadow_model_pose, model_bounds, false, ui_move_exact);
+	ui_handle_begin("ShadowModel", shadow_model_pose, nullptr, model_bounds, false, ui_move_exact);
 	model_draw(shadow_model, matrix_identity);
 	ui_handle_end();
 }

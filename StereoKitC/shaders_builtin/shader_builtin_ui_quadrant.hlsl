@@ -9,42 +9,38 @@ struct vsIn {
 	float4 color    : COLOR0;
 };
 struct psIn {
-	float4 pos     : SV_Position;
-	float3 world   : TEXCOORD1;
-	half4  color   : COLOR0;
-	uint view_id : SV_RenderTargetArrayIndex;
+	float4      pos   : SV_Position;
+	float3      world : TEXCOORD1;
+	min16float4 color : COLOR0;
 };
 
-psIn vs(vsIn input, uint id : SV_InstanceID) {
+psIn vs(vsIn input, sk_ids_t ids) {
 	psIn o;
-	o.view_id = id % sk_view_count;
-	id        = id / sk_view_count;
+	float4x4 world_mat = sk_inst[ids.inst].world;
 
-	// Extract scale from the matrix
-	float4x4 world_mat = sk_inst[id].world;
-	float2   scale     = float2(
-		length(float3(world_mat._11,world_mat._12,world_mat._13)),
-		length(float3(world_mat._21,world_mat._22,world_mat._23))
-	);
-	// Restore scale to 1
-	world_mat[0] = world_mat[0] / scale.x;
-	world_mat[1] = world_mat[1] / scale.y;
-	// Translate the position using the quadrant (TEXCOORD0) information and
-	// the extracted scale.
-	float4 sized_pos;
-	sized_pos.xy = input.pos.xy + input.quadrant * scale * 0.5;
-	sized_pos.zw = input.pos.zw;
+	// Quadrant offset uses the original (scaled) rows directly:
+	// scale * normalized_row = original_row, so no explicit scale needed.
+	// This avoids 2 sqrt transcendentals vs the old length() approach.
+	float3 row0 = float3(world_mat._11, world_mat._12, world_mat._13);
+	float3 row1 = float3(world_mat._21, world_mat._22, world_mat._23);
+	float3 quadrant_offset = (input.quadrant.x * 0.5) * row0
+	                       + (input.quadrant.y * 0.5) * row1;
+
+	// Normalize rows 0 and 1 via rsqrt + multiply (no divide)
+	world_mat[0] *= rsqrt(dot(row0, row0));
+	world_mat[1] *= rsqrt(dot(row1, row1));
 
 	float3 normal = normalize(mul(input.norm, (float3x3)world_mat));
-	float4 world  = mul(sized_pos, world_mat);
-	o.pos    = mul(world, sk_viewproj[o.view_id]);
+	float4 world  = mul(input.pos, world_mat);
+	world.xyz    += quadrant_offset;
+	o.pos    = mul(world, sk_viewproj[ids.view]);
 	o.world  = world.xyz;
-	o.color.rgb = input.color.rgb * sk_inst[id].color.rgb * sk_lighting(normal);
+	o.color.rgb = input.color.rgb * sk_inst[ids.inst].color.rgb * sk_lighting(normal);
 	o.color.a   = input.color.a;
 	return o;
 }
 
-float4 ps(psIn input) : SV_TARGET {
-	float glow = pow(1-saturate(sk_finger_distance(input.world) / 0.12), 10);
-	return float4(lerp(input.color.rgb, half3(1, 1, 1), glow), input.color.a);
+min16float4 ps(psIn input) : SV_TARGET {
+	min16float glow = sk_finger_glow(input.world);
+	return min16float4(lerp(input.color.rgb, min16float3(1, 1, 1), glow), input.color.a);
 }

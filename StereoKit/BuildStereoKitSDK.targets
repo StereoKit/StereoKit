@@ -13,9 +13,9 @@
 		<SKSDKFolder Condition="'$(SKSDKFolder)'!=''">$([MSBuild]::NormalizePath('$(SKSDKFolder)'))</SKSDKFolder>
 
 		<!-- Get a nice name for the OS/Platform we're building for. -->
-		<SKSDKBuildOS Condition="'$(TargetFrameworkIdentifier)'=='MonoAndroid'"                             >Android</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">Android</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(OS)'=='Windows_NT'"                           >Win32</SKSDKBuildOS>
+		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and $([MSBuild]::IsOSPlatform('OSX'))"               >MacOS</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(OS)'!='Windows_NT'"                           >Linux</SKSDKBuildOS>
 
 
@@ -36,6 +36,7 @@
 		<!-- Get the SK native binary names, which is different per-platform. -->
 		<SKSDKLibFile Condition="'$(SKSDKBuildOS)'=='Win32'">StereoKitC.dll</SKSDKLibFile>
 		<SKSDKDbgFile Condition="'$(SKSDKBuildOS)'=='Win32'">StereoKitC.pdb</SKSDKDbgFile>
+		<SKSDKLibFile Condition="'$(SKSDKBuildOS)'=='MacOS'">libStereoKitC.dylib</SKSDKLibFile>
 		<SKSDKLibFile Condition="'$(SKSDKBuildOS)'=='Linux' or '$(SKSDKBuildOS)'=='Android'">libStereoKitC.so</SKSDKLibFile>
 		<SKSDKDbgFile Condition="'$(SKSDKBuildOS)'=='Linux' or '$(SKSDKBuildOS)'=='Android'">libStereoKitC.so.dbg</SKSDKDbgFile>
 
@@ -46,6 +47,7 @@
 
 		<!-- Make a Runtime Id for the binary file. -->
 		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='Win32'"  >win-$(SKSDKBuildMode.ToLower())</SKSDKRID>
+		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='MacOS'"  >osx-$(SKSDKBuildMode.ToLower())</SKSDKRID>
 		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='Linux'"  >linux-$(SKSDKBuildMode.ToLower())</SKSDKRID>
 		<SKSDKRID Condition="'$(SKSDKBuildOS)'=='Android'">android-$(SKSDKBuildAbi)</SKSDKRID>
 	</PropertyGroup>
@@ -69,10 +71,11 @@
 		<PropertyGroup>
 			<SKSDKPresetFast Condition="'$(Configuration)'=='Debug'">_Fast</SKSDKPresetFast>
 			<SKSDKPreset>$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)$(SKSDKPresetFast)</SKSDKPreset>
+			<!-- Windows uses multi-config generator (MSVC), others use single-config (Ninja) -->
 			<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32'">$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)$(SKSDKPresetFast)\CMakeCache.txt</SKSDKCacheFile>
 			<SKSDKCacheFile Condition="'$(SKSDKCacheFile)'==''"   >$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)$(SKSDKPresetFast)\CMakeCache.txt</SKSDKCacheFile>
 
-			<SKBuildCommand                                         >cd $(SKSDKFolder)</SKBuildCommand>
+			<SKBuildCommand                                         >cd "$(SKSDKFolder)"</SKBuildCommand>
 			<SKBuildCommand Condition="!Exists('$(SKSDKCacheFile)')">$(SKBuildCommand) &amp;&amp; cmake --preset $(SKSDKPreset) -DSK_BUILD_TESTS=OFF</SKBuildCommand>
 			<SKBuildCommand                                         >$(SKBuildCommand) &amp;&amp; cmake --build --preset $(SKSDKPreset)</SKBuildCommand>
 		</PropertyGroup>
@@ -83,21 +86,39 @@
 	
 	<!-- Attach the native library binaries. -->
 	<ItemGroup>
-		<None                                       Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKLibFile)" Include="$(SKSDKLibPath)" />
-		<None Condition="Exists('$(SKSDKDbgPath)')" Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKDbgFile)" Include="$(SKSDKDbgPath)" />
-		
+		<None                                                                 Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKLibFile)" Include="$(SKSDKLibPath)" />
+		<None Condition="'$(SKSDKDbgFile)'!='' and Exists('$(SKSDKDbgPath)')" Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKDbgFile)" Include="$(SKSDKDbgPath)" />
 	</ItemGroup>
 
-	<!-- Android binaries are included differently. -->
+	<!-- macOS requires MoltenVK for Vulkan support. -->
+	<ItemGroup Condition="'$(SKSDKBuildOS)'=='MacOS'">
+		<None Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\libMoltenVK.dylib" Include="$(SKSDKBinDir)libMoltenVK.dylib" />
+	</ItemGroup>
+
+	<!-- Android binaries are included differently. libStereoKitC.so and the jar
+	     are literal paths, so MSBuild keeps them in the item list even before the
+	     native build produces them. -->
 	<ItemGroup Condition="'$(SKSDKBuildOS)'=='Android'">
 		<!-- <None                 Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKDbgPath)" /> -->
 		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKLibPath)" />
-		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKBinDir)$(SKOpenXRLoader.ToLower())/*.so" />
-		<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKOpenXRLoaderFolder)/$(SKOpenXRLoader)/$(SKSDKBuildMode.ToLower())/*.so" />
+		<AndroidJavaLibrary   Visible="false" Include="$(SKSDKFolder)\bin\distribute\bin\Android\sk_app.jar" />
 	</ItemGroup>
+
+	<!-- Resolve the OpenXR loader wildcards in a target, so they expand after the
+	     native build instead of at evaluation time (when the .so doesn't exist yet). -->
+	<Target Name="StereoKit_AddAndroidNativeLibraries"
+	        Condition="'$(SKSDKBuildOS)'=='Android'"
+	        AfterTargets="StereoKit_BuildNative"
+	        BeforeTargets="BeforeBuild">
+		<ItemGroup>
+			<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKSDKBinDir)$(SKOpenXRLoader.ToLower())/*.so" />
+			<AndroidNativeLibrary Visible="false" CopyToOutputDirectory="PreserveNewest" Abi="$(SKSDKBuildAbi)" Include="$(SKOpenXRLoaderFolder)/$(SKOpenXRLoader)/$(SKSDKBuildMode.ToLower())/*.so" />
+		</ItemGroup>
+	</Target>
 
 	<!-- Full rebuilds of this project should also be full rebuilds of StereoKit. -->
 	<Target Name="SKSDKRebuild" AfterTargets="Clean">
+		<!-- Windows uses multi-config generator (MSVC), others use single-config (Ninja) -->
 		<RemoveDir Condition="'$(SKSDKBuildOS)'=='Win32'" Directories="$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildMode)" />
 		<RemoveDir Condition="'$(SKSDKBuildOS)'!='Win32'" Directories="$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildMode)_$(Configuration)" />
 	</Target>

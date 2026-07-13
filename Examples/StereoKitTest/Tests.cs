@@ -31,11 +31,13 @@ public static class Tests
 	static int             sceneFrame  = 0;
 	static float           sceneTime   = 0;
 	static int             failures    = 0;
+	static int             shutdownFrames = 0;
 	static HashSet<string> screenshots = new HashSet<string>();
 
 	private static Type   ActiveScene        { set { nextScene = (ITest)Activator.CreateInstance(value); } }
 	public  static bool   IsTesting          { get; set; }
 	public  static bool   TestSingle         { get; set; }
+	public  static int    SceneFrame => sceneFrame;
 
 	public  static string ScreenshotRoot     { get; set; } = null;
 	public  static bool   MakeScreenshots    { get; set; } = true;
@@ -82,6 +84,15 @@ public static class Tests
 		if (IsTesting && runSeconds != 0)
 			Time.SetTime(Time.Total+(1/90.0), 1/90.0);
 
+		// Run a few more frames after we're finished testing to flush screenshots
+		if (shutdownFrames > 0)
+		{
+			shutdownFrames--;
+			if (shutdownFrames == 0)
+				SK.Quit();
+			return;
+		}
+
 		if (nextScene != null)
 		{
 			activeScene?.Shutdown();
@@ -121,7 +132,7 @@ public static class Tests
 		{
 			sceneIndex += 1;
 			if (sceneIndex >= allScenes.Length || TestSingle)
-				SK.Quit();
+				shutdownFrames = 4; // run a few more frames so the last screenshot flushes
 			else
 				SetTestActive(allScenes[sceneIndex].Name);
 		}
@@ -186,6 +197,14 @@ public static class Tests
 		}
 	}
 
+	// Report a failure from within a running test scene. Unlike a bare
+	// Log.Err, this actually fails the test run.
+	public static void Fail(string message)
+	{
+		Log.Err(message);
+		failures += 1;
+	}
+
 	private static bool FinishedWithTest()
 	{
 		if (runSeconds != 0) return Time.Totalf-sceneTime > runSeconds;
@@ -235,5 +254,55 @@ public static class Tests
 			return;
 		Input.HandVisible (hand, true);
 		Input.HandOverride(hand, joints);
+	}
+
+	public static void DrawInteractorRay(Interactor actor, ref float refVisibleAmt, ref float refActiveAmt, float skip = 0.07f, bool hideInactive = true)
+	{
+		// This is a port of the internal `interactor_show_ray` (interactor_modes.cpp)
+		// built only from the public Interactor API
+		if (!actor.Tracked.IsActive()) return;
+
+		bool  actorVisible = hideInactive == false || actor.Focused != IdHash.None;
+		refVisibleAmt = SKMath.Lerp(refVisibleAmt, actorVisible ? 1f : 0f, 16.0f * Time.StepUnscaledf);
+		float visibility = refVisibleAmt;
+		if (visibility < 0.001f) return;
+
+		refActiveAmt = SKMath.Lerp(refActiveAmt, actor.Active != IdHash.None ? 1f : 0f, 16.0f * Time.StepUnscaledf);
+		float active = refActiveAmt;
+
+		Vec3  motionPos     = actor.Motion.position;
+		float length        = 0.35f;
+		Vec3  uncenteredDir = (actor.End - motionPos).Normalized;
+		Vec3  centeredDir   = uncenteredDir;
+		if (actor.Focused != IdHash.None && actor.TryGetFocusBounds(out Pose poseWorld, out Bounds boundsLocal, out Vec3 atLocal))
+		{
+			Vec3 pt = poseWorld.ToMatrix().Transform(boundsLocal.center + atLocal);
+			length      = Vec3.Distance(pt, motionPos);
+			centeredDir = (pt - motionPos).Normalized;
+		}
+		length = SKMath.Lerp(0.35f, length, visibility);
+		length = Math.Max(0, length - skip);
+
+		float alpha = 0.35f + active * 0.65f;
+		if (hideInactive) alpha *= visibility;
+
+		const int   ct      = 20;
+		const float raySnap = 1.0f;
+		LinePoint[] pts = new LinePoint[ct];
+		for (int i = 0; i < ct; i++)
+		{
+			float pct   = (float)i / (ct - 1);
+			float blend = pct * pct * pct * raySnap;
+			float d     = skip + pct * length;
+
+			float pctI  = 1 - pct;
+			float curve = SKMath.Lerp(
+				MathF.Sin(pctI * pctI * MathF.PI),
+				MathF.Min(1f, MathF.Sin(pct * pct * MathF.PI) * 1.5f), active);
+			float width = (0.002f + curve * 0.003f) * visibility;
+			Vec3  at    = motionPos + Vec3.Lerp(uncenteredDir * d, centeredDir * d, blend);
+			pts[i] = new LinePoint(at, new Color32(255, 255, 255, (byte)(curve * alpha * 255)), width);
+		}
+		Lines.Add(pts);
 	}
 }

@@ -11,6 +11,7 @@
 
 #include "systems/system.h"
 #include "systems/_stereokit_systems.h"
+#include "systems/vert_format.h"
 #include "libraries/sokol_time.h"
 #include "libraries/ferr_thread.h"
 #include "libraries/ferr_hash.h"
@@ -18,14 +19,14 @@
 #include "utils/random.h"
 #include "platforms/platform.h"
 
-#if defined(SK_OS_WEB)
-#include <emscripten/threading.h>
-#include "platforms/web.h"
+#if defined(SK_XR_OPENXR)
+#include "xr_backends/openxr.h"
 #endif
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <sk_renderer.h>
+#include <sk_app.h>
 
 ///////////////////////////////////////////
 
@@ -124,11 +125,6 @@ bool32_t sk_init(sk_settings_t settings) {
 	// on desktop.
 	if (local.settings.render_multisample == 0) local.settings.render_multisample = 4;
 
-#if defined(SK_OS_ANDROID)
-	// don't allow flatscreen fallback on Android
-	local.settings.no_flatscreen_fallback = true;
-#endif
-
 	// Make a nice name for the logs, something that is identifiable as
 	// StereoKit, but also can distinguish between different SK apps. This
 	// isn't used on all platforms, but can be particularly helpful on Android.
@@ -186,6 +182,9 @@ void sk_shutdown_unsafe(void) {
 	log_show_any_fail_reason();
 
 	systems_shutdown      ();
+	// The vertex format registry initializes with skr in platform_init, and
+	// must shut down with skr too — wherever skr_shutdown goes, this goes.
+	vert_format_sys_shutdown();
 	skr_shutdown          (); // I'd prefer to do this in Platform, but refactoring may be needed to make that happen
 	sk_mem_log_allocations();
 	log_clear_subscribers ();
@@ -244,9 +243,11 @@ bool32_t sk_step_end() {
 	systems_step_partial(system_run_from, local.app_system_idx+1);
 
 	if (device_display_get_type() == display_type_flatscreen && local.focus != app_focus_active && local.settings.standby_mode != standby_mode_none)
-		platform_sleep(100);
+		ska_time_sleep(100);
 	local.in_step = false;
 	
+	profiler_plot("sk_renderer CPU (us)", (int64_t)time_perf_cpu_us());
+	profiler_plot("sk_renderer GPU (us)", (int64_t)time_perf_gpu_us());
 	profiler_frame_mark();
 	return local.running;
 }
@@ -256,10 +257,6 @@ bool32_t sk_step_end() {
 void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
 	local.disallow_user_shutdown = true;
 
-#if defined(SK_OS_WEB)
-	sk_first_step();
-	web_start_main_loop(app_update, app_shutdown);
-#else
 	while (sk_step(app_update));
 
 	if (app_shutdown != nullptr)
@@ -267,7 +264,6 @@ void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
 
 	local.disallow_user_shutdown = false;
 	sk_shutdown();
-#endif
 }
 
 ///////////////////////////////////////////
@@ -280,12 +276,6 @@ void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_
 
 	local.disallow_user_shutdown = true;
 
-#if defined(SK_OS_WEB)
-	sk_first_step();
-	web_start_main_loop(
-		[]() { if (local.run_data_app_step    ) local.run_data_app_step    (local.run_data_step_data    ); },
-		[]() { if (local.run_data_app_shutdown) local.run_data_app_shutdown(local.run_data_shutdown_data); });
-#else
 	while (sk_step(
 		[]() { if (local.run_data_app_step    ) local.run_data_app_step    (local.run_data_step_data    ); }));
 
@@ -294,7 +284,6 @@ void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_
 
 	local.disallow_user_shutdown = false;
 	sk_shutdown();
-#endif
 }
 
 ///////////////////////////////////////////
@@ -373,10 +362,10 @@ void sk_set_window_xam(void* window) {
 
 const char *sk_version_name() {
 	return SK_VERSION " "
-#if defined(SK_OS_WEB)
-		"Web"
-#elif defined(SK_OS_ANDROID)
+#if defined(SK_OS_ANDROID)
 		"Android"
+#elif defined(SK_OS_MACOS)
+		"macOS"
 #elif defined(SK_OS_LINUX)
 		"Linux"
 #elif defined(SK_OS_WINDOWS)
@@ -496,6 +485,18 @@ float  time_stepf            (){ return local.timev_stepf;     };
 double time_step             (){ return local.timev_step;      };
 void   time_scale(double scale) { local.timev_scale = scale; }
 uint64_t time_frame() { return local.frame; }
+uint64_t time_perf_cpu_us() {
+	uint64_t cpu_us = skr_renderer_get_cpu_time_us();
+#if defined(SK_XR_OPENXR)
+	// OpenXR's xrWaitFrame/xrAcquire/WaitSwapchainImage block inside
+	// sk_renderer's CPU frame window. Subtract that dead time so callers see
+	// just the CPU work. Slot is zero-init, so warm-up frames subtract 0.
+	uint64_t dead_us = openxr_cpu_dead_time_us();
+	cpu_us = cpu_us > dead_us ? cpu_us - dead_us : 0;
+#endif
+	return cpu_us;
+}
+uint64_t time_perf_gpu_us() { return skr_renderer_get_gpu_time_us(); }
 
 ///////////////////////////////////////////
 

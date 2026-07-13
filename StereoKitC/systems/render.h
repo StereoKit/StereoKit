@@ -38,13 +38,14 @@ const char   *render_fmt_name             (tex_format_ format);
 tex_format_   render_preferred_depth_fmt  ();
 void          render_set_sim_origin       (pose_t pose);
 void          render_set_sim_head         (pose_t pose);
-void          render_draw_queue           (render_list_t list, const matrix* views, const matrix* projections, int32_t viewport_width, int32_t viewport_height, int32_t eye_offset, int32_t view_count, int32_t inst_multiplier, render_layer_ filter, int32_t material_variant);
+void          render_draw_queue           (render_list_t list, const matrix* views, const matrix* projections, int32_t eye_offset, int32_t view_count, render_layer_ filter, int32_t material_variant, int32_t surface_width, int32_t surface_height);
+void          render_pass_add_draw        (skr_pass_t* pass);
 void          render_check_screenshots    ();
 void          render_global_buffer_internal (int32_t register_slot, material_buffer_t buffer);
 void          render_global_texture_internal(int32_t register_slot, tex_t             texture);
+void          render_queue_compute          (compute_t compute, uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z);
 void          render_action_list_execute  ();
 
 void          render_list_destroy         (      render_list_t list);
-void          render_list_execute         (      render_list_t list, render_layer_ filter, int32_t material_variant, uint32_t inst_multiplier, int32_t queue_start, int32_t queue_end);
 
 } // namespace sk

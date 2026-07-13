@@ -16,6 +16,8 @@ device_data_t device_data = {};
 
 void device_data_init(device_data_t* data) {
 	*data = {};
+	// TODO: get actual refresh rate from sk_app when available
+	data->display_refresh_rate = 90.0f;
 }
 
 ///////////////////////////////////////////
@@ -101,6 +103,12 @@ const char* device_get_name() {
 
 const char* device_get_runtime() {
 	return device_data.runtime;
+}
+
+///////////////////////////////////////////
+
+uint64_t device_get_runtime_version() {
+	return device_data.runtime_version;
 }
 
 ///////////////////////////////////////////

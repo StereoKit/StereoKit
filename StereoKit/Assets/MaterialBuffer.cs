@@ -38,15 +38,24 @@ namespace StereoKit
 	/// <typeparam name="T">a struct that uses the 
 	/// `[StructLayout(LayoutKind.Sequential)]` attribute for proper copying
 	/// </typeparam>
-	public class MaterialBuffer<T> where T : struct
+	public class MaterialBuffer<T> : IAsset where T : struct
 	{
 		internal IntPtr _inst;
 		private  IntPtr _localMemory;
 
+		/// <summary>Gets or sets the unique identifier of this asset resource!
+		/// This can be helpful for debugging, managing your assets, or finding
+		/// them later on!</summary>
+		public string Id
+		{
+			get => Marshal.PtrToStringAnsi(NativeAPI.asset_get_id(_inst));
+			set => NativeAPI.asset_set_id(_inst, value);
+		}
+
 		/// <summary>Create a new global MaterialBuffer bound to the register
-		/// slot id. All shaders will have access to the data provided via 
+		/// slot id. All shaders will have access to the data provided via
 		/// this instance's `Set`.</summary>
-		/// <param name="registerSlot">Valid values are 3-16. This is the 
+		/// <param name="registerSlot">Valid values are 3-16. This is the
 		/// register id that this data will be bound to. In HLSL, you'll see
 		/// the slot id for '3' indicated like this `: register(b3)`</param>
 		[Obsolete("Use empty constructor, and call Renderer.SetGlobalBuffer instead! This will be removed in a future version.")]
@@ -81,7 +90,7 @@ namespace StereoKit
 		{
 			Marshal.FreeHGlobal(_localMemory);
 			if (_inst != IntPtr.Zero)
-				SK.ExecuteOnMain(() => NativeAPI.material_buffer_release(_inst));
+				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
 
 		/// <summary>This will upload your data to the GPU for shaders to use.

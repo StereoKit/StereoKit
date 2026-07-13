@@ -27,7 +27,7 @@ void demo_aliasing_update() {
 	
 	char txt[64];
 	snprintf(txt, 64, "%d", render_get_multisample());
-	ui_label_sz(txt, { .04f,0 });
+	ui_label(txt, { .04f,0 });
 	ui_sameline();
 	if (ui_hslider("msaa", render_multisample, 1, 8, 1))
 		render_set_multisample((int32_t)render_multisample);
@@ -36,7 +36,7 @@ void demo_aliasing_update() {
 	ui_label("Render scale");
 
 	snprintf(txt, 64, "%.2f", render_get_scaling());
-	ui_label_sz(txt, { .04f,0 });
+	ui_label(txt, { .04f,0 });
 	ui_sameline();
 	if (ui_hslider("scaling", render_scale, 0.2f, 2))
 		render_set_scaling(render_scale);

@@ -29,7 +29,7 @@ struct lighting_state_t {
 	tex_t                   sky_pending_tex;
 
 	lighting_mode_          mode;
-	vec4                    ambient[9];
+	vec4                    ambient[7];
 	spherical_harmonics_t   ambient_src;
 	vec3                    directional_dir;
 	color128                directional_color;
@@ -116,7 +116,7 @@ bool lighting_init() {
 		vert_t{ { 1, 1,1}, {0,0,1}, {1,0}, {255,255,255,255} },
 		vert_t{ { 1,-1,1}, {0,0,1}, {1,1}, {255,255,255,255} },
 		vert_t{ {-1,-1,1}, {0,0,1}, {0,1}, {255,255,255,255} }, };
-	mesh_set_data(local.sky_mesh, verts, _countof(verts), inds, _countof(inds));
+	mesh_set_data(local.sky_mesh, verts, _countof(verts), inds, _countof(inds), mesh_data_calc_bounds);
 	mesh_set_id  (local.sky_mesh, "sk/lighting/skybox_mesh");
 
 	// Create a default skybox material
@@ -298,7 +298,8 @@ bool32_t lighting_set_mode(lighting_mode_ mode) {
 		// Request permission if we need it
 		permission_state_ perms = permission_state(permission_type_scene);
 		if (perms == permission_state_capable) {
-			permission_request(permission_type_scene);
+			permission_type_ scene_permission = permission_type_scene;
+			permission_request(&scene_permission, 1);
 			// Permissions may be granted immediately
 			perms = permission_state(permission_type_scene);
 		}

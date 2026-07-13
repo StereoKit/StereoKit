@@ -61,6 +61,13 @@ namespace StereoKit
 		/// will be set to null after SK.Initialize is called.</summary>
 		public static object AndroidActivity { get; set; }
 
+		/// <summary>On Android systems, this is the pointer to the JavaVM
+		/// object. If not set, StereoKit will attempt to find it at runtime
+		/// via JNI_GetCreatedJavaVMs, but this may fail on Android API 24-30
+		/// due to linker namespace restrictions. Setting this ensures
+		/// compatibility across all Android versions.</summary>
+		public static IntPtr AndroidJavaVM { get; set; }
+
 		/// <summary>Initializes StereoKit window, default resources, systems,
 		/// etc.</summary>
 		/// <param name="settings">The configuration settings for StereoKit.
@@ -72,30 +79,40 @@ namespace StereoKit
 		/// initialized!</returns>
 		public static bool Initialize(SKSettings settings)
 		{
-			if (settings.androidActivity == IntPtr.Zero && AndroidActivity != null)
+			// StereoKit doesn't reference Mono.Android or Java.Interop
+			// directly, so we use reflection to extract JNI pointers from
+			// the .NET Android runtime when available.
+			if (OperatingSystem.IsAndroid())
 			{
-				Type         javaObject = Type.GetType("Java.Lang.Object, Mono.Android");
-				PropertyInfo handle     = javaObject?.GetProperty("Handle", BindingFlags.Instance | BindingFlags.Public);
-				if (handle != null)
-					settings.androidActivity = (IntPtr)handle.GetValue(AndroidActivity);
-			}
-			if (AndroidActivity == null && settings.androidActivity != IntPtr.Zero)
-			{
-				Type activityType           = Type.GetType("Android.App.Activity, Mono.Android");
-				Type jniHandleOwnershipType = Type.GetType("Android.Runtime.JniHandleOwnership, Mono.Android");
-				ConstructorInfo constructor = activityType?.GetConstructor(new Type[] { typeof(IntPtr), jniHandleOwnershipType });
-				if (constructor != null)
-					AndroidActivity = constructor.Invoke(new object[] { settings.androidActivity, 0 }); ;
-			}
+				// Get the JNI handle from the managed Activity/Context object:
+				// equivalent to ((Java.Lang.Object)AndroidActivity).Handle
+				if (settings.androidActivity == IntPtr.Zero && AndroidActivity != null)
+				{
+					Type         javaObject = Type.GetType("Java.Lang.Object, Mono.Android");
+					PropertyInfo handle     = javaObject?.GetProperty("Handle", BindingFlags.Instance | BindingFlags.Public);
+					if (handle != null)
+						settings.androidActivity = (IntPtr)handle.GetValue(AndroidActivity);
+				}
 
-			if (!NativeLib.Load()) {
-				global::System.Diagnostics.Debug.WriteLine("[SK error] Failed to load StereoKitC!");
-				Console.WriteLine                         ("[SK error] Failed to load StereoKitC!");
-				return false;
+				// Get the JavaVM pointer, first from the explicit property,
+				// then by reflecting into the .NET Android JNI runtime:
+				// equivalent to Java.Interop.JniEnvironment.Runtime.InvocationPointer
+				if (settings.androidJavaVm == IntPtr.Zero && AndroidJavaVM != IntPtr.Zero)
+					settings.androidJavaVm = AndroidJavaVM;
+				if (settings.androidJavaVm == IntPtr.Zero)
+				{
+					Type         jniEnv     = Type.GetType("Java.Interop.JniEnvironment, Java.Interop");
+					PropertyInfo runtime    = jniEnv?.GetProperty("Runtime", BindingFlags.Static | BindingFlags.Public);
+					PropertyInfo invocation = runtime?.PropertyType.GetProperty("InvocationPointer", BindingFlags.Instance | BindingFlags.Public);
+					object       rtInstance = runtime?.GetValue(null);
+					if (rtInstance != null && invocation != null)
+						settings.androidJavaVm = (IntPtr)invocation.GetValue(rtInstance);
+				}
 			}
 
 			IsInitialized = InitializeCall(settings);
 			AndroidActivity = null;
+			AndroidJavaVM   = IntPtr.Zero;
 			return IsInitialized;
 		}
 
@@ -114,18 +131,11 @@ namespace StereoKit
 		public static bool Initialize(string projectName = null, string assetsFolder = null)
 			=> Initialize(new SKSettings{ appName = projectName, assetsFolder = assetsFolder });
 
-		/// <summary>If you need to call StereoKit code before calling
-		/// SK.Initialize, you may need to explicitly load the library first.
-		/// This can be useful for setting up a few things, but should
-		/// probably be a pretty rare case.</summary>
-		public static void PreLoadLibrary()
-		{
-			if (!NativeLib.Load())
-			{
-				global::System.Diagnostics.Debug.WriteLine("[SK error] Failed to load StereoKitC!");
-				Console.WriteLine("[SK error] Failed to load StereoKitC!");
-			}
-		}
+		/// <summary>No longer necessary! The native library resolver is now
+		/// registered automatically when any StereoKit native function is
+		/// first called.</summary>
+		[Obsolete("No longer necessary, native library loading is now automatic.")]
+		public static void PreLoadLibrary() { }
 
 		/// <summary>Android only. This is for telling StereoKit about the
 		/// active Android window surface. In particular, Xamarin's
@@ -148,9 +158,6 @@ namespace StereoKit
 				catch { settings.appName = "StereoKit App"; }
 			}
 
-			// DllImport finds the function at the beginning of the function
-			// call, so this needs to be in a separate function from
-			// NativeLib.LoadDll
 			bool result = NativeAPI.sk_init(settings);
 			// Get the "resolved" settings from StereoKit, so we pick up some
 			// of the final defaults or calculated settings.
@@ -208,10 +215,12 @@ namespace StereoKit
 		{
 			if (NativeAPI.sk_step(null) == false) return false;
 
-			_steppers.Step();
+			_steppers.StepPreApp();
 			while (_mainThreadInvoke.TryDequeue(out Action a)) a();
 
 			if (onStep != null) onStep();
+
+			_steppers.StepPostApp();
 
 			return true;
 		}
@@ -234,8 +243,7 @@ namespace StereoKit
 		/// StereoKit shuts down.</param>
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
-			while (Step())
-				if (onStep != null) onStep();
+			while (Step(onStep)) { }
 
 			if (onShutdown != null) onShutdown();
 			Shutdown();

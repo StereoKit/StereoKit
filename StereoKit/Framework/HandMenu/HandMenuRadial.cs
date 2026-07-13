@@ -357,8 +357,7 @@ namespace StereoKit.Framework
 			}
 
 			if (mesh == null) mesh = new Mesh();
-			mesh.SetVerts(verts);
-			mesh.SetInds (inds);
+			mesh.SetData(verts, inds);
 		}
 
 		static Mesh GenerateActivationButton(float radius)
@@ -390,10 +389,7 @@ namespace StereoKit.Framework
 				}
 			}
 
-			Mesh m = new Mesh();
-			m.SetInds (inds);
-			m.SetVerts(verts);
-			return m;
+			return new Mesh(verts, inds);
 		}
 
 		static Mesh GenerateActivationHamburger(float radius)
@@ -428,10 +424,7 @@ namespace StereoKit.Framework
 				inds[curr++] = a;
 			}
 
-			Mesh m = new Mesh();
-			m.SetInds (inds);
-			m.SetVerts(verts);
-			return m;
+			return new Mesh(verts, inds);
 		}
 
 		static Mesh GenerateChildIndicator(float distance, float radius)
@@ -447,10 +440,7 @@ namespace StereoKit.Framework
 			inds[1] = 1;
 			inds[2] = 2;
 
-			Mesh m = new Mesh();
-			m.SetInds (inds);
-			m.SetVerts(verts);
-			return m;
+			return new Mesh(verts, inds);
 		}
 
 		#endregion

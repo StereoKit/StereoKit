@@ -1,36 +1,33 @@
-﻿using StereoKit;
+using StereoKit;
 
 class DocOcclusion : ITest
 {
-	/// :CodeSample: World.OcclusionEnabled World.OcclusionMaterial SystemInfo.worldOcclusionPresent
+	/// :CodeSample: World.Occlusion World.OcclusionCapabilities OcclusionCaps
 	/// ### Basic World Occlusion
-	/// 
-	/// A simple example of turning on the occlusion mesh and overriding the
-	/// default material so it's visible. For normal usage where you just 
-	/// want to let the real world occlude geometry, the only important
-	/// element is to just set `World.OcclusionEnabled = true;`.
-	Material occlusionMatPrev;
+	///
+	/// A simple example of turning on occlusion. The method you use depends
+	/// on what the device supports — check `World.OcclusionCapabilities` to
+	/// see what's available. For example, HoloLens supports
+	/// `OcclusionCaps.Mesh`, while Quest supports `OcclusionCaps.Depth`.
+	OcclusionCaps prevOcclusion;
 
 	public void Start()
 	{
-		if (!SK.System.worldOcclusionPresent)
+		OcclusionCaps available = World.OcclusionCapabilities;
+		if (available == OcclusionCaps.None)
 			Log.Info("Occlusion not available!");
 
-		// If not available, this will have no effect
-		World.OcclusionEnabled = true;
+		// Store current state so we can restore it later
+		prevOcclusion = World.Occlusion;
 
-		// Override the default occluding material
-		occlusionMatPrev = World.OcclusionMaterial;
-		World.OcclusionMaterial = Material.Default;
+		// Enable whatever occlusion the device supports
+		World.Occlusion = available;
 	}
 
 	public void Stop()
 	{
-		// Restore the previous occlusion material
-		World.OcclusionMaterial = occlusionMatPrev;
-
-		// Stop occlusion
-		World.OcclusionEnabled = false;
+		// Restore the previous occlusion state
+		World.Occlusion = prevOcclusion;
 	}
 	/// :End:
 

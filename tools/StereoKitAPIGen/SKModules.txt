@@ -10,3 +10,4 @@ backend_d3d11 backend_d3d11_
 backend_opengl backend_opengl_
 render_list render_list_
 material_buffer material_buffer_
+compute_buffer compute_buffer_

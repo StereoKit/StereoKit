@@ -22,11 +22,11 @@
 	#define XR_USE_TIMESPEC
 	#include <jni.h>  // Required for OpenXR Android platform types
 
-#elif defined(SK_OS_LINUX)
+#elif defined(SK_OS_MACOS)
 	#define XR_USE_TIMESPEC
 
-#elif defined(SK_OS_WEB)
-	#error OpenXR not supported on web
+#elif defined(SK_OS_LINUX)
+	#define XR_USE_TIMESPEC
 
 #elif defined(SK_OS_WINDOWS)
 	#define XR_USE_PLATFORM_WIN32

@@ -4,6 +4,7 @@
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
 
 using StereoKit;
+using StereoKit.Framework;
 using System;
 
 class DemoPicker : ITest
@@ -12,7 +13,8 @@ class DemoPicker : ITest
 	string description = "Applications need to save and load files at runtime! StereoKit has a cross-platform, MR compatible file picker built in, Platform.FilePicker.\n\nOn systems/conditions where a native file picker is available, that's what you'll get! Otherwise, StereoKit will fall back to a custom picker built with StereoKit's UI.";
 
 	Model    model      = null;
-	float    modelScale = 1;
+	float    modelScale     = 1;
+	bool     modelScaleDone = false;
 	int      modelTask  = 0;
 	bool     showNodes  = false;
 	bool     editNodes  = false;
@@ -31,16 +33,23 @@ class DemoPicker : ITest
 
 	public static void ModelInspector(Model model, Pose modelPose, Material jointMaterial, ref float modelScale, ref ViewMode mode, ref bool showNodes, ref bool showModel, ref bool editNodes)
 	{
+		bool metaReady = model.AssetState >= AssetState.LoadedMeta;
+		bool fullReady = model.AssetState >= AssetState.Loaded;
+
 		UI.PanelAt(UI.LayoutAt, new Vec2(UI.LayoutRemaining.x, UI.LineHeight));
 		if (UI.Radio("Visuals",   mode == ViewMode.Visuals)) mode = ViewMode.Visuals;
 		UI.SameLine();
 		if (UI.Radio("Tools",     mode == ViewMode.Tools  )) mode = ViewMode.Tools;
 		UI.SameLine();
-		UI.PushEnabled(model.Anims.Count > 0);
+		UI.PushEnabled(fullReady && model.Anims.Count > 0);
 		if (UI.Radio("Animation", mode == ViewMode.Anim   )) mode = ViewMode.Anim;
 		UI.PopEnabled();
 
-		if (mode == ViewMode.Tools)
+		if (!metaReady)
+		{
+			UI.Label("Loading...");
+		}
+		else if (mode == ViewMode.Tools)
 		{
 			UI.Toggle("Show Nodes", ref showNodes);
 			UI.Toggle("Edit Nodes", ref editNodes);
@@ -61,17 +70,23 @@ class DemoPicker : ITest
 					Mesh.Sphere.Draw(node.Material, Matrix.TS(b.center, b.dimensions.x * 0.5f));
 
 				UI.SameLine();
+				UI.PushEnabled(node.Material != null);
+				if (UI.ButtonImg("mat_" + node.Name, Sprite.ArrowRight, UIBtnLayout.CenterNoText, V.XY(UI.LineHeight, UI.LineHeight)))
+					MaterialInspector.Show(node.Material);
+				UI.PopEnabled();
+
+				UI.SameLine();
 				b = UI.LayoutReserve(new Vec2(UI.LineHeight, 0));
 				b.center.z -= b.dimensions.x * 0.5f;
 				Mesh m = node.Mesh;
-				if (m != null)
+				if (m != null && m.AssetState >= AssetState.Loaded)
 					m.Draw(Material.Default, Matrix.TS(b.center, b.dimensions.x * 0.5f * (1.0f /m.Bounds.dimensions.Magnitude)));
 
 				UI.SameLine();
 				UI.Label(node.Name);
 			}
 		}
-		else if (mode == ViewMode.Anim)
+		else if (mode == ViewMode.Anim && fullReady)
 		{
 			UI.PushEnabled(model.Anims.Count > 0);
 			foreach (Anim anim in model.Anims)
@@ -109,10 +124,10 @@ class DemoPicker : ITest
 		Hierarchy.Push(modelPose.ToMatrix(modelScale), HierarchyParent.Ignore);
 		// Step Animation manually in case showModel is false, and the
 		// call to Draw gets skipped.
-		model.StepAnim();
-		if (showModel) model.Draw(Matrix.Identity);
-		if (showNodes) ShowNodes(model, jointMaterial);
-		if (editNodes) EditNodes(model, Default.MaterialUIBox);
+		if (fullReady) model.StepAnim();
+		if (showModel)  model.Draw(Matrix.Identity);
+		if (metaReady && showNodes) ShowNodes(model, jointMaterial);
+		if (metaReady && editNodes) EditNodes(model, Default.MaterialUIBox);
 		Hierarchy.Pop();
 	}
 
@@ -147,7 +162,16 @@ class DemoPicker : ITest
 			UI.HProgressBar(percent);
 
 		if (model != null)
+		{
+			if (!modelScaleDone)
+			{
+				float mag = model.Bounds.dimensions.Magnitude;
+				if (mag > 0) modelScale = 1 / mag;
+				if (model.AssetState >= AssetState.Loaded)
+					modelScaleDone = true;
+			}
 			ModelInspector(model, modelPose, jointMaterial, ref modelScale, ref viewMode, ref showNodes, ref showModel, ref editNodes);
+		}
 
 		UI.WindowEnd();
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0,-0.1f), V.XYZ(.34f, .34f, .1f)));
@@ -155,16 +179,19 @@ class DemoPicker : ITest
 
 	/// :CodeSample: Platform.FilePicker Platform.FilePickerVisible
 	/// Once you have the filename, it's simply a matter of loading it
-	/// from file. This is an example of async loading a model, and 
+	/// from file. This is an example of async loading a model, and
 	/// calculating a scale value that ensures the model is a reasonable
 	/// size.
 	private void OnLoadModel(string filename)
 	{
-		model      = Model.FromFile(filename);
-		modelTask  = Assets.CurrentTask;
-		modelScale = 1 / model.Bounds.dimensions.Magnitude;
-		if (model.Anims.Count > 0)
-			model.PlayAnim(model.Anims[0], AnimMode.Loop);
+		model          = Model.FromFile(filename);
+		modelTask      = Assets.CurrentTask;
+		modelScale     = 1;
+		modelScaleDone = false;
+		model.OnLoaded += (m) => {
+			if (m.Anims.Count > 0)
+				m.PlayAnim(m.Anims[0], AnimMode.Loop);
+		};
 	}
 	/// :End:
 

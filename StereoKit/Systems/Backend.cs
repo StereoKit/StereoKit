@@ -63,6 +63,11 @@ namespace StereoKit
 			/// `XR_REFERENCE_SPACE_TYPE_LOCAL`.</summary>
 			public static ulong Space => NativeAPI.backend_openxr_get_space();
 
+			/// <summary>Type: XrSpace. StereoKit's head/view reference space,
+			/// valid after SK.Initialize, this is created from
+			/// `XR_REFERENCE_SPACE_TYPE_VIEW`.</summary>
+			public static ulong HeadSpace => NativeAPI.backend_openxr_get_head_space();
+
 			/// <summary>Type: XrTime. This is the OpenXR time for the current
 			/// frame, and is available after SK.Initialize.</summary>
 			public static long Time => NativeAPI.backend_openxr_get_time();
@@ -77,7 +82,7 @@ namespace StereoKit
 			/// extensions via `OpenXR.RequestExt`, and this can be used to
 			/// opt-in to extensions that StereoKit would normally request
 			/// automatically.</summary>
-			public static bool UseMinimumExts { set { NativeLib.Load(); NativeAPI.backend_openxr_use_minimum_exts(value); } }
+			public static bool UseMinimumExts { set { NativeAPI.backend_openxr_use_minimum_exts(value); } }
 
 			/// <summary>This tells if an OpenXR extension has been requested
 			/// and successfully loaded by the runtime. This MUST only be
@@ -125,8 +130,7 @@ namespace StereoKit
 			/// </summary>
 			/// <param name="extensionName">The extension name as listed in the
 			/// OpenXR spec. For example: "XR_EXT_hand_tracking".</param>
-			public  static void RequestExt (string extensionName) { NativeLib.Load(); _RequestExt(extensionName); }
-			private static void _RequestExt(string extensionName) => NativeAPI.backend_openxr_ext_request(extensionName);
+			public static void RequestExt(string extensionName) => NativeAPI.backend_openxr_ext_request(extensionName);
 
 			/// <summary>This ensures that StereoKit does not load a particular
 			/// extension! StereoKit will behave as if the extension is not
@@ -135,8 +139,7 @@ namespace StereoKit
 			/// afterwards. This MUST be called before SK.Initialize.</summary>
 			/// <param name="extensionName">The extension name as listed in the
 			/// OpenXR spec. For example: "XR_EXT_hand_tracking".</param>
-			public  static void ExcludeExt (string extensionName) { NativeLib.Load(); _ExcludeExt(extensionName); }
-			private static void _ExcludeExt(string extensionName) => NativeAPI.backend_openxr_ext_exclude(extensionName);
+			public static void ExcludeExt(string extensionName) => NativeAPI.backend_openxr_ext_exclude(extensionName);
 
 			/// <summary>This allows you to add XrCompositionLayers to the list
 			/// that StereoKit submits to xrEndFrame. You must call this every

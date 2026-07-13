@@ -55,8 +55,10 @@ array_t<hand_system_t> hand_sources;
 int32_t                hand_system = -1;
 hand_state_t           hand_state[2] = {};
 float                  hand_size_update = 0;
-array_t<hand_sim_t>    hand_sim_poses   = {};
-hand_sim_id_t          hand_sim_next_id = 1;
+array_t<hand_sim_t>    hand_sim_poses     = {};
+hand_sim_id_t          hand_sim_next_id   = 1;
+hand_sim_id_t          hand_pinch_pose_id = -1;
+vec3                   hand_pinch_offset  = {};
 bool32_t               hand_finger_glow_visible = true;
 
 void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_t** ref_verts, vind_t** ref_inds);
@@ -173,8 +175,6 @@ void input_hand_init() {
 	sys.update_poses    = []() {};
 	input_hand_system_register(sys);
 
-	hand_finger_glow_visible = true;
-
 	float blend = 1;
 	for (int32_t i = 0; i < hand_sources.count; i++) {
 		if (hand_sources[i].system == hand_system_oxr_controllers) {
@@ -182,21 +182,19 @@ void input_hand_init() {
 			break;
 		}
 	}
+	// Offset that re-centers the pinch pose's pinch point onto the neutral one;
+	// applied during the pinch anim for controllers, skipped for hand profiles.
 	vec3 from_pt = vec3_lerp(input_pose_neutral[4].position, input_pose_neutral[5+4].position, blend);
 	vec3 grab_pt = vec3_lerp(input_pose_pinch  [4].position, input_pose_pinch  [5+4].position, blend);
-	vec3 offset  = from_pt - grab_pt;
-	for (int32_t i = 0; i < 25; i++) {
-		input_pose_pinch[i].position += offset;
-	}
+	hand_pinch_offset = from_pt - grab_pt;
 
 	input_hand_sim_pose_add(input_pose_neutral, controller_key_none);
-	input_hand_sim_pose_add(input_pose_pinch,   controller_key_trigger, controller_key_none, key_mouse_left);
+	hand_pinch_pose_id = input_hand_sim_pose_add(input_pose_pinch, controller_key_trigger, controller_key_none, key_mouse_left);
 	input_hand_sim_pose_add(input_pose_point,   controller_key_grip,    controller_key_none, key_mouse_right);
 	input_hand_sim_pose_add(input_pose_fist,    controller_key_trigger, controller_key_grip, key_mouse_left, key_mouse_right);
 
 	// Initialize the hands!
 	for (int32_t i = 0; i < handed_max; i++) {
-		hand_state[i].visible      = true;
 		hand_state[i].pose_prev_id = -1;
 		memcpy(hand_state[i].pose_prev,  input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
 		memcpy(hand_state[i].pose_blend, input_pose_neutral, sizeof(pose_t) * SK_FINGERS * SK_FINGERJOINTS);
@@ -313,7 +311,13 @@ void input_hand_state_update(handed_ handedness) {
 		hand.fingers[1][4].position,
 		hand_sources[hand_system].pinch_blend);
 
-	if (hand_sources[hand_system].system == hand_system_oxr_articulated) {
+	// Hand interaction profiles supply a real, stable pinch point, so use it
+	// directly and skip the index-root stabilization used for inferred points.
+	input_pose_ pinch_pose    = handedness == handed_left ? input_pose_l_pinch : input_pose_r_pinch;
+	bool        profile_pinch = input_controller_is_hand(handedness) && (input_pose_state(pinch_pose) & pose_state_pos_known);
+	if (profile_pinch) {
+		hand.pinch_pt = input_pose(pinch_pose).position;
+	} else if (hand_sources[hand_system].system == hand_system_oxr_articulated) {
 		// Preserve the pinch point relative to the root of the index finger
 		// while the pinch is active. This helps prevent traveling of the pinch
 		// point during release on real articulated hands.
@@ -329,7 +333,9 @@ void input_hand_state_update(handed_ handedness) {
 
 ///////////////////////////////////////////
 
-bool input_hand_get_visible(handed_ hand) {
+bool32_t input_hand_get_visible(handed_ hand) {
+	if (hand == handed_max)
+		return hand_state[handed_left].visible || hand_state[handed_right].visible;
 	return hand_state[hand].visible;
 }
 
@@ -358,6 +364,15 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 		handedness == handed_right ? 90.f : -90.f,
 		handedness == handed_right ? -90.f : 90.f) * orientation;
 
+	// The palm pose is on the palm surface but the joints are bone-centered, so
+	// push the skeleton dorsally (+Z) by half the hand thickness (palm radius).
+	vec3 skel_pos = hand_pos;
+	if (!mouse_adjustments) { // synthetic mouse hands have no real surface palm
+		float palm_radius = (hand_joint_size[finger_id_middle*5 + joint_id_root] +
+		                     hand_joint_size[finger_id_middle*5 + joint_id_knuckle_major]) * 0.5f;
+		skel_pos = hand_pos + palm_rot * vec3{ 0, 0, 1 } * palm_radius;
+	}
+
 	// For mice based hands, we change the hand's location to center the
 	// pointer finger on the mouse
 	vec3 finger_off = mouse_adjustments
@@ -377,18 +392,16 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 			rot.y = -rot.y;
 			rot.z = -rot.z;
 		}
-		hand.fingers[f][j].position    = palm_rot * pos + hand_pos;
+		hand.fingers[f][j].position    = palm_rot * pos + skel_pos;
 		hand.fingers[f][j].orientation = rot * palm_rot;
 		hand.fingers[f][j].radius      = hand_joint_size[f*5+j];
 	} }
 
 	// Update some of the higher level hand poses
 
-	// OpenXR spec defines "The palm joint is located at the center of the
-	// middle finger's metacarpal bone", so we'll use that for the position.
-	hand.palm.position =
-		(hand.fingers[2][0].position +
-		 hand.fingers[2][1].position) * 0.5f;
+	// Hand.palm reports the palm pose on the surface (matching Controller.palm),
+	// not the dorsally-shifted skeleton root.
+	hand.palm.position     = hand_pos;
 	hand.palm.orientation  = palm_rot;
 	hand.wrist.orientation = hand.fingers[2][0].orientation;
 	hand.wrist.position    = (hand.fingers[1][0].position + hand.fingers[4][0].position) / 2 + (hand.wrist.orientation*vec3_forward*-0.03f);
@@ -396,7 +409,7 @@ void input_hand_sim_poses(handed_ handedness, bool mouse_adjustments, vec3 hand_
 
 ///////////////////////////////////////////
 
-void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation, bool tracked) {
+void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, quat orientation, bool tracked, bool stabilize_pinch) {
 	hand_t &hand = hand_state[handedness].info;
 
 	// Update tracking state
@@ -412,7 +425,7 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, qu
 	hand_sim_id_t pose_id         = -1;
 	int32_t       pose_idx        = -1;
 	float         pose_blend_curr = 0;
-	
+
 	for (int32_t i = 0; i < hand_sim_poses.count; i++) {
 		float amt1 = 0, amt2 = 0;
 		hand_sim_t *p = &hand_sim_poses[i];
@@ -452,11 +465,14 @@ void input_hand_sim(handed_ handedness, bool center_on_finger, vec3 hand_pos, qu
 			pose_blend_curr = 1 - fminf(1,(time_totalf() - hand_state[handedness].pose_prev_time) / 0.1f);
 			pose_blend_curr = 1 - (pose_blend_curr * pose_blend_curr);
 		}
+		// Re-center the pinch pose so the pinch point stays put while pinching.
+		// Skipped for hand interaction profiles, which already have a real one.
+		vec3 dest_offset = (stabilize_pinch && pose_id == hand_pinch_pose_id) ? hand_pinch_offset : vec3_zero;
 		for (int32_t f = 0; f < 5; f++) {
 		for (int32_t j = 0; j < 5; j++) {
 			pose_t *p     = &hand_state[handedness].pose_blend[f][j];
 			int32_t joint = f * 5 + j;
-			p->position    = vec3_lerp (hand_state[handedness].pose_prev[f][j].position,    dest_pose[joint].position,    pose_blend_curr);
+			p->position    = vec3_lerp (hand_state[handedness].pose_prev[f][j].position,    dest_pose[joint].position + dest_offset, pose_blend_curr);
 			p->orientation = quat_slerp(hand_state[handedness].pose_prev[f][j].orientation, dest_pose[joint].orientation, pose_blend_curr);
 		} }
 	}
@@ -528,13 +544,14 @@ void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_
 	const int32_t  ring_count  = _countof(sincos);
 	const int32_t  slice_count = SK_FINGERJOINTS + 1;
 	const uint32_t vert_count  = (_countof(sincos) * slice_count + 1) * SK_FINGERS; // verts: per joint, per finger
+	const uint32_t ind_count   = (3 * 5 * 2 * (slice_count - 1) + (8 * 3)) * (SK_FINGERS); // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
 
-	vert_t *verts = *ref_verts;
-	vind_t *inds  = *ref_inds;
+	vert_t *verts     = *ref_verts;
+	vind_t *inds      = *ref_inds;
+	bool    set_inds  = false;
 
 	// if this mesh hasn't been initialized yet
 	if (*ref_verts == nullptr) {
-		const uint32_t ind_count = (3 * 5 * 2 * (slice_count - 1) + (8 * 3)) * (SK_FINGERS); // inds: per face, per connecting faces, per joint section, per finger, plus 2 caps
 		*ref_verts = sk_malloc_t(vert_t, vert_count);
 		*ref_inds  = sk_malloc_t(vind_t, ind_count );
 		verts      = *ref_verts;
@@ -623,7 +640,7 @@ void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_
 		verts[v++].col = { 255,255,255,255 };
 		}
 
-		mesh_set_inds(mesh, inds, ind_count);
+		set_inds = true;
 	}
 
 	int32_t v = 0;
@@ -677,8 +694,75 @@ void input_gen_fallback_mesh(const hand_joint_t fingers[][5], mesh_t mesh, vert_
 		v++;
 	}
 
-	// And update the mesh vertices!
+	// Update verts first, then inds, so the mesh state transitions correctly
 	mesh_set_verts(mesh, verts, vert_count);
+	if (set_inds)
+		mesh_set_inds(mesh, inds, ind_count);
+}
+
+///////////////////////////////////////////
+
+// Fingertip section of the procedural hand mesh (last segment + rounded cap),
+// index-sized, tip joint at the origin with apex forward (-Z) for poke poses.
+void input_gen_finger_cap_mesh(mesh_t mesh) {
+	const int32_t ring_count   = _countof(sincos);
+	const float   r_base       = hand_joint_size[finger_id_index*5 + joint_id_knuckle_minor];
+	const float   r_tip        = hand_joint_size[finger_id_index*5 + joint_id_tip];
+	const float   seg_len      = 0.02f;
+	const float   apex_z       = -r_tip;
+	const float   length       = seg_len + r_tip;
+	const float   uv_x         = ((float)finger_id_index / SK_FINGERS) + (0.5f / SK_FINGERS);
+	const float   cap_uv_span  = 0.5f;
+
+	vert_t verts[ring_count*3 + 1];
+	vind_t inds [(5*2*2 + 3 + 5) * 3];
+
+	// Two joint rings (base, tip), a rounded "blunt" ring, and a tip vertex,
+	// matching the fingertip section of input_gen_fallback_mesh.
+	int32_t v = 0;
+	for (int32_t ring = 0; ring < 3; ring++) {
+		vec3  center = ring == 0 ? vec3{ 0,0,seg_len } : ring == 1 ? vec3{ 0,0,0 } : vec3{ 0, r_tip*0.25f, -r_tip*0.65f };
+		float scale  = ring == 0 ? r_base : ring == 1 ? r_tip : r_tip*0.75f;
+		float uv_y   = (center.z - apex_z) / length * cap_uv_span;
+		for (int32_t i = 0; i < ring_count; i++) {
+			verts[v].norm = vec3{ sincos_norm[i].x, sincos_norm[i].y, 0 } * SK_SQRT2;
+			verts[v].pos  = center + vec3{ sincos[i].x, sincos[i].y, 0 } * scale;
+			verts[v].uv   = { uv_x, uv_y };
+			verts[v].col  = { 255,255,255,255 };
+			v++;
+		}
+	}
+	verts[v].norm = vec3_forward;
+	verts[v].pos  = vec3{ 0, r_tip*0.9f, apex_z };
+	verts[v].uv   = { uv_x, 0 };
+	verts[v].col  = { 255,255,255,255 };
+	v++;
+
+	vind_t  ring0 = 0, blunt = ring_count*2, tip = ring_count*3;
+	int32_t ind   = 0;
+	// Base cap
+	inds[ind++] = ring0+2; inds[ind++] = ring0+1; inds[ind++] = ring0+0;
+	inds[ind++] = ring0+4; inds[ind++] = ring0+3; inds[ind++] = ring0+6;
+	inds[ind++] = ring0+5; inds[ind++] = ring0+4; inds[ind++] = ring0+6;
+	// Tube faces between the three rings (verts 2/3 and 6/0 are coincident
+	// seam verts, so those edges are skipped)
+	for (vind_t r = 0; r < 2; r++) {
+		vind_t a = r * ring_count, b = (r+1) * ring_count;
+		for (vind_t c = 0; c < ring_count-1; c++) {
+			if (c == 2) c++;
+			inds[ind++] = b+c+1; inds[ind++] = b+c;   inds[ind++] = a+c;
+			inds[ind++] = a+c+1; inds[ind++] = b+c+1; inds[ind++] = a+c;
+		}
+	}
+	// Tip cap
+	inds[ind++] = blunt+0; inds[ind++] = blunt+1; inds[ind++] = tip;
+	inds[ind++] = blunt+1; inds[ind++] = blunt+2; inds[ind++] = tip;
+	inds[ind++] = blunt+3; inds[ind++] = blunt+4; inds[ind++] = tip;
+	inds[ind++] = blunt+4; inds[ind++] = blunt+5; inds[ind++] = tip;
+	inds[ind++] = blunt+5; inds[ind++] = blunt+6; inds[ind++] = tip;
+
+	mesh_set_verts(mesh, verts, v);
+	mesh_set_inds (mesh, inds, ind);
 }
 
 ///////////////////////////////////////////

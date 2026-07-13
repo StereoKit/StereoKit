@@ -30,9 +30,12 @@
 #include "extensions/vulkan_enable.h"
 #include "extensions/android_thread.h"
 #include "extensions/loader_init.h"
+#include "ska_input.h"
 
 #include <openxr/openxr.h>
 #include <openxr/openxr_reflection.h>
+
+#include <sk_app.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -220,12 +223,13 @@ bool openxr_create_system() {
 		xr_check(xrGetInstanceProperties(xr_instance, &inst_properties),
 			"xrGetInstanceProperties");
 
-		device_data.runtime = string_copy(inst_properties.runtimeName);
-		log_diagf("OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
-			inst_properties.runtimeName,
-			XR_VERSION_MAJOR(inst_properties.runtimeVersion),
-			XR_VERSION_MINOR(inst_properties.runtimeVersion),
-			XR_VERSION_PATCH(inst_properties.runtimeVersion));
+	device_data.runtime = string_copy(inst_properties.runtimeName);
+	device_data.runtime_version = inst_properties.runtimeVersion;
+	log_diagf("OpenXR runtime: <~grn>%s<~clr> %u.%u.%u",
+		inst_properties.runtimeName,
+		XR_VERSION_MAJOR(inst_properties.runtimeVersion),
+		XR_VERSION_MINOR(inst_properties.runtimeVersion),
+		XR_VERSION_PATCH(inst_properties.runtimeVersion));
 
 		// This is an incomplete list of runtimes, we sometimes use these
 		// internally for runtime compatibility fixes.
@@ -353,7 +357,7 @@ bool openxr_init() {
 	// spaces, reference spaces are sometimes invalid before session start. We
 	// need to submit blank frames in order to get past the READY state.
 	while (xr_session_state == XR_SESSION_STATE_IDLE || xr_session_state == XR_SESSION_STATE_UNKNOWN) {
-		platform_sleep(33);
+		ska_time_sleep(33);
 		if (!openxr_poll_events()) { log_infof("Exit event during initialization"); openxr_cleanup(); return false; }
 	}
 	// Blank frames should only be submitted when the session is READY
@@ -365,6 +369,13 @@ bool openxr_init() {
 	// Initialize XR systems
 	if (!ext_management_evt_session_ready()) {
 		log_warnf("OpenXR initialization failed during event: %s", "Session Ready");
+		openxr_cleanup();
+		return false;
+	}
+
+	// Create swapchains after extensions are initialized, so features
+	// like depth composition are available during creation.
+	if (!openxr_views_create_swapchains()) {
 		openxr_cleanup();
 		return false;
 	}
@@ -406,6 +417,10 @@ bool openxr_blank_frame() {
 	XrFrameState    frame_state = { XR_TYPE_FRAME_STATE };
 	xr_check(xrWaitFrame(xr_session, &wait_info, &frame_state),
 		"blank xrWaitFrame");
+
+	// Update time, this is used for a variety of queries, so keeping it
+	// up-to-date even on blank frames during init is helpful.
+	xr_time = frame_state.predictedDisplayTime;
 
 	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
 	xr_check(xrBeginFrame(xr_session, &begin_info),
@@ -642,6 +657,15 @@ void openxr_shutdown() {
 
 void openxr_step_begin() {
 	openxr_poll_events();
+
+	// Poll sk_app events for keyboard, mouse, file dialogs, etc.
+	// OpenXR may not have a window, but can still receive input events
+	// and native file dialogs on some systems (e.g., Android)
+	ska_event_t evt;
+	while (ska_event_poll(&evt)) {
+		ska_handle_event(&evt);
+	}
+
 	ext_management_evt_step_begin();
 	input_step();
 
@@ -656,7 +680,12 @@ void openxr_step_end() {
 	ext_management_evt_step_end();
 
 	if (xr_has_session) { openxr_render_frame(); }
-	else                { render_clear(); render_pipeline_skip_present(); platform_sleep(33); }
+	else                { render_clear(); render_pipeline_skip_present(); ska_time_sleep(33); }
+
+	// Both branches above tick sk_renderer's frame counter via
+	// render_pipeline_skip_present (directly or inside openxr_render_frame),
+	// so commit here keeps our mirror counter in lockstep.
+	openxr_cpu_dead_commit();
 
 	xr_extension_structs_clear();
 
@@ -683,7 +712,7 @@ void openxr_step_end() {
 				if (timer == timer_time) audio_pause();
 				timer += 1;
 
-				platform_sleep(100);
+				ska_time_sleep(100);
 				openxr_poll_events();
 			}
 			if (timer > timer_time) audio_resume();
@@ -691,7 +720,7 @@ void openxr_step_end() {
 			xr_ext_android_thread_set_type(xr_thread_type_render_main);
 			log_diagf("Resuming from sleep");
 		} else if (settings->standby_mode == standby_mode_slow) {
-			platform_sleep(77);
+			ska_time_sleep(77);
 		}
 	}
 }
@@ -750,13 +779,19 @@ bool openxr_poll_events() {
 					result = false;
 				} else {
 					xr_has_session = true;
+					xr_time        = changed->time;
 					log_diag("OpenXR session began.");
 
-					// FoV normally updates right before drawing, but we need it to
-					// be available as soon as the session begins, for apps that
-					// are listening to sk_app_focus changing to determine if FoV
-					// is ready.
-					openxr_views_update_fov();
+					// FoV normally updates right before drawing, but we need
+					// it to be available as soon as the session begins, for
+					// apps that are listening to sk_app_focus changing to
+					// determine if FoV is ready.
+					openxr_views_update_fov(changed->time);
+
+					// After session begins, we want to break out of the
+					// polling loop so we can call ext_management_evt_session_ready
+					// before processing any more events!
+					return result;
 				}
 			} break;
 			case XR_SESSION_STATE_SYNCHRONIZED: break; // We're connected to a session, but not visible to users yet.
@@ -841,9 +876,17 @@ openxr_handle_t backend_openxr_get_system_id() {
 ///////////////////////////////////////////
 
 openxr_handle_t backend_openxr_get_space() {
-	if (backend_xr_get_type() != backend_xr_type_openxr) 
+	if (backend_xr_get_type() != backend_xr_type_openxr)
 		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
 	return (openxr_handle_t)xr_app_space;
+}
+
+///////////////////////////////////////////
+
+openxr_handle_t backend_openxr_get_head_space() {
+	if (backend_xr_get_type() != backend_xr_type_openxr)
+		log_err("backend_openxr_ functions only work when OpenXR is the backend!");
+	return (openxr_handle_t)xr_head_space;
 }
 
 ///////////////////////////////////////////

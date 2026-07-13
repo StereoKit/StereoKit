@@ -16,24 +16,26 @@ class DocVolumeAt : ITest
 	public void Step()
 	{
 		/// :CodeSample: UI.VolumeAt
-		/// This code will draw an axis at the index finger's location when
-		/// the user pinches while inside a VolumeAt.
-		/// 
+		/// A volume is a 3D space that can be interacted with by any
+		/// interactor, such as a hand, controller, or mouse pointer. This code
+		/// draws an axis at the interactor's location when it pinches while
+		/// inside the VolumeAt.
+		///
 		/// ![UI.InteractVolume]({{site.screen_url}}/InteractVolume.jpg)
-		/// 
+		///
 		// Draw a transparent volume so the user can see this space
 		Vec3  volumeAt   = new Vec3(0, 0.2f, -0.4f);
 		float volumeSize = 0.2f;
 		Default.MeshCube.Draw(Default.MaterialUIBox, Matrix.TS(volumeAt, volumeSize));
 
-		BtnState volumeState = UI.VolumeAt("Volume", new Bounds(volumeAt, Vec3.One * volumeSize), UIConfirm.Pinch, out Handed hand);
+		BtnState volumeState = UI.VolumeAt("Volume", new Bounds(volumeAt, Vec3.One * volumeSize), UIConfirm.Pinch, out Interactor interactor);
 		if (volumeState != BtnState.Inactive)
 		{
 			// If it just changed interaction state, make it jump in size
 			float scale = volumeState.IsChanged()
 				? 0.1f
 				: 0.05f;
-			Lines.AddAxis(Input.Hand(hand)[FingerId.Index, JointId.Tip].Pose, scale);
+			Lines.AddAxis(interactor.Motion, scale);
 		}
 		/// :End:
 

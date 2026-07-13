@@ -130,13 +130,13 @@
 ///
 /// ![Model Nodes]({{site.screen_url}}/Demos/ModelNodes.jpg)
 ///
-/// ## [Passthrough](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoPassthrough.cs)
-/// 
+/// ## [Mixed Reality](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoMixedReality.cs)
+///
 /// You can set up AR with OpenXR by changing the environment blend mode! In StereoKit, this is modifiable via Device.DisplayBlend at runtime, and SKSettings.blendPreference during initialization.
-/// 
+///
 /// Note that some devices may not support each blend mode! Like a HoloLens can't be Opaque, and some VR headsets can't be transparent!
 ///
-/// ![Passthrough]({{site.screen_url}}/Demos/Passthrough.jpg)
+/// ![Mixed Reality]({{site.screen_url}}/Demos/MixedReality.jpg)
 ///
 /// ## [PBR Shaders](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoPBR.cs)
 /// 
@@ -264,11 +264,5 @@
 /// 
 ///
 /// ![Unicode Text]({{site.screen_url}}/Demos/UnicodeText.jpg)
-///
-/// ## [World Mesh](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Demos/DemoWorldMesh.cs)
-/// 
-/// 
-///
-/// ![World Mesh]({{site.screen_url}}/Demos/WorldMesh.jpg)
 ///
 /// :End:

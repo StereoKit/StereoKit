@@ -335,12 +335,66 @@ class DebugToolWindow : IStepper
 	public static HandJoint[] JointsLerp(HandJoint[] a, HandJoint[] b, float t)
 	{
 		HandJoint[] result = new HandJoint[a.Length];
-		for (int i = 0; i < a.Length; i++) { 
+		for (int i = 0; i < a.Length; i++) {
 			result[i].position    = Vec3  .Lerp (a[i].position,    b[i].position,    t);
 			result[i].orientation = Quat  .Slerp(a[i].orientation, b[i].orientation, t);
 			result[i].radius      = SKMath.Lerp (a[i].radius,      b[i].radius,      t);
 		}
 		return result;
+	}
+
+	public static void WriteHandAnim(string filename, (float time, HandJoint[] data)[] frames)
+	{
+		MemoryStream ms = new MemoryStream();
+		using (BinaryWriter w = new BinaryWriter(ms))
+		{
+			w.Write(frames.Length);
+			for (int i = 0; i < frames.Length; i++)
+			{
+				w.Write(frames[i].time);
+				w.Write(frames[i].data.Length);
+				for (int j = 0; j < frames[i].data.Length; j++)
+				{
+					HandJoint joint = frames[i].data[j];
+					w.Write(joint.position.x);
+					w.Write(joint.position.y);
+					w.Write(joint.position.z);
+					w.Write(joint.orientation.x);
+					w.Write(joint.orientation.y);
+					w.Write(joint.orientation.z);
+					w.Write(joint.orientation.w);
+					w.Write(joint.radius);
+				}
+			}
+		}
+		Platform.WriteFile(filename, ms.ToArray());
+	}
+
+	public static (float time, HandJoint[] data)[] ReadHandAnim(string filename)
+	{
+		byte[] bytes = Platform.ReadFileBytes(filename);
+		using BinaryReader r = new BinaryReader(new MemoryStream(bytes));
+		int frameCount = r.ReadInt32();
+		var frames = new (float time, HandJoint[] data)[frameCount];
+		for (int i = 0; i < frameCount; i++)
+		{
+			float time       = r.ReadSingle();
+			int   jointCount = r.ReadInt32();
+			HandJoint[] joints = new HandJoint[jointCount];
+			for (int j = 0; j < jointCount; j++)
+			{
+				joints[j].position.x    = r.ReadSingle();
+				joints[j].position.y    = r.ReadSingle();
+				joints[j].position.z    = r.ReadSingle();
+				joints[j].orientation.x = r.ReadSingle();
+				joints[j].orientation.y = r.ReadSingle();
+				joints[j].orientation.z = r.ReadSingle();
+				joints[j].orientation.w = r.ReadSingle();
+				joints[j].radius        = r.ReadSingle();
+			}
+			frames[i] = (time, joints);
+		}
+		return frames;
 	}
 
 	Sprite screenshot;

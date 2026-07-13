@@ -518,6 +518,34 @@ namespace StereoKit
 		public void SetTexture(string name, Tex value)
 			=> NativeAPI.material_set_texture(_inst, name, value._inst);
 
+		/// <summary>Sets a RW/StructuredBuffer or ByteAddressBuffer on the
+		/// shader. This is used to provide BIG arrays of data to the
+		/// GPU, for both reading and writing! These perform very similarly
+		/// to textures, and can be thought of as big textures of just data!
+		/// </summary>
+		/// <typeparam name="T">The element type of the buffer.
+		/// </typeparam>
+		/// <param name="name">Name of the shader parameter in the HLSL.</param>
+		/// <param name="buffer">The buffer to assign, or null to clear.
+		/// </param>
+		/// <returns>True if a matching resource was found in the
+		/// shader.</returns>
+		public bool SetStorage<T>(string name, ComputeBuffer<T> buffer) where T: unmanaged
+			=> NativeAPI.material_set_storage(_inst, name, buffer?._inst ?? IntPtr.Zero);
+
+		/// <summary>Sets a constant/uniform buffer (cbuffer) on the shader.
+		/// This is for smaller chunks of data (16kb max) that can be read from
+		/// faster than textures or StructuredBuffers.</summary>
+		/// <typeparam name="T">The element type of the buffer.
+		/// </typeparam>
+		/// <param name="name">Name of the shader parameter in the HLSL.</param>
+		/// <param name="buffer">The buffer to assign, or null to clear.
+		/// </param>
+		/// <returns>True if a matching resource was found in the
+		/// shader.</returns>
+		public bool SetConstant<T>(string name, MaterialBuffer<T> buffer) where T: struct
+			=> NativeAPI.material_set_constant(_inst, name, buffer?._inst ?? IntPtr.Zero);
+
 		/// <summary>This allows you to set more complex shader data types such
 		/// as structs. Note the SK doesn't guard against setting data of the
 		/// wrong size here, so pay extra attention to the size of your data

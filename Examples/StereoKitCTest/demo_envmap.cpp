@@ -11,6 +11,7 @@ tex_t envmap_tex = {};
 
 tex_t                 envmap_oldtex   = {};
 spherical_harmonics_t envmap_oldlight = {};
+model_t               model           = {};
 
 ///////////////////////////////////////////
 
@@ -23,11 +24,14 @@ void demo_envmap_init() {
 		render_set_skylight(tex_get_cubemap_lighting(t));
 		render_set_skytex  (t);
 	}, nullptr);
+
+	model = model_create_file("DamagedHelmet.gltf");
 }
 
 ///////////////////////////////////////////
 
 void demo_envmap_update() {
+	model_draw(model, matrix_trs({0,0,-0.5f}, quat_lookat(vec3_zero, -vec3_forward), {0.1f, 0.1f,0.1f}));
 }
 
 ///////////////////////////////////////////

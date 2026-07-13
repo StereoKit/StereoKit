@@ -10,7 +10,7 @@ using namespace sk;
 #include "demo_sprites.h"
 #include "demo_lines.h"
 #include "demo_picker.h"
-#include "demo_world.h"
+#include "demo_mixed_reality.h"
 #include "demo_anchors.h"
 #include "demo_lighting.h"
 #include "demo_draw.h"
@@ -20,11 +20,12 @@ using namespace sk;
 #include "demo_desktop.h"
 #include "demo_bvh.h"
 #include "demo_aliasing.h"
+#include "demo_custom_verts.h"
+#include "log_window.h"
 
 #include <stdio.h>
 
 #include <string>
-#include <list>
 
 matrix      floor_tr;
 material_t  floor_mat;
@@ -62,11 +63,6 @@ scene_t demos[] = {
 		demo_picker_update,
 		demo_picker_shutdown,
 	}, {
-		"World",
-		demo_world_init,
-		demo_world_update,
-		demo_world_shutdown,
-	}, {
 		"Anchors",
 		demo_anchors_init,
 		demo_anchors_update,
@@ -82,11 +78,6 @@ scene_t demos[] = {
 		demo_draw_update,
 		demo_draw_shutdown,
 	}, {
-		"Environment Map",
-		demo_envmap_init,
-		demo_envmap_update,
-		demo_envmap_shutdown,
-	}, {
 		"Shadows",
 		demo_shadows_init,
 		demo_shadows_update,
@@ -101,6 +92,21 @@ scene_t demos[] = {
 		demo_aliasing_init,
 		demo_aliasing_update,
 		demo_aliasing_shutdown,
+	}, {
+		"Custom Verts",
+		demo_custom_verts_init,
+		demo_custom_verts_update,
+		demo_custom_verts_shutdown,
+	}, {
+		"Environment Map",
+		demo_envmap_init,
+		demo_envmap_update,
+		demo_envmap_shutdown,
+	}, {
+		"Mixed Reality",
+		demo_mixed_reality_init,
+		demo_mixed_reality_update,
+		demo_mixed_reality_shutdown,
 	},
 #if defined(_WIN32)
 	{
@@ -120,47 +126,24 @@ scene_t demos[] = {
 
 pose_t demo_select_pose;
 
-void on_log(log_, const char*);
-void log_window();
 void common_init();
 void common_update();
 void common_shutdown();
 void ruler_window();
 
+// Placed behind the viewer, where the log has traditionally lived.
 pose_t log_pose = pose_t{vec3{0, -0.1f, 0.5f}, quat_lookat(vec3_zero, vec3_forward)};
-std::list<std::string> log_list;
-
-void on_log(void*, log_ log_level, const char* log_c_str) {
-	if (log_level == log_error) {
-		log_level = log_level;
-	}
-	if (log_list.size() > 10) {
-		log_list.pop_front();
-	}
-	std::string log_str(log_c_str);
-	if (log_str.size() >= 100) {
-		log_str.resize(100);
-		log_str += "...";
-	}
-	log_list.push_back(log_str);
-}
-
-void log_window() {
-	ui_window_begin("Log", &log_pose, vec2{40*cm2m, 0*cm2m});
-	for (auto &log_str : log_list) {
-		ui_label(log_str.c_str(), false);
-	}
-	ui_window_end();
-}
 
 int main() {
-	log_subscribe(on_log);
+	// Subscribe before sk_init so the window catches logs from startup.
+	log_window_init();
 	log_set_filter(log_diagnostic);
 
 	sk_settings_t settings = {};
 	settings.app_name      = "StereoKit C";
 	settings.assets_folder = "Assets";
 	settings.mode          = app_mode_xr;
+	settings.default_font_family = "builtin, sans-serif";
 	if (!sk_init(settings))
 		return 1;
 
@@ -199,6 +182,8 @@ void common_init() {
 	const char* text = "";
 	log_infof("Device:   %s", device_get_name());
 	log_infof("GPU:      %s", device_get_gpu());
+	uint64_t runtime_version = device_get_runtime_version();
+	log_infof("Runtime:  %llu.%llu.%llu", (runtime_version >> 48) & 0xFFFF, (runtime_version >> 32) & 0xFFFF, runtime_version & 0xFFFFFFFF);
 	switch (device_get_tracking()) { case device_tracking_none: text = "none"; break; case device_tracking_3dof: text = "3dof"; break; case device_tracking_6dof: text = "6dof"; break; }
 	log_infof("Tracking: %s", text);
 	log_infof("Hands:    %s", device_has_hand_tracking()?"true":"false");
@@ -252,10 +237,11 @@ void common_update() {
 	ui_window_end();
 
 	ruler_window();
-	log_window();
+	log_window_update(&log_pose);
 }
 
 void common_shutdown() {
+	log_window_shutdown();
 	scene_shutdown();
 
 	material_release(floor_mat);
@@ -264,7 +250,7 @@ void common_shutdown() {
 
 void ruler_window() {
 	static pose_t window_pose = pose_t{{0, 0, 0.5f}, quat_identity};
-	ui_handle_begin("Ruler", window_pose,
+	ui_handle_begin("Ruler", window_pose, nullptr,
 					bounds_t{vec3_zero, vec3{30*cm2m, 4*cm2m, 1*cm2m}},
 					true, ui_move_exact);
 	color32 color = color_to_32(color_hsv(0.6f, 0.5f, 1, 1));

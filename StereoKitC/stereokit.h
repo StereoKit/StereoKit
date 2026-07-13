@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
- * Copyright (c) 2019-2025 Nick Klingensmith
- * Copyright (c) 2023-2025 Qualcomm Technologies, Inc.
+ * Copyright (c) 2019-2026 Nick Klingensmith
+ * Copyright (c) 2023-2026 Qualcomm Technologies, Inc.
  */
 
 #pragma once
@@ -184,220 +184,397 @@ typedef enum depth_mode_ {
 	depth_mode_stencil,
 } depth_mode_;
 
-/*What type of color information will the texture contain? A
-  good default here is Rgba32.*/
-typedef enum tex_format_ {
-	/*A default zero value for TexFormat! Uninitialized formats
-	  will get this value and **** **** up so you know to assign it
-	  properly :)*/
-	tex_format_none = 0,
-	/*Red/Green/Blue/Transparency data channels, at 8 bits
-	  per-channel in sRGB color space. This is what you'll want most of
-	  the time you're dealing with color images! Matches well with the
-	  Color32 struct! If you're storing normals, rough/metal, or
-	  anything else, use Rgba32Linear.*/
-	tex_format_rgba32_srgb = 1,
-	/*Alias for tex_format_rgba32_srgb for backwards compatibility.*/
-	tex_format_rgba32 = tex_format_rgba32_srgb,
-	/*Red/Green/Blue/Transparency data channels, at 8 bits
-	  per-channel in linear color space. This is what you'll want most
-	  of the time you're dealing with color data! Matches well with the
-	  Color32 struct.*/
-	tex_format_rgba32_linear = 2,
-	/*Blue/Green/Red/Transparency data channels, at 8 bits
-	  per-channel in sRGB color space. This is a common swapchain format
-	  on Windows.*/
-	tex_format_bgra32_srgb = 3,
-	/*Alias for tex_format_bgra32_srgb for backwards compatibility.*/
-	tex_format_bgra32 = tex_format_bgra32_srgb,
-	/*Blue/Green/Red/Transparency data channels, at 8 bits
-	  per-channel in linear color space. This is a common swapchain
-	  format on Windows.*/
-	tex_format_bgra32_linear = 4,
-	/*Red/Green/Blue data channels, with 11 bits for R and G,
-	  and 10 bits for blue. This is a great presentation format for high
-	  bit depth displays that still fits in 32 bits! This format has no
-	  alpha channel.*/
-	tex_format_rg11b10 = 5,
-	/*Red/Green/Blue/Transparency data channels, with 10 
-	  bits for R, G, and B, and 2 for alpha. This is a great presentation
-	  format for high bit depth displays that still fits in 32 bits, and
-	  also includes at least a bit of transparency!*/
-	tex_format_rgb10a2 = 6,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. TODO: remove during major version
-	  update, prefer s, f, or u postfixed versions of this format.*/
-	tex_format_rgba64 = 7,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. The u postfix indicates that the raw
-	  color data is stored as an unsigned 16 bit integer, which is then
-	  normalized into the 0, 1 floating point range on the GPU.*/
-	tex_format_rgba64u = tex_format_rgba64,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. The s postfix indicates that the raw
-	  color data is stored as a signed 16 bit integer, which is then
-	  normalized into the -1, +1 floating point range on the GPU.*/
-	tex_format_rgba64s = 8,
-	/*Red/Green/Blue/Transparency data channels, at 16 bits
-	  per-channel! This is not common, but you might encounter it with
-	  raw photos, or HDR images. The f postfix indicates that the raw
-	  color data is stored as 16 bit floats, which may be tricky to work
-	  with in most languages.*/
-	tex_format_rgba64f = 9,
-	/*Red/Green/Blue/Transparency data channels at 32 bits
-	  per-channel! Basically 4 floats per color, which is bonkers
-	  expensive. Don't use this unless you know -exactly- what you're
-	  doing.*/
-	tex_format_rgba128 = 10,
-	/*A single channel of data, with 8 bits per-pixel! This
-	  can be great when you're only using one channel, and want to
-	  reduce memory usage. Values in the shader are always 0.0-1.0.*/
-	tex_format_r8 = 11,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The "un" postfix indicates "unsigned normalized",
-	  where the raw color data is stored as an unsigned 16 bit integer,
-	  which is then normalized into the 0, 1 floating point range on the
-	  GPU.*/
-	tex_format_r16un = 12,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The "sn" postfix indicates "signed normalized",
-	  where the raw color data is stored as a signed 16 bit integer, which
-	  is then normalized into the -1, +1 floating point range on the GPU.*/
-	tex_format_r16sn = 13,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for index or id data, since it stores values as
-	  raw unsigned integers. The "ui" postfix indicates "unsigned integer",
-	  where the data is stored and accessed as an unsigned 16 bit integer
-	  without any normalization.*/
-	tex_format_r16ui = 14,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for index or id data, since it stores values as
-	  raw signed integers. The "si" postfix indicates "signed integer",
-	  where the data is stored and accessed as a signed 16 bit integer
-	  without any normalization.*/
-	tex_format_r16si = 15,
-	/*A single channel of data, with 16 bits per-pixel! This
-	  is a good format for height maps, since it stores a fair bit of
-	  information in it. The f postfix indicates that the raw color
-	  data is stored as 16 bit floats, which may be tricky to work with
-	  in most languages.*/
-	tex_format_r16f = 16,
-	/*Alias for R16un for backwards compatibility.*/
-	tex_format_r16  = tex_format_r16un,
-	/*Alias for R16un for backwards compatibility.*/
-	tex_format_r16u = tex_format_r16un,
-	/*Alias for R16sn for backwards compatibility.*/
-	tex_format_r16s = tex_format_r16sn,
-	/*A single channel of data, with 32 bits per-pixel! This
-	  basically treats each pixel as a generic float, so you can do all
-	  sorts of strange and interesting things with this.*/
-	tex_format_r32f = 17,
-	/*Alias for tex_format_r32f for backwards compatibility.*/
-	tex_format_r32 = tex_format_r32f,
-	/*A depth data format, 24 bits for depth data, and 8 bits
-	  to store stencil information! Stencil data can be used for things
-	  like clipping effects, deferred rendering, or shadow effects.*/
-	tex_format_depth24s8 = 18,
-	/*Alias for tex_format_depth24s8 for backwards compatibility.*/
-	tex_format_depthstencil = tex_format_depth24s8,
-	/*32 bits of data per depth value! This is pretty detailed,
-	  and is excellent for experiences that have a very far view
-	  distance.*/
-	tex_format_depth32 = 19,
-	/*16 bits of depth is not a lot, but it can be enough if
-	  your far clipping plane is pretty close. If you're seeing lots of
-	  flickering where two objects overlap, you either need to bring
-	  your far clip in, or switch to 32/24 bit depth.*/
-	tex_format_depth16 = 20,
-	/*A double channel of data that supports 8 bits for the red
-	  channel and 8 bits for the green channel.*/
-	tex_format_r8g8 = 21,
-	/*A shared exponent format with 9 bits each for R, G, B, and
-	  5 bits for the shared exponent. This is a compact HDR format.*/
-	tex_format_rgb9e5 = 22,
-	/*A depth data format with 32 bits for depth and 8 bits for
-	  stencil. The extra stencil bits provide more precision than
-	  depth24s8 while still offering stencil support.*/
-	tex_format_depth32s8,
-	/*A depth data format with 16 bits for depth and 8 bits for
-	  stencil. This is a more compact depth-stencil format.*/
-	tex_format_depth16s8,
+/*What type of color information will the texture contain? A good
+  default here is Rgba32, which gives 8-bit sRGB color with alpha!
 
-	/*BC1/DXT1 block compression with sRGB color. 4 bits per pixel,
-	  great for opaque textures on desktop/console GPUs.*/
+  Most format names end in a short suffix telling you how the GPU
+  interprets the bits when sampled in a shader:
+
+  - no suffix or "un": unsigned normalized. Raw unsigned integers
+    get normalized into the [0,1] floating point range on read.
+    The default flavor for most color and data formats.
+  - "sn": signed normalized. Raw signed integers get normalized
+    into the [-1,1] floating point range on read.
+  - "ui": unsigned integer. Raw unsigned integers, no
+    normalization! Great for IDs, counters, and exact-integer data.
+  - "si": signed integer. Raw signed integers, no normalization.
+  - "f":  signed float, typically an IEEE half or single precision
+    float.
+  - "uf": unsigned float, used by some HDR-leaning compact formats
+    that can only represent non-negative values.
+  - "_srgb": stored in sRGB color space! The GPU auto-converts to
+    linear when sampled and back to sRGB when written. Use this
+    for images viewed by humans, like photos and UI artwork.
+  - "_linear": stored in linear color space, no color-space
+    conversion at sample time. Use this for data textures, like
+    normals, masks, roughness, and metallic. Any format that is
+    _not_ "_srgb" is generally linear.
+
+  Block-compressed formats (BC, ETC, ASTC, PVRTC, ATC) trade a
+  little quality for a big drop in memory and bandwidth: each
+  format packs an NxN block of pixels into a fixed payload, so
+  cost is measured in bits-per-pixel rather than bits-per-channel.
+  Hardware support varies - prefer BC on desktop/console, ASTC on
+  modern mobile. They're sample-only; you can't render to them.*/
+typedef enum tex_format_ {
+	/*Default zero value for TexFormat! Uninitialized formats land
+	  here and **** **** up so you know to assign one properly :)*/
+	tex_format_none = 0,
+
+	/*8-bit sRGB R/G/B/A. The default for human-viewed color
+	  images, and a clean match for the Color32 struct! For data
+	  textures (normals, masks, rough/metal) use Rgba32Linear
+	  instead.*/
+	tex_format_rgba32_srgb,
+	/*8-bit sRGB R/G/B/A. The default for human-viewed color
+	  images, and a clean match for the Color32 struct! For data
+	  textures (normals, masks, rough/metal) use Rgba32Linear
+	  instead.*/
+	tex_format_rgba32 = tex_format_rgba32_srgb,
+	/*8-bit linear R/G/B/A. Use this for data textures (normals,
+	  masks, rough/metal) where you don't want the GPU's automatic
+	  sRGB conversion getting in the way.*/
+	tex_format_rgba32_linear,
+	/*8-bit sRGB B/G/R/A. Same as Rgba32Srgb but with R and B
+	  swapped to match the byte order some GPUs and Windows
+	  swapchains prefer. Most code can stick with Rgba32Srgb!*/
+	tex_format_bgra32_srgb,
+	/*8-bit sRGB B/G/R/A. Same as Rgba32Srgb but with R and B
+	  swapped to match the byte order some GPUs and Windows
+	  swapchains prefer. Most code can stick with Rgba32Srgb!*/
+	tex_format_bgra32 = tex_format_bgra32_srgb,
+	/*8-bit linear B/G/R/A. Same as Rgba32Linear but with R and B
+	  swapped, mostly for compatibility with BGRA-preferring APIs
+	  like Windows swapchains.*/
+	tex_format_bgra32_linear,
+
+	/*16-bit unsigned-normalized R/G/B/A (64 bpp). Doubling the
+	  bit depth over Rgba32 gives much smoother gradients!*/
+	tex_format_rgba64un,
+	/*16-bit unsigned-normalized R/G/B/A (64 bpp). Doubling the
+	  bit depth over Rgba32 gives much smoother gradients!*/
+	tex_format_rgba64    = tex_format_rgba64un,
+	/*16-bit signed-normalized R/G/B/A (64 bpp).*/
+	tex_format_rgba64sn,
+	/*16-bit unsigned-integer R/G/B/A (64 bpp). Great for ID
+	  textures, counters, or any discrete-integer data. For [0,1]
+	  sampling, use Rgba64un instead.*/
+	tex_format_rgba64ui,
+	/*16-bit signed-integer R/G/B/A (64 bpp). For [-1,1] sampling,
+	  use Rgba64sn instead.*/
+	tex_format_rgba64si,
+	/*16-bit half-float R/G/B/A (64 bpp). A common HDR
+	  render-target format - full RGBA float precision at half the
+	  memory of Rgba128. Almost always supported as a render
+	  target, so a reliable fallback for formats like Rg11b10.*/
+	tex_format_rgba64f,
+
+	/*32-bit float R/G/B/A - basically 4 single-precision floats
+	  per pixel, which is bonkers expensive at 128 bpp! Don't
+	  reach for this unless you know -exactly- what you're doing.
+	  Useful for scientific data or compute buffers where you
+	  really need full 32-bit float precision per channel.*/
+	tex_format_rgba128,
+	/*32-bit float R/G/B/A - basically 4 single-precision floats
+	  per pixel, which is bonkers expensive at 128 bpp! Don't
+	  reach for this unless you know -exactly- what you're doing.
+	  Useful for scientific data or compute buffers where you
+	  really need full 32-bit float precision per channel.*/
+	tex_format_rgba128f  = tex_format_rgba128,
+
+	/*Packed HDR R/G/B as unsigned floats - 11 bits for R and G,
+	  10 for B, no alpha. A great compact HDR format: holds values
+	  way beyond the [0,1] range that Rgba32 maxes out at, while
+	  still fitting in 32 bpp! Great for HDR render targets and
+	  intermediate compute buffers. Not universally supported as a
+	  render target, so watch for that!*/
+	tex_format_rg11b10,
+	/*Packed HDR R/G/B as unsigned floats - 11 bits for R and G,
+	  10 for B, no alpha. A great compact HDR format: holds values
+	  way beyond the [0,1] range that Rgba32 maxes out at, while
+	  still fitting in 32 bpp! Great for HDR render targets and
+	  intermediate compute buffers. Not universally supported as a
+	  render target, so watch for that!*/
+	tex_format_rg11b10uf = tex_format_rg11b10,
+	/*Packed unsigned-normalized R/G/B/A with 10 bits per color
+	  channel and 2 bits for alpha. A great presentation format
+	  for high bit-depth displays that still fits in 32 bpp, and
+	  you get a bit of transparency too! Alpha is effectively
+	  on/off/halfway though, so skip this if you need smooth alpha.
+	  Not universally supported as a render target!*/
+	tex_format_rgb10a2,
+	/*Shared-exponent HDR R/G/B with 9-bit mantissa per channel
+	  and a 5-bit shared exponent. A compact HDR format that packs
+	  values way beyond the [0,1] range into just 32 bpp! No alpha
+	  though, and sharing the exponent means all three channels
+	  need similar magnitudes - perfect for environment maps!
+	  Usually sample-only; GPUs typically can't render to it.*/
+	tex_format_rgb9e5,
+	/*Shared-exponent HDR R/G/B with 9-bit mantissa per channel
+	  and a 5-bit shared exponent. A compact HDR format that packs
+	  values way beyond the [0,1] range into just 32 bpp! No alpha
+	  though, and sharing the exponent means all three channels
+	  need similar magnitudes - perfect for environment maps!
+	  Usually sample-only; GPUs typically can't render to it.*/
+	tex_format_rgb9e5uf  = tex_format_rgb9e5,
+
+	/*8-bit unsigned-normalized single channel. Great when you
+	  only need one channel and want to keep memory down.*/
+	tex_format_r8,
+	/*8-bit signed-normalized single channel. Useful for a single
+	  signed value like an elevation difference or signed mask.*/
+	tex_format_r8sn,
+	/*8-bit unsigned-integer single channel. Good for small IDs,
+	  indices, or stencil-like data accessed as exact integers.*/
+	tex_format_r8ui,
+	/*8-bit signed-integer single channel.*/
+	tex_format_r8si,
+	/*8-bit sRGB single channel. Useful for single-channel sRGB
+	  data like a luminance map that should be linearized before
+	  lighting math.*/
+	tex_format_r8_srgb,
+
+	/*Two 8-bit unsigned-normalized channels (R, G). Useful for
+	  two-component data like compressed normals where the third
+	  axis is reconstructed in the shader, or two grayscale
+	  signals stored side by side.*/
+	tex_format_r8g8,
+
+	/*16-bit unsigned-normalized single channel. A good format for
+	  height maps, since it stores a fair bit of information!*/
+	tex_format_r16un,
+	/*16-bit unsigned-normalized single channel. A good format for
+	  height maps, since it stores a fair bit of information!*/
+	tex_format_r16  = tex_format_r16un,
+	/*16-bit unsigned-normalized single channel. A good format for
+	  height maps, since it stores a fair bit of information!*/
+	tex_format_r16u = tex_format_r16un,
+	/*16-bit signed-normalized single channel. Good for signed
+	  height data or signed distance fields.*/
+	tex_format_r16sn,
+	/*16-bit signed-normalized single channel. Good for signed
+	  height data or signed distance fields.*/
+	tex_format_r16s = tex_format_r16sn,
+	/*16-bit unsigned-integer single channel. A great format for
+	  index or ID data, since values are accessed as raw
+	  integers.*/
+	tex_format_r16ui,
+	/*16-bit signed-integer single channel. Good for signed
+	  integer or ID data.*/
+	tex_format_r16si,
+	/*16-bit half-float single channel. Good for HDR height/depth
+	  data that needs a range beyond what normalized formats give
+	  you.*/
+	tex_format_r16f,
+
+	/*32-bit unsigned-integer single channel. Useful for counters,
+	  IDs, and atomic compute operations.*/
+	tex_format_r32ui,
+	/*32-bit signed-integer single channel.*/
+	tex_format_r32si,
+	/*32-bit single-precision float single channel. Treats each
+	  pixel as a generic float, so you can do all sorts of strange
+	  and interesting things with this! Great for scientific data,
+	  signed distance fields, or detailed height fields where 16
+	  bits of precision aren't enough.*/
+	tex_format_r32f,
+	/*32-bit single-precision float single channel. Treats each
+	  pixel as a generic float, so you can do all sorts of strange
+	  and interesting things with this! Great for scientific data,
+	  signed distance fields, or detailed height fields where 16
+	  bits of precision aren't enough.*/
+	tex_format_r32 = tex_format_r32f,
+
+	/*16-bit depth - not a lot, but it can be enough if your far
+	  clipping plane is pretty close. If you're seeing z-fighting,
+	  either bring your far clip in or switch to 24/32-bit depth.*/
+	tex_format_depth16,
+	/*16-bit depth + 8-bit stencil. A compact depth-with-stencil
+	  option for when precision needs are modest and memory is
+	  tight. If you see z-fighting, step up to Depth24s8 or
+	  Depth32s8.*/
+	tex_format_depth16s8,
+	/*24-bit depth + 8-bit stencil. Depth tracks how close to the
+	  camera each pixel is so near objects correctly occlude far
+	  ones. Stencil data can be used for clipping effects,
+	  deferred rendering, or shadow effects. A sensible default
+	  for most scenes!*/
+	tex_format_depth24s8,
+	/*24-bit depth + 8-bit stencil. Depth tracks how close to the
+	  camera each pixel is so near objects correctly occlude far
+	  ones. Stencil data can be used for clipping effects,
+	  deferred rendering, or shadow effects. A sensible default
+	  for most scenes!*/
+	tex_format_depthstencil = tex_format_depth24s8,
+	/*32-bit depth. Pretty detailed, and excellent for experiences
+	  with very far view distances. No stencil bits though - if
+	  you need stencil too, use Depth32s8 instead.*/
+	tex_format_depth32,
+	/*32-bit depth + 8-bit stencil (40 bpp). More depth precision
+	  than Depth24s8 but heavier on memory. Use this when you need
+	  both 32-bit depth precision and a stencil channel for
+	  masking effects.*/
+	tex_format_depth32s8,
+
+	/*BC1/DXT1 sRGB RGB, no alpha, 4 bpp. Each 4x4 block of pixels
+	  gets squished into 8 bytes, so a texture only takes a
+	  quarter of Rgba32's memory. Quality is good for opaque
+	  diffuse textures, though artifacts can show up in smooth
+	  gradients. Widely supported on desktop and console GPUs -
+	  not so much on mobile.*/
 	tex_format_bc1_rgb_srgb,
-	/*BC1/DXT1 block compression, linear color. 4 bits per pixel,
-	  great for opaque textures on desktop/console GPUs.*/
+	/*BC1/DXT1 linear RGB, no alpha, 4 bpp. Great for compressed
+	  data textures (normals, masks) on desktop and console GPUs.
+	  For color images for humans, use Bc1RgbSrgb.*/
 	tex_format_bc1_rgb,
-	/*BC3/DXT5 block compression with sRGB color. 8 bits per pixel,
-	  good for textures with alpha on desktop/console GPUs.*/
+	/*BC1/DXT1 sRGB with 1-bit alpha, 4 bpp. Alpha is either fully
+	  on or fully off per pixel - great for cutout effects like
+	  foliage or chain-link fences. Smooth fade-outs will band
+	  hard though; reach for Bc3 or Bc7 for smooth alpha.*/
+	tex_format_bc1_rgba_srgb,
+	/*BC1/DXT1 linear with 1-bit alpha, 4 bpp. Good for opaque
+	  data textures with a sharp cutout mask on desktop and
+	  console GPUs. For smooth alpha, reach for Bc3 or Bc7
+	  instead.*/
+	tex_format_bc1_rgba,
+	/*BC2/DXT3 sRGB with explicit 4-bit alpha, 8 bpp. Alpha gets
+	  16 discrete levels - fine for blocky or dithered alpha but
+	  bands hard on smooth gradients. Bc3 is usually a better
+	  choice for smooth alpha; Bc2 is mostly historical.*/
+	tex_format_bc2_rgba_srgb,
+	/*BC2/DXT3 linear with explicit 4-bit alpha, 8 bpp. Bc3 is
+	  usually preferred for smooth alpha gradients; Bc2 is mostly
+	  historical.*/
+	tex_format_bc2_rgba,
+	/*BC3/DXT5 sRGB color with smooth alpha, 8 bpp. Alpha is
+	  BC4-compressed, giving much better gradients than Bc1 or
+	  Bc2. A solid default for color-with-alpha textures on
+	  desktop and console GPUs!*/
 	tex_format_bc3_rgba_srgb,
-	/*BC3/DXT5 block compression, linear color. 8 bits per pixel,
-	  good for textures with alpha on desktop/console GPUs.*/
+	/*BC3/DXT5 linear color with smooth alpha, 8 bpp. Great for
+	  compressed data textures with alpha (RGBA masks) on desktop
+	  and console GPUs.*/
 	tex_format_bc3_rgba,
-	/*BC4 single-channel block compression. 4 bits per pixel, ideal
-	  for grayscale textures like heightmaps on desktop/console GPUs.*/
+	/*BC4 unsigned-normalized single channel [0,1], 4 bpp. Ideal
+	  for compressed grayscale textures like heightmaps, ambient
+	  occlusion, or single-channel masks. Quality is excellent for
+	  smooth single-channel data.*/
 	tex_format_bc4_r,
-	/*BC5 two-channel block compression. 8 bits per pixel, commonly
-	  used for normal maps on desktop/console GPUs.*/
+	/*BC4 signed-normalized single channel [-1,1], 4 bpp. Useful
+	  when your data is naturally signed, like signed distance
+	  fields or elevation difference maps.*/
+	tex_format_bc4_rsn,
+	/*BC5 unsigned-normalized two channels, 8 bpp. Effectively two
+	  BC4 textures packed together. The standard format for
+	  compressed two-channel data on desktop/console - most
+	  commonly used for tangent-space normal maps where the Z
+	  component is reconstructed in the shader!*/
 	tex_format_bc5_rg,
-	/*BC7 high-quality block compression with sRGB color. 8 bits per
-	  pixel, best quality for color textures on desktop/console GPUs.*/
+	/*BC5 signed-normalized two channels ([-1,1] per channel), 8
+	  bpp. Useful for signed two-channel data, like normal maps
+	  stored as [-1,1] directly rather than the typical [0,1]
+	  packed form.*/
+	tex_format_bc5_rgsn,
+	/*BC6H HDR RGB, unsigned float (positive values only), 8 bpp.
+	  16-bit half-float per channel, no alpha. The go-to format
+	  for compressing HDR cubemaps and environment maps - stores
+	  high-dynamic-range data at a fraction of the cost of
+	  Rgba64f.*/
+	tex_format_bc6h_rgbuf,
+	/*BC6H HDR RGB, signed float (can store negative values), 8
+	  bpp. 16-bit half-float per channel, no alpha. Use this when
+	  your HDR data can contain negatives, like signed spherical
+	  harmonics coefficients.*/
+	tex_format_bc6h_rgbf,
+	/*BC7 sRGB color with full alpha, 8 bpp. The highest-quality
+	  BC format - noticeably better than Bc3 at the same
+	  compression ratio. Compression takes longer than Bc3 though,
+	  so reach for this when quality matters more than encoding
+	  speed.*/
 	tex_format_bc7_rgba_srgb,
-	/*BC7 high-quality block compression, linear color. 8 bits per
-	  pixel, best quality for color textures on desktop/console GPUs.*/
+	/*BC7 linear color with full alpha, 8 bpp. Highest-quality BC
+	  format - excellent for compressed RGBA data textures when
+	  Bc3 quality isn't enough.*/
 	tex_format_bc7_rgba,
 
-	/*ETC1 compression for RGB, widely supported on older Android
-	  devices. 4 bits per pixel, no alpha support.*/
+	/*ETC1 RGB, no alpha, 4 bpp. Widely supported on older Android
+	  devices and OpenGL ES 2.0+ GPUs. Quality is acceptable for
+	  diffuse color but it's been superseded - prefer Etc2 or Astc
+	  on newer hardware!*/
 	tex_format_etc1_rgb,
-	/*ETC2 compression with sRGB color and alpha. 8 bits per pixel,
-	  standard on OpenGL ES 3.0+ mobile devices.*/
+	/*ETC2 sRGB color with full alpha, 8 bpp. The standard
+	  compressed RGBA format on OpenGL ES 3.0+ mobile devices, and
+	  mandatory in the spec - so it's widely available. A great
+	  default for sRGB color textures on mobile!*/
 	tex_format_etc2_rgba_srgb,
-	/*ETC2 compression with linear color and alpha. 8 bits per pixel,
-	  standard on OpenGL ES 3.0+ mobile devices.*/
+	/*ETC2 linear color with full alpha, 8 bpp. Standard
+	  compressed format for data textures with alpha on OpenGL ES
+	  3.0+ mobile devices.*/
 	tex_format_etc2_rgba,
-	/*ETC2 single-channel compression. 4 bits per pixel, good for
-	  grayscale data on mobile.*/
+	/*ETC2/EAC single 11-bit unsigned-normalized channel, 4 bpp.
+	  The ETC equivalent of Bc4 - great for compressed grayscale
+	  or heightmap data on mobile GPUs!*/
 	tex_format_etc2_r11,
-	/*ETC2 two-channel compression. 8 bits per pixel, useful for
-	  normal maps on mobile.*/
+	/*ETC2/EAC two 11-bit unsigned-normalized channels, 8 bpp. The
+	  ETC equivalent of Bc5 - great for compressed two-channel
+	  data like tangent-space normal maps on mobile GPUs!*/
 	tex_format_etc2_rg11,
-	/*PVRTC1 RGB compression with sRGB color. 4 bits per pixel,
-	  supported on iOS and PowerVR GPUs.*/
+	/*PVRTC1 sRGB RGB, 2 bpp. Used on iOS and other PowerVR GPUs.
+	  The 2bpp bitrate is super compact but quality is lower than
+	  ETC/BC - acceptable for low-detail or background textures.
+	  Requires power-of-two square textures!*/
 	tex_format_pvrtc1_rgb_srgb,
-	/*PVRTC1 RGB compression, linear color. 4 bits per pixel,
-	  supported on iOS and PowerVR GPUs.*/
+	/*PVRTC1 linear RGB, 2 bpp. PowerVR GPUs only, requires
+	  power-of-two square textures.*/
 	tex_format_pvrtc1_rgb,
-	/*PVRTC1 RGBA compression with sRGB color. 4 bits per pixel,
-	  supported on iOS and PowerVR GPUs.*/
+	/*PVRTC1 sRGB with full alpha, 4 bpp. The 4bpp variant is
+	  higher quality than the 2bpp variants. PowerVR GPUs only,
+	  requires power-of-two square textures.*/
 	tex_format_pvrtc1_rgba_srgb,
-	/*PVRTC1 RGBA compression, linear color. 4 bits per pixel,
-	  supported on iOS and PowerVR GPUs.*/
+	/*PVRTC1 linear with full alpha, 4 bpp. PowerVR GPUs only,
+	  requires power-of-two square textures.*/
 	tex_format_pvrtc1_rgba,
-	/*PVRTC2 RGBA compression with sRGB color. 4 bits per pixel,
-	  improved quality over PVRTC1 on PowerVR GPUs.*/
+	/*PVRTC2 sRGB with full alpha, 4 bpp. An update to PVRTC1 with
+	  better quality and fewer restrictions - works with
+	  non-power-of-two and non-square textures. Still
+	  PowerVR-specific though.*/
 	tex_format_pvrtc2_rgba_srgb,
-	/*PVRTC2 RGBA compression, linear color. 4 bits per pixel,
-	  improved quality over PVRTC1 on PowerVR GPUs.*/
+	/*PVRTC2 linear with full alpha, 4 bpp. Better quality and
+	  more flexible texture sizes than PVRTC1. PowerVR GPUs only.*/
 	tex_format_pvrtc2_rgba,
-	/*ASTC 4x4 block compression with sRGB color. 8 bits per pixel,
-	  high quality format supported on modern mobile GPUs.*/
+	/*ASTC 4x4 sRGB color with full alpha, 8 bpp. ASTC is the
+	  modern mobile-standard compressed format - excellent
+	  quality, broadly supported. The 4x4 block size is the
+	  highest-quality (and largest-size) ASTC variant.*/
 	tex_format_astc4x4_rgba_srgb,
-	/*ASTC 4x4 block compression, linear color. 8 bits per pixel,
-	  high quality format supported on modern mobile GPUs.*/
+	/*ASTC 4x4 linear color with full alpha, 8 bpp. High-quality
+	  compressed format for data textures on modern mobile GPUs.*/
 	tex_format_astc4x4_rgba,
-	/*ATC RGB compression for Qualcomm Adreno GPUs. 4 bits per pixel,
-	  found on many Android devices.*/
+	/*ATC RGB on Qualcomm Adreno GPUs, 4 bpp. Historical
+	  Qualcomm-specific format - prefer Astc or Etc2 on newer
+	  Adreno hardware.*/
 	tex_format_atc_rgb,
-	/*ATC RGBA compression for Qualcomm Adreno GPUs. 8 bits per pixel,
-	  found on many Android devices.*/
+	/*ATC with alpha on Qualcomm Adreno GPUs, 8 bpp. Historical
+	  Qualcomm-specific format - prefer Astc or Etc2 on newer
+	  Adreno hardware.*/
 	tex_format_atc_rgba,
+
+	/*NV12 video format - a 2-plane 4:2:0 YUV layout! Plane 1 is a
+	  full-resolution Y (luminance) plane at 8 bpp, plane 2 is a
+	  half-resolution UV (chrominance) plane with U and V
+	  interleaved at 8 bits each. The most common output format
+	  from hardware video decoders!*/
+	tex_format_nv12,
+	/*P010 video format - like NV12 but with 10-bit channels
+	  stored in 16-bit fields. Full-resolution 10-bit Y plane plus
+	  a half-resolution interleaved 10-bit UV plane. Used for
+	  10-bit HDR video!*/
+	tex_format_p010,
+	/*A 3-plane 4:2:0 YUV layout - separate Y, U, and V planes
+	  each at 8 bpp, with U and V at half resolution. Common in
+	  software video decoders but less common from hardware
+	  decoders (which usually output NV12).*/
+	tex_format_yuv420p,
 } tex_format_;
 
 /*This describes the way the display's content blends with
@@ -478,7 +655,12 @@ typedef enum log_ {
   the primary display. See `Renderer.LayerFilter` for configuring what
   the primary display renders.
   
-  Render layers can also be mixed and matched like bit-flags!*/
+  Render layers can also be mixed and matched like bit-flags!
+
+  Note that while this enum is 32 bits wide, render layers are stored
+  internally in 16 bits when items are queued for drawing. Only the low
+  16 bits are usable as layers, so any custom flags above bit 15 will be
+  silently truncated.*/
 typedef enum render_layer_ {
 	/*The default render layer. All Draw use this layer unless
 	  otherwise specified.*/
@@ -512,6 +694,10 @@ typedef enum render_layer_ {
 	  perspective. By default, this is enabled for renders that
 	  are from a 3rd person viewpoint.*/
 	render_layer_third_person     = 1 << 12,
+	/*The default layer for StereoKit's UI. Mesh and model content
+	  drawn by the UI system uses this layer, see `UI.RenderLayer`
+	  to change it.*/
+	render_layer_ui               = 1 << 13,
 	/*This is a flag that specifies all possible layers. If you
 	  want to render all layers, then this is the layer filter
 	  you would use. This is the default for render filtering.*/
@@ -624,6 +810,7 @@ typedef enum standby_mode_ {
 typedef struct sk_settings_t {
 	const char    *app_name;
 	const char    *assets_folder;
+	const char    *default_font_family;
 	app_mode_      mode;
 	display_blend_ blend_preference;
 	bool32_t       no_flatscreen_fallback;
@@ -776,6 +963,7 @@ SK_API fov_info_t       device_display_get_fov    (void);
 SK_API device_tracking_ device_get_tracking       (void);
 SK_API const char*      device_get_name           (void);
 SK_API const char*      device_get_runtime        (void);
+SK_API uint64_t         device_get_runtime_version(void);
 SK_API const char*      device_get_gpu            (void);
 SK_API bool32_t         device_has_eye_gaze       (void);
 SK_API bool32_t         device_has_hand_tracking  (void);
@@ -849,7 +1037,7 @@ typedef enum permission_state_ {
 
 SK_API permission_state_ permission_state         (permission_type_ permission);
 SK_API bool32_t          permission_is_interactive(permission_type_ permission);
-SK_API void              permission_request       (permission_type_ permission);
+SK_API void              permission_request       (const permission_type_* in_arr_permissions, int32_t permission_count);
 
 ///////////////////////////////////////////
 
@@ -865,6 +1053,8 @@ SK_API double        time_step             (void);
 SK_API void          time_scale            (double scale);
 SK_API void          time_set_time         (double total_seconds, double frame_elapsed_seconds sk_default(0));
 SK_API uint64_t      time_frame            (void);
+SK_API uint64_t      time_perf_cpu_us      (void);
+SK_API uint64_t      time_perf_gpu_us      (void);
 
 ///////////////////////////////////////////
 
@@ -1079,6 +1269,8 @@ SK_DeclarePrivateType(sprite_t);
 SK_DeclarePrivateType(sound_t);
 SK_DeclarePrivateType(anchor_t);
 SK_DeclarePrivateType(render_list_t);
+SK_DeclarePrivateType(compute_t);
+SK_DeclarePrivateType(compute_buffer_t);
 
 ///////////////////////////////////////////
 
@@ -1137,6 +1329,86 @@ typedef struct vert_t {
 
 static inline vert_t vert_create(vec3 position, vec3 normal sk_default({ 0,1,0 }), vec2 texture_coordinates sk_default({ 0,0 }), color32 vertex_color sk_default({ 255,255,255,255 })) { vert_t v = { position, normal, texture_coordinates, vertex_color }; return v;  }
 
+/*The data format of a single element of a vertex component. Normalized
+  formats map their integer range onto 0-1 (unsigned) or -1-1 (signed)
+  when read by the GPU, other integer formats arrive as integers.*/
+typedef enum vert_fmt_ {
+	/*Invalid format, this is not a valid value for a component.*/
+	vert_fmt_none = 0,
+	/*32 bit float.*/
+	vert_fmt_f32,
+	/*16 bit half float.*/
+	vert_fmt_f16,
+	/*32 bit signed integer.*/
+	vert_fmt_i32,
+	/*16 bit signed integer.*/
+	vert_fmt_i16,
+	/*8 bit signed integer.*/
+	vert_fmt_i8,
+	/*16 bit signed integer, normalized to -1-1 on the GPU.*/
+	vert_fmt_i16_normalized,
+	/*8 bit signed integer, normalized to -1-1 on the GPU.*/
+	vert_fmt_i8_normalized,
+	/*32 bit unsigned integer.*/
+	vert_fmt_u32,
+	/*16 bit unsigned integer.*/
+	vert_fmt_u16,
+	/*8 bit unsigned integer.*/
+	vert_fmt_u8,
+	/*16 bit unsigned integer, normalized to 0-1 on the GPU.*/
+	vert_fmt_u16_normalized,
+	/*8 bit unsigned integer, normalized to 0-1 on the GPU. A color32 is
+	  4 of these.*/
+	vert_fmt_u8_normalized,
+} vert_fmt_;
+
+/*What a vertex component means! This is matched against the semantics
+  the shader's vertex inputs declare, so component order in a format
+  doesn't need to match the shader's input order.*/
+typedef enum vert_semantic_ {
+	/*Invalid semantic, this is not a valid value for a component.*/
+	vert_semantic_none = 0,
+	/*Vertex position, in model space coordinates.*/
+	vert_semantic_position,
+	/*Direction the vertex is facing.*/
+	vert_semantic_normal,
+	/*Texture coordinates.*/
+	vert_semantic_texcoord,
+	/*Vertex color.*/
+	vert_semantic_color,
+	/*Tangent direction for normal mapping.*/
+	vert_semantic_tangent,
+	/*Binormal/bitangent direction for normal mapping.*/
+	vert_semantic_binormal,
+	/*Bone weights for skinning.*/
+	vert_semantic_blendweight,
+	/*Bone indices for skinning.*/
+	vert_semantic_blendindices,
+	/*Point size for point rendering.*/
+	vert_semantic_psize,
+} vert_semantic_;
+
+/*A single component of a custom vertex layout, such as a position or a
+  UV coordinate. A vertex format is described by an array of these, in
+  the same order the fields appear in the vertex struct. Data is always
+  tightly packed, aligned to nothing, so the format fully describes the
+  vertex layout.*/
+typedef struct vert_component_t {
+	/*The data format of a single element, of type vert_fmt_.*/
+	uint8_t format;
+	/*How many format elements this component has, 1-4. A float3
+	  position would be 3.*/
+	uint8_t count;
+	/*What this component means, of type vert_semantic_. This is matched
+	  with the shader's vertex input semantics.*/
+	uint8_t semantic;
+	/*Distinguishes multiple components with the same semantic, like
+	  TEXCOORD0 vs TEXCOORD1. Usually 0.*/
+	uint8_t semantic_slot;
+} vert_component_t;
+
+static inline vert_component_t vert_component(vert_semantic_ semantic, vert_fmt_ format, int32_t count, int32_t semantic_slot sk_default(0)) { vert_component_t c = { (uint8_t)format, (uint8_t)count, (uint8_t)semantic, (uint8_t)semantic_slot }; return c; }
+
 typedef uint32_t vind_t;
 
 /*Culling is discarding an object from the render pipeline!
@@ -1158,40 +1430,60 @@ typedef enum cull_ {
 	cull_none,
 } cull_;
 
-SK_API mesh_t      mesh_find            (const char *name);
-SK_API mesh_t      mesh_create          (void);
-SK_API mesh_t      mesh_copy            (mesh_t mesh);
-SK_API void        mesh_set_id          (mesh_t mesh, const char *id);
-SK_API const char* mesh_get_id          (const mesh_t mesh);
-SK_API void        mesh_addref          (mesh_t mesh);
-SK_API void        mesh_release         (mesh_t mesh);
-SK_API void        mesh_draw            (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
-SK_API void        mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
-SK_API bool32_t    mesh_get_keep_data   (mesh_t mesh);
-SK_API void        mesh_set_data        (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, const vind_t *in_arr_indices, int32_t index_count, bool32_t calculate_bounds sk_default(true));
-SK_API void        mesh_set_verts       (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
-SK_API void        mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_arr_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
-SK_API int32_t     mesh_get_vert_count  (mesh_t mesh);
-SK_API void        mesh_set_inds        (mesh_t mesh, const vind_t *in_arr_indices, int32_t index_count);
-SK_API void        mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_arr_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
-SK_API int32_t     mesh_get_ind_count   (mesh_t mesh);
-SK_API void        mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
-SK_API void        mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);
-SK_API bounds_t    mesh_get_bounds      (mesh_t mesh);
-SK_API bool32_t    mesh_has_skin        (mesh_t mesh);
-SK_API void        mesh_set_skin        (mesh_t mesh, const uint16_t *in_arr_bone_ids_4, int32_t bone_id_4_count, const vec4 *in_arr_bone_weights, int32_t bone_weight_count, const matrix *bone_resting_transforms, int32_t bone_count);
-SK_API void        mesh_update_skin     (mesh_t mesh, const matrix *in_arr_bone_transforms, int32_t bone_count);
-SK_API bool32_t    mesh_ray_intersect    (mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_opt_start_inds sk_default(nullptr));
-SK_API bool32_t    mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr));
-SK_API bool32_t    mesh_get_triangle     (mesh_t mesh, uint32_t triangle_index, vert_t* out_a, vert_t* out_b, vert_t* out_c);
+/*Bit-flags for controlling mesh data upload behavior.*/
+typedef enum mesh_data_ {
+	/*No special behavior. Mesh data will be uploaded synchronously with
+	  no bounds calculation.*/
+	mesh_data_none        = 0,
+	/*Calculate mesh bounds from the provided vertices.*/
+	mesh_data_calc_bounds = 1 << 0,
+	/*Upload mesh data asynchronously on a background thread. The mesh
+	  will be skipped during rendering until the upload completes.*/
+	mesh_data_async       = 1 << 1,
+} mesh_data_;
+SK_MakeFlag(mesh_data_);
 
-SK_API mesh_t      mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0), bool32_t double_sided sk_default(false));
-SK_API mesh_t      mesh_gen_circle      (float diameter,  vec3 plane_normal, vec3 plane_top_direction, int32_t spokes sk_default(16), bool32_t double_sided sk_default(false));
-SK_API mesh_t      mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_default(0));
-SK_API mesh_t      mesh_gen_sphere      (float diameter,  int32_t subdivisions sk_default(4));
-SK_API mesh_t      mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
-SK_API mesh_t      mesh_gen_cylinder    (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
-SK_API mesh_t      mesh_gen_cone        (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
+SK_API mesh_t       mesh_find            (const char *name);
+SK_API mesh_t       mesh_create          (void);
+SK_API mesh_t       mesh_copy            (mesh_t mesh);
+SK_API void         mesh_set_id          (mesh_t mesh, const char *id);
+SK_API const char*  mesh_get_id          (const mesh_t mesh);
+SK_API void         mesh_addref          (mesh_t mesh);
+SK_API void         mesh_release         (mesh_t mesh);
+SK_API asset_state_ mesh_asset_state     (const mesh_t mesh);
+SK_API void         mesh_on_load         (mesh_t mesh, void (*asset_on_load_callback)(mesh_t mesh, void *context), void *context);
+SK_API void         mesh_on_load_remove  (mesh_t mesh, void (*asset_on_load_callback)(mesh_t mesh, void *context));
+SK_API void         mesh_draw            (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
+SK_API void         mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
+SK_API bool32_t     mesh_get_keep_data   (mesh_t mesh);
+SK_API void         mesh_set_data        (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, const vind_t *in_arr_indices, int32_t index_count, mesh_data_ flags sk_default(mesh_data_calc_bounds), int32_t priority sk_default(0));
+SK_API void         mesh_set_data_fmt    (mesh_t mesh, const vert_component_t *in_arr_format, int32_t component_count, const void *vertex_data, int32_t vertex_count, const vind_t *in_arr_indices, int32_t index_count, mesh_data_ flags sk_default(mesh_data_calc_bounds), int32_t priority sk_default(0));
+SK_API void         mesh_set_verts       (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
+SK_API void         mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_arr_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
+SK_API void         mesh_set_verts_fmt   (mesh_t mesh, const vert_component_t *in_arr_format, int32_t component_count, const void *vertex_data, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
+SK_API void         mesh_get_verts_fmt   (mesh_t mesh, vert_component_t **out_arr_format, int32_t *out_component_count, void **out_vertex_data, int32_t *out_vertex_count, memory_ reference_mode);
+SK_API int32_t      mesh_fmt_stride      (const vert_component_t *in_arr_format, int32_t component_count);
+SK_API int32_t      mesh_get_vert_count  (mesh_t mesh);
+SK_API void         mesh_set_inds        (mesh_t mesh, const vind_t *in_arr_indices, int32_t index_count);
+SK_API void         mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_arr_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
+SK_API int32_t      mesh_get_ind_count   (mesh_t mesh);
+SK_API void         mesh_set_draw_inds   (mesh_t mesh, int32_t index_count);
+SK_API void         mesh_set_bounds      (mesh_t mesh, const sk_ref(bounds_t) bounds);
+SK_API bounds_t     mesh_get_bounds      (mesh_t mesh);
+SK_API bool32_t     mesh_has_skin        (mesh_t mesh);
+SK_API void         mesh_set_skin        (mesh_t mesh, const uint16_t *in_arr_bone_ids_4, int32_t bone_id_4_count, const vec4 *in_arr_bone_weights, int32_t bone_weight_count, const matrix *in_arr_bone_resting_transforms, int32_t bone_count);
+SK_API void         mesh_update_skin     (mesh_t mesh, const matrix *in_arr_bone_transforms, int32_t bone_count);
+SK_API bool32_t     mesh_ray_intersect    (mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_opt_start_inds sk_default(nullptr));
+SK_API bool32_t     mesh_ray_intersect_bvh(mesh_t mesh, ray_t model_space_ray, cull_ cull_mode, ray_t* out_pt, uint32_t* out_start_inds sk_default(nullptr));
+SK_API bool32_t     mesh_get_triangle     (mesh_t mesh, uint32_t triangle_index, vert_t* out_a, vert_t* out_b, vert_t* out_c);
+
+SK_API mesh_t       mesh_gen_plane       (vec2 dimensions, vec3 plane_normal, vec3 plane_top_direction, int32_t subdivisions sk_default(0), bool32_t double_sided sk_default(false));
+SK_API mesh_t       mesh_gen_circle      (float diameter,  vec3 plane_normal, vec3 plane_top_direction, int32_t spokes sk_default(16), bool32_t double_sided sk_default(false));
+SK_API mesh_t       mesh_gen_cube        (vec3 dimensions, int32_t subdivisions sk_default(0));
+SK_API mesh_t       mesh_gen_sphere      (float diameter,  int32_t subdivisions sk_default(4));
+SK_API mesh_t       mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
+SK_API mesh_t       mesh_gen_cylinder    (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
+SK_API mesh_t       mesh_gen_cone        (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
 
 ///////////////////////////////////////////
 
@@ -1230,6 +1522,14 @@ typedef enum tex_type_ {
 	  readable. This makes it great for shadowmaps or other textures that need to
 	  be read from later on.*/
 	tex_type_depthtarget   = 1 << 6,
+	/*This texture can be used as a RWTexture in compute shaders.
+	  Create it with a format that supports storage images, such as
+	  tex_format_rgba128.*/
+	tex_type_compute       = 1 << 7,
+	/*A volumetric (3D) texture, sized with width, height, and depth.
+	  Volume textures are mutually exclusive with Cubemap and array
+	  textures, and don't pair with a zbuffer.*/
+	tex_type_volume        = 1 << 8,
 	/*A standard color image that also generates mip-maps
 	  automatically.*/
 	tex_type_image         = tex_type_image_nomips | tex_type_mips,
@@ -1332,6 +1632,7 @@ SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
 SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_colors_3d       (tex_t texture, int32_t width, int32_t height, int32_t depth, void *data);
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
@@ -1344,6 +1645,7 @@ SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t)
 SK_API tex_format_  tex_get_format          (tex_t texture);
 SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
+SK_API int32_t      tex_get_depth           (tex_t texture);
 SK_API void         tex_set_sample          (tex_t texture, tex_sample_ sample sk_default(tex_sample_linear));
 SK_API tex_sample_  tex_get_sample          (tex_t texture);
 SK_API void             tex_set_sample_comp (tex_t texture, tex_sample_comp_ compare sk_default(tex_sample_comp_none));
@@ -1380,6 +1682,19 @@ SK_API const char*  shader_get_id           (const shader_t shader);
 SK_API const char*  shader_get_name         (shader_t shader);
 SK_API void         shader_addref           (shader_t shader);
 SK_API void         shader_release          (shader_t shader);
+
+///////////////////////////////////////////
+
+/*Describes the access mode of a ComputeBuffer for use in compute
+  shaders.*/
+typedef enum compute_buffer_type_ {
+	/*Read-only from compute shaders. Maps to StructuredBuffer<T>
+	  in HLSL.*/
+	compute_buffer_type_read      = 1,
+	/*Read-write from compute shaders. Maps to
+	  RWStructuredBuffer<T> in HLSL.*/
+	compute_buffer_type_readwrite = 2,
+} compute_buffer_type_;
 
 ///////////////////////////////////////////
 
@@ -1500,6 +1815,9 @@ typedef enum material_param_ {
 	material_param_uint3 = 14,
 	/*A 4 component vector composed of unsigned integers.*/
 	material_param_uint4 = 15,
+	/*A structured buffer resource, such as StructuredBuffer<T> or
+	  RWStructuredBuffer<T> in HLSL.*/
+	material_param_buffer = 16,
 } material_param_;
 
 SK_API material_t        material_find            (const char *id);
@@ -1545,6 +1863,8 @@ SK_API void              material_set_uint4       (material_t material, const ch
 SK_API void              material_set_matrix      (material_t material, const char *name, matrix   value);
 SK_API bool32_t          material_set_texture     (material_t material, const char *name, tex_t    value);
 SK_API bool32_t          material_set_texture_id  (material_t material, id_hash_t   id,   tex_t    value);
+SK_API bool32_t          material_set_storage     (material_t material, const char *name, compute_buffer_t  buffer);
+SK_API bool32_t          material_set_constant    (material_t material, const char *name, material_buffer_t buffer);
 SK_API float             material_get_float       (material_t material, const char *name);
 SK_API vec2              material_get_vector2     (material_t material, const char *name);
 SK_API vec3              material_get_vector3     (material_t material, const char *name);
@@ -1569,6 +1889,53 @@ SK_API material_buffer_t material_buffer_create   (int32_t size);
 SK_API void              material_buffer_addref   (material_buffer_t buffer);
 SK_API void              material_buffer_release  (material_buffer_t buffer);
 SK_API void              material_buffer_set_data (material_buffer_t buffer, const void *buffer_data);
+
+///////////////////////////////////////////
+
+SK_API compute_buffer_t compute_buffer_create    (compute_buffer_type_ type, int32_t element_count, int32_t element_size, const void *opt_initial_data);
+SK_API void             compute_buffer_set_id    (compute_buffer_t buffer, const char *id);
+SK_API const char*      compute_buffer_get_id    (const compute_buffer_t buffer);
+SK_API void             compute_buffer_set_data  (compute_buffer_t buffer, const void *data, int32_t element_count);
+SK_API void             compute_buffer_get_data  (compute_buffer_t buffer, void *out_data, int32_t element_count);
+SK_API int32_t          compute_buffer_get_count (const compute_buffer_t buffer);
+SK_API int32_t          compute_buffer_get_stride(const compute_buffer_t buffer);
+SK_API void             compute_buffer_addref    (compute_buffer_t buffer);
+SK_API void             compute_buffer_release   (compute_buffer_t buffer);
+
+///////////////////////////////////////////
+
+SK_API compute_t        compute_create           (shader_t shader);
+SK_API compute_t        compute_find             (const char *id);
+SK_API void             compute_set_id           (compute_t compute, const char *id);
+SK_API const char*      compute_get_id           (const compute_t compute);
+SK_API shader_t         compute_get_shader       (const compute_t compute);
+SK_API void             compute_set_float        (compute_t compute, const char *name, float value);
+SK_API void             compute_set_int          (compute_t compute, const char *name, int32_t value);
+SK_API void             compute_set_uint         (compute_t compute, const char *name, uint32_t value);
+SK_API void             compute_set_vector2      (compute_t compute, const char *name, vec2 value);
+SK_API void             compute_set_vector3      (compute_t compute, const char *name, vec3 value);
+SK_API void             compute_set_vector4      (compute_t compute, const char *name, vec4 value);
+SK_API void             compute_set_color        (compute_t compute, const char *name, color128 color_gamma);
+SK_API void             compute_set_bool         (compute_t compute, const char *name, bool32_t value);
+SK_API void             compute_set_matrix       (compute_t compute, const char *name, matrix value);
+SK_API float            compute_get_float        (compute_t compute, const char *name);
+SK_API int32_t          compute_get_int          (compute_t compute, const char *name);
+SK_API uint32_t         compute_get_uint         (compute_t compute, const char *name);
+SK_API vec2             compute_get_vector2      (compute_t compute, const char *name);
+SK_API vec3             compute_get_vector3      (compute_t compute, const char *name);
+SK_API vec4             compute_get_vector4      (compute_t compute, const char *name);
+SK_API bool32_t         compute_get_bool         (compute_t compute, const char *name);
+SK_API color128         compute_get_color        (compute_t compute, const char *name);
+SK_API matrix           compute_get_matrix       (compute_t compute, const char *name);
+SK_API bool32_t         compute_set_texture      (compute_t compute, const char *name, tex_t texture);
+SK_API bool32_t         compute_set_storage      (compute_t compute, const char *name, compute_buffer_t  buffer);
+SK_API bool32_t         compute_set_constant     (compute_t compute, const char *name, material_buffer_t buffer);
+SK_API void             compute_dispatch         (compute_t compute, uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z);
+SK_API void             compute_dispatch_now     (compute_t compute, uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z);
+SK_API int32_t          compute_get_param_count  (compute_t compute);
+SK_API void             compute_get_param_info   (compute_t compute, int32_t index, char **out_name, material_param_ *out_type);
+SK_API void             compute_addref           (compute_t compute);
+SK_API void             compute_release          (compute_t compute);
 
 ///////////////////////////////////////////
 
@@ -1622,6 +1989,9 @@ SK_DEPRECATED typedef enum text_align_ {
   without an axis listed in their names, 'TopLeft', 'BottomCenter',
   etc.*/
 typedef enum align_ {
+	/*No alignment specified. For elements that have a natural default
+	  alignment (such as image buttons), this falls back to that default.*/
+	align_none = 0,
 	/*On the x axis, this item should start on the left.*/
 	align_x_left = 1 << 0,
 	/*On the y axis, this item should start at the top.*/
@@ -1738,6 +2108,8 @@ SK_API void          text_style_set_layout_height   (text_style_t style, float h
 SK_API float         text_style_get_total_height    (text_style_t style);
 SK_API void          text_style_set_total_height    (text_style_t style, float height_meters);
 SK_API material_t    text_style_get_material        (text_style_t style);
+SK_API render_layer_ text_style_get_render_layer    (text_style_t style);
+SK_API void          text_style_set_render_layer    (text_style_t style, render_layer_ layer);
 SK_API float         text_style_get_ascender        (text_style_t style);
 SK_API float         text_style_get_descender       (text_style_t style);
 SK_API float         text_style_get_cap_height      (text_style_t style);
@@ -1766,12 +2138,15 @@ SK_API model_t       model_find                    (const char *id);
 SK_API model_t       model_copy                    (model_t model);
 SK_API model_t       model_create                  (void);
 SK_API model_t       model_create_mesh             (mesh_t mesh, material_t material);
-SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr));
-SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr));
+SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr), int32_t priority sk_default(10));
+SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr), int32_t priority sk_default(10));
 SK_API void          model_set_id                  (model_t model, const char *id);
 SK_API const char*   model_get_id                  (const model_t model);
 SK_API void          model_addref                  (model_t model);
 SK_API void          model_release                 (model_t model);
+SK_API asset_state_  model_asset_state             (const model_t model);
+SK_API void          model_on_load                 (model_t model, void (*asset_on_load_callback)(model_t model, void *context), void *context);
+SK_API void          model_on_load_remove          (model_t model, void (*asset_on_load_callback)(model_t model, void *context));
 SK_API void          model_draw                    (model_t model,                               matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_draw_mat                (model_t model, material_t material_override, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_recalculate_bounds      (model_t model);
@@ -1861,7 +2236,7 @@ SK_API float       sprite_get_aspect (sprite_t sprite);
 SK_API int32_t     sprite_get_width  (sprite_t sprite);
 SK_API int32_t     sprite_get_height (sprite_t sprite);
 SK_API vec2        sprite_get_dimensions_normalized(sprite_t sprite);
-SK_API void        sprite_draw       (sprite_t sprite, matrix transform, pivot_ pivot_position, color32 color sk_default({255,255,255,255}));
+SK_API void        sprite_draw       (sprite_t sprite, matrix transform, pivot_ pivot_position, color32 color sk_default({255,255,255,255}), render_layer_ layer sk_default(render_layer_0));
 
 ///////////////////////////////////////////
 
@@ -1962,14 +2337,30 @@ SK_API void                  render_screenshot     (const char *file_utf8, int32
 //TODO: for v0.4, reorder parameters, context in particular should be next to callback
 SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
 SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
-SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, const sk_ref(matrix) camera, const sk_ref(matrix) projection, render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
+SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, const matrix* in_arr_cameras, const matrix* in_arr_projections, int32_t view_count, render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
 SK_API void                  render_get_device     (void **device, void **context);
 SK_API render_list_t         render_get_primary_list(void);
 
 ///////////////////////////////////////////
 
+
+/* Controls whether a RenderList holds asset references for the items it
+   contains. Tracked lists are safe to keep around across frames at the cost
+   of an addref/releaseref pair per item. */
+typedef enum render_list_refs_ {
+	/* The list calls addref on each item's mesh/material when added, and
+	   releaseref when cleared. This keeps assets alive for as long as the
+	   list holds them, and is the safe default. */
+	render_list_refs_tracked = 0,
+	/* The list does not addref or releaseref its items. The caller is
+	   responsible for ensuring referenced assets remain valid until the
+	   list is cleared. Useful for per-frame lists that are filled and
+	   drained inside a single frame. */
+	render_list_refs_none    = 1,
+} render_list_refs_;
+
 SK_API render_list_t         render_list_find         (const char* id);
-SK_API render_list_t         render_list_create       (void);
+SK_API render_list_t         render_list_create       (render_list_refs_ refs sk_default(render_list_refs_tracked));
 SK_API void                  render_list_set_id       (      render_list_t list, const char* id);
 SK_API const char*           render_list_get_id       (const render_list_t list);
 SK_API void                  render_list_addref       (      render_list_t list);
@@ -1980,7 +2371,7 @@ SK_API int32_t               render_list_prev_count   (const render_list_t list)
 SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
 SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
 SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
-SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, matrix camera, matrix projection, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0));
+SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, const matrix* in_arr_cameras, const matrix* in_arr_projections, int32_t view_count, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0));
 
 SK_API void                  render_list_push         (      render_list_t list);
 SK_API void                  render_list_pop          (void);
@@ -2181,9 +2572,11 @@ typedef enum interactor_event_ {
 } interactor_event_;
 SK_MakeFlag(interactor_event_);
 
-// TODO: is this redundant with interactor_type_?
-/*This describes how an interactor activates elements. Does it use the physical
-  position of the interactor, or the activation state?*/
+/*This describes how an interactor commits an interaction with an element - does
+  it activate from the physical position of the interactor (like a finger poking
+  through a button), or from its activation/button state (like a pinch or a
+  trigger click)? This is independent of `InteractorType`, which describes the
+  interactor's shape rather than what triggers it.*/
 typedef enum interactor_activation_ {
 	/*This interactor uses its `active` state to determine element
 	  activation.*/
@@ -2192,6 +2585,38 @@ typedef enum interactor_activation_ {
 	  activation.*/
 	interactor_activation_position,
 } interactor_activation_;
+
+/*A bit-flag describing the physical source an interactor's input comes from,
+  such as a specific hand, controller, or the mouse. Interactors that share a
+  source are mutually exclusive: while one is actively interacting, the others
+  won't begin a new interaction. This is how the poke, pinch, and aim
+  interactors of a single hand avoid fighting over the same element. The bits
+  at and above `InteractorSource.Max` are free for your own custom sources.*/
+typedef enum interactor_source_ {
+	/*A unique, independent source. Interactors with this source never group
+	  with any other interactor, and are invisible to source queries like
+	  `Interactor.IsInteracting`. This is the default 'shares nothing' source.*/
+	interactor_source_unique           = 0,
+	/*The left hand.*/
+	interactor_source_hand_left        = 1 << 0,
+	/*The right hand.*/
+	interactor_source_hand_right       = 1 << 1,
+	/*The left motion controller.*/
+	interactor_source_controller_left  = 1 << 2,
+	/*The right motion controller.*/
+	interactor_source_controller_right = 1 << 3,
+	/*Gaze or eye tracking based input.*/
+	interactor_source_gaze             = 1 << 4,
+	/*A mouse pointer.*/
+	interactor_source_mouse            = 1 << 5,
+	/*Matches with all sources!*/
+	interactor_source_any              = 0x7FFFFFFF,
+	/*The first bit available for your own custom interactor sources. Bits at
+	  and above this are unused by StereoKit, so you can define your own
+	  relative to it, for example `(InteractorSource)((int)InteractorSource.Max << 1)`.*/
+	interactor_source_max              = 1 << 6,
+} interactor_source_;
+SK_MakeFlag(interactor_source_);
 
 /*A bit-flag for the current state of a button input.*/
 typedef enum button_state_ {
@@ -2203,8 +2628,10 @@ typedef enum button_state_ {
 	button_state_just_inactive = 1 << 1,
 	/*Has the button just been pressed? Only true for a single frame.*/
 	button_state_just_active   = 1 << 2,
-	/*Has the button just changed state this frame?*/
-	button_state_changed       = button_state_just_inactive | button_state_just_active,
+	/*Was a button activation just canceled this frame, ending without firing because the interactor moved too far away? Only true for a single frame.*/
+	button_state_just_canceled = 1 << 3,
+	/*Has the button just changed state this frame? Includes presses, releases, and canceled activations.*/
+	button_state_changed       = button_state_just_inactive | button_state_just_active | button_state_just_canceled,
 	/*Matches with all states!*/
 	button_state_any           = 0x7FFFFFFF,
 } button_state_;
@@ -2212,17 +2639,28 @@ SK_MakeFlag(button_state_);
 
 /*Options for what type of interactors StereoKit provides by default.*/
 typedef enum default_interactors_ {
-	/*StereoKit's default interactors, this provides an aim ray for a mouse,
-	aim rays for controllers, and aim, pinch, and poke interactors for hands.*/
+	/*Use the XR backend's default interactor mode. This is 'all' for XR,
+	'mouse' for simulator and window, and 'none' for offscreen.*/
 	default_interactors_default,
 	/*Don't provide any interactors at all. This means you either don't want
 	interaction, or are providing your own custom interactors.*/
 	default_interactors_none,
+	/*Auto-switch between hands and controllers based on the current input
+	source. This provides aim, pinch, and poke interactors for hands, and
+	aim rays for controllers.*/
+	default_interactors_all,
+	/*Always use the default hand interactors, using simulated hands when
+	articulated hand tracking is not available.*/
+	default_interactors_hands,
+	/*Always use the default controller interactors.*/
+	default_interactors_controllers,
+	/*Always use the default mouse interactor.*/
+	default_interactors_mouse,
 } default_interactors_;
 
 typedef int32_t interactor_t;
 
-SK_API interactor_t          interactor_create                  (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, int32_t input_source_id, float capsule_radius, int32_t secondary_motion_dimensions);
+SK_API interactor_t          interactor_create                  (interactor_type_ shape_type, interactor_event_ events, interactor_activation_ activation_type, interactor_source_ source, float capsule_radius, int32_t secondary_motion_dimensions);
 SK_API void                  interactor_destroy                 (      interactor_t interactor);
 SK_API void                  interactor_update                  (      interactor_t interactor, vec3 capsule_start, vec3 capsule_end, pose_t motion, vec3 motion_anchor, vec3 secondary_motion, button_state_ active, button_state_ tracked);
 SK_API void                  interactor_set_min_distance        (      interactor_t interactor, float min_distance);
@@ -2236,9 +2674,16 @@ SK_API id_hash_t             interactor_get_focused             (const interacto
 SK_API id_hash_t             interactor_get_active              (const interactor_t interactor);
 SK_API bool32_t              interactor_get_focus_bounds        (const interactor_t interactor, pose_t* out_pose_world, bounds_t* out_bounds_local, vec3* out_at_local);
 SK_API pose_t                interactor_get_motion              (const interactor_t interactor);
+SK_API interactor_type_      interactor_get_type                (const interactor_t interactor);
+SK_API interactor_event_     interactor_get_events              (const interactor_t interactor);
+SK_API interactor_activation_ interactor_get_activation         (const interactor_t interactor);
+SK_API interactor_source_    interactor_get_source              (const interactor_t interactor);
+SK_API int32_t               interactor_get_secondary_dims      (const interactor_t interactor);
 
 SK_API int32_t               interactor_count                   (void);
 SK_API interactor_t          interactor_get                     (int32_t index);
+
+SK_API bool32_t              interactor_is_interacting          (interactor_source_ source);
 
 SK_API void                  interaction_set_default_interactors(default_interactors_ default_interactors);
 SK_API default_interactors_  interaction_get_default_interactors();
@@ -2676,10 +3121,218 @@ typedef enum controller_key_ {
 	controller_key_menu,
 } controller_key_;
 
+/*Index values for input poses. These represent tracked spatial poses
+  from the XR system, such as hand or controller positions and
+  orientations.*/
+typedef enum input_pose_ {
+	/*The user's eye gaze, where they're looking in the world. Requires
+	  eye tracking hardware and permissions to provide meaningful data.*/
+	input_pose_eyes,
+	/*The left hand/controller grip pose, centered in the hand where you'd
+	  hold something like a sword hilt or a tool handle.*/
+	input_pose_l_grip,
+	/*The left hand/controller palm pose, located at the surface of the
+	  palm. Forward points along the fingers and Up toward the thumb, with
+	  X+ into the palm on the right hand, and out of the palm on the left.
+	  This is the controller's palm orientation, which faces along the
+	  fingers rather than out from the palm. Uses the palm pose OpenXR
+	  extension when available, and falls back to an approximation when
+	  it's not.*/
+	input_pose_l_palm,
+	/*The left hand/controller aim pose. This points forward from the hand
+	  like a laser pointer, useful for UI interaction at a distance.*/
+	input_pose_l_aim,
+	/*The left poke pose, located at the tip of the index finger. This is
+	  provided by hand interaction systems such as the OpenXR hand
+	  interaction extension, and may be present even when full articulated
+	  hand tracking is not.*/
+	input_pose_l_poke,
+	/*The left pinch pose, located between the tips of the thumb and index
+	  finger. This is provided by hand interaction systems such as the
+	  OpenXR hand interaction extension, and may be present even when full
+	  articulated hand tracking is not.*/
+	input_pose_l_pinch,
+	/*The left pose of a "detached controller", when the user has both hands
+	  and controllers active in the scene.*/
+	input_pose_l_detached,
+	/*The right hand/controller grip pose, centered in the hand where
+	  you'd hold something like a sword hilt or a tool handle.*/
+	input_pose_r_grip,
+	/*The right hand/controller palm pose, located at the surface of the
+	  palm. Forward points along the fingers and Up toward the thumb, with
+	  X+ into the palm on the right hand, and out of the palm on the left.
+	  This is the controller's palm orientation, which faces along the
+	  fingers rather than out from the palm. Uses the palm pose OpenXR
+	  extension when available, and falls back to an approximation when
+	  it's not.*/
+	input_pose_r_palm,
+	/*The right hand/controller aim pose. This points forward from the
+	  hand like a laser pointer, useful for UI interaction at a
+	  distance.*/
+	input_pose_r_aim,
+	/*The right poke pose, located at the tip of the index finger. This is
+	  provided by hand interaction systems such as the OpenXR hand
+	  interaction extension, and may be present even when full articulated
+	  hand tracking is not.*/
+	input_pose_r_poke,
+	/*The right pinch pose, located between the tips of the thumb and index
+	  finger. This is provided by hand interaction systems such as the
+	  OpenXR hand interaction extension, and may be present even when full
+	  articulated hand tracking is not.*/
+	input_pose_r_pinch,
+	/*The right pose of a "detached controller", when the user has both hands
+	  and controllers active in the scene.*/
+	input_pose_r_detached,
+
+	/*Total number of input pose types.*/
+	input_pose_max
+} input_pose_;
+
+/*Index values for analog float inputs from controllers. These are
+  inputs that range from 0-1 based on how far the user has pressed
+  them.*/
+typedef enum input_float_ {
+	/*The trigger on the left controller, where the user's index finger
+	  typically rests.*/
+	input_float_l_trigger,
+	/*The grip button on the left controller, usually where the remaining
+	  fingers sit.*/
+	input_float_l_grip,
+	/*The trigger on the right controller, where the user's index finger
+	  typically rests.*/
+	input_float_r_trigger,
+	/*The grip button on the right controller, usually where the remaining
+	  fingers sit.*/
+	input_float_r_grip,
+
+	/*Total number of input float types.*/
+	input_float_max
+} input_float_;
+
+/*Index values for binary button inputs from controllers. These are
+  on/off inputs that provide button_state_ information.*/
+typedef enum input_button_ {
+	/*Is the left hand ready to interact at a distance? This maps to the
+	  pinch_ext/ready_ext binding from the hand interaction extension, and
+	  factors in facing direction and pinch readiness.*/
+	input_button_l_aim_ready,
+	/*The left controller's thumbstick button, pressed by clicking the
+	  stick inward. This has nothing to do with the stick's XY position.*/
+	input_button_l_stick,
+	/*The lower of the two left thumb buttons, sometimes labelled X, and
+	  sometimes A.*/
+	input_button_l_x1,
+	/*The upper of the two left thumb buttons, sometimes labelled Y, and
+	  sometimes B.*/
+	input_button_l_x2,
+	/*The menu or settings button on the left controller.*/
+	input_button_l_menu,
+	/*Is the right hand ready to interact at a distance? This maps to the
+	  pinch_ext/ready_ext binding from the hand interaction extension, and
+	  factors in facing direction and pinch readiness.*/
+	input_button_r_aim_ready,
+	/*The right controller's thumbstick button, pressed by clicking the
+	  stick inward. This has nothing to do with the stick's XY position.*/
+	input_button_r_stick,
+	/*The lower of the two right thumb buttons, sometimes labelled X, and
+	  sometimes A.*/
+	input_button_r_x1,
+	/*The upper of the two right thumb buttons, sometimes labelled Y, and
+	  sometimes B.*/
+	input_button_r_x2,
+	/*The menu or settings button on the right controller.*/
+	input_button_r_menu,
+
+	/*Total number of input button types.*/
+	input_button_max
+} input_button_;
+
+/*Index values for 2D axis inputs from controllers, like thumbsticks.
+  These provide a vec2 with X and Y ranging from -1 to 1.*/
+typedef enum input_xy_ {
+	/*The thumbstick on the left controller. X is left/right, Y is
+	  forward/back.*/
+	input_xy_l_stick,
+	/*The thumbstick on the right controller. X is left/right, Y is
+	  forward/back.*/
+	input_xy_r_stick,
+
+	/*Total number of input XY types.*/
+	input_xy_max
+} input_xy_;
+
+/*Index values for haptic outputs on controllers. These represent a
+  destination for vibration playback, requested via Input.HapticPulse,
+  Input.HapticWaveform, or Input.HapticCurve.*/
+typedef enum input_haptic_ {
+	/*The left controller's primary haptic actuator.*/
+	input_haptic_l_controller,
+	/*The right controller's primary haptic actuator.*/
+	input_haptic_r_controller,
+
+	/*Total number of haptic outputs.*/
+	input_haptic_max
+} input_haptic_;
+
+/*Bit flags describing what playback modes a haptic output currently
+  supports. Queryable via Input.HapticCaps. The set of supported modes
+  may change at runtime whenever the active OpenXR interaction profile
+  changes, which typically happens as the user picks up, sets down, or
+  swaps a controller.*/
+typedef enum input_haptic_caps_ {
+	/*No haptic output is available right now (e.g. no controller is
+	  bound, or the haptic action isn't active).*/
+	input_haptic_caps_none     = 0,
+	/*Simple frequency / amplitude / duration vibration via
+	  Input.HapticPulse. Supported by every controller that has any
+	  haptic actuator.*/
+	input_haptic_caps_pulse    = 1 << 0,
+	/*Sample-by-sample PCM playback via Input.HapticWaveform. Requires
+	  the XR_FB_haptic_pcm OpenXR extension.*/
+	input_haptic_caps_waveform = 1 << 1,
+	/*Amplitude envelope playback via Input.HapticCurve. Requires the
+	  XR_FB_haptic_amplitude_envelope OpenXR extension.*/
+	input_haptic_caps_curve    = 1 << 2,
+} input_haptic_caps_;
+
+/*A bit-flag describing the tracking state of a pose, with separate
+  bits for position and orientation. The PosAny, RotAny, and Any
+  combinations are handy when you only care if there's tracking at
+  all, and not whether it's directly measured or just an educated
+  guess.*/
+typedef enum pose_state_ {
+	/*The pose has no tracking at all, neither position nor
+	  orientation should be trusted.*/
+	pose_state_lost         = 0,
+	/*The position isn't directly tracked, but the system has an
+	  educated guess for it. For example, a controller's accelerometer
+	  can keep dead-reckoning the position for a short time after it
+	  leaves optical view.*/
+	pose_state_pos_inferred = 1 << 0,
+	/*The orientation isn't directly tracked, but the system has an
+	  educated guess for it, often from an IMU after the source has
+	  left direct view.*/
+	pose_state_rot_inferred = 1 << 1,
+	/*The position is actively tracked by the underlying hardware,
+	  to the best of its ability.*/
+	pose_state_pos_known    = 1 << 2,
+	/*The orientation is actively tracked by the underlying hardware,
+	  to the best of its ability.*/
+	pose_state_rot_known    = 1 << 3,
+
+	/*Matches any positional tracking, whether the position is
+	  directly known or just inferred.*/
+	pose_state_pos_any = pose_state_pos_inferred | pose_state_pos_known,
+	/*Matches any orientation tracking, whether the orientation is
+	  directly known or just inferred.*/
+	pose_state_rot_any = pose_state_rot_inferred | pose_state_rot_known,
+	/*Matches any tracking at all, on position or orientation. A pose
+	  with no overlap with this is fully lost.*/
+	pose_state_any     = pose_state_pos_inferred | pose_state_pos_known | pose_state_rot_inferred | pose_state_rot_known,
+} pose_state_;
+
 typedef int32_t hand_sim_id_t;
 
-SK_API int32_t               input_pointer_count             (input_source_ filter sk_default(input_source_any));
-SK_API pointer_t             input_pointer                   (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API const hand_t*         input_hand                      (handed_ hand);
 SK_API void                  input_hand_override             (handed_ hand, const hand_joint_t *in_arr_hand_joints);
 SK_API hand_source_          input_hand_source               (handed_ hand);
@@ -2687,25 +3340,42 @@ SK_API const controller_t*   input_controller                (handed_ hand);
 SK_API button_state_         input_controller_menu           (void);
 SK_API void                  input_controller_model_set      (handed_ hand, model_t model);
 SK_API model_t               input_controller_model_get      (handed_ hand);
+SK_API pose_t                input_controller_detached       (handed_ hand);
 SK_API pose_t                input_head                      (void);
 SK_API pose_t                input_eyes                      (void);
 SK_API button_state_         input_eyes_tracked              (void);
 SK_API const mouse_t*        input_mouse                     (void);
-SK_API button_state_         input_key                       (key_ key);
 SK_API void                  input_key_inject_press          (key_ key);
 SK_API void                  input_key_inject_release        (key_ key);
 SK_API char32_t              input_text_consume              (void);
 SK_API void                  input_text_reset                (void);
 SK_API void                  input_text_inject_char          (char32_t character);
 SK_API void                  input_hand_visible              (handed_ hand, bool32_t visible);
+SK_API bool32_t              input_hand_get_visible          (handed_ hand);
 SK_API void                  input_hand_material             (handed_ hand, material_t material);
 SK_API bool32_t              input_get_finger_glow           (void);
 SK_API void                  input_set_finger_glow           (bool32_t visible);
+
+SK_API pose_t                input_pose                      (input_pose_   pose_type);
+SK_API pose_state_           input_pose_state                (input_pose_   pose_type);
+SK_API float                 input_float                     (input_float_  float_type);
+SK_API button_state_         input_button                    (input_button_ button_type);
+SK_API vec2                  input_xy                        (input_xy_     xy_type);
+SK_API button_state_         input_key                       (key_ key);
+
+SK_API input_haptic_caps_    input_haptic_caps               (input_haptic_ haptic_type);
+SK_API float                 input_haptic_preferred_rate     (input_haptic_ haptic_type);
+SK_API void                  input_haptic_pulse              (input_haptic_ haptic_type, float frequency, float amplitude, float duration_seconds);
+SK_API void                  input_haptic_waveform           (input_haptic_ haptic_type, const float* in_arr_samples,    int32_t sample_count, float sample_rate_hz, bool32_t append, int32_t* out_prev_samples_consumed sk_default(nullptr));
+SK_API void                  input_haptic_curve              (input_haptic_ haptic_type, const float* in_arr_amplitudes, int32_t sample_count, float sample_rate_hz);
+SK_API void                  input_haptic_stop               (input_haptic_ haptic_type);
 
 SK_API hand_sim_id_t         input_hand_sim_pose_add         (const pose_t* in_arr_palm_relative_hand_joints_25, controller_key_ button1, controller_key_ and_button2 sk_default(controller_key_none), key_ or_hotkey1 sk_default(key_none), key_ and_hotkey2 sk_default(key_none));
 SK_API void                  input_hand_sim_pose_remove      (hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear       (void);
 
+SK_API SK_DEPRECATED int32_t input_pointer_count             (input_source_ filter sk_default(input_source_any));
+SK_API SK_DEPRECATED pointer_t input_pointer                 (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API SK_DEPRECATED void    input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API SK_DEPRECATED void    input_unsubscribe               (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
 SK_API SK_DEPRECATED void    input_fire_event                (input_source_ source, button_state_ input_event, const sk_ref(pointer_t) pointer);
@@ -2764,6 +3434,23 @@ typedef enum world_refresh_ {
 	world_refresh_timer,
 } world_refresh_;
 
+/*Flags that describe which occlusion methods are active or
+  available. These can be combined to enable multiple occlusion
+  techniques simultaneously.*/
+typedef enum occlusion_caps_ {
+	/*No occlusion is active.*/
+	occlusion_caps_none  = 0,
+	/*Scene Understanding mesh-based occlusion (e.g. HoloLens).*/
+	occlusion_caps_mesh  = 1 << 0,
+	/*Depth texture-based occlusion (e.g. META environment depth).*/
+	occlusion_caps_depth = 1 << 1,
+	/*When combined with Depth: hands will also occlude virtual
+	  content. Without this flag, hands are removed from the depth
+	  buffer and will not occlude.*/
+	occlusion_caps_hands = 1 << 2,
+} occlusion_caps_;
+SK_MakeFlag(occlusion_caps_);
+
 SK_API bool32_t              world_has_bounds                (void);
 SK_API vec2                  world_get_bounds_size           (void);
 SK_API pose_t                world_get_bounds_pose           (void);
@@ -2772,12 +3459,15 @@ SK_API pose_t                world_from_perception_anchor    (void *perception_s
 SK_API bool32_t              world_try_from_spatial_graph    (uint8_t spatial_graph_node_id[16], bool32_t dynamic, int64_t qpc_time, pose_t *out_pose);
 SK_API bool32_t              world_try_from_perception_anchor(void *perception_spatial_anchor,   pose_t *out_pose);
 SK_API bool32_t              world_raycast                   (ray_t ray, ray_t *out_intersection);
-SK_API void                  world_set_occlusion_enabled     (bool32_t enabled);
-SK_API bool32_t              world_get_occlusion_enabled     (void);
+SK_API void                  world_set_occlusion             (occlusion_caps_ flags);
+SK_API occlusion_caps_       world_get_occlusion             (void);
+SK_API occlusion_caps_       world_occlusion_capabilities    (void);
+SK_API SK_DEPRECATED void    world_set_occlusion_enabled     (bool32_t enabled);
+SK_API SK_DEPRECATED bool32_t world_get_occlusion_enabled    (void);
 SK_API void                  world_set_raycast_enabled       (bool32_t enabled);
 SK_API bool32_t              world_get_raycast_enabled       (void);
-SK_API void                  world_set_occlusion_material    (material_t material);
-SK_API material_t            world_get_occlusion_material    (void);
+SK_API SK_DEPRECATED void    world_set_occlusion_material    (material_t material);
+SK_API SK_DEPRECATED material_t world_get_occlusion_material (void);
 SK_API void                  world_set_refresh_type          (world_refresh_ refresh_type);
 SK_API world_refresh_        world_get_refresh_type          (void);
 SK_API void                  world_set_refresh_radius        (float radius_meters);
@@ -2788,6 +3478,83 @@ SK_API button_state_         world_get_tracked               (void);
 SK_API origin_mode_          world_get_origin_mode           (void);
 SK_API pose_t                world_get_origin_offset         (void);
 SK_API void                  world_set_origin_offset         (pose_t offset);
+
+///////////////////////////////////////////
+
+/*Per-eye view metadata for a sensor depth frame, providing the
+  camera pose and field of view used to capture that eye's depth.*/
+typedef struct sensor_depth_view_t {
+	/*The pose of this eye's depth camera in world space.*/
+	pose_t     pose;
+	/*The field of view of this eye's depth camera, in degrees.*/
+	fov_info_t fov;
+} sensor_depth_view_t;
+
+/*Per-frame metadata for sensor depth. Contains timestamps, dimensions,
+  near/far planes, and per-eye camera metadata.*/
+typedef struct sensor_depth_frame_t {
+	/*The predicted display time this frame was acquired for, in OpenXR
+	  time units (nanoseconds).*/
+	int64_t                  display_time;
+	/*The actual capture time of the depth sensor images, in OpenXR time
+	  units (nanoseconds). Zero if the runtime does not support it.*/
+	int64_t                  capture_time;
+	/*Width of a single eye's depth image, in pixels.*/
+	uint32_t                 width;
+	/*Height of a single eye's depth image, in pixels.*/
+	uint32_t                 height;
+	/*Near clip plane of the depth projection, in meters.*/
+	float                    near_z;
+	/*Far clip plane of the depth projection, in meters.*/
+	float                    far_z;
+	/*Per-eye depth camera metadata. Index 0 is left, index 1 is right.*/
+	sensor_depth_view_t      views[2];
+} sensor_depth_frame_t;
+
+/*Capabilities for configuring the sensor depth system. These control
+  optional features that may or may not be supported on the current
+  platform. Check the capabilities for platform support.*/
+typedef enum sensor_depth_caps_ {
+	/*No special capabilities.*/
+	sensor_depth_caps_none          = 0,
+	/*Enable hand removal filtering on depth data, removing hands from
+	  the depth image.*/
+	sensor_depth_caps_hand_removal  = 1 << 0,
+} sensor_depth_caps_;
+SK_MakeFlag(sensor_depth_caps_);
+
+/*Is sensor depth available on the current device and backend?*/
+SK_API bool32_t              sensor_depth_available            (void);
+/*Is the sensor depth provider currently running and producing
+  frames?*/
+SK_API bool32_t              sensor_depth_running              (void);
+/*Returns a bitmask of sensor_depth_caps_ indicating which optional
+  features are supported on the current platform and backend.*/
+SK_API sensor_depth_caps_   sensor_depth_get_capabilities     (void);
+/*Starts the sensor depth provider with the given caps. Unsupported
+  caps for the current platform are silently ignored.*/
+SK_API bool32_t              sensor_depth_start                (sensor_depth_caps_ flags sk_default(sensor_depth_caps_none));
+/*Stops the sensor depth provider and releases resources.*/
+SK_API void                  sensor_depth_stop                 (void);
+/*Updates the active caps while the sensor is running. Can enable or
+  disable features like hand removal at runtime. Unsupported caps for
+  the current platform are silently ignored. Returns false if the
+  sensor is not running.*/
+SK_API bool32_t              sensor_depth_set_capabilities     (sensor_depth_caps_ flags);
+/*Returns the system-managed depth texture, or nullptr if no frame has
+  been produced yet. Do not release this texture; it is owned by the
+  system.*/
+SK_API tex_t                 sensor_depth_get_texture          (void);
+/*Retrieves the latest per-frame depth metadata. Returns false if no
+  frame is available yet.*/
+SK_API bool32_t              sensor_depth_try_get_latest_frame (sensor_depth_frame_t* out_frame);
+/*Retrieves the latest CPU-accessible depth data with matching
+  metadata. The readback pipeline starts automatically on the first
+  call and runs asynchronously, so the first few calls may return
+  false. The returned data may be 1-2 frames behind the GPU texture.
+  If out_data is null, only out_data_size is written, so the caller
+  can query the size before allocating.*/
+SK_API bool32_t              sensor_depth_try_get_latest_data  (sensor_depth_frame_t* out_frame, void* out_data, size_t* out_data_size, int32_t view_index sk_default(-1));
 
 ///////////////////////////////////////////
 
@@ -2822,6 +3589,8 @@ typedef enum backend_platform_ {
 	backend_platform_android,
 	/*This is running in a browser.*/
 	backend_platform_web,
+	/*This is running as a macOS app.*/
+	backend_platform_macos,
 } backend_platform_;
 
 /*This describes the graphics API that StereoKit is using for rendering.*/
@@ -2856,6 +3625,7 @@ SK_API openxr_handle_t   backend_openxr_get_instance        (void);
 SK_API openxr_handle_t   backend_openxr_get_session         (void);
 SK_API openxr_handle_t   backend_openxr_get_system_id       (void);
 SK_API openxr_handle_t   backend_openxr_get_space           (void);
+SK_API openxr_handle_t   backend_openxr_get_head_space      (void);
 SK_API int64_t           backend_openxr_get_time            (void);
 SK_API int64_t           backend_openxr_get_eyes_sample_time(void);
 SK_API void*             backend_openxr_get_function        (const char *function_name);
@@ -2947,6 +3717,12 @@ typedef enum asset_type_ {
 	asset_type_anchor,
 	/*A RenderList*/
 	asset_type_render_list,
+	/*A Compute dispatch object*/
+	asset_type_compute,
+	/*A ComputeBuffer*/
+	asset_type_compute_buffer,
+	/*A MaterialBuffer*/
+	asset_type_material_buffer,
 } asset_type_;
 
 typedef void* asset_t;
@@ -2956,6 +3732,7 @@ SK_API int32_t     assets_current_task         (void);
 SK_API int32_t     assets_total_tasks          (void);
 SK_API int32_t     assets_current_task_priority(void);
 SK_API void        assets_block_for_priority   (int32_t priority);
+SK_API void        assets_block_until          (asset_t asset, asset_state_ state);
 SK_API int32_t     assets_count                (void);
 SK_API asset_t     assets_get_index            (int32_t index);
 SK_API asset_type_ assets_get_type             (int32_t index);
@@ -2988,6 +3765,7 @@ SK_CONST char *default_id_tex_rough            = "default/tex_rough";
 SK_CONST char *default_id_tex_devtex           = "default/tex_devtex";
 SK_CONST char *default_id_tex_error            = "default/tex_error";
 SK_CONST char *default_id_cubemap              = "default/cubemap";
+SK_CONST char *default_id_tex_3d               = "default/tex_3d";
 SK_CONST char *default_id_font                 = "default/font";
 SK_CONST char *default_id_mesh_quad            = "default/mesh_quad";
 SK_CONST char *default_id_mesh_screen_quad     = "default/mesh_screen_quad";
@@ -3012,6 +3790,7 @@ SK_CONST char *default_id_shader_ui_aura       = "default/shader_ui_aura";
 SK_CONST char *default_id_shader_sky           = "default/shader_sky";
 SK_CONST char *default_id_shader_lines         = "default/shader_lines";
 SK_CONST char *default_id_shader_sh_compute    = "default/shader_sh_compute";
+SK_CONST char *default_id_shader_depth_prepass = "default/shader_depth_prepass";
 SK_CONST char *default_id_sound_click          = "default/sound_click";
 SK_CONST char *default_id_sound_unclick        = "default/sound_unclick";
 SK_CONST char *default_id_sound_grab           = "default/sound_grab";

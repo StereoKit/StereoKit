@@ -164,8 +164,7 @@ class DemoGeo : ITest
 				inds[ind+5] = (uint)((x  )+(y  )*gridSize);
 			}
 		} }
-		demoProcMesh = new Mesh();
-		demoProcMesh.SetData(verts, inds);
+		demoProcMesh = new Mesh(verts, inds);
 		/// :End:
 	}
 

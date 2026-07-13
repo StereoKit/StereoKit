@@ -22,24 +22,21 @@ struct psIn {
 	float3 model_pos : TEXCOORD1;
 	half3  normal    : NORMAL0;
 	half4  color     : COLOR0;
-	uint   view_id   : SV_RenderTargetArrayIndex;
 };
 
-psIn vs(vsIn input, uint id : SV_InstanceID) {
+psIn vs(vsIn input, sk_ids_t ids) {
 	psIn o;
-	o.view_id = id % sk_view_count;
-	id        = id / sk_view_count;
 
-	float4x4 world_mat = sk_inst[id].world;
+	float4x4 world_mat = sk_inst[ids.inst].world;
 	float3   scale     = float3(
 		length(float3(world_mat._11,world_mat._12,world_mat._13)),
 		length(float3(world_mat._21,world_mat._22,world_mat._23)),
 		length(float3(world_mat._31,world_mat._32,world_mat._33)));
-		
+
 	o.model_pos = input.pos.xyz * scale;
 	o.world_pos = mul(float4(input.pos.xyz, 1), world_mat).xyz;
-	o.pos       = mul(float4(o.world_pos,   1), sk_viewproj[o.view_id]);
-	o.color     = input.col * color * sk_inst[id].color;
+	o.pos       = mul(float4(o.world_pos,   1), sk_viewproj[ids.view]);
+	o.color     = input.col * color * sk_inst[ids.inst].color;
 	o.normal    = input.norm;
 	return o;
 }

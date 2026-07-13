@@ -334,6 +334,10 @@ public static class BindCSharp {
 	// ─────────────────────────────────────────────────────────────
 
 	static void BuildFunction(StringBuilder sb, SKFunction fn, Dictionary<string, string> delegates, string indent) {
+		// Skip functions marked with @noimpl in overrides (hand-written in
+		// NativeAPI.Custom.cs)
+		if (_overrides.ShouldSkipImpl(fn.Name)) return;
+
 		var returnType = MapType(fn.ReturnType, "", delegates, isReturn: true);
 		bool returnsBool = fn.ReturnType.Name == "bool32_t";
 
@@ -452,6 +456,16 @@ public static class BindCSharp {
 			if (type.ArraySize1 > 0) {
 				// Fixed size array
 				return ($"[MarshalAs(UnmanagedType.LPArray, SizeConst = {type.ArraySize1})] {typeName}[]", textType);
+			}
+			// A double pointer can't be a caller-allocated element array, the
+			// function is handing back a pointer to its own array → IntPtr
+			if (type.PointerLevel >= 2) {
+				string keyword = passType switch {
+					SKPassType.Out => "out ",
+					SKPassType.Ref => "ref ",
+					_              => "",
+				};
+				return ($"{keyword}IntPtr", textType);
 			}
 			// Variable length array - use [In] or [Out] attribute
 			string attr = passType switch {

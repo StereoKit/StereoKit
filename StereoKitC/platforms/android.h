@@ -14,7 +14,5 @@ namespace sk {
 void android_set_window     (void *window);
 void android_set_window_xam (void *window);
 
-bool android_read_asset(const char* asset_name, void** out_data, size_t* out_size);
-
 } // namespace sk
 #endif // defined(SK_OS_ANDROID)

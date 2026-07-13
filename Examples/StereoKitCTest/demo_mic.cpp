@@ -59,11 +59,11 @@ void demo_mic_update() {
 	// Let the user pick a microphone from the list of available devices
 	ui_window_begin("Available Microphones:", &window_pose);
 	bool32_t toggle_val = mic_active == "";
-	if (ui_toggle_sz("Default", toggle_val, vec2{0.25f,ui_line_height()}) && toggle_val)
+	if (ui_toggle("Default", toggle_val, vec2{0.25f,ui_line_height()}) && toggle_val)
 		switch_mic("");
 	for (size_t i = 0; i < mic_device_names.size(); i++) {
 		toggle_val = mic_active == mic_device_names[i];
-		if (ui_toggle_sz(mic_device_names[i].c_str(), toggle_val, vec2{0.25f,ui_line_height()}) && toggle_val)
+		if (ui_toggle(mic_device_names[i].c_str(), toggle_val, vec2{0.25f,ui_line_height()}) && toggle_val)
 			switch_mic(mic_device_names[i]);
 	}
 	ui_window_end();

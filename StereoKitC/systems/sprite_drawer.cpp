@@ -36,22 +36,22 @@ void sprite_buffer_ensure_capacity(sprite_buffer_t &buffer) {
 	buffer.vert_cap = buffer.vert_count + 4;
 	buffer.verts    = sk_realloc_t(vert_t, buffer.verts, buffer.vert_cap);
 
-	// regenerate indices
-	vind_t  quads = (vind_t)(buffer.vert_cap / 4);
-	vind_t *inds  = sk_malloc_t(vind_t, quads * 6);
+	// regenerate indices, defer upload to step time so verts are set first
+	vind_t quads     = (vind_t)(buffer.vert_cap / 4);
+	buffer.ind_count = quads * 6;
+	buffer.inds      = sk_realloc_t(vind_t, buffer.inds, buffer.ind_count);
 	for (vind_t i = 0; i < quads; i++) {
 		vind_t q = i * 4;
 		vind_t c = i * 6;
-		inds[c+0] = q+2;
-		inds[c+1] = q+1;
-		inds[c+2] = q;
+		buffer.inds[c+0] = q+2;
+		buffer.inds[c+1] = q+1;
+		buffer.inds[c+2] = q;
 
-		inds[c+3] = q+3;
-		inds[c+4] = q+2;
-		inds[c+5] = q;
+		buffer.inds[c+3] = q+3;
+		buffer.inds[c+4] = q+2;
+		buffer.inds[c+5] = q;
 	}
-	mesh_set_inds(buffer.mesh, inds, quads * 6);
-	sk_free(inds);
+	buffer.dirty_inds = true;
 }
 
 ///////////////////////////////////////////
@@ -94,7 +94,7 @@ void sprite_drawer_add     (sprite_t sprite, const matrix &at, color32 color) {
 
 ///////////////////////////////////////////
 
-void sprite_drawer_add_at(sprite_t sprite, matrix at, pivot_ pivot_position, color32 color) {
+void sprite_drawer_add_at(sprite_t sprite, matrix at, pivot_ pivot_position, color32 color, render_layer_ layer) {
 	// Check if this one does get batched
 	if (sprite->buffer_index == -1) {
 		// Just plop a quad onto the render queue
@@ -104,7 +104,7 @@ void sprite_drawer_add_at(sprite_t sprite, matrix at, pivot_ pivot_position, col
 		else if (pivot_position & pivot_x_right ) offset.x =  aspect/2;
 		if      (pivot_position & pivot_y_bottom) offset.y =  0.5f;
 		else if (pivot_position & pivot_y_top   ) offset.y = -0.5f;
-		render_add_mesh(sprite_quad, sprite->material, matrix_ts(offset, {aspect, 1, 1}) * at, { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f });
+		render_add_mesh(sprite_quad, sprite->material, matrix_ts(offset, {aspect, 1, 1}) * at, { color.r / 255.f, color.g / 255.f, color.b / 255.f, color.a / 255.f }, layer);
 		return;
 	} else {
 		log_err("Not implemented");
@@ -129,7 +129,7 @@ bool sprite_drawer_init() {
 	vind_t inds[6] = { 0,1,2, 0,2,3 };
 	mesh_set_id       (sprite_quad_old, "sk/render/sprite_quad");
 	mesh_set_keep_data(sprite_quad_old, false);
-	mesh_set_data     (sprite_quad_old, verts, 4, inds, 6, false);
+	mesh_set_data     (sprite_quad_old, verts, 4, inds, 6, mesh_data_none);
 
 	return true;
 }
@@ -145,9 +145,13 @@ void sprite_drawer_step() {
 			continue;
 
 		mesh_set_verts(buffer.mesh, buffer.verts, buffer.vert_count, false);
+		if (buffer.dirty_inds) {
+			mesh_set_inds(buffer.mesh, buffer.inds, buffer.ind_count);
+			buffer.dirty_inds = false;
+		}
 		mesh_set_draw_inds(buffer.mesh, (buffer.vert_count / 4) * 6);
 
-		render_add_mesh(buffer.mesh, buffer.material, matrix_identity);
+		render_add_mesh(buffer.mesh, buffer.material, matrix_identity, {1,1,1,1}, render_layer_vfx);
 		buffer.vert_count = 0;
 	}
 }
@@ -162,6 +166,7 @@ void sprite_drawer_shutdown() {
 		mesh_release(buffer.mesh);
 		material_release(buffer.material);
 		sk_free(buffer.verts);
+		sk_free(buffer.inds);
 	}
 	sprite_buffers.clear();
 }

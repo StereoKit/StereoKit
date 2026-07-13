@@ -110,6 +110,17 @@ void openxr_step_end    ();
 bool openxr_poll_events ();
 bool openxr_render_frame();
 
+// CPU dead-time accounting: OpenXR's xrWaitFrame/xrAcquireSwapchainImage/
+// xrWaitSwapchainImage block inside sk_renderer's CPU frame window, so their
+// time gets counted as CPU work. The 5 call sites in openxr_view.cpp
+// accumulate into a file-static tick counter; openxr_step_end calls
+// _commit() to advance the ring per frame; time_perf_cpu_us subtracts
+// _time_us() from the reported value. The internal counter mirrors
+// _skr_vk.frame so the read slot matches the frame whose timing
+// skr_renderer_get_cpu_time_us reports.
+void     openxr_cpu_dead_commit ();
+uint64_t openxr_cpu_dead_time_us();
+
 bool32_t      openxr_get_space        (XrSpace space, pose_t *out_pose, XrTime time = 0);
 const char*   openxr_string           (XrResult result);
 void          openxr_set_origin_offset(pose_t offset);

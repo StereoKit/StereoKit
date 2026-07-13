@@ -668,7 +668,7 @@ vec3 bounds_segment_closest(bounds_t bounds, vec3 line_start, vec3 line_end) {
 
 	// Check if line end is closest point
 	vec3  closest_end   = vec3_max(min, vec3_min(line_end, max));
-	float distance2_end = vec3_distance_sq(line_end, closest);
+	float distance2_end = vec3_distance_sq(line_end, closest_end);
 	if (distance2_end < distance2) {
 		distance2 = distance2_end;
 		closest   = closest_end;

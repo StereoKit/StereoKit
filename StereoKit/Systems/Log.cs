@@ -59,9 +59,8 @@ namespace StereoKit
 		static Dictionary<LogCallback, LogCallbackData> callbacks = new Dictionary<LogCallback, LogCallbackData>();
 
 		/// <summary>What's the lowest level of severity logs to display on
-		/// the console? Default is LogLevel.Info. This property can safely
-		/// be set before SK initialization.</summary>
-		public static LogLevel Filter { set{ NativeLib.Load(); SetFilter(value); } }
+		/// the console? Default is LogLevel.Info.</summary>
+		public static LogLevel Filter { set{ SetFilter(value); } }
 		private static void SetFilter(LogLevel level)
 			=> NativeAPI.log_set_filter(level);
 
@@ -105,36 +104,20 @@ namespace StereoKit
 		/// <summary>Allows you to listen in on log events! Any callback
 		/// subscribed here will be called when something is logged. This
 		/// does honor the Log.Filter, so filtered logs will not be received
-		/// here. This method can safely be called before SK initialization.
-		/// </summary>
+		/// here.</summary>
 		/// <param name="onLog">The function to call when a log event occurs.
 		/// </param>
-		public static void Subscribe(LogCallback onLog) 
+		public static void Subscribe(LogCallback onLog)
 		{
-			NativeLib.Load();
-			_Subscribe(onLog);
-		}
-		private static void _Subscribe(LogCallback onLog)
-		{
-			// Separate function because the native call will make C# attempt
-			// to load the library as soon as it enters this method.
 			callbacks.Add(onLog, (IntPtr context, LogLevel level, string text) => onLog(level, text)); // This prevents the callback from getting GCed
 			NativeAPI.log_subscribe(callbacks[onLog], IntPtr.Zero);
 		}
 
 		/// <summary>If you subscribed to the log callback, you can
-		/// unsubscribe that callback here!
-		/// This method can safely be called before initialization.</summary>
+		/// unsubscribe that callback here!</summary>
 		/// <param name="onLog">The subscribed callback to remove.</param>
 		public static void Unsubscribe(LogCallback onLog)
 		{
-			NativeLib.Load();
-			_Unsubscribe(onLog);
-		}
-		private static void _Unsubscribe(LogCallback onLog)
-		{
-			// Separate function because the native call will make C# attempt
-			// to load the library as soon as it enters this method.
 			NativeAPI.log_unsubscribe(callbacks[onLog], IntPtr.Zero);
 			callbacks.Remove(onLog);
 		}

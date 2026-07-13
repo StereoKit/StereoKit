@@ -186,7 +186,7 @@ void demo_desktop_update() {
 	static pose_t desktop_pose        = pose_t{ vec3{0,0,-0.5f}, quat_lookat(vec3_zero, {0,0,1}) };
 	static pose_t desktop_pose_smooth = desktop_pose;
 	ui_enable_far_interact(false);
-	ui_handle_begin("Desktop", desktop_pose, bounds, true);
+	ui_handle_begin("Desktop", desktop_pose, nullptr, bounds, true);
 	ui_handle_end();
 	ui_enable_far_interact(true);
 

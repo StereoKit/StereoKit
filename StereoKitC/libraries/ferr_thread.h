@@ -321,6 +321,11 @@ void ft_thread_name(ft_thread_t thread, const char* name) {
 	free(name_wide);
 #elif defined(__EMSCRIPTEN__)
 	emscripten_set_thread_name(thread, name);
+#elif defined(__APPLE__)
+	// macOS pthread_setname_np only works on the current thread
+	if (pthread_equal(thread, pthread_self())) {
+		pthread_setname_np(name);
+	}
 #else
 	pthread_setname_np(thread, name);
 #endif

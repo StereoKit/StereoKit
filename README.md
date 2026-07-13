@@ -44,6 +44,7 @@ These are the binaries that currently ship in the NuGet package. StereoKit devel
 | Windows | X | X |
 | Linux   | X | X |
 | Android | X | X |
+| MacOS   |   | X |
 
 If you require an additional architecture in the NuGet, please propose it as an Issue!
 

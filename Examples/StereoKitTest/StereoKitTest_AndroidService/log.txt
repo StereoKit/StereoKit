@@ -1,0 +1,724 @@
+--------- beginning of main
+02-26 16:37:26.412 28909 28909 I _androidservice: Late-enabling -Xcheck:jni
+02-26 16:37:26.434 28909 28909 I _androidservice: Using CollectorTypeCC GC.
+02-26 16:37:26.481 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10198; state: ENABLED
+02-26 16:37:26.481 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 242716250; UID 10198; state: DISABLED
+02-26 16:37:26.504 28909 28909 W ziparchive: Unable to open '/data/app/~~5EFr8VuVjk9PcX-mx6zxNg==/net.stereokit.stereokittest_androidservice-7-4g9OGDtA-M_M_JGb3q_w==/base.dm': No such file or directory
+02-26 16:37:26.504 28909 28909 W ziparchive: Unable to open '/data/app/~~5EFr8VuVjk9PcX-mx6zxNg==/net.stereokit.stereokittest_androidservice-7-4g9OGDtA-M_M_JGb3q_w==/base.dm': No such file or directory
+02-26 16:37:26.511 28909 28909 D nativeloader: Configuring clns-6 for other apk /data/app/~~5EFr8VuVjk9PcX-mx6zxNg==/net.stereokit.stereokittest_androidservice-7-4g9OGDtA-M_M_JGb3q_w==/base.apk. target_sdk_version=32, uses_libraries=, library_path=/data/app/~~5EFr8VuVjk9PcX-mx6zxNg==/net.stereokit.stereokittest_androidservice-7-4g9OGDtA-M_M_JGb3q_w==/lib/arm64:/data/app/~~5EFr8VuVjk9PcX-mx6zxNg==/net.stereokit.stereokittest_androidservice-7-4g9OGDtA-M_M_JGb3q_w==/base.apk!/lib/arm64-v8a:/apex/com.meta.xr/priv-app/VrDriver/VrDriver.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/net.stereokit.stereokittest_androidservice
+02-26 16:37:26.521 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 183155436; UID 10198; state: DISABLED
+02-26 16:37:26.528 28909 28909 V GraphicsEnvironment: Currently set values for:
+02-26 16:37:26.528 28909 28909 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+02-26 16:37:26.528 28909 28909 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+02-26 16:37:26.528 28909 28909 V GraphicsEnvironment: ANGLE GameManagerService for net.stereokit.stereokittest_androidservice: false
+02-26 16:37:26.528 28909 28909 V GraphicsEnvironment: net.stereokit.stereokittest_androidservice is not listed in per-application setting
+02-26 16:37:26.528 28909 28909 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+02-26 16:37:26.533 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 175409949; UID 10198; state: DISABLED
+02-26 16:37:26.533 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 175409951; UID 10198; state: DISABLED
+02-26 16:37:26.533 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 175409956; UID 10198; state: DISABLED
+02-26 16:37:26.535 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 175409950; UID 10198; state: DISABLED
+02-26 16:37:26.535 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 175409952; UID 10198; state: DISABLED
+02-26 16:37:26.568 28909 28909 W monodroid: Failed to create directory '/data/user/0/net.stereokit.stereokittest_androidservice/files/.__override__/arm64-v8a'. File exists
+02-26 16:37:26.568 28909 28909 W monodroid: Creating public update directory: `/data/user/0/net.stereokit.stereokittest_androidservice/files/.__override__/arm64-v8a`
+02-26 16:37:26.568 28909 28909 W _androidservice: Attempt to remove non-JNI local reference
+02-26 16:37:26.568 28909 28909 W monodroid: runtime args empty
+02-26 16:37:26.613 28909 28909 D DOTNET  : AndroidCryptoNative_InitLibraryOnLoad: jint AndroidCryptoNative_InitLibraryOnLoad(JavaVM *, void *) in /__w/1/s/src/runtime/src/native/libs/System.Security.Cryptography.Native.Android/pal_jni.c
+02-26 16:37:26.614 28909 28909 D DOTNET  : GetOptionalClassGRef: optional class com/android/org/conscrypt/OpenSSLEngineImpl was not found
+02-26 16:37:26.712 28909 28909 W _androidservice: Attempt to remove non-JNI local reference
+02-26 16:37:26.772 28909 28909 D VrosSpatialAudio: Immersive activity detected, skip VrosSpatialAudio init
+02-26 16:37:26.821 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 210923482; UID 10198; state: DISABLED
+02-26 16:37:26.821 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 37756858; UID 10198; state: ENABLED
+02-26 16:37:26.829 28909 28909 I VrosSpatialAudio: init with android.view.ViewRootImpl$W@9242324
+02-26 16:37:26.831 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 237531167; UID 10198; state: DISABLED
+02-26 16:37:26.832 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 175409955; UID 10198; state: DISABLED
+02-26 16:37:26.832 28909 28909 D CompatibilityChangeReporter: Compat change id reported: 175409954; UID 10198; state: DISABLED
+02-26 16:37:26.842 28909 28909 W OpenGLRenderer: Unknown dataspace 0
+02-26 16:37:26.903 28909 28962 I AdrenoGLES-0: QUALCOMM build                   : 5eb6d58341, Icac217ebc7
+02-26 16:37:26.903 28909 28962 I AdrenoGLES-0: Build Date                       : 11/10/25
+02-26 16:37:26.903 28909 28962 I AdrenoGLES-0: OpenGL ES Shader Compiler Version: E031.50.14.00
+02-26 16:37:26.903 28909 28962 I AdrenoGLES-0: Local Branch                     : 
+02-26 16:37:26.903 28909 28962 I AdrenoGLES-0: Remote Branch                    : refs/tags/AU_LINUX_ANDROID_LA.VENDOR.12.3.11.00.00.934.442
+02-26 16:37:26.903 28909 28962 I AdrenoGLES-0: Remote Branch                    : NONE
+02-26 16:37:26.903 28909 28962 I AdrenoGLES-0: Reconstruct Branch               : NOTHING
+02-26 16:37:26.903 28909 28962 I AdrenoGLES-0: Build Config                     : S P 12.1.6 AArch64
+02-26 16:37:26.903 28909 28962 I AdrenoGLES-0: Driver Path                      : /vendor/lib64/egl/libGLESv2_adreno.so
+02-26 16:37:26.904 28909 28962 I AdrenoGLES-0: Driver Version                   : 0837.0.6
+02-26 16:37:26.904 28909 28962 I AdrenoGLES-0: Process Name                     : net.stereokit.stereokittest_androidservice
+02-26 16:37:26.908 28909 28962 I AdrenoGLES-0: PFP: 0x01511181, ME: 0x00000000
+02-26 16:37:26.909 28909 28909 I OpenGLRenderer: setStopped(0)
+02-26 16:37:26.911 28909 28962 W Adreno-AppProfiles: Could not find QSPM HAL service. Skipping adreno profile processing.
+02-26 16:37:26.911 28909 28970 D SK_StereoKit_C#: Initializing StereoKit v0.4.0 Android ARM64...
+02-26 16:37:26.912 28909 28970 D SK_StereoKit_C#: Initializing Assets
+02-26 16:37:26.913 28909 28962 I AdrenoUtils: <ReadGpuID:1293>: Reading chip ID through GSL
+02-26 16:37:26.919 28909 28962 E OpenGLRenderer: Unable to match the desired swap behavior.
+02-26 16:37:26.919 28909 28909 I OpenGLRenderer: setStopped(0): complete
+02-26 16:37:26.923 28909 28909 I OpenGLRenderer: setStopped(0)
+02-26 16:37:26.923 28909 28909 I OpenGLRenderer: setStopped(0): complete
+02-26 16:37:27.005 28909 28970 D SK_StereoKit_C#: Initializing Platform
+02-26 16:37:27.005 28909 28970 I sk_app  : Context is not an Activity — window management unavailable
+02-26 16:37:27.006 28909 28970 I sk_app  : Android platform initialized
+02-26 16:37:27.006 28909 28970 I sk_app  : sk_app initialized
+02-26 16:37:27.007 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrInitializeLoaderKHR | OpenXR-Loader] : Entering loader trampoline
+02-26 16:37:27.007 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrEnumerateInstanceExtensionProperties | OpenXR-Loader] : Entering loader trampoline
+02-26 16:37:27.010 28909 28970 I OpenXR-Loader: getActiveRuntimeCursor: Querying URI: content://org.khronos.openxr.runtime_broker/openxr/1/abi/arm64-v8a/runtimes/active
+02-26 16:37:27.014 28909 28970 W OpenXR-Loader: Null cursor when querying installable content resolver.
+02-26 16:37:27.014 28909 28970 I OpenXR-Loader: getActiveRuntimeCursor: Querying URI: content://org.khronos.openxr.system_runtime_broker/openxr/1/abi/arm64-v8a/runtimes/active
+02-26 16:37:27.017 28909 28970 W OpenXR-Loader: Null cursor when querying system content resolver.
+02-26 16:37:27.017 28909 28970 E OpenXR-Loader: Could access neither the installable nor system runtime broker.
+02-26 16:37:27.017 28909 28970 I OpenXR-Loader: Info [GENERAL | xrEnumerateInstanceExtensionProperties | OpenXR-Loader] : RuntimeManifestFile::FindManifestFiles - using global runtime file /odm/etc/openxr/1/active_runtime.aarch64.json
+02-26 16:37:27.017 28909 28970 I OpenXR-Loader: Info [GENERAL |  | OpenXR-Loader] : RuntimeManifestFile::CreateIfValid - attempting to load /odm/etc/openxr/1/active_runtime.aarch64.json
+02-26 16:37:27.019 28909 28970 I OpenXR-Loader: Info [GENERAL | xrEnumerateInstanceExtensionProperties | OpenXR-Loader] : RuntimeInterface::LoadRuntime forwarding xrInitializeLoaderKHR call to runtime before calling xrNegotiateLoaderRuntimeInterface.
+02-26 16:37:27.019 28909 28970 V OpenXR  : OpenXRForwardLoader::xrInitializeLoaderKHR [start]
+02-26 16:37:27.025 28909 28970 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+02-26 16:37:27.025 28909 28970 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.hidl.manager-V1.0-java.jar
+02-26 16:37:27.025 28909 28970 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.hidl.base-V1.0-java.jar
+02-26 16:37:27.028 28909 28970 D nativeloader: Configuring clns-shared-7 for other apk /system/framework/org.apache.http.legacy.jar. target_sdk_version=24, uses_libraries=ALL, library_path=/apex/com.meta.xr/priv-app/VrDriver/lib/arm64:/apex/com.meta.xr/priv-app/VrDriver/VrDriver.apk!/lib/arm64-v8a:/system/lib64:/system_ext/lib64:/apex/com.meta.xr/priv-app/VrDriver/VrDriver.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand::/apex/com.meta.xr/priv-app/VrDriver:/system/lib64:/system_ext/lib64
+02-26 16:37:27.028 28909 28970 D nativeloader: Extending system_exposed_libraries: libhzos.meta.so:libhzos_featurejournal.meta.so:libhzos_gaze.meta.so:libhzos_orthofit.meta.so:libhzos_reportstatsevent.meta.so:libhzos_spaces.meta.so:libhzos_trackedinput.meta.so:libhzos_trackingclient.meta.so:libaudiotapper.oculus.so:libcalibrationmanager.oculus.so:libheadtracker.oculus.so:libinstsamp.oculus.so:libossdk.oculus.so:libparfait.oculus.so:libripcclient.oculus.so:libripcmanager.oculus.so:libappsensoraccess.oculus.so:libOVRMrcLib.oculus.so:libxrstreaminghost.oculus.so
+02-26 16:37:27.036 28909 28970 D nativeloader: Configuring clns-shared-8 for other apk /apex/com.meta.xr/priv-app/VrDriver/VrDriver.apk. target_sdk_version=24, uses_libraries=, library_path=/apex/com.meta.xr/priv-app/VrDriver/lib/arm64:/apex/com.meta.xr/priv-app/VrDriver/VrDriver.apk!/lib/arm64-v8a:/system/lib64:/system_ext/lib64:/apex/com.meta.xr/priv-app/VrDriver/VrDriver.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand::/apex/com.meta.xr/priv-app/VrDriver:/system/lib64:/system_ext/lib64
+02-26 16:37:27.036 28909 28970 D nativeloader: Extending system_exposed_libraries: libhzos.meta.so:libhzos_featurejournal.meta.so:libhzos_gaze.meta.so:libhzos_orthofit.meta.so:libhzos_reportstatsevent.meta.so:libhzos_spaces.meta.so:libhzos_trackedinput.meta.so:libhzos_trackingclient.meta.so:libaudiotapper.oculus.so:libcalibrationmanager.oculus.so:libheadtracker.oculus.so:libinstsamp.oculus.so:libossdk.oculus.so:libparfait.oculus.so:libripcclient.oculus.so:libripcmanager.oculus.so:libappsensoraccess.oculus.so:libOVRMrcLib.oculus.so:libxrstreaminghost.oculus.so
+02-26 16:37:27.038 28909 28970 D nativeloader: InitApexLibraries:
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_android_adservices: libhpke_jni.so:libtflite_support_classifiers_native.so
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_android_appsearch: libicing.so
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_android_art: libartservice.so
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_android_btservices: libbluetooth_jni.so
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_android_conscrypt: libjavacrypto.so
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_android_extservices: libhpke_jni.so:libtflite_support_classifiers_native.so
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_android_os_statsd: libstats_jni.so
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_android_tethering: libcronet.114.0.5735.84.so:libframework-connectivity-jni.so:libframework-connectivity-tiramisu-jni.so:libandroid_net_connectivity_com_android_net_module_util_jni.so:libservice-connectivity.so
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_android_uwb: libuwb_uci_jni_rust.so
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_android_virt: libvirtualizationservice_jni.so:libvirtualmachine_jni.so
+02-26 16:37:27.038 28909 28970 D nativeloader:   com_meta_xr: libmrservice_plugin.so
+02-26 16:37:27.040 28909 28970 I OpenXR  : Loading 64-bit Runtime.
+02-26 16:37:27.048 28909 28970 I VrRuntimeClient: VrRuntimeClient(): 0x6f452e2340
+02-26 16:37:27.048 28909 28970 D OsSdkLoader: OSSDK loading module 'libossdk.oculus.so'
+02-26 16:37:27.057 28909 28970 I DriverLoader: Calling into SetLegacyVrApiEntryPointOverride
+02-26 16:37:27.057 28909 28970 I VrApi_DriverLoader: SetLegacyVrApiEntryPointOverride: calling sprintf
+02-26 16:37:27.057 28909 28970 I VrApi_DriverLoader: SetLegacyVrApiEntryPointOverride: env buffer is '0x6f45232204'
+02-26 16:37:27.057 28909 28970 I VrApi_DriverLoader: SetLegacyVrApiEntryPointOverride: calling setenv
+02-26 16:37:27.057 28909 28970 I DriverLoader: Creating Temp JNIEnv
+02-26 16:37:27.057 28909 28970 I DriverLoader: Calling FindClass
+02-26 16:37:27.057 28909 28970 I DriverLoader: Calling RegisterNativeVrApiLoaderMethods
+02-26 16:37:27.057 28909 28970 I VrApi_DriverLoader: RegisterNativeVrApiLoaderMethods: calling RegisterNatives
+02-26 16:37:27.057 28909 28970 I DriverLoader: Calling RegisterNativeXrLoaderMethods
+02-26 16:37:27.057 28909 28970 I OpenXR_DriverLoader: RegisterNativeVrApiLoaderMethods: calling RegisterNatives
+02-26 16:37:27.057 28909 28970 I DriverLoader: Exiting JNI_OnLoad
+02-26 16:37:27.058 28909 28970 I OpenXR_ClientState: OpenXRClientState::create - from xrInitializeLoaderKHR
+02-26 16:37:27.058 28909 28970 I XrRuntimeSharedClientState: SharedClientState::create called from 'OpenXRClientState::init'
+02-26 16:37:27.058 28909 28970 I ipcLoader [RUNTIMEIPC]: RuntimeIPC: Loader: IPC Service API Loader Version: 84 Feb 20 2026 18:53:02
+02-26 16:37:27.058 28909 28970 I ipcLoader [RUNTIMEIPC]: Using android_get_exported_namespace: libripcclient.oculus.so
+02-26 16:37:27.060 28909 28970 I ipcLoader [RUNTIMEIPC]: android_get_exported_namespace SUCCESS: libripcclient.oculus.so
+02-26 16:37:27.061 28909 28970 I RuntimeIPCSystem [RUNTIMEIPC]: RuntimeIPCSystem: Init called: Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.061 28909 28970 I MultiInstanceDetector [RUNTIMEIPC]: Multiple instances check passed. Socket name: INSTANCE_DETECTOR:28909
+02-26 16:37:27.061 28909 28970 D OsSdkLoader: OSSDK loading module 'libossdk.oculus.so'
+02-26 16:37:27.062 28909 28970 W RuntimeIPCSystem [RUNTIMEIPC]: Init: Java VM is null
+02-26 16:37:27.062 28909 28970 D OsSdkLoader: OSSDK loading module 'libripcmanager.oculus.so'
+02-26 16:37:27.064 28909 28970 I RuntimeIpcManager: RuntimeIpcManager: attempting to get a service connection
+02-26 16:37:27.067 28909 28970 I RuntimeIpcManager: RuntimeIpcManager: Binder call to service->connect SUCCESS
+02-26 16:37:27.067 28909 28970 I BrokerRPC [RUNTIMEIPC]: InitRPCToServiceInternal: Success
+02-26 16:37:27.068 28909 28970 I RuntimeIPCSystem [RUNTIMEIPC]: RuntimeIPCSystem: Init SUCCESS: Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.068 28909 28990 I RipcServerMgr [RUNTIMEIPC]: UpdateServerListOnBroker (pid: 28909): SUCCESS (shouldNotify=true): []
+02-26 16:37:27.071 28909 28970 I ClientProcessConnector [RUNTIMEIPC]: GetProcessConnection: com.oculus.systemdriver:com.oculus.vrruntimeservice
+02-26 16:37:27.078 28909 28970 I RipcClient [RUNTIMEIPC]: Event buffer size (client): 8192
+02-26 16:37:27.078 28909 28970 I RipcClient [RUNTIMEIPC]: TryToGetIPCResourcesFromServer: RPC_CONNECTOR_CONNECT_TO_SERVER SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (gkcache), Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.078 28909 28970 I RipcClient [RUNTIMEIPC]: EnsureServerConnection: SUCCESS. Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (gkcache)
+02-26 16:37:27.078 28909 28970 I RipcClient [RUNTIMEIPC]: [RIPC_CONNECT_LOG] ConnectToServer: SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (gkcache)
+02-26 16:37:27.080 28909 28970 I RipcClient [RUNTIMEIPC]: InitServerStateBuffer: SUCCESS. 0, Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (gkcache)
+02-26 16:37:27.080 28909 28970 I OpenXR_ClientState: Client state creation succeeded.
+02-26 16:37:27.080 28909 28970 V OpenXR  : OpenXRForwardLoader::xrInitializeLoaderKHR [end]
+02-26 16:37:27.081 28909 28970 V OpenXR  : OpenXRForwardLoader::xrNegotiateLoaderRuntimeInterface [start]
+02-26 16:37:27.081 28909 28970 V OpenXR  : OpenXRForwardLoader::xrNegotiateLoaderRuntimeInterface [end]
+02-26 16:37:27.081 28909 28970 I OpenXR-Loader: Info [GENERAL | xrEnumerateInstanceExtensionProperties | OpenXR-Loader] : RuntimeInterface::LoadRuntime succeeded loading runtime defined in manifest file /odm/etc/openxr/1/active_runtime.aarch64.json using interface version 1 and OpenXR API version 1.0
+02-26 16:37:27.089 28909 28970 I ApplicationAttributes: IsPrivileged 0
+02-26 16:37:27.089 28909 28970 I OpenXR  : Is_X_PartnerGateKeeper
+02-26 16:37:27.089 28909 28970 I OpenXR  : PGK Status: exp = 0, dc = false
+02-26 16:37:27.089 28909 28970 I OpenXR  : oculus_first_access = false
+02-26 16:37:27.089 28909 28970 I OpenXR  : Extension status: P
+02-26 16:37:27.091 28909 28970 I ApplicationAttributes: IsSystem 0
+02-26 16:37:27.093 28909 28970 E libosutils: Failed to get real path of file '/sys/devices/soc0/oem_variant', err: Permission denied
+02-26 16:37:27.093 28909 28970 E libosutils: Failed to get real path of file '/sys/devices/soc0/platform_subtype_id', err: Permission denied
+02-26 16:37:27.093 28909 28970 E libosutils: Failed to get real path of file '/sys/devices/soc0/platform_version', err: Permission denied
+02-26 16:37:27.093 28909 28970 W libdeviceid: DeviceId unknown with subtype FFFFFFFF and version: 0xFFFFFFFF
+02-26 16:37:27.089 28909 28909 W SK_StereoKit_C#: type=1400 audit(0.0:1636): avc:  denied  { search } for  name="soc0" dev="sysfs" ino=69948 scontext=u:r:untrusted_app_32:s0:c198,c256,c512,c768 tcontext=u:object_r:vendor_sysfs_soc:s0 tclass=dir permissive=0 app=net.stereokit.stereokittest_androidservice
+02-26 16:37:27.089 28909 28909 W SK_StereoKit_C#: type=1400 audit(0.0:1637): avc:  denied  { search } for  name="soc0" dev="sysfs" ino=69948 scontext=u:r:untrusted_app_32:s0:c198,c256,c512,c768 tcontext=u:object_r:vendor_sysfs_soc:s0 tclass=dir permissive=0 app=net.stereokit.stereokittest_androidservice
+02-26 16:37:27.089 28909 28909 W SK_StereoKit_C#: type=1400 audit(0.0:1638): avc:  denied  { search } for  name="soc0" dev="sysfs" ino=69948 scontext=u:r:untrusted_app_32:s0:c198,c256,c512,c768 tcontext=u:object_r:vendor_sysfs_soc:s0 tclass=dir permissive=0 app=net.stereokit.stereokittest_androidservice
+02-26 16:37:27.096 28909 28970 W libc    : Access denied finding property "ro.vendor.product.model_extended"
+02-26 16:37:27.097 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime:oculus_trex_body_full_killsw' not successful: 4
+02-26 16:37:27.097 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime_sessionless:oculus_trex_body_full_killsw' not successful: 4
+02-26 16:37:27.097 28909 28970 W GkHelper: GkHelper: query failed for oculus_trex_body_full_killsw, result code: 4
+02-26 16:37:27.097 28909 28970 I OpenXR  : checkTrexKillswitchGk 'oculus_trex_body_full_killsw' = false
+02-26 16:37:27.097 28909 28970 I OpenXR  : PassesGKKillswitch 1
+02-26 16:37:27.097 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.099 28909 28970 D CompatibilityChangeReporter: Compat change id reported: 247079863; UID 10198; state: DISABLED
+02-26 16:37:27.102 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.102 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FB_spatial_entity` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.103 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FB_render_model` due to: missing uses-feature string `com.oculus.feature.RENDER_MODEL` from AndroidManifest
+02-26 16:37:27.103 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.105 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.105 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FB_spatial_entity_query` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.105 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.107 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.107 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_spatial_entity_persistence` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.107 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.110 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.110 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_spatial_entity_discovery` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.110 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FBX1_touch_controller_extras` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.110 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.112 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.112 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FB_spatial_entity_storage` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.112 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.114 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.114 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FB_spatial_entity_storage_batch` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.115 28909 28970 I OpenXR  : Checking for permission horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.117 28909 28970 I OpenXR  : Required permission horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA is missing, retrying check as com.oculus.permission.IMPORT_EXPORT_IOT_MAP_DATA -> 0
+02-26 16:37:27.117 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FB_spatial_entity_sharing` due to: missing uses-permission string `horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.117 28909 28970 I OpenXR  : Checking for permission horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.119 28909 28970 I OpenXR  : Required permission horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA is missing, retrying check as com.oculus.permission.IMPORT_EXPORT_IOT_MAP_DATA -> 0
+02-26 16:37:27.119 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_spatial_entity_sharing` due to: missing uses-permission string `horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.119 28909 28970 I OpenXR  : Checking for permission horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.121 28909 28970 I OpenXR  : Required permission horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA is missing, retrying check as com.oculus.permission.IMPORT_EXPORT_IOT_MAP_DATA -> 0
+02-26 16:37:27.121 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_spatial_entity_group_sharing` due to: missing uses-permission string `horizonos.permission.IMPORT_EXPORT_IOT_MAP_DATA` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.121 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.123 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.123 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FB_spatial_entity_container` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.123 28909 28970 I OpenXR  : Checking for permission com.oculus.permission.USE_COLOCATION_DISCOVERY_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.124 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_colocation_discovery` due to: missing uses-permission string `com.oculus.permission.USE_COLOCATION_DISCOVERY_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.124 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.127 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.127 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FB_scene` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.127 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.130 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.130 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FB_scene_capture` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.130 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_SCENE of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.132 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_SCENE is missing, retrying check as com.oculus.permission.USE_SCENE -> 0
+02-26 16:37:27.132 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_spatial_entity_mesh` due to: missing uses-permission string `horizonos.permission.USE_SCENE` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.133 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_SCENE of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.135 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_SCENE is missing, retrying check as com.oculus.permission.USE_SCENE -> 0
+02-26 16:37:27.135 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_spatial_entity_room_mesh` due to: missing uses-permission string `horizonos.permission.USE_SCENE` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.136 28909 28970 I OpenXR  : Checking for permission horizonos.permission.FACE_TRACKING of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.137 28909 28970 I OpenXR  : Checking for permission horizonos.permission.FACE_TRACKING of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.138 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension 'XR_META_local_dimming' as device requirements requirements (16) are not met.
+02-26 16:37:27.138 28909 28970 I OpenXR  : Checking for permission horizonos.permission.EYE_TRACKING of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.139 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension 'XR_META_foveation_eye_tracked' as feature requirements (1) are not met.
+02-26 16:37:27.139 28909 28970 I OpenXR  : Checking for permission horizonos.permission.EYE_TRACKING of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.139 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension 'XR_FB_eye_tracking_social' as feature requirements (1) are not met.
+02-26 16:37:27.139 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FBX1_composition_layer_settings` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.139 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_FBX1_composition_layer_depth_test` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.140 28909 28970 I OpenXR  : Checking for permission horizonos.permission.EYE_TRACKING of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension 'XR_EXT_eye_gaze_interaction' as feature requirements (1) are not met.
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX1_hand_tracking_wide_motion_mode2` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX1_hand_tracking_frequency_hint` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX1_hand_tracking_unextrapolated_poses` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX1_performance_metrics` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX1_spatial_entity_marker` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX1_virtual_keyboard` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX2_virtual_keyboard` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_EXTX1_event_channel` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX1_environment_depth` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.140 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX2_environment_depth` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.141 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_SCENE of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.143 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_SCENE is missing, retrying check as com.oculus.permission.USE_SCENE -> 0
+02-26 16:37:27.143 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_environment_depth` due to: missing uses-permission string `horizonos.permission.USE_SCENE` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.143 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_SCENE of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.146 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_SCENE is missing, retrying check as com.oculus.permission.USE_SCENE -> 0
+02-26 16:37:27.146 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_environment_raycast` due to: missing uses-permission string `horizonos.permission.USE_SCENE` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.146 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime:oculus_trex_body_fidelity_killsw' not successful: 4
+02-26 16:37:27.146 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime_sessionless:oculus_trex_body_fidelity_killsw' not successful: 4
+02-26 16:37:27.146 28909 28970 W GkHelper: GkHelper: query failed for oculus_trex_body_fidelity_killsw, result code: 4
+02-26 16:37:27.146 28909 28970 I OpenXR  : checkTrexKillswitchGk 'oculus_trex_body_fidelity_killsw' = false
+02-26 16:37:27.146 28909 28970 I OpenXR  : PassesGKKillswitch 1
+02-26 16:37:27.146 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime:oculus_trex_body_calibration_killsw' not successful: 4
+02-26 16:37:27.146 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime_sessionless:oculus_trex_body_calibration_killsw' not successful: 4
+02-26 16:37:27.146 28909 28970 W GkHelper: GkHelper: query failed for oculus_trex_body_calibration_killsw, result code: 4
+02-26 16:37:27.146 28909 28970 I OpenXR  : checkTrexKillswitchGk 'oculus_trex_body_calibration_killsw' = false
+02-26 16:37:27.146 28909 28970 I OpenXR  : PassesGKKillswitch 1
+02-26 16:37:27.146 28909 28970 I OpenXR  : Checking for permission com.oculus.permission.BOUNDARY_VISIBILITY of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.148 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_boundary_visibility` due to: missing uses-permission string `com.oculus.permission.BOUNDARY_VISIBILITY` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.148 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX1_dynamic_object_tracker` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.148 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_SCENE of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.150 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_SCENE is missing, retrying check as com.oculus.permission.USE_SCENE -> 0
+02-26 16:37:27.150 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_dynamic_object_tracker` due to: missing uses-permission string `horizonos.permission.USE_SCENE` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.150 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_SCENE of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.152 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_SCENE is missing, retrying check as com.oculus.permission.USE_SCENE -> 0
+02-26 16:37:27.152 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_META_dynamic_object_keyboard` due to: missing uses-permission string `horizonos.permission.USE_SCENE` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.152 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX2_debug_utils_region_profiling` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.152 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_METAX3_debug_utils_region_profiling` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.152 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_EXTX2_stationary_reference_space` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.152 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.154 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.154 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_EXT_spatial_entity` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.154 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.157 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.157 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_EXT_spatial_anchor` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.157 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_SCENE of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.159 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_SCENE is missing, retrying check as com.oculus.permission.USE_SCENE -> 0
+02-26 16:37:27.159 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_EXT_spatial_plane_tracking` due to: missing uses-permission string `horizonos.permission.USE_SCENE` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.159 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.161 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.161 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_EXT_spatial_persistence` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.161 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_ANCHOR_API of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.163 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_ANCHOR_API is missing, retrying check as com.oculus.permission.USE_ANCHOR_API -> 0
+02-26 16:37:27.163 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_EXT_spatial_persistence_operations` due to: missing uses-permission string `horizonos.permission.USE_ANCHOR_API` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.163 28909 28970 I OpenXR  : Checking for permission horizonos.permission.USE_SCENE of package net.stereokit.stereokittest_androidservice
+02-26 16:37:27.166 28909 28970 I OpenXR  : Required permission horizonos.permission.USE_SCENE is missing, retrying check as com.oculus.permission.USE_SCENE -> 0
+02-26 16:37:27.166 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_EXT_spatial_marker_tracking` due to: missing uses-permission string `horizonos.permission.USE_SCENE` from AndroidManifest in package `net.stereokit.stereokittest_androidservice`
+02-26 16:37:27.166 28909 28970 I OpenXR  : xrEnumerateInstanceExtensionProperties: skipping extension=`XR_EXTX1_haptic_parametric` due to: Tier=40 extState=P deviceIsExpEnabled=false expManifestSet=true isFirstPartyApp=false isSystemApp=false
+02-26 16:37:27.166 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrEnumerateInstanceExtensionProperties | OpenXR-Loader] : Completed loader trampoline
+02-26 16:37:27.166 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrEnumerateInstanceExtensionProperties | OpenXR-Loader] : Entering loader trampoline
+02-26 16:37:27.167 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrEnumerateInstanceExtensionProperties | OpenXR-Loader] : Completed loader trampoline
+02-26 16:37:27.167 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrEnumerateApiLayerProperties | OpenXR-Loader] : Entering loader trampoline
+02-26 16:37:27.168 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrEnumerateApiLayerProperties | OpenXR-Loader] : Entering loader trampoline
+02-26 16:37:27.168 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrCreateInstance | OpenXR-Loader] : Entering loader trampoline
+02-26 16:37:27.168 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrCreateInstance | OpenXR-Loader] : Entering LoaderInstance::CreateInstance
+02-26 16:37:27.168 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrCreateInstance | OpenXR-Loader] : Entering loader terminator
+02-26 16:37:27.168 28909 28970 I OpenXR  : ----------- xrCreateInstance [start] ----------
+02-26 16:37:27.168 28909 28970 I OpenXR_ClientState: OpenXRClientState::create - from xrCreateInstance
+02-26 16:37:27.168 28909 28970 I VersionGater: App OpenXR version is 1.0.49
+02-26 16:37:27.168 28909 28970 I VersionGater: Version gate state: 1111 1111 1111 1111 1010 1000 00
+02-26 16:37:27.172 28909 28970 I TREX    : Initializing TREX for client 57e8e43c3c550c42...
+02-26 16:37:27.172 28909 28970 I TREX    : Initializing system...
+02-26 16:37:27.172 28909 28970 I XrRuntimeSystem_Client: BodyPoweredHands checkSysPropForBodyAPIOverride 0
+02-26 16:37:27.172 28909 28970 I XrRuntimeSystem_Client: SP plugin: permissionMatch 0, skipSysProp 0. shouldLoad 0
+02-26 16:37:27.172 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime:oculus_trex_insightsdk_killsw' not successful: 4
+02-26 16:37:27.172 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime_sessionless:oculus_trex_insightsdk_killsw' not successful: 4
+02-26 16:37:27.172 28909 28970 W libc    : Access denied finding property "ro.vendor.hw.device_config"
+02-26 16:37:27.172 28909 28970 W libc    : Access denied finding property "ro.vendor.product.model_extended"
+02-26 16:37:27.172 28909 28970 I TREX    : PTINC: API=vrruntime
+02-26 16:37:27.172 28909 28970 I TREXLoadPolicy: InsightMrPassthrough: all features matched!
+02-26 16:37:27.174 28909 28970 I TREX    : Created plugin package context for com.oculus.systemdriver
+02-26 16:37:27.175 28909 28970 I [CT]    : MIXEDREALITY: TREX-MRPT: Passthrough API in VrRuntime enabled.
+02-26 16:37:27.175 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime:oculus_trex_insightsdk_killsw' not successful: 4
+02-26 16:37:27.175 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime_sessionless:oculus_trex_insightsdk_killsw' not successful: 4
+02-26 16:37:27.175 28909 28970 I TREXLoadPolicy: Plugin ':': GK killswitch is enabled! Plugin will be skipped!
+02-26 16:37:27.176 28909 28970 I TREX    : Created plugin package context for com.oculus.systemdriver
+02-26 16:37:27.176 28909 28970 I RuntimeIPCSystem [RUNTIMEIPC]: RuntimeIPCSystem: Init called: Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.180 28909 28970 I RipcClient [RUNTIMEIPC]: Event buffer size (client): 8192
+02-26 16:37:27.180 28909 28970 I RipcClient [RUNTIMEIPC]: TryToGetIPCResourcesFromServer: RPC_CONNECTOR_CONNECT_TO_SERVER SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (HapticsServer), Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.180 28909 28970 I RipcClient [RUNTIMEIPC]: EnsureServerConnection: SUCCESS. Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (HapticsServer)
+02-26 16:37:27.180 28909 28970 I RipcClient [RUNTIMEIPC]: [RIPC_CONNECT_LOG] ConnectToServer: SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (HapticsServer)
+02-26 16:37:27.180 28909 28970 I TREX    : Loading EMGSDK Client Plugin
+02-26 16:37:27.181 28909 28970 I TREX    : Created plugin package context for com.oculus.systemdriver
+02-26 16:37:27.181 28909 28970 I RuntimeIPCSystem [RUNTIMEIPC]: RuntimeIPCSystem: Init called: Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.185 28909 28970 I RipcClient [RUNTIMEIPC]: Event buffer size (client): 8192
+02-26 16:37:27.185 28909 28970 I RipcClient [RUNTIMEIPC]: TryToGetIPCResourcesFromServer: RPC_CONNECTOR_CONNECT_TO_SERVER SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (HandInputDataServer), Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.185 28909 28970 I RipcClient [RUNTIMEIPC]: EnsureServerConnection: SUCCESS. Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (HandInputDataServer)
+02-26 16:37:27.185 28909 28970 I RipcClient [RUNTIMEIPC]: [RIPC_CONNECT_LOG] ConnectToServer: SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (HandInputDataServer)
+02-26 16:37:27.189 28909 28970 I TREX    : Created plugin package context for com.oculus.systemdriver
+02-26 16:37:27.189 28909 28970 I RuntimeIPCSystem [RUNTIMEIPC]: RuntimeIPCSystem: Init called: Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.193 28909 28970 I RipcClient [RUNTIMEIPC]: Event buffer size (client): 8192
+02-26 16:37:27.193 28909 28970 I RipcClient [RUNTIMEIPC]: TryToGetIPCResourcesFromServer: RPC_CONNECTOR_CONNECT_TO_SERVER SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (ControllerIPCServer), Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.193 28909 28970 I RipcClient [RUNTIMEIPC]: EnsureServerConnection: SUCCESS. Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (ControllerIPCServer)
+02-26 16:37:27.193 28909 28970 I RipcClient [RUNTIMEIPC]: [RIPC_CONNECT_LOG] ConnectToServer: SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (ControllerIPCServer)
+02-26 16:37:27.195 28909 28970 I TrexControllerClientPlugin: ControllerClientBase::Initialize success
+02-26 16:37:27.195 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime:oculus_trex_insight_debug_killsw' not successful: 4
+02-26 16:37:27.195 28909 28970 W GkCacheQuerierClient: getGkValue: Query result for 'oculus_xrruntime_sessionless:oculus_trex_insight_debug_killsw' not successful: 4
+02-26 16:37:27.197 28909 28970 I TREXLoadPolicy: BodyApiClientPlugin: all features matched!
+02-26 16:37:27.197 28909 28970 I TREX    : Loading plugin com.oculus.bodyapiservice:libbodyapiplugin.so
+02-26 16:37:27.202 28909 28970 D AndroidLibraryResolver: Loading 'libbodyapiplugin.so' from package 'com.oculus.bodyapiservice'
+02-26 16:37:27.205 28909 28970 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+02-26 16:37:27.209 28909 28970 D nativeloader: Configuring clns-shared-9 for other apk /system_ext/priv-app/BodyApiService/BodyApiService.apk. target_sdk_version=29, uses_libraries=, library_path=/system_ext/priv-app/BodyApiService/lib/arm64:/system_ext/priv-app/BodyApiService/BodyApiService.apk!/lib/arm64-v8a:/system/lib64:/system_ext/lib64:/apex/com.meta.xr/priv-app/VrDriver/VrDriver.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand::/system_ext/priv-app/BodyApiService:/system/lib64:/system_ext/lib64
+02-26 16:37:27.209 28909 28970 D nativeloader: Extending system_exposed_libraries: libhzos.meta.so:libhzos_featurejournal.meta.so:libhzos_gaze.meta.so:libhzos_orthofit.meta.so:libhzos_reportstatsevent.meta.so:libhzos_spaces.meta.so:libhzos_trackedinput.meta.so:libhzos_trackingclient.meta.so:libaudiotapper.oculus.so:libcalibrationmanager.oculus.so:libheadtracker.oculus.so:libinstsamp.oculus.so:libossdk.oculus.so:libparfait.oculus.so:libripcclient.oculus.so:libripcmanager.oculus.so:libappsensoraccess.oculus.so:libOVRMrcLib.oculus.so:libxrstreaminghost.oculus.so
+02-26 16:37:27.211 28909 28970 I AndroidLibraryResolver: Attempting to find getAPIFunction64
+02-26 16:37:27.212 28909 28970 V LibLoaderImpl: Loading 64-bit LibLoaderImpl.
+02-26 16:37:27.212 28909 28970 V LibLoaderImpl: internalGetAPIFunction: loadLibrary 'loaderimpl'
+02-26 16:37:27.212 28909 28970 V LibLoaderImpl: Using System.loadLibrary
+02-26 16:37:27.213 28909 28970 I libloaderimpl: nativeSetClassLoader:0x4126
+02-26 16:37:27.213 28909 28970 V LibLoaderImpl: internalGetAPIFunction: calling nativeGetAPIFunction
+02-26 16:37:27.213 28909 28970 I libloaderimpl: LibLoaderImpl nativeGetAPIFunction.
+02-26 16:37:27.214 28909 28970 I libloaderimpl: LibLoaderHandle SUCCESS
+02-26 16:37:27.214 28909 28970 I TREX    : loaded 'com.oculus.bodyapiservice:libbodyapiplugin.so'
+02-26 16:37:27.214 28909 28970 I libloaderimpl: LibLoaderImpl GetAPIFunction. libName: libbodyapiplugin.so, funcName: trex_GetPluginInfo
+02-26 16:37:27.215 28909 28970 I libloaderimpl: LibLoaderImpl GetAPIFunction. libName: libbodyapiplugin.so, funcName: trex_Initialize
+02-26 16:37:27.215 28909 28970 I libloaderimpl: LibLoaderImpl GetAPIFunction. libName: libbodyapiplugin.so, funcName: trex_Shutdown
+02-26 16:37:27.216 28909 28970 I TREX    : Created plugin package context for com.oculus.bodyapiservice
+02-26 16:37:27.216 28909 28970 I ipcLoader [RUNTIMEIPC]: RuntimeIPC: Loader: IPC Service API Loader Version: 84 Feb 22 2026 03:11:04
+02-26 16:37:27.216 28909 28970 I ipcLoader [RUNTIMEIPC]: Using android_get_exported_namespace: libripcclient.oculus.so
+02-26 16:37:27.217 28909 28970 I ipcLoader [RUNTIMEIPC]: android_get_exported_namespace SUCCESS: libripcclient.oculus.so
+02-26 16:37:27.217 28909 28970 I RuntimeIPCSystem [RUNTIMEIPC]: RuntimeIPCSystem: Init called: Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.220 28909 28970 I ClientProcessConnector [RUNTIMEIPC]: GetProcessConnection: com.oculus.bodyapiservice:com.oculus.bodyapiservice
+02-26 16:37:27.221 28909 28970 I RipcClient [RUNTIMEIPC]: Event buffer size (client): 8192
+02-26 16:37:27.221 28909 28970 I RipcClient [RUNTIMEIPC]: TryToGetIPCResourcesFromServer: RPC_CONNECTOR_CONNECT_TO_SERVER SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.bodyapiservice:com.oculus.bodyapiservice:0 (BodyApiServiceServer), Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.222 28909 28970 I RipcClient [RUNTIMEIPC]: EnsureServerConnection: SUCCESS. Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.bodyapiservice:com.oculus.bodyapiservice:0 (BodyApiServiceServer)
+02-26 16:37:27.222 28909 28970 I RipcClient [RUNTIMEIPC]: [RIPC_CONNECT_LOG] ConnectToServer: SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.bodyapiservice:com.oculus.bodyapiservice:0 (BodyApiServiceServer)
+02-26 16:37:27.225 28909 28970 W RipcClient [RUNTIMEIPC]: GetServerStateMemoryId: Failed to find entry in server for bodyPose_. Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.bodyapiservice:com.oculus.bodyapiservice:0 (BodyApiServiceServer)
+02-26 16:37:27.225 28909 28970 W REFLECT [RUNTIMEIPC]: ipc_GetServerState FAILED: bodyPose_
+02-26 16:37:27.225 28909 28970 W RipcClient [RUNTIMEIPC]: GetServerStateMemoryId: Failed to find entry in server for bodySkeleton_. Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.bodyapiservice:com.oculus.bodyapiservice:0 (BodyApiServiceServer)
+02-26 16:37:27.226 28909 28970 W REFLECT [RUNTIMEIPC]: ipc_GetServerState FAILED: bodySkeleton_
+02-26 16:37:27.226 28909 28970 I [CT]    : BodyApiPlugin: BodyApiClientInterface7 initialized.
+02-26 16:37:27.226 28909 28970 I [CT]    : BodyApiPlugin: BodyApiClientInterface8 initialized.
+02-26 16:37:27.226 28909 28970 I [CT]    : BodyApiPlugin: BodyModelParamsClientInterface initialized.
+02-26 16:37:27.226 28909 28970 I TREXLoadPolicy: InsightSdk: all features matched!
+02-26 16:37:27.226 28909 28970 I TREX    : Loading plugin :libmrservice_plugin.so
+02-26 16:37:27.226 28909 28970 D AndroidLibraryResolver: Loading 'libmrservice_plugin.so'
+02-26 16:37:27.228 28909 28970 D PosixLibraryResolver: dlopen success for 'libmrservice_plugin.so'
+02-26 16:37:27.228 28909 28970 I TREX    : loaded 'libmrservice_plugin.so'
+02-26 16:37:27.228 28909 28970 I PosixLibraryHandle: retrieved address for 'trex_GetPluginInfo'
+02-26 16:37:27.228 28909 28970 I PosixLibraryHandle: retrieved address for 'trex_Initialize'
+02-26 16:37:27.228 28909 28970 I PosixLibraryHandle: retrieved address for 'trex_Shutdown'
+02-26 16:37:27.228 28909 28970 W TREX    : Interface version 2 is already registered! Check debug build for more information.
+02-26 16:37:27.228 28909 28970 W [CT]    : MIXEDREALITY: TREX-MR-HELPER: Failed to register feature interface InsightMrSessionEventInterface v2.
+02-26 16:37:27.228 28909 28970 W TREX    : Interface version 2 is already registered! Check debug build for more information.
+02-26 16:37:27.228 28909 28970 W [CT]    : MIXEDREALITY: TREX-MR-HELPER: Failed to register feature interface InsightMrPassthroughInterface v2.
+02-26 16:37:27.228 28909 28970 W TREX    : Interface version 1 is already registered! Check debug build for more information.
+02-26 16:37:27.228 28909 28970 W [CT]    : MIXEDREALITY: TREX-MR-HELPER: Failed to register feature interface InsightMrPassthroughGeometryMeshInterface v1.
+02-26 16:37:27.228 28909 28970 I TREX    : Loading plugin com.oculus.wearableinputservice:libtrex_emgwristband_client_plugin.so
+02-26 16:37:27.228 28909 28970 I TREX    : package 'com.oculus.wearableinputservice' not found, skipping
+02-26 16:37:27.228 28909 28970 I TREX    : Plugin 'com.oculus.wearableinputservice:libtrex_emgwristband_client_plugin.so' not loaded.
+02-26 16:37:27.228 28909 28970 I TREX    : Loading plugin com.oculus.appautomation:libtrex_app_automation_plugin_v1.so
+02-26 16:37:27.230 28909 28970 D AndroidLibraryResolver: Loading 'libtrex_app_automation_plugin_v1.so' from package 'com.oculus.appautomation'
+02-26 16:37:27.236 28909 28970 D nativeloader: Configuring clns-shared-10 for other apk /system_ext/app/OculusAppAutomationTREX/OculusAppAutomationTREX.apk. target_sdk_version=34, uses_libraries=, library_path=/system_ext/app/OculusAppAutomationTREX/lib/arm64:/system_ext/app/OculusAppAutomationTREX/OculusAppAutomationTREX.apk!/lib/arm64-v8a:/system/lib64:/system_ext/lib64:/apex/com.meta.xr/priv-app/VrDriver/VrDriver.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand::/system_ext/app/OculusAppAutomationTREX:/system/lib64:/system_ext/lib64
+02-26 16:37:27.239 28909 28970 I AndroidLibraryResolver: Attempting to find getAPIFunction64
+02-26 16:37:27.239 28909 28970 V LibLoaderImpl: Loading 64-bit LibLoaderImpl.
+02-26 16:37:27.239 28909 28970 V LibLoaderImpl: internalGetAPIFunction: loadLibrary 'loaderimpl'
+02-26 16:37:27.239 28909 28970 V LibLoaderImpl: Using System.loadLibrary
+02-26 16:37:27.240 28909 28970 I libloaderimpl: nativeSetClassLoader:0x4166
+02-26 16:37:27.240 28909 28970 V LibLoaderImpl: internalGetAPIFunction: calling nativeGetAPIFunction
+02-26 16:37:27.240 28909 28970 I libloaderimpl: LibLoaderImpl nativeGetAPIFunction.
+02-26 16:37:27.240 28909 28970 I libloaderimpl: LibLoaderHandle SUCCESS
+02-26 16:37:27.240 28909 28970 I TREX    : loaded 'com.oculus.appautomation:libtrex_app_automation_plugin_v1.so'
+02-26 16:37:27.240 28909 28970 I libloaderimpl: LibLoaderImpl GetAPIFunction. libName: libtrex_app_automation_plugin_v1.so, funcName: trex_GetPluginInfo
+02-26 16:37:27.241 28909 28970 I libloaderimpl: LibLoaderImpl GetAPIFunction. libName: libtrex_app_automation_plugin_v1.so, funcName: trex_Initialize
+02-26 16:37:27.241 28909 28970 I libloaderimpl: LibLoaderImpl GetAPIFunction. libName: libtrex_app_automation_plugin_v1.so, funcName: trex_Shutdown
+02-26 16:37:27.242 28909 28970 I TREX    : Created plugin package context for com.oculus.appautomation
+02-26 16:37:27.243 28909 28970 I TREX    : Loading plugin com.oculus.ovrmonitormetricsservice:libovrmetricstool_client_api.so
+02-26 16:37:27.245 28909 28970 D AndroidLibraryResolver: Loading 'libovrmetricstool_client_api.so' from package 'com.oculus.ovrmonitormetricsservice'
+02-26 16:37:27.252 28909 28970 D nativeloader: Configuring clns-11 for other apk /data/app/~~fkVu7-xuA6hR4kM_HdVOOA==/com.oculus.ovrmonitormetricsservice-tf5FWFy7sBwbstCslJ4Snw==/base.apk. target_sdk_version=34, uses_libraries=libossdk.oculus.so:libossdk.oculus.so, library_path=/data/app/~~fkVu7-xuA6hR4kM_HdVOOA==/com.oculus.ovrmonitormetricsservice-tf5FWFy7sBwbstCslJ4Snw==/lib/arm64:/data/app/~~fkVu7-xuA6hR4kM_HdVOOA==/com.oculus.ovrmonitormetricsservice-tf5FWFy7sBwbstCslJ4Snw==/base.apk!/lib/arm64-v8a:/apex/com.meta.xr/priv-app/VrDriver/VrDriver.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand
+02-26 16:37:27.252 28909 28970 D nativeloader: Extending system_exposed_libraries: libossdk.oculus.so:libossdk.oculus.so
+02-26 16:37:27.255 28909 28970 I AndroidLibraryResolver: Attempting to find getAPIFunction64
+02-26 16:37:27.255 28909 28970 V LibLoaderImpl: Loading 64-bit LibLoaderImpl.
+02-26 16:37:27.255 28909 28970 V LibLoaderImpl: internalGetAPIFunction: loadLibrary 'loaderimpl'
+02-26 16:37:27.255 28909 28970 V LibLoaderImpl: Using System.loadLibrary
+02-26 16:37:27.256 28909 28970 I libloaderimpl: nativeSetClassLoader:0x41a6
+02-26 16:37:27.256 28909 28970 V LibLoaderImpl: internalGetAPIFunction: calling nativeGetAPIFunction
+02-26 16:37:27.256 28909 28970 I libloaderimpl: LibLoaderImpl nativeGetAPIFunction.
+02-26 16:37:27.256 28909 28970 I libloaderimpl: LibLoaderHandle SUCCESS
+02-26 16:37:27.256 28909 28970 I TREX    : loaded 'com.oculus.ovrmonitormetricsservice:libovrmetricstool_client_api.so'
+02-26 16:37:27.256 28909 28970 I libloaderimpl: LibLoaderImpl GetAPIFunction. libName: libovrmetricstool_client_api.so, funcName: trex_GetPluginInfo
+02-26 16:37:27.257 28909 28970 I libloaderimpl: LibLoaderImpl GetAPIFunction. libName: libovrmetricstool_client_api.so, funcName: trex_Initialize
+02-26 16:37:27.257 28909 28970 I libloaderimpl: LibLoaderImpl GetAPIFunction. libName: libovrmetricstool_client_api.so, funcName: trex_Shutdown
+02-26 16:37:27.258 28909 28970 I TREX    : Created plugin package context for com.oculus.ovrmonitormetricsservice
+02-26 16:37:27.259 28909 28970 D OVRMetricsToolAPI: --- OMT_Initialize ---
+02-26 16:37:27.259 28909 28970 D OVRMetricsToolAPI: Using user-provided JavaVM
+02-26 16:37:27.259 28909 28970 D OVRMetricsToolAPI: Loading metrics service class
+02-26 16:37:27.260 28909 28970 D OVRMetricsToolAPI: Doing sanity check on user-provided activity context
+02-26 16:37:27.260 28909 28970 D OVRMetricsToolAPI: Package name: net.stereokit.stereokittest_androidservice
+02-26 16:37:27.260 28909 28970 D OVRMetricsToolAPI: Initialized OVRMetricsTool API. App version: 85.1 | API version: 2.0
+02-26 16:37:27.260 28909 28970 I PerformanceManagerInterface_Impl: PerformanceManagerInterface_Impl_V1: feature: 9: oculus.software.handtracking
+02-26 16:37:27.260 28909 28970 I PerformanceManagerInterface_Impl: PerformanceManagerInterface_Impl_V1: feature: 10: com.oculus.software.body_tracking
+02-26 16:37:27.260 28909 28970 I PerformanceManagerInterface_Impl: PerformanceManagerInterface_Impl_V1: feature: 11: oculus.software.face_tracking
+02-26 16:37:27.260 28909 28970 I PerformanceManagerInterface_Impl: PerformanceManagerInterface_Impl_V1: feature: 12: oculus.software.eye_tracking
+02-26 16:37:27.260 28909 28970 I TREX    : Interface 'WristbandClientInterface', version 6 was not found. Check debug build for more information.
+02-26 16:37:27.260 28909 28970 I RuntimeIPCSystem [RUNTIMEIPC]: RuntimeIPCSystem: Init called: Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.266 28909 28970 I RipcClient [RUNTIMEIPC]: Event buffer size (client): 8192
+02-26 16:37:27.266 28909 28970 I RipcClient [RUNTIMEIPC]: TryToGetIPCResourcesFromServer: RPC_CONNECTOR_CONNECT_TO_SERVER SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceDevice), Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.267 28909 28970 I RipcClient [RUNTIMEIPC]: EnsureServerConnection: SUCCESS. Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceDevice)
+02-26 16:37:27.267 28909 28970 I RipcClient [RUNTIMEIPC]: [RIPC_CONNECT_LOG] ConnectToServer: SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceDevice)
+02-26 16:37:27.270 28909 28970 I RipcClient [RUNTIMEIPC]: ReleaseRef: Remaining refs: 0, Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceDevice)
+02-26 16:37:27.270 28909 29011 W RuntimeIPCNotificationThread [RUNTIMEIPC]: RuntimeIPCNotificationThread MainLoop: WaitForNotification FAILED: -1
+02-26 16:37:27.270 28909 29011 W RuntimeIPCNotificationThread [RUNTIMEIPC]: RuntimeIPCNotificationThread MainLoop: exiting
+02-26 16:37:27.271 28909 28970 W RipcClient [RUNTIMEIPC]: [RIPC_CONNECT_LOG] DisconnectFromServer: Not connected: 0, Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceDevice)
+02-26 16:37:27.271 28909 28970 I RipcClient [RUNTIMEIPC]: [RIPC_CONNECT_LOG] Shutdown: clientId: 16777223, Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceDevice), SUCCESS
+02-26 16:37:27.271 28909 28970 I RipcClientMgr [RUNTIMEIPC]: [RIPC_CONNECT_LOG] DisconnectFromServer DONE: clientId: 16777223, Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceDevice)
+02-26 16:37:27.271 28909 28970 I RuntimeIPCApi [RUNTIMEIPC]: ipc_DisconnectFromServer: 16777223, SUCCESS
+02-26 16:37:27.271 28909 28970 I Distortion: Initializing Mesh Decenter Correction
+02-26 16:37:27.272 28909 28970 I Distortion: Decenter tester version = 200
+02-26 16:37:27.272 28909 28970 I Distortion: SetLensPositions - iad=0.0635, left offset=-0.00317379,0.000127227, right offset=0.00328335,-0.000148009
+02-26 16:37:27.273 28909 28970 I VrRuntimeCompatHelper: DevicesSupported : 5 devices, quest|quest2|quest3|questpro
+02-26 16:37:27.273 28909 28970 I ApplicationAttributes: IsSystem 0
+02-26 16:37:27.273 28909 28970 I Distortion: Initializing Mesh Decenter Correction
+02-26 16:37:27.275 28909 28970 I Distortion: Decenter tester version = 200
+02-26 16:37:27.275 28909 28970 I Distortion: SetLensPositions - iad=0.0635, left offset=-0.00317379,0.000127227, right offset=0.00328335,-0.000148009
+02-26 16:37:27.275 28909 28970 I OpenXR  : ----------- xrCreateInstance [end] ----------
+02-26 16:37:27.275 28909 28970 V OpenXR_DriverLoader: xrGetInstanceProcAddr: xrLocateSpaces not supported, the extension is not enabled for the requested OpenXR API version 1.0.49.
+02-26 16:37:27.275 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrCreateInstance | OpenXR-Loader] : Completed loader terminator
+02-26 16:37:27.275 28909 28970 V OpenXR_DriverLoader: xrGetInstanceProcAddr: xrLocateSpaces not supported, the extension is not enabled for the requested OpenXR API version 1.0.49.
+02-26 16:37:27.276 28909 28970 I OpenXR-Loader: Info [GENERAL | xrCreateInstance | OpenXR-Loader] : LoaderInstance::CreateInstance succeeded with 0 layers enabled and runtime interface - created instance = 0x0000000000000001
+02-26 16:37:27.276 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrCreateInstance | OpenXR-Loader] : Completed loader trampoline
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: OpenXR API:     1.0.49
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: OpenXR runtime: Oculus 201.109.0
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: OpenXR extensions:
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: ___________________________________
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |     Usage | Extension
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |-----------|----------------------
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_EXT_active_action_set_priority
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_EXT_composition_layer_inverted_alpha
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_EXT_frame_synthesis
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_EXT_future
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_EXT_hand_joints_motion_range
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_EXT_performance_settings
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_EXT_user_presence
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_android_surface_swapchain_create
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_body_tracking
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_common_events
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_composition_layer_alpha_blend
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_composition_layer_depth_test
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_composition_layer_image_layout
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_composition_layer_secure_content
+02-26 16:37:27.276 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_composition_layer_settings
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_face_tracking
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_face_tracking2
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_foveation
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_foveation_configuration
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_foveation_vulkan
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_hand_tracking_aim
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_hand_tracking_capsules
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_hand_tracking_mesh
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_haptic_amplitude_envelope
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_haptic_pcm
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_passthrough
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_space_warp
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_spatial_entity_user
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_swapchain_update_state
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_swapchain_update_state_android_surface
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_swapchain_update_state_opengl_es
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_swapchain_update_state_vulkan
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_touch_controller_pro
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_touch_controller_proximity
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_FB_triangle_mesh
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_KHR_composition_layer_color_scale_bias
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_KHR_composition_layer_cube
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_KHR_composition_layer_cylinder
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_KHR_composition_layer_equirect2
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_KHR_maintenance1
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_KHR_opengl_es_enable
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_KHR_visibility_mask
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_KHR_vulkan_enable
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_LOGITECH_mx_ink_stylus_interaction
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_automatic_layer_filter
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_body_tracking_calibration
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_body_tracking_fidelity
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_body_tracking_full_body
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_detached_controllers
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_face_tracking_visemes
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_feature_fidelity
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_hand_tracking_microgestures
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_hand_tracking_wide_motion_mode
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_headset_id
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_passthrough_color_lut
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_passthrough_layer_resumed_event
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_passthrough_preferences
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_performance_metrics
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_recommended_layer_resolution
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_simultaneous_hands_and_controllers
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_tile_properties_hint
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_touch_controller_plus
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_virtual_keyboard
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_META_vulkan_swapchain_create_info
+02-26 16:37:27.277 28909 28970 D SK_StereoKit_C#: |   present | XR_OCULUS_common_reference_spaces
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_EXT_debug_utils
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_EXT_hand_interaction
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_EXT_hand_tracking
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_EXT_hand_tracking_data_source
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_EXT_local_floor
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_EXT_palm_pose
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_FB_color_space
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_FB_display_refresh_rate
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_KHR_android_create_instance
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_KHR_android_surface_swapchain
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_KHR_android_thread_settings
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_KHR_composition_layer_depth
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_KHR_convert_timespec_time
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_KHR_vulkan_enable2
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: | ACTIVATED | XR_MSFT_hand_interaction
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: |___________|______________________
+02-26 16:37:27.278 28909 28970 D SK_StereoKit_C#: OpenXR requires Vulkan v1.0.0 - v1.2.0
+02-26 16:37:27.282 28909 28970 D vulkan  : searching for layers in '/data/app/~~5EFr8VuVjk9PcX-mx6zxNg==/net.stereokit.stereokittest_androidservice-7-4g9OGDtA-M_M_JGb3q_w==/lib/arm64'
+02-26 16:37:27.282 28909 28970 D vulkan  : searching for layers in '/data/app/~~5EFr8VuVjk9PcX-mx6zxNg==/net.stereokit.stereokittest_androidservice-7-4g9OGDtA-M_M_JGb3q_w==/base.apk!/lib/arm64-v8a'
+02-26 16:37:27.282 28909 28970 D vulkan  : searching for layers in '/apex/com.meta.xr/priv-app/VrDriver/VrDriver.apk!/lib/arm64-v8a'
+02-26 16:37:27.282 28909 28970 W SK_StereoKit_C#: [sk_renderer] Layer 'VK_LAYER_KHRONOS_validation' not available, skipping
+02-26 16:37:27.284 28909 28970 W Adreno-AppProfiles: Could not find QSPM HAL service. Skipping adreno profile processing.
+02-26 16:37:27.285 28909 28970 I AdrenoVK-0: ===== BEGIN DUMP OF OVERRIDDEN SETTINGS =====
+02-26 16:37:27.285 28909 28970 I AdrenoVK-0: ===== END DUMP OF OVERRIDDEN SETTINGS =====
+02-26 16:37:27.287 28909 28970 W Adreno-AppProfiles: Could not find QSPM HAL service. Skipping adreno profile processing.
+02-26 16:37:27.288 28909 28970 I AdrenoVK-0: ===== BEGIN DUMP OF OVERRIDDEN SETTINGS =====
+02-26 16:37:27.288 28909 28970 I AdrenoVK-0: ===== END DUMP OF OVERRIDDEN SETTINGS =====
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: QUALCOMM build          : 5eb6d58341, Icac217ebc7
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Build Date              : 11/10/25
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Shader Compiler Version : E031.50.14.00
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Local Branch            : 
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Remote Branch           : refs/tags/AU_LINUX_ANDROID_LA.VENDOR.12.3.11.00.00.934.442
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Remote Branch           : NONE
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Reconstruct Branch      : NOTHING
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Build Config            : S P 12.1.6 AArch64
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Driver Path             : /vendor/lib64/hw/vulkan.adreno.so
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Driver Version          : 0837.0.6
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: PFP                     : 0x01511181
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: ME                      : 0x00000000
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Application Name    : StereoKit C#
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Process Name        : net.stereokit.stereokittest_androidservice
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Application Version : 0x00000001
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Engine Name         : sk_renderer
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Engine Version      : 0x00001000
+02-26 16:37:27.289 28909 28970 I AdrenoVK-0: Api Version         : 0x00401000
+02-26 16:37:27.289 28909 28970 D SK_StereoKit_C#: VkInstance created via xrCreateVulkanInstanceKHR
+02-26 16:37:27.290 28909 28970 I VulkanLoader: ovrVulkanLoader::Load
+02-26 16:37:27.290 28909 28970 W VulkanLoader: VulkanLoader::LoadInstanceFunctions: Failed to load vkCreateDebugReportCallbackEXT, likely vkInstance created without xrGetVulkanInstanceExtensionsKHR/vrapi_GetInstanceExtensionsVulkan
+02-26 16:37:27.290 28909 28970 W VulkanLoader: VulkanLoader::LoadInstanceFunctions: Failed to load vkDestroyDebugReportCallbackEXT, likely vkInstance created without xrGetVulkanInstanceExtensionsKHR/vrapi_GetInstanceExtensionsVulkan
+02-26 16:37:27.290 28909 28970 W VulkanLoader: VulkanLoader::LoadInstanceFunctions: Failed to load vkGetPhysicalDeviceSurfaceCapabilities2KHR, likely vkInstance created without xrGetVulkanInstanceExtensionsKHR/vrapi_GetInstanceExtensionsVulkan
+02-26 16:37:27.290 28909 28970 W VulkanLoader: ovrVulkanLoader::LoadDeviceFunctions: device invalid
+02-26 16:37:27.290 28909 28970 W VulkanLoader: ovrVulkanLoader::LoadExtensionList: physicalDevice invalid
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: --------------------------------
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: Device Name          : Adreno (TM) 740
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: Device Type          : integrated GPU
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: Vendor ID            : 0x5143
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: Device ID            : 0x43050B00
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: Driver Version       : 512.837.6
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: API Version          : 1.3.295
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: Queue Families       : 0 = graphics compute transfer (4 queues, 4 priorities)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        1 = (1 queues, 4 priorities)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: Work Queue Family    : 0
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: Device Extensions    : VK_KHR_swapchain (required, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_KHR_external_memory (required, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_KHR_get_memory_requirements2 (required, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_ANDROID_external_memory_android_hardware_buffer (required, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_EXT_queue_family_foreign (required, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils: Device Extensions      VK_EXT_fragment_density_map (optional, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_EXT_fragment_density_map2 (optional, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_KHR_maintenance1 (optional, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_KHR_bind_memory2 (optional, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_KHR_sampler_ycbcr_conversion (optional, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_KHR_dedicated_allocation (optional, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_KHR_external_memory_fd (optional, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_EXT_extended_dynamic_state (optional, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_KHR_shared_presentable_image (optional, enabled)
+02-26 16:37:27.290 28909 28970 I Vulkan_Utils:                        VK_KHR_timeline_semaphore (optional, enabled)
+02-26 16:37:27.291 28909 28970 D SK_StereoKit_C#: [sk_renderer] Using application-specified GPU: Adreno (TM) 740
+02-26 16:37:27.291 28909 28970 D SK_StereoKit_C#: [sk_renderer] Using GPU: Adreno (TM) 740
+02-26 16:37:27.291 28909 28970 D SK_StereoKit_C#: [sk_renderer] Device extension 'VK_KHR_push_descriptor' not available, using descriptor set fallback
+02-26 16:37:27.293 28909 28970 D SK_StereoKit_C#: VkDevice created via xrCreateVulkanDeviceKHR
+02-26 16:37:27.295 28909 28970 D SK_StereoKit_C#: Starting a XR mode app
+02-26 16:37:27.295 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrCreateDebugUtilsMessengerEXT | OpenXR-Loader] : Entering loader trampoline
+02-26 16:37:27.295 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrCreateDebugUtilsMessengerEXT | OpenXR-Loader] : Entering loader terminator
+02-26 16:37:27.296 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrCreateDebugUtilsMessengerEXT | OpenXR-Loader] : Completed loader terminator
+02-26 16:37:27.296 28909 28970 V OpenXR-Loader: Verbose [GENERAL | xrCreateDebugUtilsMessengerEXT | OpenXR-Loader] : Completed loader trampoline
+02-26 16:37:27.296 28909 28970 I OpenXR  : ------------ xrCreateSession [start] -----------
+02-26 16:37:27.296 28909 28970 I VrRuntimeClient: VrRuntimeClient(): 0xb400006fc8b14780
+02-26 16:37:27.296 28909 28970 I JVMHandler: JVMHandler: callStaticMethodWithVariableArguments. [functionName:getDisplayID] is valid: [1]
+02-26 16:37:27.296 28909 28970 I JVMHandler: JVMHandler: callStaticMethodWithVariableArguments. [functionName:getUUIDforVolumetricWindow] is valid: [1]
+02-26 16:37:27.297 28909 28970 I VrRuntimeClient: s_->rssdkClient.InitClient
+02-26 16:37:27.297 28909 28970 I RuntimeIPCSystem [RUNTIMEIPC]: RuntimeIPCSystem: Init called: Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.301 28909 28970 I RipcClient [RUNTIMEIPC]: Event buffer size (client): 8192
+02-26 16:37:27.301 28909 28970 I RipcClient [RUNTIMEIPC]: TryToGetIPCResourcesFromServer: RPC_CONNECTOR_CONNECT_TO_SERVER SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceServer), Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.301 28909 28970 I RipcClient [RUNTIMEIPC]: EnsureServerConnection: SUCCESS. Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceServer)
+02-26 16:37:27.301 28909 28970 I RipcClient [RUNTIMEIPC]: [RIPC_CONNECT_LOG] ConnectToServer: SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceServer)
+02-26 16:37:27.301 28909 29013 I VrRuntimeClient: s_->rssdkClient.Connected: com.oculus.systemdriver:com.oculus.vrruntimeservice
+02-26 16:37:27.301 28909 29013 I VrRuntimeClient: RegisterClient RequestDescriptor net.stereokit.stereokittest_androidservice:28909 clientType 0 clientFlags 0 clientSessionPlacement 0 clientLaunchId 
+02-26 16:37:27.310 28909 29013 I VrRuntimeClient: RegisterClient success 
+02-26 16:37:27.311 28909 29013 I VrRuntimeClient: RuntimeIPC: ServiceConnected: SharedMemoryDebug: publicReadOnly SharedMemorySize=128 (net.stereokit.stereokittest_androidservice) sizeof(s_->sharedMemoryPublicReadOnly)=152
+02-26 16:37:27.311 28909 29013 I VrRuntimeClient: RuntimeIPC: ServiceConnected: SharedMemoryDebug: privateReadWrite SharedMemorySize=441136 (net.stereokit.stereokittest_androidservice) sizeof(privateSharedMemorySize)=8
+02-26 16:37:27.311 28909 29013 I VrRuntimeClient: nativeRuntimeServiceConnected: SharedMemoryDebug: publicReadOnlyFd=173, privateReadWriteFd=174 (net.stereokit.stereokittest_androidservice)
+02-26 16:37:27.315 28909 28970 I VrRuntimeClient: s_->rssdkClient.InitClient SUCCESS. Version: 5.0, Custom: 1.0
+02-26 16:37:27.315 28909 28970 I RipcClientMgr [RUNTIMEIPC]: GetClientOptions
+02-26 16:37:27.315 28909 28970 I VrRuntimeClient: Connected to VrRuntimeService on attempt 0
+02-26 16:37:27.315 28909 28970 I OpenXR  : xrCreateSession: Connected to VrRuntimeService after 0.019140s
+02-26 16:37:27.315 28909 28970 I VrRuntimeClient: SetPhaseSyncMode 4
+02-26 16:37:27.315 28909 28970 I OpenXR  : PhaseSync Mode: FRAME_SYNC
+02-26 16:37:27.315 28909 28970 I VrRuntimeClient: VrRuntimeClient: Init
+02-26 16:37:27.316 28909 28970 I JVMHandler: JVMHandler: callStaticMethodWithVariableArguments. [functionName:getDisplayID] is valid: [1]
+02-26 16:37:27.316 28909 28970 I RipcClient [RUNTIMEIPC]: InitServerStateBuffer: SUCCESS. 0, Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.systemdriver:com.oculus.vrruntimeservice:0 (RuntimeServiceServer)
+02-26 16:37:27.317 28909 28970 I JVMHandler: JVMHandler: callStaticMethodWithVariableArguments. [functionName:getFoveationTileOffset] is valid: [1]
+02-26 16:37:27.317 28909 28970 I JVMHandler: JVMHandler: callStaticMethodWithVariableArguments. [functionName:getFoveationTileTurnOff] is valid: [1]
+02-26 16:37:27.317 28909 28970 I JVMHandler: JVMHandler: callStaticMethodWithVariableArguments. [functionName:getFrameSyncEnabled] is valid: [1]
+02-26 16:37:27.317 28909 28970 I Foveation: InitFoveationClient: TileOffset=0,TileTurnOff=1,TileAlignedFoveation=1
+02-26 16:37:27.317 28909 28970 I JVMHandler: JVMHandler: callStaticMethodWithVariableArguments. [functionName:initialize] is valid: [1]
+02-26 16:37:27.317 28909 28970 I RuntimeIPCSystem [RUNTIMEIPC]: RuntimeIPCSystem: Init called: Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.318 28909 28970 I ClientProcessConnector [RUNTIMEIPC]: GetProcessConnection: com.oculus.guardian:com.oculus.vrguardianservice
+02-26 16:37:27.319 28909 28970 I RipcClient [RUNTIMEIPC]: Event buffer size (client): 8192
+02-26 16:37:27.319 28909 28970 I RipcClient [RUNTIMEIPC]: TryToGetIPCResourcesFromServer: RPC_CONNECTOR_CONNECT_TO_SERVER SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.guardian:com.oculus.vrguardianservice:0 (guardianserver), Version: 84, Platform: Android, Build Date: Jan 19 2026, Build Time: 11:55:40, BuildMode: shared
+02-26 16:37:27.319 28909 28970 I RipcClient [RUNTIMEIPC]: EnsureServerConnection: SUCCESS. Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.guardian:com.oculus.vrguardianservice:0 (guardianserver)
+02-26 16:37:27.319 28909 28970 I RipcClient [RUNTIMEIPC]: [RIPC_CONNECT_LOG] ConnectToServer: SUCCESS: Client: net.stereokit.stereokittest_androidservice:net.stereokit.stereokittest_androidservice:28909, Server: com.oculus.guardian:com.oculus.vrguardianservice:0 (guardianserver)
+02-26 16:37:27.326 28909 28970 I GuardianClientCommon: guardianSDKClient_ connected.
+02-26 16:37:27.326 28909 28970 I FaceEyeTrackingClientManager: [FaceEyeTrackingManager] Initializing FaceEyeTrackingClientManager...
+02-26 16:37:27.329 28909 28970 I JVMHandler: JVMHandler: callStaticMethodWithVariableArguments. [functionName:getAllowedAudioCapturePolicy] is valid: [1]
+02-26 16:37:27.331 28909 28970 I LogTimer: CPUTIME: VrRuntimeClient_Init took 15.5223 ms
+02-26 16:37:27.331 28909 28970 I VulkanLoader: ovrVulkanLoader::Load
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadInstanceFunctions: Failed to load vkCreateDebugReportCallbackEXT, likely vkInstance created without xrGetVulkanInstanceExtensionsKHR/vrapi_GetInstanceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadInstanceFunctions: Failed to load vkDestroyDebugReportCallbackEXT, likely vkInstance created without xrGetVulkanInstanceExtensionsKHR/vrapi_GetInstanceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadInstanceFunctions: Failed to load vkGetPhysicalDeviceSurfaceCapabilities2KHR, likely vkInstance created without xrGetVulkanInstanceExtensionsKHR/vrapi_GetInstanceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadDeviceFunctions: Failed to load vkCmdDebugMarkerInsertEXT, likely vkDevice created without xrGetVulkanDeviceExtensionsKHR/vrapi_GetDeviceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadDeviceFunctions: Failed to load vkCmdSetCullModeEXT, likely vkDevice created without xrGetVulkanDeviceExtensionsKHR/vrapi_GetDeviceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadDeviceFunctions: Failed to load vkCmdSetDepthCompareOpEXT, likely vkDevice created without xrGetVulkanDeviceExtensionsKHR/vrapi_GetDeviceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadDeviceFunctions: Failed to load vkCmdSetDepthTestEnableEXT, likely vkDevice created without xrGetVulkanDeviceExtensionsKHR/vrapi_GetDeviceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadDeviceFunctions: Failed to load vkCmdSetDepthWriteEnableEXT, likely vkDevice created without xrGetVulkanDeviceExtensionsKHR/vrapi_GetDeviceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadDeviceFunctions: Failed to load vkDebugMarkerSetObjectTagEXT, likely vkDevice created without xrGetVulkanDeviceExtensionsKHR/vrapi_GetDeviceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadDeviceFunctions: Failed to load vkCmdSetColorBlendEnableEXT, likely vkDevice created without xrGetVulkanDeviceExtensionsKHR/vrapi_GetDeviceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadDeviceFunctions: Failed to load vkCmdSetColorBlendEquationEXT, likely vkDevice created without xrGetVulkanDeviceExtensionsKHR/vrapi_GetDeviceExtensionsVulkan
+02-26 16:37:27.331 28909 28970 W VulkanLoader: VulkanLoader::LoadDeviceFunctions: Failed to load vkCmdSetColorWriteMaskEXT, likely vkDevice created without xrGetVulkanDeviceExtensionsKHR/vrapi_GetDeviceExtensionsVulkan
+02-26 16:37:27.332 28909 28970 I Foveation: Vulkan FFR is supported: MinFragmentDensityTexelSize=(16,16)
+02-26 16:37:27.332 28909 28970 I Distortion: Initializing Mesh Decenter Correction
+02-26 16:37:27.333 28909 28970 I Distortion: Decenter tester version = 200
+02-26 16:37:27.333 28909 28970 I Distortion: SetLensPositions - iad=0.0635, left offset=-0.00317379,0.000127227, right offset=0.00328335,-0.000148009
+02-26 16:37:27.334 28909 28970 I Distortion: Initializing Mesh Decenter Correction
+02-26 16:37:27.335 28909 28970 I Distortion: Decenter tester version = 200
+02-26 16:37:27.335 28909 28970 I Distortion: SetLensPositions - iad=0.0635, left offset=-0.00317379,0.000127227, right offset=0.00328335,-0.000148009
+02-26 16:37:27.337 28909 28970 I ClientInputSettings: SYSTEMBUTTONSPACE GKS freeze '0' 
+02-26 16:37:27.337 28909 28970 I ClientInputSettings: SYSTEMBUTTONSPACE 'net.stereokit.stereokittest_androidservice' Freeze input '0' on home button down
+02-26 16:37:27.337 28909 28970 I ClientInputSettings: HANDTRACKING: Hands V2.0 enforced.
+02-26 16:37:27.337 28909 28970 I ClientInputSettings: HANDTRACKING: YES, in the GK oculus_mobile_enable_hand_tracking_frequency_inter
+02-26 16:37:27.337 28909 28970 I JVMHandler: JVMHandler: callStaticMethodWithVariableArguments. [functionName:getApplicationMetadata] is valid: [1]
+02-26 16:37:27.337 28909 28970 I ClientInputInterface: HANDTRACKING sethandtrackingfrequency 1
+02-26 16:37:27.337 28909 28970 I ClientInputSettings: HANDTRACKING: YES, in the GK oculus_mobile_30hz_handtracking_downclocking
+02-26 16:37:27.337 28909 28970 I ClientInputInterface: Set30HzHandtrackingDownclockingGKFlag 1
+02-26 16:37:27.337 28909 28970 I ClientInputSettings: HANDTRACKING: NO, not in the GK oculus_mobile_enable_hand_emulation_of_controllers
+02-26 16:37:27.337 28909 28970 I ClientInputInterface: HANDTRACKING SetHandTrackingControllerEmulationGkFlag 0
+02-26 16:37:27.338 28909 28970 I OpenXR  : xrCreateSession: Activity is not yet in the ready state.
+02-26 16:37:27.338 28909 28970 I OpenXR_Aperture: ------------ ovrCreateApertureMETAX1 -----------
+02-26 16:37:27.340 28909 28970 I OpenXR  : ------------ xrCreateSession [end] -----------
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: System name: Meta Quest 3
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: ____________________
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: | Swapchain Formats 
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |-------------------
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: | +rgba32_sRGB
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  r8
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x10
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: | +rgba32_linear
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  r16
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x47
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x4A
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  rgba64u
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x4B
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  rgba64s
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x4C
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  rgba64f
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  r32
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x93
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x97
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x98
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x99
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x9B
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x9D
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: |  0x9E
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: | +depth16
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: | +depth32
+02-26 16:37:27.340 28909 28970 D SK_StereoKit_C#: | +depth24_stencil8
+02-26 16:37:27.341 28909 28970 D SK_StereoKit_C#: |___________________
+02-26 16:37:27.341 28909 28970 D SK_StereoKit_C#: Creating view: PrimaryStereo color:rgba32_sRGB depth:depth16 blend:Alpha Blend
+02-26 16:37:27.347 28909 28970 V SwapChain_Vulkan_Memory_Export: Imported texture has requirements 3, ends up index 0
+02-26 16:37:27.348 28909 28970 V SwapChain_Vulkan_Memory_Export: Imported texture has requirements 3, ends up index 0
+02-26 16:37:27.348 28909 28970 V SwapChain_Vulkan_Memory_Export: Imported texture has requirements 3, ends up index 0
+02-26 16:37:27.349 28909 28970 I OpenXR_GPUMemTrace: OpenXR GPU memory tracing is enabled on heap(oculus.OpenXR) with id(2)
+02-26 16:37:27.349 28909 28970 I OpenXR_GPUMemTrace: Swapchain creation, id=187, idx=0, width: 2520, height: 2640, array size: 2, MemoryAllocationSize: 53061 KB
+02-26 16:37:27.349 28909 28970 I OpenXR_GPUMemTrace: Swapchain creation, id=187, idx=1, width: 2520, height: 2640, array size: 2, MemoryAllocationSize: 53061 KB
+02-26 16:37:27.349 28909 28970 I OpenXR_GPUMemTrace: Swapchain creation, id=187, idx=2, width: 2520, height: 2640, array size: 2, MemoryAllocationSize: 53061 KB
+02-26 16:37:27.368 28909 28970 V SwapChain_Vulkan_Memory_Export: Imported texture has requirements 3, ends up index 0
+02-26 16:37:27.368 28909 28970 V SwapChain_Vulkan_Memory_Export: Imported texture has requirements 3, ends up index 0
+02-26 16:37:27.369 28909 28970 V SwapChain_Vulkan_Memory_Export: Imported texture has requirements 3, ends up index 0
+02-26 16:37:27.369 28909 28970 I OpenXR_GPUMemTrace: Swapchain creation, id=188, idx=0, width: 2520, height: 2640, array size: 2, MemoryAllocationSize: 26661 KB
+02-26 16:37:27.369 28909 28970 I OpenXR_GPUMemTrace: Swapchain creation, id=188, idx=1, width: 2520, height: 2640, array size: 2, MemoryAllocationSize: 26661 KB
+02-26 16:37:27.369 28909 28970 I OpenXR_GPUMemTrace: Swapchain creation, id=188, idx=2, width: 2520, height: 2640, array size: 2, MemoryAllocationSize: 26661 KB
+02-26 16:37:27.369 28909 28970 D SK_StereoKit_C#: Set swapchain to 2520x2640 4msaa for PrimaryStereo using simultaneous render.
+02-26 16:37:27.370 28909 28970 D SK_StereoKit_C#: Creating target surface: 2520x2640x2@4msaa
+02-26 16:37:27.389 28909 28970 I OpenXR_Space: xrCreateReferenceSpace: Spaces info
+02-26 16:37:27.389 28909 28970 I OpenXR_Space: xrCreateReferenceSpace: Local version=45
+02-26 16:37:27.389 28909 28970 I OpenXR_Space: xrCreateReferenceSpace: RawFromLocal       = (0.000, 0.051, 0.000, 0.999), (0.03, -0.16, 0.15)
+02-26 16:37:27.389 28909 28970 I OpenXR_Space: xrCreateReferenceSpace: RawFromLocalTilted = (-0.043, 0.051, 0.005, 0.998), (0.03, -0.16, 0.15)
+02-26 16:37:27.389 28909 28970 I OpenXR_Space: xrCreateReferenceSpace: Stage IsValid=true
+02-26 16:37:27.389 28909 28970 I OpenXR_Space: xrCreateReferenceSpace: Stage HasActiveSafetyBound=true
+02-26 16:37:27.389 28909 28970 I OpenXR_Space: xrCreateReferenceSpace: Stage Width=2.279312, Depth=2.834842
+02-26 16:37:27.389 28909 28970 I OpenXR_Space: xrCreateReferenceSpace: RawFromStage       = (-0.000, -0.655, -0.000, 0.756), (-0.37, -1.34, 0.87)
+02-26 16:37:27.422 28909 28970 I VrRuntimeClient: UpdateEvents: Detected LOCAL_FLOOR reference space update. Sending reference space update event
+02-26 16:37:27.422 28909 28970 I VrRuntimeClient: UpdateEvents: Detected STAGE reference space update. Sending reference space update event
+02-26 16:37:27.423 28909 28970 I OpenXR  : PostSessionStateChange:[pid: 28909] XR_SESSION_STATE_UNKNOWN -> XR_SESSION_STATE_IDLE
+02-26 16:37:27.424 28909 28970 W VrRuntimeClient: useHzInterstitialCBGKEnabled not enabled
+02-26 16:37:27.424 28909 28970 D SK_StereoKit_C#: OpenXR state: unknown -> idle
+
+Stopping application...

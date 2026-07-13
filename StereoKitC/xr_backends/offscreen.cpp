@@ -11,6 +11,7 @@
 #include "../systems/input.h"
 #include "../systems/render.h"
 #include "../systems/render_pipeline.h"
+#include "../ui/interactor_modes.h"
 #include "../libraries/stref.h"
 
 ///////////////////////////////////////////
@@ -35,9 +36,13 @@ bool offscreen_init() {
 	device_data.display_type      = display_type_flatscreen;
 	device_data.name              = string_copy("Offscreen");
 	device_data.runtime           = string_copy("None");
+	device_data.runtime_version   = 0;
 
 	local = sk_malloc_zero_t(offscreen_backend_state_t, 1);
 
+	interactor_modes_set_default(default_interactors_none);
+	input_hand_visible(handed_max, false);
+	input_set_finger_glow(false);
 	return true;
 }
 

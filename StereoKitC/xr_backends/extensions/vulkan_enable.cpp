@@ -46,6 +46,7 @@ typedef struct xr_vulkan_enable_state_t {
 	array_t<const char*>            instance_extensions;
 	char*                           device_ext_storage;
 	array_t<const char*>            device_extensions;
+
 } xr_vulkan_enable_state_t;
 static xr_vulkan_enable_state_t local = {};
 
@@ -279,10 +280,20 @@ static skr_device_request_t xr_vulkan_enable2_device_init(void* vk_instance, voi
 
 ///////////////////////////////////////////
 
+// Some OpenXR runtimes (e.g. HTC Wave) incorrectly call
+// vkGetInstanceProcAddr(VK_NULL_HANDLE, "vkCreateDevice") for instance-level
+// functions. The Vulkan spec only allows global-level functions with a NULL
+// instance. This wrapper substitutes the real VkInstance when NULL is passed.
+static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL xr_vulkan_enable2_get_instance_proc_addr(VkInstance instance, const char* name) {
+	return vkGetInstanceProcAddr(instance == VK_NULL_HANDLE ? skr_get_vk_instance() : instance, name);
+}
+
+///////////////////////////////////////////
+
 static void* xr_vulkan_enable2_device_create(skr_device_create_info_t* create_info, void* user_data) {
 	XrVulkanDeviceCreateInfoKHR xr_create_info = { XR_TYPE_VULKAN_DEVICE_CREATE_INFO_KHR };
 	xr_create_info.systemId               = xr_system_id;
-	xr_create_info.pfnGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)create_info->get_instance_proc_addr;
+	xr_create_info.pfnGetInstanceProcAddr = xr_vulkan_enable2_get_instance_proc_addr;
 	xr_create_info.vulkanPhysicalDevice   = (VkPhysicalDevice)create_info->vk_physical_device;
 	xr_create_info.vulkanCreateInfo       = (const VkDeviceCreateInfo*)create_info->device_create_info;
 	xr_create_info.vulkanAllocator        = nullptr;

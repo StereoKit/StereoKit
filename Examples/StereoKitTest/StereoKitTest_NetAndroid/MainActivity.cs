@@ -1,5 +1,6 @@
 using Android.App;
 using Android.Content;
+using Android.Content.PM;
 using Android.Graphics;
 using Android.OS;
 using Android.Runtime;
@@ -9,11 +10,12 @@ using System;
 using System.Reflection;
 using System.Threading;
 
-[Activity(Label = "@string/app_name", MainLauncher = true, Exported = true)]
+[Activity(Label = "@string/app_name", MainLauncher = true, Exported = true, LaunchMode = LaunchMode.SingleTask)]
 [IntentFilter(new[] { Intent.ActionMain }, Categories = new[] { "org.khronos.openxr.intent.category.IMMERSIVE_HMD", "com.oculus.intent.category.VR", Intent.CategoryLauncher })]
 public class MainActivity : Activity, ISurfaceHolderCallback2
 {
-	View surface;
+	View   surface;
+	Thread skThread;
 
 	protected override void OnCreate(Bundle savedInstanceState)
 	{
@@ -34,7 +36,12 @@ public class MainActivity : Activity, ISurfaceHolderCallback2
 	{
 		// Quit, but not if Destroy is just a rotation or resize
 		if (IsChangingConfigurations == false)
+		{
+			// SK.Quit only signals; wait for the SK thread to finish its OpenXR
+			// teardown before Android tears us down.
 			SK.Quit();
+			skThread?.Join();
+		}
 
 		base.OnDestroy();
 	}
@@ -45,16 +52,20 @@ public class MainActivity : Activity, ISurfaceHolderCallback2
 		if (running) return;
 		running = true;
 
-		// Before anything else, give StereoKit the Activity. This should
-		// be set before any other SK calls, otherwise native library
-		// loading may fail.
+		// Before anything else, give StereoKit the Activity and VM. These
+		// should be set before any other SK calls, otherwise native
+		// library loading may fail.
 		SK.AndroidActivity = this;
+		// This is optional, but helps with compatibility on older devices,
+		// Android API 30 and older.
+		SK.AndroidJavaVM   = Java.Interop.JniEnvironment.Runtime.InvocationPointer;
 
 		// Task.Run will eat exceptions, but Thread.Start doesn't seem to.
-		new Thread(InvokeStereoKit).Start();
+		skThread = new Thread(InvokeStereoKit);
+		skThread.Start();
 	}
 
-	static void InvokeStereoKit()
+	void InvokeStereoKit()
 	{
 		Type       entryClass = typeof(Program);
 		MethodInfo entryPoint = entryClass?.GetMethod("Main", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
@@ -77,6 +88,9 @@ public class MainActivity : Activity, ISurfaceHolderCallback2
 		}
 		else throw new Exception("Couldn't invoke Program.Main!");
 
+		// SK has fully shut down. Finish the Activity so Android's task state is
+		// tidy, then kill the process so the next launch re-inits SK from scratch.
+		Finish();
 		Process.KillProcess(Process.MyPid());
 	}
 

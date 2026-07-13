@@ -39,10 +39,22 @@ struct _model_t {
 	bool32_t                bounds_dirty;
 };
 
-bool modelfmt_obj (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader);
-bool modelfmt_gltf(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader);
-bool modelfmt_stl (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader);
-bool modelfmt_ply (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader);
+bool modelfmt_gltf_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, void **out_format_data);
+bool modelfmt_gltf_meshes  (model_t model, const char *filename, shader_t shader, int32_t priority, void *format_data);
+void modelfmt_gltf_free    (void *format_data);
+
+bool modelfmt_obj_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, void **out_format_data);
+bool modelfmt_obj_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, void *format_data);
+void modelfmt_obj_free     (void *format_data);
+
+bool modelfmt_stl_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, void **out_format_data);
+bool modelfmt_stl_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, void *format_data);
+void modelfmt_stl_free     (void *format_data);
+
+bool modelfmt_ply_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, void **out_format_data);
+bool modelfmt_ply_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, void *format_data);
+void modelfmt_ply_free     (void *format_data);
+
 void model_destroy(model_t model);
 
 } // namespace sk

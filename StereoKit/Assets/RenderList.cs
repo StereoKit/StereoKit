@@ -7,7 +7,7 @@ namespace StereoKit
 	/// submitted to various surfaces. RenderList.Primary is where all normal
 	/// Draw calls get added to, and this RenderList is renderer to primary
 	/// display surface.
-	/// 
+	///
 	/// Manually working with a RenderList can be useful for "baking down
 	/// matrices" or caching a scene of objects. Or for drawing a separate
 	/// scene to an offscreen surface, like for thumbnails of Models.</summary>
@@ -34,9 +34,14 @@ namespace StereoKit
 		public int PrevCount => NativeAPI.render_list_prev_count(_inst);
 
 		/// <summary>Creates a new empty RenderList.</summary>
-		public RenderList()
+		/// <param name="refs">Controls whether the list tracks asset
+		/// references for the Meshes and Materials added to it. The default,
+		/// `Tracked`, is safe across frames. `None` skips the addref/release
+		/// pair on each add and clear, but the caller must ensure the list
+		/// is cleared before any referenced asset could be released.</param>
+		public RenderList(RenderListRefs refs = RenderListRefs.Tracked)
 		{
-			_inst = NativeAPI.render_list_create();
+			_inst = NativeAPI.render_list_create(refs);
 		}
 		internal RenderList(IntPtr list)
 		{
@@ -133,7 +138,37 @@ namespace StereoKit
 		/// Material has no corresponding variant, it will not be drawn.
 		/// </param>
 		public void DrawNow(Tex toRenderTarget, Matrix camera, Matrix projection, Color clearColor = default, RenderClear clear = RenderClear.All, Rect viewportPct = default, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0)
-			=> NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, camera, projection, clearColor, clear, viewportPct, layerFilter, materialVariant);
+			=> NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, in camera, in projection, 1, clearColor, clear, viewportPct, layerFilter, materialVariant);
+
+		/// <summary>Multi-view variant of DrawNow. Renders the list once
+		/// across multiple views in a single pass, with one camera +
+		/// projection per view. Each view writes to its corresponding
+		/// layer of the (array) render target. The number of views is
+		/// capped at 6.</summary>
+		/// <param name="toRenderTarget">An array or cubemap rendertarget
+		/// with at least `cameras.Length` layers.</param>
+		/// <param name="cameras">View transforms, one per view. Length
+		/// must equal `projections.Length` and cannot exceed
+		/// Renderer.MaxViews.</param>
+		/// <param name="projections">Projection matrices, one per view.
+		/// Same length as `cameras`.</param>
+		/// <param name="clearColor">If `clear` clears color, this is the
+		/// color used. Default is transparent black.</param>
+		/// <param name="clear">Whether and how to clear the rendertarget
+		/// before rendering.</param>
+		/// <param name="viewportPct">Subregion of the rendertarget to draw
+		/// to, in normalized coordinates 0-1. Width of zero draws to the
+		/// entire target.</param>
+		/// <param name="layerFilter">Bit flag controlling which render
+		/// layers are drawn this pass.</param>
+		/// <param name="materialVariant">Which material variant to use.
+		/// 0 is the default; non-zero indexes into Material.Variants.</param>
+		public void DrawNow(Tex toRenderTarget, in Matrix[] cameras, in Matrix[] projections, Color clearColor = default, RenderClear clear = RenderClear.All, Rect viewportPct = default, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0)
+		{
+			if (cameras.Length != projections.Length)
+				throw new ArgumentException("cameras and projections must have the same length");
+			NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, cameras, projections, cameras.Length, clearColor, clear, viewportPct, layerFilter, materialVariant);
+		}
 
 		/// <summary>The default RenderList used by the Renderer for the
 		/// primary display surface.</summary>

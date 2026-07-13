@@ -23,7 +23,7 @@ void demo_draw_init() {
 ///////////////////////////////////////////
 
 void demo_draw_update() {
-	ui_handle_begin("Draw", draw_pose, mesh_get_bounds(draw_mesh), false);
+	ui_handle_begin("Draw", draw_pose, nullptr, mesh_get_bounds(draw_mesh), false);
 	mesh_draw      (draw_mesh, draw_material, matrix_identity);
 	ui_handle_end  ();
 }

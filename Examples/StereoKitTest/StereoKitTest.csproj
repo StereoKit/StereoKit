@@ -12,6 +12,7 @@
 		<SKAssetFolder>..\Assets</SKAssetFolder>
 		<SKAssetDestination>Assets</SKAssetDestination>
 		<SKShowDebugVars>true</SKShowDebugVars>
+		<SKUseSVSL>true</SKUseSVSL>
 
 		<NoWarn>CS1587</NoWarn>
 	</PropertyGroup>
@@ -24,11 +25,11 @@
 	<!-- Exclude the subfolders for different platform projects -->
 	<ItemGroup>
 		<Compile Remove="StereoKitTest_NetAndroid\**" />
-		<Compile Remove="StereoKitTest_Xamarin\**" />
+		<Compile Remove="StereoKitTest_AndroidService\**" />
 		<EmbeddedResource Remove="StereoKitTest_NetAndroid\**" />
-		<EmbeddedResource Remove="StereoKitTest_Xamarin\**" />
+		<EmbeddedResource Remove="StereoKitTest_AndroidService\**" />
 		<None Remove="StereoKitTest_NetAndroid\**" />
-		<None Remove="StereoKitTest_Xamarin\**" />
+		<None Remove="StereoKitTest_AndroidService\**" />
 	</ItemGroup>
 	
 

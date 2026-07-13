@@ -91,15 +91,4 @@
 /// using the templates, then you may need to do additional work to ensure the
 /// copy happens.
 ///
-/// ### System.DLLNotFoundException for StereoKitC
-/// A StereoKit function has been called before the native StereoKit DLL was
-/// loaded. Make sure your code is happening _after_ your call to
-/// `SK.Initialize`! Watch out for code being called from implied constructors,
-/// especially on static classes.
-///
-/// For some rare cases where you need access to a StereoKit function before
-/// initialization, you may be able to call `SK.PreLoadLibrary`. This only
-/// works for functions that interact with code that does not require
-/// initialization, like math. It may also disguise code that's incorrectly
-/// being called before SK.Initialize.
 /// :End:

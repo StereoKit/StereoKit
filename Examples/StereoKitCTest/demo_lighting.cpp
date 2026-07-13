@@ -10,8 +10,8 @@ using namespace sk;
 
 material_t mat_light;
 material_t mat_lit;
-material_t mat_lit_only;
 mesh_t     mesh_sphere;
+shader_t   old_occlusion_shader;
 
 skt_light_id_t lights[3];
 
@@ -31,17 +31,20 @@ void demo_lighting_init() {
 	// Load up some assets
 	shader_t lit_shader      = shader_create_mem((void*)sks_skt_default_lighting_hlsl, sizeof(sks_skt_default_lighting_hlsl));
 	shader_t lit_only_shader = shader_create_mem((void*)sks_skt_light_only_hlsl,       sizeof(sks_skt_light_only_hlsl));
-	mat_light    = material_find  (default_id_material_unlit);
-	mat_lit      = material_create(lit_shader);
-	mat_lit_only = material_create(lit_only_shader);
-	mesh_sphere  = mesh_find      (default_id_mesh_sphere);
+	mat_light   = material_find  (default_id_material_unlit);
+	mat_lit     = material_create(lit_shader);
+	mesh_sphere = mesh_find      (default_id_mesh_sphere);
 	shader_release(lit_shader);
+
+	// Replace the shader on the default world occlusion material so it
+	// responds to our custom lighting system.
+	material_t occlusion_mat = material_find("sk/world/material");
+	old_occlusion_shader = material_get_shader(occlusion_mat);
+	material_set_shader(occlusion_mat, lit_only_shader);
+	material_release(occlusion_mat);
 	shader_release(lit_only_shader);
 
-	// Attach the lighting only material to the world/occludion mesh, for
-	// 'world affecting' lighting
-	world_set_occlusion_enabled (true);
-	world_set_occlusion_material(mat_lit_only);
+	world_set_occlusion(occlusion_caps_mesh);
 
 	// Set the environment to be a little dimmer, so the lights stand out.
 	old_light = render_get_skylight();
@@ -69,8 +72,13 @@ void demo_lighting_shutdown() {
 	render_set_skylight(old_light);
 	skt_lighting_shutdown();
 
+	// Restore the original shader on the occlusion material
+	material_t occlusion_mat = material_find("sk/world/material");
+	material_set_shader(occlusion_mat, old_occlusion_shader);
+	material_release(occlusion_mat);
+	shader_release(old_occlusion_shader);
+
 	material_release(mat_light);
 	material_release(mat_lit);
-	material_release(mat_lit_only);
 	mesh_release    (mesh_sphere);
 }

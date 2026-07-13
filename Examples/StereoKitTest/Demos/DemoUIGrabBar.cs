@@ -18,6 +18,9 @@ class DemoUIGrabBar : ITest
 		UISettings settings = UI.Settings;
 		float      barSize  = Math.Max(0.01f, settings.rounding * 2);
 
+		// Show the window grab bar at its own location.
+		UI.Handle("GrabBar", ref grabBarPose, new Bounds(new Vec3(windowSize.x * 0.9f, barSize, settings.depth)), true, UIMove.FaceUser);
+
 		// Use the size of the Window to position it directly above the grab
 		// bar. Note that we're using the Pose relative Up direction instead of
 		// just the Y axis.
@@ -38,9 +41,6 @@ class DemoUIGrabBar : ITest
 
 		// Save the size of the window.
 		windowSize = UI.LayoutLast.dimensions.XY;
-
-		// Show the window grab bar at its own location.
-		UI.Handle("GrabBar", ref grabBarPose, new Bounds(new Vec3(windowSize.x * 0.9f, barSize, settings.depth)), true, UIMove.FaceUser);
 	}
 
 	public void Initialize() {}

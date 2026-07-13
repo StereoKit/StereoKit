@@ -58,5 +58,24 @@ namespace StereoKit
 		/// frame's time was also zero, it'll use 1/90.</param>
 		public static void SetTime(double totalSeconds, double frameElapsedSeconds = 0)
 			=> NativeAPI.time_set_time(totalSeconds, frameElapsedSeconds);
+
+		/// <summary>Microseconds of CPU work for the renderer during the
+		/// most recently completed frame. This measures wall-clock time
+		/// from command buffer acquisition through queue submission,
+		/// excluding any time spent waiting on GPU fences or vsync. This
+		/// is useful for identifying CPU-side rendering bottlenecks such
+		/// as draw call overhead or resource uploads. Returns 0 if timing
+		/// data is not yet available (first few frames).</summary>
+		public static ulong PerfCPUus => NativeAPI.time_perf_cpu_us();
+		
+		/// <summary>Microseconds the GPU spent executing rendering
+		/// commands for the most recently completed frame. Measured via
+		/// hardware timestamp queries at the top and bottom of the
+		/// Vulkan pipeline, so this reflects actual GPU execution time
+		/// independent of CPU pacing or vsync. Useful for identifying
+		/// GPU-bound scenarios like expensive shaders or overdraw.
+		/// Returns 0 if timing data is not yet available (first few
+		/// frames).</summary>
+		public static ulong PerfGPUus => NativeAPI.time_perf_gpu_us();
 	}
 }

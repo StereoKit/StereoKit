@@ -7,8 +7,6 @@ on:
         type: boolean
         required: false
         default: true
-  schedule:
-  - cron: '0 9 * * *'
 
 permissions:
   actions: write
@@ -32,7 +30,7 @@ jobs:
         REPO_NAME: ${{ github.repository }}
         WORKFLOW_RUN_ID: ${{ github.run_id }}
         SKIP_TIME_CHECK: ${{ inputs.skip_time_check }}
-        BRANCH: ${{ vars.NIGHTLY_BRANCH }}
+        BRANCH: ${{ github.ref_name }}
       run: |
         $urlBase = "https://api.github.com/repos/$env:REPO_NAME"
         $header  = @{
@@ -73,8 +71,6 @@ jobs:
         }
 
     - uses: actions/checkout@v4
-      with:
-        ref: ${{ vars.NIGHTLY_BRANCH }}
       if: steps.check.outputs.shouldBuild == 'true'
 
     - name: Get the version
@@ -148,7 +144,7 @@ jobs:
       minor: ${{ needs.check.outputs.minor }}
       patch: ${{ needs.check.outputs.patch }}
       pre: ${{ needs.check.outputs.pre }}
-      branch: ${{ vars.NIGHTLY_BRANCH }}
+      branch: ${{ github.ref_name }}
       upload: true
       commitChanges: false
     secrets: inherit

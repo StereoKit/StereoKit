@@ -101,9 +101,8 @@ internal class DemoHandPoses : ITest
 		UI.WindowEnd();
 
 		// Lets also show the root pose on the Controller, if it's around
-		Controller c = Input.Controller(Handed.Right);
-		if (c.tracked.IsActive())
-			Lines.AddAxis(new Pose(c.palm.position, c.palm.orientation * Quat.FromAngles(0,90,-90)), 0.03f);
+		if (Input.PoseState(InputPose.RGrip).IsTracked())
+			Lines.AddAxis(Input.Pose(InputPose.RGrip), 0.03f);
 
 		Demo.ShowSummary(title, description,
 			new Bounds(new Vec3(-.07f,-.15f,0), new Vec3(.6f, .4f, 0.2f)));

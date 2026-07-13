@@ -6,7 +6,7 @@ namespace StereoKitAPIGen;
 ///
 /// Supported directives:
 /// - name NewName   : Rename a type/enum value
-/// - @noimpl name   : Skip auto-generating this type/delegate (hand-written elsewhere)
+/// - @noimpl name   : Skip auto-generating this type/delegate/function (hand-written elsewhere)
 /// </summary>
 public class NameOverrides {
 	readonly Dictionary<string, string> _overrides = new();

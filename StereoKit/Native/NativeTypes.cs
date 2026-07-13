@@ -57,26 +57,6 @@ namespace StereoKit
 		public float bottom;
 	}
 
-	/// <summary>This represents a single vertex in a Mesh, all StereoKit Meshes
-	/// currently use this exact layout!
-	/// It's good to fill out all values of a Vertex explicitly, as default
-	/// values for the normal (0,0,0) and color (0,0,0,0) will cause your
-	/// mesh to appear completely black, or even transparent in most shaders!</summary>
-	[StructLayout(LayoutKind.Sequential)]
-	public partial struct Vertex
-	{
-		/// <summary>Position of the vertex, in model space coordinates.</summary>
-		public Vec3 pos;
-		/// <summary>The normal of this vertex, or the direction the vertex is
-		/// facing. Preferably normalized.</summary>
-		public Vec3 norm;
-		/// <summary>The texture coordinates at this vertex.</summary>
-		public Vec2 uv;
-		/// <summary>The color of the vertex. If you aren't using it, set it to
-		/// white.</summary>
-		public Color32 col;
-	}
-
 	/// <summary>Used to represent lines for the line drawing functions! This is
 	/// just a snapshot of information about each individual point on a line.</summary>
 	[StructLayout(LayoutKind.Sequential)]
@@ -126,6 +106,41 @@ namespace StereoKit
 		public float scroll;
 		/// <summary>How much has the scroll wheel value changed during this frame?</summary>
 		public float scrollChange;
+	}
+
+	/// <summary>Per-eye view metadata for a sensor depth frame, providing the
+	/// camera pose and field of view used to capture that eye's depth.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public partial struct SensorDepthView
+	{
+		/// <summary>The pose of this eye's depth camera in world space.</summary>
+		public Pose pose;
+		/// <summary>The field of view of this eye's depth camera, in degrees.</summary>
+		public FovInfo fov;
+	}
+
+	/// <summary>Per-frame metadata for sensor depth. Contains timestamps, dimensions,
+	/// near/far planes, and per-eye camera metadata.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public partial struct SensorDepthFrame
+	{
+		/// <summary>The predicted display time this frame was acquired for, in OpenXR
+		/// time units (nanoseconds).</summary>
+		public long displayTime;
+		/// <summary>The actual capture time of the depth sensor images, in OpenXR time
+		/// units (nanoseconds). Zero if the runtime does not support it.</summary>
+		public long captureTime;
+		/// <summary>Width of a single eye's depth image, in pixels.</summary>
+		public uint width;
+		/// <summary>Height of a single eye's depth image, in pixels.</summary>
+		public uint height;
+		/// <summary>Near clip plane of the depth projection, in meters.</summary>
+		public float nearZ;
+		/// <summary>Far clip plane of the depth projection, in meters.</summary>
+		public float farZ;
+		/// <summary>Per-eye depth camera metadata. Index 0 is left, index 1 is right.</summary>
+		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
+		public SensorDepthView[] views;
 	}
 
 	/// <summary>A point on a lathe for a mesh generation algorithm. This is the 'silhouette'

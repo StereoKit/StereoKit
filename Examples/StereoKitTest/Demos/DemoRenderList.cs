@@ -21,6 +21,7 @@ class DemoRenderList : ITest
 		winPose = (Demo.contentPose * winPose.ToMatrix()).Pose;
 
 		Model model = Model.FromFile("DamagedHelmet.gltf");
+		Assets.BlockUntil(model, AssetState.Loaded);
 		list.Add(model, Matrix.R(0,180,0), Color.White);
 
 		renderMat[MatParamName.DiffuseTex] = renderTex;

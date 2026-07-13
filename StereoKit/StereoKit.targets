@@ -2,7 +2,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<Import Project="$(MSBuildThisFileDirectory)SKAssets.targets" />
 	<Import Project="$(MSBuildThisFileDirectory)SKShaders.targets" />
-	<Import Project="$(MSBuildThisFileDirectory)SKMaui.targets" />
 
 	<!-- Copy the package's native libraries into the project, for those
 	     platforms that require it. -->
@@ -14,13 +13,15 @@
 		<!-- The managed .pdb is not copied by default, so we copy it here to
 		     enable debugging of the managed dll.-->
 		<Copy
-			SourceFiles        = "$(MSBuildThisFileDirectory)../lib/netstandard2.0/StereoKit.pdb"
+			SourceFiles        = "$(MSBuildThisFileDirectory)../lib/net8.0/StereoKit.pdb"
 			DestinationFolder  = "$(OutputPath)"
 			SkipUnchangedFiles = "true"/>
 		
 		<ItemGroup Condition="'$(SKBuildPlatform)'=='Desktop'">
 			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/linux-arm64/*.*" />
 			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/linux-x64/*.*" />
+			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/osx-arm64/*.*" />
+			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/win-arm64/*.*" />
 			<SKSourceFolder Include="$(MSBuildThisFileDirectory)../runtimes/win-x64/*.*" />
 		</ItemGroup>
 		<Copy
@@ -28,31 +29,14 @@
 			DestinationFolder  = "$(BaseIntermediateOutputPath)lib/%(RecursiveDir)"
 			SkipUnchangedFiles = "true"/>
 
-		<!-- .NET Core 2.x behaves fine using the above for publishing, but
-		     not for development. So! This is a manual copy that happens by
-		     default on other versions of .Net Core.-->
-		<Copy
-			Condition          = "'$(SKBuildNET)'=='Core' and $(TargetFrameworkVersion.StartsWith('v2.'))"
-			SourceFiles        = "@(SKSourceFolder)"
-			DestinationFolder  = "$(OutputPath)runtimes/%(RecursiveDir)"
-			SkipUnchangedFiles = "true"/>
-
-		<!-- .NET Framework projects also seem to have the same issue. This
-		     doesn't work for Publish, however. -->
-		<Copy
-			Condition          = "'$(SKBuildNET)'=='Framework'"
-			SourceFiles        = "$(MSBuildThisFileDirectory)../runtimes/win-x64/native/StereoKitC.dll"
-			DestinationFolder  = "$(OutputPath)"
-			SkipUnchangedFiles = "true"/>
-
 	</Target>
 
-	<!-- Link libraries directly in Xamarin and Maui Android projects. -->
+	<!-- Link libraries directly in Maui Android projects. -->
 	<ItemGroup>
 		<AndroidNativeLibrary Abi="arm64-v8a" Include="$(MSBuildThisFileDirectory)../runtimes/android-arm64/native/libStereoKitC.so">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</AndroidNativeLibrary>
-		<AndroidNativeLibrary Abi="x86_64" Include="$(MSBuildThisFileDirectory)../runtimes/x86_64/native/libStereoKitC.so">
+		<AndroidNativeLibrary Abi="x86_64" Include="$(MSBuildThisFileDirectory)../runtimes/android-x64/native/libStereoKitC.so">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</AndroidNativeLibrary>
 		<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="arm64-v8a" Include="$(MSBuildThisFileDirectory)../android_openxr_loaders/$(SKOpenXRLoader.ToLower())/arm64/*.so">
@@ -67,6 +51,11 @@
 		<AndroidNativeLibrary Condition="'$(SKOpenXRLoader)'!='None'" Abi="x86_64" Include="$(SKOpenXRLoaderFolder)$(SKOpenXRLoader)/x64/*.so">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</AndroidNativeLibrary>
+	</ItemGroup>
+
+	<!-- Include sk_app Java classes for Android (file dialogs, activity results) -->
+	<ItemGroup>
+		<AndroidJavaLibrary Include="$(MSBuildThisFileDirectory)sk_app.jar" Condition="Exists('$(MSBuildThisFileDirectory)sk_app.jar')" />
 	</ItemGroup>
 
 </Project>

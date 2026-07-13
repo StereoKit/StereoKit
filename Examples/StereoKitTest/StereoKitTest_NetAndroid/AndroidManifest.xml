@@ -36,7 +36,7 @@
 
 	<!-- AndroidXR items -->
 	<!-- https://developer.android.com/develop/xr/get-started#designing-xr -->
-	<uses-feature    android:name="android.software.xr.immersive"           android:required="true"  />
+	<uses-feature    android:name="android.software.xr.immersive"           android:required="false" />
 	<uses-feature    android:name="android.hardware.xr.input.hand_tracking" android:required="false" />
 	<uses-feature    android:name="android.hardware.xr.input.controller"    android:required="false" />
 	<uses-feature    android:name="android.hardware.xr.input.eye_tracking"  android:required="false" />
@@ -46,8 +46,12 @@
 	<uses-permission android:name="android.permission.EYE_TRACKING_FINE" />
 
 	<!-- Vive specific items  -->
-	<uses-feature android:name="wave.feature.handtracking" android:required="false"/>
-	<uses-feature android:name="wave.feature.tracker"      android:required="false"/>
+	<meta-data android:name="no_controller_pairing" android:value="true" />
+	<uses-feature android:name="wave.feature.handtracking"    android:required="false"/>
+	<uses-feature android:name="wave.feature.tracker"         android:required="false"/>
+	<uses-feature android:name="wave.feature.eyetracking"     android:required="false" />
+	<uses-feature android:name="wave.feature.sceneperception" android:required="false" />
+	<uses-feature android:name="wave.feature.marker"          android:required="true" />
 
 	<!-- Snapdragon specific items -->
 	<uses-permission android:name="com.qualcomm.qti.qxr.QXRServiceClientPermission" android:required="false"/>
@@ -62,8 +66,11 @@
 	<uses-permission android:name="com.oculus.permission.BODY_TRACKING"/>
 	<uses-permission android:name="com.oculus.permission.FACE_TRACKING"/>
 	<uses-permission android:name="com.oculus.permission.EYE_TRACKING"/>
+	<uses-permission android:name="com.oculus.permission.USE_SCENE"/>
+	<uses-permission android:name="com.oculus.permission.RENDER_MODEL"/>
 	<uses-feature    android:name="com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP" android:required="false" />
 	<uses-feature    android:name="com.oculus.feature.PASSTHROUGH"    android:required="false"/>
+	<uses-feature    android:name="com.oculus.feature.RENDER_MODEL"   android:required="false"/>
 	<uses-feature    android:name="oculus.software.handtracking"      android:required="false"/>
 	<uses-feature    android:name="com.oculus.software.body_tracking" android:required="false"/>
 	<uses-feature    android:name="oculus.software.face_tracking"     android:required="false"/>

@@ -97,7 +97,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.branch }}
-    - uses: lukka/get-cmake@v3.26.3
+    - uses: lukka/get-cmake@v4.3.3
 
     - name: Get Cache
       uses: actions/cache@v4
@@ -125,6 +125,12 @@ jobs:
         name: binaries-windows
         path: bin/distribute/
 
+    - name: Upload Tools
+      uses: actions/upload-artifact@v4
+      with:
+        name: tools-windows
+        path: bin/tools/
+
 ###########################################
 
   build-linux:
@@ -136,7 +142,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         ref: ${{ inputs.branch }}
-    - uses: lukka/get-cmake@v3.26.3
+    - uses: lukka/get-cmake@v4.3.3
 
     - name: Get Cache
       uses: actions/cache@v4
@@ -162,11 +168,14 @@ jobs:
             echo "Changed $(basename "$link") from $current_target to $new_target"
         done
 
+    - name: Install Android SDK Platform
+      run: echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-32"
+
     - name: Install Prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get install clang lld ninja-build libx11-dev libxfixes-dev libegl-dev libgbm-dev libfontconfig-dev
-    
+        sudo apt-get install clang llvm lld ninja-build libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libfontconfig-dev
+
     - name: Set Version
       shell: pwsh
       run: ./tools/Set-Version.ps1 -major ${{inputs.major}} -minor ${{inputs.minor}} -patch ${{inputs.patch}} -pre ${{inputs.pre}} -preName ${{inputs.preName}}
@@ -195,7 +204,7 @@ jobs:
       with:
         arch: arm64
     - name: Install cross-compilation tools
-      run: sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu lld:arm64 libx11-dev:arm64 libxfixes-dev:arm64 libegl-dev:arm64 libgbm-dev:arm64 libfontconfig-dev:arm64
+      run: sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu lld:arm64 libx11-dev:arm64 libxfixes-dev:arm64 libxrandr-dev:arm64 libxcursor-dev:arm64 libfontconfig-dev:arm64
 
     - name: Build Linux Arm64
       run: |
@@ -211,14 +220,55 @@ jobs:
     - name: Upload Tools
       uses: actions/upload-artifact@v4
       with:
-        name: tools
-        path: tools/skshaderc/
+        name: tools-linux
+        path: bin/tools/
+
+###########################################
+
+  build-macos:
+    runs-on: macos-14
+    env:
+      CPM_SOURCE_CACHE: .deps_cache
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+    - uses: lukka/get-cmake@v4.3.3
+
+    - name: Get Cache
+      uses: actions/cache@v4
+      with:
+        key: DependencyCache
+        path: |
+          .deps_cache
+
+    - name: Set Version
+      shell: pwsh
+      run: ./tools/Set-Version.ps1 -major ${{inputs.major}} -minor ${{inputs.minor}} -patch ${{inputs.patch}} -pre ${{inputs.pre}} -preName ${{inputs.preName}}
+
+    - name: Build Native macOS ARM64
+      run: |
+        cmake --preset MacOS_Arm64_Release
+        cmake --build --preset MacOS_Arm64_Release
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries-macos
+        path: bin/distribute/
+
+    - name: Upload Tools
+      uses: actions/upload-artifact@v4
+      with:
+        name: tools-macos
+        path: bin/tools/
 
   ###########################################
 
   build-package:
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux, build-macos]
 
     steps:
     - uses: actions/checkout@v4
@@ -239,8 +289,9 @@ jobs:
     - name: Get Tools from Previous
       uses: actions/download-artifact@v4
       with:
-        name: tools
-        path: tools/skshaderc/
+        merge-multiple: true
+        pattern: tools-*
+        path: bin/tools/
 
     - name: Set Version
       shell: pwsh

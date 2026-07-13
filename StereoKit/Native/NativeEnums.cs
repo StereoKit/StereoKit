@@ -71,218 +71,382 @@ namespace StereoKit
 		Stencil,
 	}
 
-	/// <summary>What type of color information will the texture contain? A
-	/// good default here is Rgba32.</summary>
+	/// <summary>What type of color information will the texture contain? A good
+	/// default here is Rgba32, which gives 8-bit sRGB color with alpha!
+	/// Most format names end in a short suffix telling you how the GPU
+	/// interprets the bits when sampled in a shader:
+	/// - no suffix or "un": unsigned normalized. Raw unsigned integers
+	/// get normalized into the [0,1] floating point range on read.
+	/// The default flavor for most color and data formats.
+	/// - "sn": signed normalized. Raw signed integers get normalized
+	/// into the [-1,1] floating point range on read.
+	/// - "ui": unsigned integer. Raw unsigned integers, no
+	/// normalization! Great for IDs, counters, and exact-integer data.
+	/// - "si": signed integer. Raw signed integers, no normalization.
+	/// - "f": signed float, typically an IEEE half or single precision
+	/// float.
+	/// - "uf": unsigned float, used by some HDR-leaning compact formats
+	/// that can only represent non-negative values.
+	/// - "_srgb": stored in sRGB color space! The GPU auto-converts to
+	/// linear when sampled and back to sRGB when written. Use this
+	/// for images viewed by humans, like photos and UI artwork.
+	/// - "_linear": stored in linear color space, no color-space
+	/// conversion at sample time. Use this for data textures, like
+	/// normals, masks, roughness, and metallic. Any format that is
+	/// _not_ "_srgb" is generally linear.
+	/// Block-compressed formats (BC, ETC, ASTC, PVRTC, ATC) trade a
+	/// little quality for a big drop in memory and bandwidth: each
+	/// format packs an NxN block of pixels into a fixed payload, so
+	/// cost is measured in bits-per-pixel rather than bits-per-channel.
+	/// Hardware support varies - prefer BC on desktop/console, ASTC on
+	/// modern mobile. They're sample-only; you can't render to them.</summary>
 	public enum TexFormat {
-		/// <summary>A default zero value for TexFormat! Uninitialized formats
-		/// will get this value and **** **** up so you know to assign it
-		/// properly :)</summary>
+		/// <summary>Default zero value for TexFormat! Uninitialized formats land
+		/// here and **** **** up so you know to assign one properly :)</summary>
 		None         = 0,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in sRGB color space. This is what you'll want most of
-		/// the time you're dealing with color images! Matches well with the
-		/// Color32 struct! If you're storing normals, rough/metal, or
-		/// anything else, use Rgba32Linear.</summary>
-		Rgba32Srgb   = 1,
-		/// <summary>Alias for tex_format_rgba32_srgb for backwards compatibility.</summary>
+		/// <summary>8-bit sRGB R/G/B/A. The default for human-viewed color
+		/// images, and a clean match for the Color32 struct! For data
+		/// textures (normals, masks, rough/metal) use Rgba32Linear
+		/// instead.</summary>
+		Rgba32Srgb,
+		/// <summary>8-bit sRGB R/G/B/A. The default for human-viewed color
+		/// images, and a clean match for the Color32 struct! For data
+		/// textures (normals, masks, rough/metal) use Rgba32Linear
+		/// instead.</summary>
 		Rgba32       = Rgba32Srgb,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is what you'll want most
-		/// of the time you're dealing with color data! Matches well with the
-		/// Color32 struct.</summary>
-		Rgba32Linear = 2,
-		/// <summary>Blue/Green/Red/Transparency data channels, at 8 bits
-		/// per-channel in sRGB color space. This is a common swapchain format
-		/// on Windows.</summary>
-		Bgra32Srgb   = 3,
-		/// <summary>Alias for tex_format_bgra32_srgb for backwards compatibility.</summary>
+		/// <summary>8-bit linear R/G/B/A. Use this for data textures (normals,
+		/// masks, rough/metal) where you don't want the GPU's automatic
+		/// sRGB conversion getting in the way.</summary>
+		Rgba32Linear,
+		/// <summary>8-bit sRGB B/G/R/A. Same as Rgba32Srgb but with R and B
+		/// swapped to match the byte order some GPUs and Windows
+		/// swapchains prefer. Most code can stick with Rgba32Srgb!</summary>
+		Bgra32Srgb,
+		/// <summary>8-bit sRGB B/G/R/A. Same as Rgba32Srgb but with R and B
+		/// swapped to match the byte order some GPUs and Windows
+		/// swapchains prefer. Most code can stick with Rgba32Srgb!</summary>
 		Bgra32       = Bgra32Srgb,
-		/// <summary>Blue/Green/Red/Transparency data channels, at 8 bits
-		/// per-channel in linear color space. This is a common swapchain
-		/// format on Windows.</summary>
-		Bgra32Linear = 4,
-		/// <summary>Red/Green/Blue data channels, with 11 bits for R and G,
-		/// and 10 bits for blue. This is a great presentation format for high
-		/// bit depth displays that still fits in 32 bits! This format has no
-		/// alpha channel.</summary>
-		Rg11b10      = 5,
-		/// <summary>Red/Green/Blue/Transparency data channels, with 10
-		/// bits for R, G, and B, and 2 for alpha. This is a great presentation
-		/// format for high bit depth displays that still fits in 32 bits, and
-		/// also includes at least a bit of transparency!</summary>
-		Rgb10a2      = 6,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
-		/// per-channel! This is not common, but you might encounter it with
-		/// raw photos, or HDR images. TODO: remove during major version
-		/// update, prefer s, f, or u postfixed versions of this format.</summary>
-		Rgba64       = 7,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
-		/// per-channel! This is not common, but you might encounter it with
-		/// raw photos, or HDR images. The u postfix indicates that the raw
-		/// color data is stored as an unsigned 16 bit integer, which is then
-		/// normalized into the 0, 1 floating point range on the GPU.</summary>
-		Rgba64u      = Rgba64,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
-		/// per-channel! This is not common, but you might encounter it with
-		/// raw photos, or HDR images. The s postfix indicates that the raw
-		/// color data is stored as a signed 16 bit integer, which is then
-		/// normalized into the -1, +1 floating point range on the GPU.</summary>
-		Rgba64s      = 8,
-		/// <summary>Red/Green/Blue/Transparency data channels, at 16 bits
-		/// per-channel! This is not common, but you might encounter it with
-		/// raw photos, or HDR images. The f postfix indicates that the raw
-		/// color data is stored as 16 bit floats, which may be tricky to work
-		/// with in most languages.</summary>
-		Rgba64f      = 9,
-		/// <summary>Red/Green/Blue/Transparency data channels at 32 bits
-		/// per-channel! Basically 4 floats per color, which is bonkers
-		/// expensive. Don't use this unless you know -exactly- what you're
-		/// doing.</summary>
-		Rgba128      = 10,
-		/// <summary>A single channel of data, with 8 bits per-pixel! This
-		/// can be great when you're only using one channel, and want to
-		/// reduce memory usage. Values in the shader are always 0.0-1.0.</summary>
-		R8           = 11,
-		/// <summary>A single channel of data, with 16 bits per-pixel! This
-		/// is a good format for height maps, since it stores a fair bit of
-		/// information in it. The "un" postfix indicates "unsigned normalized",
-		/// where the raw color data is stored as an unsigned 16 bit integer,
-		/// which is then normalized into the 0, 1 floating point range on the
-		/// GPU.</summary>
-		R16un        = 12,
-		/// <summary>A single channel of data, with 16 bits per-pixel! This
-		/// is a good format for height maps, since it stores a fair bit of
-		/// information in it. The "sn" postfix indicates "signed normalized",
-		/// where the raw color data is stored as a signed 16 bit integer, which
-		/// is then normalized into the -1, +1 floating point range on the GPU.</summary>
-		R16sn        = 13,
-		/// <summary>A single channel of data, with 16 bits per-pixel! This
-		/// is a good format for index or id data, since it stores values as
-		/// raw unsigned integers. The "ui" postfix indicates "unsigned integer",
-		/// where the data is stored and accessed as an unsigned 16 bit integer
-		/// without any normalization.</summary>
-		R16ui        = 14,
-		/// <summary>A single channel of data, with 16 bits per-pixel! This
-		/// is a good format for index or id data, since it stores values as
-		/// raw signed integers. The "si" postfix indicates "signed integer",
-		/// where the data is stored and accessed as a signed 16 bit integer
-		/// without any normalization.</summary>
-		R16si        = 15,
-		/// <summary>A single channel of data, with 16 bits per-pixel! This
-		/// is a good format for height maps, since it stores a fair bit of
-		/// information in it. The f postfix indicates that the raw color
-		/// data is stored as 16 bit floats, which may be tricky to work with
-		/// in most languages.</summary>
-		R16f         = 16,
-		/// <summary>Alias for R16un for backwards compatibility.</summary>
+		/// <summary>8-bit linear B/G/R/A. Same as Rgba32Linear but with R and B
+		/// swapped, mostly for compatibility with BGRA-preferring APIs
+		/// like Windows swapchains.</summary>
+		Bgra32Linear,
+		/// <summary>16-bit unsigned-normalized R/G/B/A (64 bpp). Doubling the
+		/// bit depth over Rgba32 gives much smoother gradients!</summary>
+		Rgba64un,
+		/// <summary>16-bit unsigned-normalized R/G/B/A (64 bpp). Doubling the
+		/// bit depth over Rgba32 gives much smoother gradients!</summary>
+		Rgba64       = Rgba64un,
+		/// <summary>16-bit signed-normalized R/G/B/A (64 bpp).</summary>
+		Rgba64sn,
+		/// <summary>16-bit unsigned-integer R/G/B/A (64 bpp). Great for ID
+		/// textures, counters, or any discrete-integer data. For [0,1]
+		/// sampling, use Rgba64un instead.</summary>
+		Rgba64ui,
+		/// <summary>16-bit signed-integer R/G/B/A (64 bpp). For [-1,1] sampling,
+		/// use Rgba64sn instead.</summary>
+		Rgba64si,
+		/// <summary>16-bit half-float R/G/B/A (64 bpp). A common HDR
+		/// render-target format - full RGBA float precision at half the
+		/// memory of Rgba128. Almost always supported as a render
+		/// target, so a reliable fallback for formats like Rg11b10.</summary>
+		Rgba64f,
+		/// <summary>32-bit float R/G/B/A - basically 4 single-precision floats
+		/// per pixel, which is bonkers expensive at 128 bpp! Don't
+		/// reach for this unless you know -exactly- what you're doing.
+		/// Useful for scientific data or compute buffers where you
+		/// really need full 32-bit float precision per channel.</summary>
+		Rgba128,
+		/// <summary>32-bit float R/G/B/A - basically 4 single-precision floats
+		/// per pixel, which is bonkers expensive at 128 bpp! Don't
+		/// reach for this unless you know -exactly- what you're doing.
+		/// Useful for scientific data or compute buffers where you
+		/// really need full 32-bit float precision per channel.</summary>
+		Rgba128f     = Rgba128,
+		/// <summary>Packed HDR R/G/B as unsigned floats - 11 bits for R and G,
+		/// 10 for B, no alpha. A great compact HDR format: holds values
+		/// way beyond the [0,1] range that Rgba32 maxes out at, while
+		/// still fitting in 32 bpp! Great for HDR render targets and
+		/// intermediate compute buffers. Not universally supported as a
+		/// render target, so watch for that!</summary>
+		Rg11b10,
+		/// <summary>Packed HDR R/G/B as unsigned floats - 11 bits for R and G,
+		/// 10 for B, no alpha. A great compact HDR format: holds values
+		/// way beyond the [0,1] range that Rgba32 maxes out at, while
+		/// still fitting in 32 bpp! Great for HDR render targets and
+		/// intermediate compute buffers. Not universally supported as a
+		/// render target, so watch for that!</summary>
+		Rg11b10uf    = Rg11b10,
+		/// <summary>Packed unsigned-normalized R/G/B/A with 10 bits per color
+		/// channel and 2 bits for alpha. A great presentation format
+		/// for high bit-depth displays that still fits in 32 bpp, and
+		/// you get a bit of transparency too! Alpha is effectively
+		/// on/off/halfway though, so skip this if you need smooth alpha.
+		/// Not universally supported as a render target!</summary>
+		Rgb10a2,
+		/// <summary>Shared-exponent HDR R/G/B with 9-bit mantissa per channel
+		/// and a 5-bit shared exponent. A compact HDR format that packs
+		/// values way beyond the [0,1] range into just 32 bpp! No alpha
+		/// though, and sharing the exponent means all three channels
+		/// need similar magnitudes - perfect for environment maps!
+		/// Usually sample-only; GPUs typically can't render to it.</summary>
+		Rgb9e5,
+		/// <summary>Shared-exponent HDR R/G/B with 9-bit mantissa per channel
+		/// and a 5-bit shared exponent. A compact HDR format that packs
+		/// values way beyond the [0,1] range into just 32 bpp! No alpha
+		/// though, and sharing the exponent means all three channels
+		/// need similar magnitudes - perfect for environment maps!
+		/// Usually sample-only; GPUs typically can't render to it.</summary>
+		Rgb9e5uf     = Rgb9e5,
+		/// <summary>8-bit unsigned-normalized single channel. Great when you
+		/// only need one channel and want to keep memory down.</summary>
+		R8,
+		/// <summary>8-bit signed-normalized single channel. Useful for a single
+		/// signed value like an elevation difference or signed mask.</summary>
+		R8sn,
+		/// <summary>8-bit unsigned-integer single channel. Good for small IDs,
+		/// indices, or stencil-like data accessed as exact integers.</summary>
+		R8ui,
+		/// <summary>8-bit signed-integer single channel.</summary>
+		R8si,
+		/// <summary>8-bit sRGB single channel. Useful for single-channel sRGB
+		/// data like a luminance map that should be linearized before
+		/// lighting math.</summary>
+		R8Srgb,
+		/// <summary>Two 8-bit unsigned-normalized channels (R, G). Useful for
+		/// two-component data like compressed normals where the third
+		/// axis is reconstructed in the shader, or two grayscale
+		/// signals stored side by side.</summary>
+		R8g8,
+		/// <summary>16-bit unsigned-normalized single channel. A good format for
+		/// height maps, since it stores a fair bit of information!</summary>
+		R16un,
+		/// <summary>16-bit unsigned-normalized single channel. A good format for
+		/// height maps, since it stores a fair bit of information!</summary>
 		R16          = R16un,
-		/// <summary>Alias for R16un for backwards compatibility.</summary>
+		/// <summary>16-bit unsigned-normalized single channel. A good format for
+		/// height maps, since it stores a fair bit of information!</summary>
 		R16u         = R16un,
-		/// <summary>Alias for R16sn for backwards compatibility.</summary>
+		/// <summary>16-bit signed-normalized single channel. Good for signed
+		/// height data or signed distance fields.</summary>
+		R16sn,
+		/// <summary>16-bit signed-normalized single channel. Good for signed
+		/// height data or signed distance fields.</summary>
 		R16s         = R16sn,
-		/// <summary>A single channel of data, with 32 bits per-pixel! This
-		/// basically treats each pixel as a generic float, so you can do all
-		/// sorts of strange and interesting things with this.</summary>
-		R32f         = 17,
-		/// <summary>Alias for tex_format_r32f for backwards compatibility.</summary>
+		/// <summary>16-bit unsigned-integer single channel. A great format for
+		/// index or ID data, since values are accessed as raw
+		/// integers.</summary>
+		R16ui,
+		/// <summary>16-bit signed-integer single channel. Good for signed
+		/// integer or ID data.</summary>
+		R16si,
+		/// <summary>16-bit half-float single channel. Good for HDR height/depth
+		/// data that needs a range beyond what normalized formats give
+		/// you.</summary>
+		R16f,
+		/// <summary>32-bit unsigned-integer single channel. Useful for counters,
+		/// IDs, and atomic compute operations.</summary>
+		R32ui,
+		/// <summary>32-bit signed-integer single channel.</summary>
+		R32si,
+		/// <summary>32-bit single-precision float single channel. Treats each
+		/// pixel as a generic float, so you can do all sorts of strange
+		/// and interesting things with this! Great for scientific data,
+		/// signed distance fields, or detailed height fields where 16
+		/// bits of precision aren't enough.</summary>
+		R32f,
+		/// <summary>32-bit single-precision float single channel. Treats each
+		/// pixel as a generic float, so you can do all sorts of strange
+		/// and interesting things with this! Great for scientific data,
+		/// signed distance fields, or detailed height fields where 16
+		/// bits of precision aren't enough.</summary>
 		R32          = R32f,
-		/// <summary>A depth data format, 24 bits for depth data, and 8 bits
-		/// to store stencil information! Stencil data can be used for things
-		/// like clipping effects, deferred rendering, or shadow effects.</summary>
-		Depth24s8    = 18,
-		/// <summary>Alias for tex_format_depth24s8 for backwards compatibility.</summary>
-		DepthStencil = Depth24s8,
-		/// <summary>32 bits of data per depth value! This is pretty detailed,
-		/// and is excellent for experiences that have a very far view
-		/// distance.</summary>
-		Depth32      = 19,
-		/// <summary>16 bits of depth is not a lot, but it can be enough if
-		/// your far clipping plane is pretty close. If you're seeing lots of
-		/// flickering where two objects overlap, you either need to bring
-		/// your far clip in, or switch to 32/24 bit depth.</summary>
-		Depth16      = 20,
-		/// <summary>A double channel of data that supports 8 bits for the red
-		/// channel and 8 bits for the green channel.</summary>
-		R8g8         = 21,
-		/// <summary>A shared exponent format with 9 bits each for R, G, B, and
-		/// 5 bits for the shared exponent. This is a compact HDR format.</summary>
-		Rgb9e5       = 22,
-		/// <summary>A depth data format with 32 bits for depth and 8 bits for
-		/// stencil. The extra stencil bits provide more precision than
-		/// depth24s8 while still offering stencil support.</summary>
-		Depth32s8,
-		/// <summary>A depth data format with 16 bits for depth and 8 bits for
-		/// stencil. This is a more compact depth-stencil format.</summary>
+		/// <summary>16-bit depth - not a lot, but it can be enough if your far
+		/// clipping plane is pretty close. If you're seeing z-fighting,
+		/// either bring your far clip in or switch to 24/32-bit depth.</summary>
+		Depth16,
+		/// <summary>16-bit depth + 8-bit stencil. A compact depth-with-stencil
+		/// option for when precision needs are modest and memory is
+		/// tight. If you see z-fighting, step up to Depth24s8 or
+		/// Depth32s8.</summary>
 		Depth16s8,
-		/// <summary>BC1/DXT1 block compression with sRGB color. 4 bits per pixel,
-		/// great for opaque textures on desktop/console GPUs.</summary>
+		/// <summary>24-bit depth + 8-bit stencil. Depth tracks how close to the
+		/// camera each pixel is so near objects correctly occlude far
+		/// ones. Stencil data can be used for clipping effects,
+		/// deferred rendering, or shadow effects. A sensible default
+		/// for most scenes!</summary>
+		Depth24s8,
+		/// <summary>24-bit depth + 8-bit stencil. Depth tracks how close to the
+		/// camera each pixel is so near objects correctly occlude far
+		/// ones. Stencil data can be used for clipping effects,
+		/// deferred rendering, or shadow effects. A sensible default
+		/// for most scenes!</summary>
+		DepthStencil = Depth24s8,
+		/// <summary>32-bit depth. Pretty detailed, and excellent for experiences
+		/// with very far view distances. No stencil bits though - if
+		/// you need stencil too, use Depth32s8 instead.</summary>
+		Depth32,
+		/// <summary>32-bit depth + 8-bit stencil (40 bpp). More depth precision
+		/// than Depth24s8 but heavier on memory. Use this when you need
+		/// both 32-bit depth precision and a stencil channel for
+		/// masking effects.</summary>
+		Depth32s8,
+		/// <summary>BC1/DXT1 sRGB RGB, no alpha, 4 bpp. Each 4x4 block of pixels
+		/// gets squished into 8 bytes, so a texture only takes a
+		/// quarter of Rgba32's memory. Quality is good for opaque
+		/// diffuse textures, though artifacts can show up in smooth
+		/// gradients. Widely supported on desktop and console GPUs -
+		/// not so much on mobile.</summary>
 		Bc1RgbSrgb,
-		/// <summary>BC1/DXT1 block compression, linear color. 4 bits per pixel,
-		/// great for opaque textures on desktop/console GPUs.</summary>
+		/// <summary>BC1/DXT1 linear RGB, no alpha, 4 bpp. Great for compressed
+		/// data textures (normals, masks) on desktop and console GPUs.
+		/// For color images for humans, use Bc1RgbSrgb.</summary>
 		Bc1Rgb,
-		/// <summary>BC3/DXT5 block compression with sRGB color. 8 bits per pixel,
-		/// good for textures with alpha on desktop/console GPUs.</summary>
+		/// <summary>BC1/DXT1 sRGB with 1-bit alpha, 4 bpp. Alpha is either fully
+		/// on or fully off per pixel - great for cutout effects like
+		/// foliage or chain-link fences. Smooth fade-outs will band
+		/// hard though; reach for Bc3 or Bc7 for smooth alpha.</summary>
+		Bc1RgbaSrgb,
+		/// <summary>BC1/DXT1 linear with 1-bit alpha, 4 bpp. Good for opaque
+		/// data textures with a sharp cutout mask on desktop and
+		/// console GPUs. For smooth alpha, reach for Bc3 or Bc7
+		/// instead.</summary>
+		Bc1Rgba,
+		/// <summary>BC2/DXT3 sRGB with explicit 4-bit alpha, 8 bpp. Alpha gets
+		/// 16 discrete levels - fine for blocky or dithered alpha but
+		/// bands hard on smooth gradients. Bc3 is usually a better
+		/// choice for smooth alpha; Bc2 is mostly historical.</summary>
+		Bc2RgbaSrgb,
+		/// <summary>BC2/DXT3 linear with explicit 4-bit alpha, 8 bpp. Bc3 is
+		/// usually preferred for smooth alpha gradients; Bc2 is mostly
+		/// historical.</summary>
+		Bc2Rgba,
+		/// <summary>BC3/DXT5 sRGB color with smooth alpha, 8 bpp. Alpha is
+		/// BC4-compressed, giving much better gradients than Bc1 or
+		/// Bc2. A solid default for color-with-alpha textures on
+		/// desktop and console GPUs!</summary>
 		Bc3RgbaSrgb,
-		/// <summary>BC3/DXT5 block compression, linear color. 8 bits per pixel,
-		/// good for textures with alpha on desktop/console GPUs.</summary>
+		/// <summary>BC3/DXT5 linear color with smooth alpha, 8 bpp. Great for
+		/// compressed data textures with alpha (RGBA masks) on desktop
+		/// and console GPUs.</summary>
 		Bc3Rgba,
-		/// <summary>BC4 single-channel block compression. 4 bits per pixel, ideal
-		/// for grayscale textures like heightmaps on desktop/console GPUs.</summary>
+		/// <summary>BC4 unsigned-normalized single channel [0,1], 4 bpp. Ideal
+		/// for compressed grayscale textures like heightmaps, ambient
+		/// occlusion, or single-channel masks. Quality is excellent for
+		/// smooth single-channel data.</summary>
 		Bc4R,
-		/// <summary>BC5 two-channel block compression. 8 bits per pixel, commonly
-		/// used for normal maps on desktop/console GPUs.</summary>
+		/// <summary>BC4 signed-normalized single channel [-1,1], 4 bpp. Useful
+		/// when your data is naturally signed, like signed distance
+		/// fields or elevation difference maps.</summary>
+		Bc4Rsn,
+		/// <summary>BC5 unsigned-normalized two channels, 8 bpp. Effectively two
+		/// BC4 textures packed together. The standard format for
+		/// compressed two-channel data on desktop/console - most
+		/// commonly used for tangent-space normal maps where the Z
+		/// component is reconstructed in the shader!</summary>
 		Bc5Rg,
-		/// <summary>BC7 high-quality block compression with sRGB color. 8 bits per
-		/// pixel, best quality for color textures on desktop/console GPUs.</summary>
+		/// <summary>BC5 signed-normalized two channels ([-1,1] per channel), 8
+		/// bpp. Useful for signed two-channel data, like normal maps
+		/// stored as [-1,1] directly rather than the typical [0,1]
+		/// packed form.</summary>
+		Bc5Rgsn,
+		/// <summary>BC6H HDR RGB, unsigned float (positive values only), 8 bpp.
+		/// 16-bit half-float per channel, no alpha. The go-to format
+		/// for compressing HDR cubemaps and environment maps - stores
+		/// high-dynamic-range data at a fraction of the cost of
+		/// Rgba64f.</summary>
+		Bc6hRgbuf,
+		/// <summary>BC6H HDR RGB, signed float (can store negative values), 8
+		/// bpp. 16-bit half-float per channel, no alpha. Use this when
+		/// your HDR data can contain negatives, like signed spherical
+		/// harmonics coefficients.</summary>
+		Bc6hRgbf,
+		/// <summary>BC7 sRGB color with full alpha, 8 bpp. The highest-quality
+		/// BC format - noticeably better than Bc3 at the same
+		/// compression ratio. Compression takes longer than Bc3 though,
+		/// so reach for this when quality matters more than encoding
+		/// speed.</summary>
 		Bc7RgbaSrgb,
-		/// <summary>BC7 high-quality block compression, linear color. 8 bits per
-		/// pixel, best quality for color textures on desktop/console GPUs.</summary>
+		/// <summary>BC7 linear color with full alpha, 8 bpp. Highest-quality BC
+		/// format - excellent for compressed RGBA data textures when
+		/// Bc3 quality isn't enough.</summary>
 		Bc7Rgba,
-		/// <summary>ETC1 compression for RGB, widely supported on older Android
-		/// devices. 4 bits per pixel, no alpha support.</summary>
+		/// <summary>ETC1 RGB, no alpha, 4 bpp. Widely supported on older Android
+		/// devices and OpenGL ES 2.0+ GPUs. Quality is acceptable for
+		/// diffuse color but it's been superseded - prefer Etc2 or Astc
+		/// on newer hardware!</summary>
 		Etc1Rgb,
-		/// <summary>ETC2 compression with sRGB color and alpha. 8 bits per pixel,
-		/// standard on OpenGL ES 3.0+ mobile devices.</summary>
+		/// <summary>ETC2 sRGB color with full alpha, 8 bpp. The standard
+		/// compressed RGBA format on OpenGL ES 3.0+ mobile devices, and
+		/// mandatory in the spec - so it's widely available. A great
+		/// default for sRGB color textures on mobile!</summary>
 		Etc2RgbaSrgb,
-		/// <summary>ETC2 compression with linear color and alpha. 8 bits per pixel,
-		/// standard on OpenGL ES 3.0+ mobile devices.</summary>
+		/// <summary>ETC2 linear color with full alpha, 8 bpp. Standard
+		/// compressed format for data textures with alpha on OpenGL ES
+		/// 3.0+ mobile devices.</summary>
 		Etc2Rgba,
-		/// <summary>ETC2 single-channel compression. 4 bits per pixel, good for
-		/// grayscale data on mobile.</summary>
+		/// <summary>ETC2/EAC single 11-bit unsigned-normalized channel, 4 bpp.
+		/// The ETC equivalent of Bc4 - great for compressed grayscale
+		/// or heightmap data on mobile GPUs!</summary>
 		Etc2R11,
-		/// <summary>ETC2 two-channel compression. 8 bits per pixel, useful for
-		/// normal maps on mobile.</summary>
+		/// <summary>ETC2/EAC two 11-bit unsigned-normalized channels, 8 bpp. The
+		/// ETC equivalent of Bc5 - great for compressed two-channel
+		/// data like tangent-space normal maps on mobile GPUs!</summary>
 		Etc2Rg11,
-		/// <summary>PVRTC1 RGB compression with sRGB color. 4 bits per pixel,
-		/// supported on iOS and PowerVR GPUs.</summary>
+		/// <summary>PVRTC1 sRGB RGB, 2 bpp. Used on iOS and other PowerVR GPUs.
+		/// The 2bpp bitrate is super compact but quality is lower than
+		/// ETC/BC - acceptable for low-detail or background textures.
+		/// Requires power-of-two square textures!</summary>
 		Pvrtc1RgbSrgb,
-		/// <summary>PVRTC1 RGB compression, linear color. 4 bits per pixel,
-		/// supported on iOS and PowerVR GPUs.</summary>
+		/// <summary>PVRTC1 linear RGB, 2 bpp. PowerVR GPUs only, requires
+		/// power-of-two square textures.</summary>
 		Pvrtc1Rgb,
-		/// <summary>PVRTC1 RGBA compression with sRGB color. 4 bits per pixel,
-		/// supported on iOS and PowerVR GPUs.</summary>
+		/// <summary>PVRTC1 sRGB with full alpha, 4 bpp. The 4bpp variant is
+		/// higher quality than the 2bpp variants. PowerVR GPUs only,
+		/// requires power-of-two square textures.</summary>
 		Pvrtc1RgbaSrgb,
-		/// <summary>PVRTC1 RGBA compression, linear color. 4 bits per pixel,
-		/// supported on iOS and PowerVR GPUs.</summary>
+		/// <summary>PVRTC1 linear with full alpha, 4 bpp. PowerVR GPUs only,
+		/// requires power-of-two square textures.</summary>
 		Pvrtc1Rgba,
-		/// <summary>PVRTC2 RGBA compression with sRGB color. 4 bits per pixel,
-		/// improved quality over PVRTC1 on PowerVR GPUs.</summary>
+		/// <summary>PVRTC2 sRGB with full alpha, 4 bpp. An update to PVRTC1 with
+		/// better quality and fewer restrictions - works with
+		/// non-power-of-two and non-square textures. Still
+		/// PowerVR-specific though.</summary>
 		Pvrtc2RgbaSrgb,
-		/// <summary>PVRTC2 RGBA compression, linear color. 4 bits per pixel,
-		/// improved quality over PVRTC1 on PowerVR GPUs.</summary>
+		/// <summary>PVRTC2 linear with full alpha, 4 bpp. Better quality and
+		/// more flexible texture sizes than PVRTC1. PowerVR GPUs only.</summary>
 		Pvrtc2Rgba,
-		/// <summary>ASTC 4x4 block compression with sRGB color. 8 bits per pixel,
-		/// high quality format supported on modern mobile GPUs.</summary>
+		/// <summary>ASTC 4x4 sRGB color with full alpha, 8 bpp. ASTC is the
+		/// modern mobile-standard compressed format - excellent
+		/// quality, broadly supported. The 4x4 block size is the
+		/// highest-quality (and largest-size) ASTC variant.</summary>
 		Astc4x4RgbaSrgb,
-		/// <summary>ASTC 4x4 block compression, linear color. 8 bits per pixel,
-		/// high quality format supported on modern mobile GPUs.</summary>
+		/// <summary>ASTC 4x4 linear color with full alpha, 8 bpp. High-quality
+		/// compressed format for data textures on modern mobile GPUs.</summary>
 		Astc4x4Rgba,
-		/// <summary>ATC RGB compression for Qualcomm Adreno GPUs. 4 bits per pixel,
-		/// found on many Android devices.</summary>
+		/// <summary>ATC RGB on Qualcomm Adreno GPUs, 4 bpp. Historical
+		/// Qualcomm-specific format - prefer Astc or Etc2 on newer
+		/// Adreno hardware.</summary>
 		AtcRgb,
-		/// <summary>ATC RGBA compression for Qualcomm Adreno GPUs. 8 bits per pixel,
-		/// found on many Android devices.</summary>
+		/// <summary>ATC with alpha on Qualcomm Adreno GPUs, 8 bpp. Historical
+		/// Qualcomm-specific format - prefer Astc or Etc2 on newer
+		/// Adreno hardware.</summary>
 		AtcRgba,
+		/// <summary>NV12 video format - a 2-plane 4:2:0 YUV layout! Plane 1 is a
+		/// full-resolution Y (luminance) plane at 8 bpp, plane 2 is a
+		/// half-resolution UV (chrominance) plane with U and V
+		/// interleaved at 8 bits each. The most common output format
+		/// from hardware video decoders!</summary>
+		Nv12,
+		/// <summary>P010 video format - like NV12 but with 10-bit channels
+		/// stored in 16-bit fields. Full-resolution 10-bit Y plane plus
+		/// a half-resolution interleaved 10-bit UV plane. Used for
+		/// 10-bit HDR video!</summary>
+		P010,
+		/// <summary>A 3-plane 4:2:0 YUV layout - separate Y, U, and V planes
+		/// each at 8 bpp, with U and V at half resolution. Common in
+		/// software video decoders but less common from hardware
+		/// decoders (which usually output NV12).</summary>
+		Yuv420p,
 	}
 
 	/// <summary>This describes the way the display's content blends with
@@ -362,7 +526,11 @@ namespace StereoKit
 	/// to draw a player's avatar in a 'mirror' rendertarget, but not in
 	/// the primary display. See `Renderer.LayerFilter` for configuring what
 	/// the primary display renders.
-	/// Render layers can also be mixed and matched like bit-flags!</summary>
+	/// Render layers can also be mixed and matched like bit-flags!
+	/// Note that while this enum is 32 bits wide, render layers are stored
+	/// internally in 16 bits when items are queued for drawing. Only the low
+	/// 16 bits are usable as layers, so any custom flags above bit 15 will be
+	/// silently truncated.</summary>
 	[Flags]
 	public enum RenderLayer {
 		/// <summary>The default render layer. All Draw use this layer unless
@@ -397,6 +565,10 @@ namespace StereoKit
 		/// perspective. By default, this is enabled for renders that
 		/// are from a 3rd person viewpoint.</summary>
 		ThirdPerson  = 1 << 12,
+		/// <summary>The default layer for StereoKit's UI. Mesh and model content
+		/// drawn by the UI system uses this layer, see `UI.RenderLayer`
+		/// to change it.</summary>
+		UI           = 1 << 13,
 		/// <summary>This is a flag that specifies all possible layers. If you
 		/// want to render all layers, then this is the layer filter
 		/// you would use. This is the default for render filtering.</summary>
@@ -609,6 +781,65 @@ namespace StereoKit
 		Granted      = 1,
 	}
 
+	/// <summary>The data format of a single element of a vertex component. Normalized
+	/// formats map their integer range onto 0-1 (unsigned) or -1-1 (signed)
+	/// when read by the GPU, other integer formats arrive as integers.</summary>
+	public enum VertFmt {
+		/// <summary>Invalid format, this is not a valid value for a component.</summary>
+		None         = 0,
+		/// <summary>32 bit float.</summary>
+		F32,
+		/// <summary>16 bit half float.</summary>
+		F16,
+		/// <summary>32 bit signed integer.</summary>
+		I32,
+		/// <summary>16 bit signed integer.</summary>
+		I16,
+		/// <summary>8 bit signed integer.</summary>
+		I8,
+		/// <summary>16 bit signed integer, normalized to -1-1 on the GPU.</summary>
+		I16Normalized,
+		/// <summary>8 bit signed integer, normalized to -1-1 on the GPU.</summary>
+		I8Normalized,
+		/// <summary>32 bit unsigned integer.</summary>
+		U32,
+		/// <summary>16 bit unsigned integer.</summary>
+		U16,
+		/// <summary>8 bit unsigned integer.</summary>
+		U8,
+		/// <summary>16 bit unsigned integer, normalized to 0-1 on the GPU.</summary>
+		U16Normalized,
+		/// <summary>8 bit unsigned integer, normalized to 0-1 on the GPU. A color32 is
+		/// 4 of these.</summary>
+		U8Normalized,
+	}
+
+	/// <summary>What a vertex component means! This is matched against the semantics
+	/// the shader's vertex inputs declare, so component order in a format
+	/// doesn't need to match the shader's input order.</summary>
+	public enum VertSemantic {
+		/// <summary>Invalid semantic, this is not a valid value for a component.</summary>
+		None         = 0,
+		/// <summary>Vertex position, in model space coordinates.</summary>
+		Position,
+		/// <summary>Direction the vertex is facing.</summary>
+		Normal,
+		/// <summary>Texture coordinates.</summary>
+		Texcoord,
+		/// <summary>Vertex color.</summary>
+		Color,
+		/// <summary>Tangent direction for normal mapping.</summary>
+		Tangent,
+		/// <summary>Binormal/bitangent direction for normal mapping.</summary>
+		Binormal,
+		/// <summary>Bone weights for skinning.</summary>
+		Blendweight,
+		/// <summary>Bone indices for skinning.</summary>
+		Blendindices,
+		/// <summary>Point size for point rendering.</summary>
+		Psize,
+	}
+
 	/// <summary>Culling is discarding an object from the render pipeline!
 	/// This enum describes how mesh faces get discarded on the graphics
 	/// card. With culling set to none, you can double the number of pixels
@@ -626,6 +857,19 @@ namespace StereoKit
 		/// <summary>No culling at all! Draw the triangle regardless of which
 		/// way it's pointing.</summary>
 		None,
+	}
+
+	/// <summary>Bit-flags for controlling mesh data upload behavior.</summary>
+	[Flags]
+	public enum MeshData {
+		/// <summary>No special behavior. Mesh data will be uploaded synchronously with
+		/// no bounds calculation.</summary>
+		None         = 0,
+		/// <summary>Calculate mesh bounds from the provided vertices.</summary>
+		CalcBounds   = 1 << 0,
+		/// <summary>Upload mesh data asynchronously on a background thread. The mesh
+		/// will be skipped during rendering until the upload completes.</summary>
+		Async        = 1 << 1,
 	}
 
 	/// <summary>Textures come in various types and flavors! These are bit-flags
@@ -664,6 +908,14 @@ namespace StereoKit
 		/// readable. This makes it great for shadowmaps or other textures that need to
 		/// be read from later on.</summary>
 		Depthtarget  = 1 << 6,
+		/// <summary>This texture can be used as a RWTexture in compute shaders.
+		/// Create it with a format that supports storage images, such as
+		/// tex_format_rgba128.</summary>
+		Compute      = 1 << 7,
+		/// <summary>A volumetric (3D) texture, sized with width, height, and depth.
+		/// Volume textures are mutually exclusive with Cubemap and array
+		/// textures, and don't pair with a zbuffer.</summary>
+		Volume       = 1 << 8,
 		/// <summary>A standard color image that also generates mip-maps
 		/// automatically.</summary>
 		Image        = ImageNomips | Mips,
@@ -738,6 +990,17 @@ namespace StereoKit
 		/// this? I'm not sure!! But the graphics card can do it, so now you
 		/// can too!</summary>
 		Mirror,
+	}
+
+	/// <summary>Describes the access mode of a ComputeBuffer for use in compute
+	/// shaders.</summary>
+	public enum ComputeBufferType {
+		/// <summary>Read-only from compute shaders. Maps to StructuredBuffer&lt;T&gt;
+		/// in HLSL.</summary>
+		Read         = 1,
+		/// <summary>Read-write from compute shaders. Maps to
+		/// RWStructuredBuffer&lt;T&gt; in HLSL.</summary>
+		ReadWrite    = 2,
 	}
 
 	/// <summary>Also known as 'alpha' for those in the know. But there's
@@ -856,6 +1119,9 @@ namespace StereoKit
 		UInt3        = 14,
 		/// <summary>A 4 component vector composed of unsigned integers.</summary>
 		UInt4        = 15,
+		/// <summary>A structured buffer resource, such as StructuredBuffer&lt;T&gt; or
+		/// RWStructuredBuffer&lt;T&gt; in HLSL.</summary>
+		Buffer       = 16,
 	}
 
 	/// <summary>This enum describes how text layout behaves within the space
@@ -891,6 +1157,9 @@ namespace StereoKit
 	/// etc.</summary>
 	[Flags]
 	public enum Align {
+		/// <summary>No alignment specified. For elements that have a natural default
+		/// alignment (such as image buttons), this falls back to that default.</summary>
+		None         = 0,
 		/// <summary>On the x axis, this item should start on the left.</summary>
 		XLeft        = 1 << 0,
 		/// <summary>On the y axis, this item should start at the top.</summary>
@@ -1067,6 +1336,21 @@ namespace StereoKit
 		World,
 	}
 
+	/// <summary>Controls whether a RenderList holds asset references for the items it
+	/// contains. Tracked lists are safe to keep around across frames at the cost
+	/// of an addref/releaseref pair per item.</summary>
+	public enum RenderListRefs {
+		/// <summary>The list calls addref on each item's mesh/material when added, and
+		/// releaseref when cleared. This keeps assets alive for as long as the
+		/// list holds them, and is the safe default.</summary>
+		Tracked      = 0,
+		/// <summary>The list does not addref or releaseref its items. The caller is
+		/// responsible for ensuring referenced assets remain valid until the
+		/// list is cleared. Useful for per-frame lists that are filled and
+		/// drained inside a single frame.</summary>
+		None         = 1,
+	}
+
 	/// <summary>When used with a hierarchy modifying function that will push/pop items onto a
 	/// stack, this can be used to change the behavior of how parent hierarchy items
 	/// will affect the item being added to the top of the stack.</summary>
@@ -1146,8 +1430,11 @@ namespace StereoKit
 		Pinch        = 1 << 3,
 	}
 
-	/// <summary>This describes how an interactor activates elements. Does it use the physical
-	/// position of the interactor, or the activation state?</summary>
+	/// <summary>This describes how an interactor commits an interaction with an element - does
+	/// it activate from the physical position of the interactor (like a finger poking
+	/// through a button), or from its activation/button state (like a pinch or a
+	/// trigger click)? This is independent of `InteractorType`, which describes the
+	/// interactor's shape rather than what triggers it.</summary>
 	public enum InteractorActivation {
 		/// <summary>This interactor uses its `active` state to determine element
 		/// activation.</summary>
@@ -1155,6 +1442,38 @@ namespace StereoKit
 		/// <summary>This interactor uses its motion position to determine the element
 		/// activation.</summary>
 		Position,
+	}
+
+	/// <summary>A bit-flag describing the physical source an interactor's input comes from,
+	/// such as a specific hand, controller, or the mouse. Interactors that share a
+	/// source are mutually exclusive: while one is actively interacting, the others
+	/// won't begin a new interaction. This is how the poke, pinch, and aim
+	/// interactors of a single hand avoid fighting over the same element. The bits
+	/// at and above `InteractorSource.Max` are free for your own custom sources.</summary>
+	[Flags]
+	public enum InteractorSource {
+		/// <summary>A unique, independent source. Interactors with this source never group
+		/// with any other interactor, and are invisible to source queries like
+		/// `Interactor.IsInteracting`. This is the default 'shares nothing' source.</summary>
+		Unique       = 0,
+		/// <summary>The left hand.</summary>
+		HandLeft     = 1 << 0,
+		/// <summary>The right hand.</summary>
+		HandRight    = 1 << 1,
+		/// <summary>The left motion controller.</summary>
+		ControllerLeft = 1 << 2,
+		/// <summary>The right motion controller.</summary>
+		ControllerRight = 1 << 3,
+		/// <summary>Gaze or eye tracking based input.</summary>
+		Gaze         = 1 << 4,
+		/// <summary>A mouse pointer.</summary>
+		Mouse        = 1 << 5,
+		/// <summary>Matches with all sources!</summary>
+		Any          = 0x7FFFFFFF,
+		/// <summary>The first bit available for your own custom interactor sources. Bits at
+		/// and above this are unused by StereoKit, so you can define your own
+		/// relative to it, for example `(InteractorSource)((int)InteractorSource.Max &lt;&lt; 1)`.</summary>
+		Max          = 1 << 6,
 	}
 
 	/// <summary>A bit-flag for the current state of a button input.</summary>
@@ -1168,20 +1487,33 @@ namespace StereoKit
 		JustInactive = 1 << 1,
 		/// <summary>Has the button just been pressed? Only true for a single frame.</summary>
 		JustActive   = 1 << 2,
-		/// <summary>Has the button just changed state this frame?</summary>
-		Changed      = JustInactive | JustActive,
+		/// <summary>Was a button activation just canceled this frame, ending without firing because the interactor moved too far away? Only true for a single frame.</summary>
+		JustCanceled = 1 << 3,
+		/// <summary>Has the button just changed state this frame? Includes presses, releases, and canceled activations.</summary>
+		Changed      = JustInactive | JustActive | JustCanceled,
 		/// <summary>Matches with all states!</summary>
 		Any          = 0x7FFFFFFF,
 	}
 
 	/// <summary>Options for what type of interactors StereoKit provides by default.</summary>
 	public enum DefaultInteractors {
-		/// <summary>StereoKit's default interactors, this provides an aim ray for a mouse,
-		/// aim rays for controllers, and aim, pinch, and poke interactors for hands.</summary>
+		/// <summary>Use the XR backend's default interactor mode. This is 'all' for XR,
+		/// 'mouse' for simulator and window, and 'none' for offscreen.</summary>
 		Default,
 		/// <summary>Don't provide any interactors at all. This means you either don't want
 		/// interaction, or are providing your own custom interactors.</summary>
 		None,
+		/// <summary>Auto-switch between hands and controllers based on the current input
+		/// source. This provides aim, pinch, and poke interactors for hands, and
+		/// aim rays for controllers.</summary>
+		All,
+		/// <summary>Always use the default hand interactors, using simulated hands when
+		/// articulated hand tracking is not available.</summary>
+		Hands,
+		/// <summary>Always use the default controller interactors.</summary>
+		Controllers,
+		/// <summary>Always use the default mouse interactor.</summary>
+		Mouse,
 	}
 
 	/// <summary>What type of device is the source of the pointer? This is a
@@ -1536,6 +1868,212 @@ namespace StereoKit
 		Menu,
 	}
 
+	/// <summary>Index values for input poses. These represent tracked spatial poses
+	/// from the XR system, such as hand or controller positions and
+	/// orientations.</summary>
+	public enum InputPose {
+		/// <summary>The user's eye gaze, where they're looking in the world. Requires
+		/// eye tracking hardware and permissions to provide meaningful data.</summary>
+		Eyes,
+		/// <summary>The left hand/controller grip pose, centered in the hand where you'd
+		/// hold something like a sword hilt or a tool handle.</summary>
+		LGrip,
+		/// <summary>The left hand/controller palm pose, located at the surface of the
+		/// palm. Forward points along the fingers and Up toward the thumb, with
+		/// X+ into the palm on the right hand, and out of the palm on the left.
+		/// This is the controller's palm orientation, which faces along the
+		/// fingers rather than out from the palm. Uses the palm pose OpenXR
+		/// extension when available, and falls back to an approximation when
+		/// it's not.</summary>
+		LPalm,
+		/// <summary>The left hand/controller aim pose. This points forward from the hand
+		/// like a laser pointer, useful for UI interaction at a distance.</summary>
+		LAim,
+		/// <summary>The left poke pose, located at the tip of the index finger. This is
+		/// provided by hand interaction systems such as the OpenXR hand
+		/// interaction extension, and may be present even when full articulated
+		/// hand tracking is not.</summary>
+		LPoke,
+		/// <summary>The left pinch pose, located between the tips of the thumb and index
+		/// finger. This is provided by hand interaction systems such as the
+		/// OpenXR hand interaction extension, and may be present even when full
+		/// articulated hand tracking is not.</summary>
+		LPinch,
+		/// <summary>The left pose of a "detached controller", when the user has both hands
+		/// and controllers active in the scene.</summary>
+		LDetached,
+		/// <summary>The right hand/controller grip pose, centered in the hand where
+		/// you'd hold something like a sword hilt or a tool handle.</summary>
+		RGrip,
+		/// <summary>The right hand/controller palm pose, located at the surface of the
+		/// palm. Forward points along the fingers and Up toward the thumb, with
+		/// X+ into the palm on the right hand, and out of the palm on the left.
+		/// This is the controller's palm orientation, which faces along the
+		/// fingers rather than out from the palm. Uses the palm pose OpenXR
+		/// extension when available, and falls back to an approximation when
+		/// it's not.</summary>
+		RPalm,
+		/// <summary>The right hand/controller aim pose. This points forward from the
+		/// hand like a laser pointer, useful for UI interaction at a
+		/// distance.</summary>
+		RAim,
+		/// <summary>The right poke pose, located at the tip of the index finger. This is
+		/// provided by hand interaction systems such as the OpenXR hand
+		/// interaction extension, and may be present even when full articulated
+		/// hand tracking is not.</summary>
+		RPoke,
+		/// <summary>The right pinch pose, located between the tips of the thumb and index
+		/// finger. This is provided by hand interaction systems such as the
+		/// OpenXR hand interaction extension, and may be present even when full
+		/// articulated hand tracking is not.</summary>
+		RPinch,
+		/// <summary>The right pose of a "detached controller", when the user has both hands
+		/// and controllers active in the scene.</summary>
+		RDetached,
+		/// <summary>Total number of input pose types.</summary>
+		Max,
+	}
+
+	/// <summary>Index values for analog float inputs from controllers. These are
+	/// inputs that range from 0-1 based on how far the user has pressed
+	/// them.</summary>
+	public enum InputFloat {
+		/// <summary>The trigger on the left controller, where the user's index finger
+		/// typically rests.</summary>
+		LTrigger,
+		/// <summary>The grip button on the left controller, usually where the remaining
+		/// fingers sit.</summary>
+		LGrip,
+		/// <summary>The trigger on the right controller, where the user's index finger
+		/// typically rests.</summary>
+		RTrigger,
+		/// <summary>The grip button on the right controller, usually where the remaining
+		/// fingers sit.</summary>
+		RGrip,
+		/// <summary>Total number of input float types.</summary>
+		Max,
+	}
+
+	/// <summary>Index values for binary button inputs from controllers. These are
+	/// on/off inputs that provide button_state_ information.</summary>
+	public enum InputButton {
+		/// <summary>Is the left hand ready to interact at a distance? This maps to the
+		/// pinch_ext/ready_ext binding from the hand interaction extension, and
+		/// factors in facing direction and pinch readiness.</summary>
+		LAimReady,
+		/// <summary>The left controller's thumbstick button, pressed by clicking the
+		/// stick inward. This has nothing to do with the stick's XY position.</summary>
+		LStick,
+		/// <summary>The lower of the two left thumb buttons, sometimes labelled X, and
+		/// sometimes A.</summary>
+		LX1,
+		/// <summary>The upper of the two left thumb buttons, sometimes labelled Y, and
+		/// sometimes B.</summary>
+		LX2,
+		/// <summary>The menu or settings button on the left controller.</summary>
+		LMenu,
+		/// <summary>Is the right hand ready to interact at a distance? This maps to the
+		/// pinch_ext/ready_ext binding from the hand interaction extension, and
+		/// factors in facing direction and pinch readiness.</summary>
+		RAimReady,
+		/// <summary>The right controller's thumbstick button, pressed by clicking the
+		/// stick inward. This has nothing to do with the stick's XY position.</summary>
+		RStick,
+		/// <summary>The lower of the two right thumb buttons, sometimes labelled X, and
+		/// sometimes A.</summary>
+		RX1,
+		/// <summary>The upper of the two right thumb buttons, sometimes labelled Y, and
+		/// sometimes B.</summary>
+		RX2,
+		/// <summary>The menu or settings button on the right controller.</summary>
+		RMenu,
+		/// <summary>Total number of input button types.</summary>
+		Max,
+	}
+
+	/// <summary>Index values for 2D axis inputs from controllers, like thumbsticks.
+	/// These provide a vec2 with X and Y ranging from -1 to 1.</summary>
+	public enum InputXY {
+		/// <summary>The thumbstick on the left controller. X is left/right, Y is
+		/// forward/back.</summary>
+		LStick,
+		/// <summary>The thumbstick on the right controller. X is left/right, Y is
+		/// forward/back.</summary>
+		RStick,
+		/// <summary>Total number of input XY types.</summary>
+		Max,
+	}
+
+	/// <summary>Index values for haptic outputs on controllers. These represent a
+	/// destination for vibration playback, requested via Input.HapticPulse,
+	/// Input.HapticWaveform, or Input.HapticCurve.</summary>
+	public enum InputHaptic {
+		/// <summary>The left controller's primary haptic actuator.</summary>
+		LController,
+		/// <summary>The right controller's primary haptic actuator.</summary>
+		RController,
+		/// <summary>Total number of haptic outputs.</summary>
+		Max,
+	}
+
+	/// <summary>Bit flags describing what playback modes a haptic output currently
+	/// supports. Queryable via Input.HapticCaps. The set of supported modes
+	/// may change at runtime whenever the active OpenXR interaction profile
+	/// changes, which typically happens as the user picks up, sets down, or
+	/// swaps a controller.</summary>
+	[Flags]
+	public enum InputHapticCaps {
+		/// <summary>No haptic output is available right now (e.g. no controller is
+		/// bound, or the haptic action isn't active).</summary>
+		None         = 0,
+		/// <summary>Simple frequency / amplitude / duration vibration via
+		/// Input.HapticPulse. Supported by every controller that has any
+		/// haptic actuator.</summary>
+		Pulse        = 1 << 0,
+		/// <summary>Sample-by-sample PCM playback via Input.HapticWaveform. Requires
+		/// the XR_FB_haptic_pcm OpenXR extension.</summary>
+		Waveform     = 1 << 1,
+		/// <summary>Amplitude envelope playback via Input.HapticCurve. Requires the
+		/// XR_FB_haptic_amplitude_envelope OpenXR extension.</summary>
+		Curve        = 1 << 2,
+	}
+
+	/// <summary>A bit-flag describing the tracking state of a pose, with separate
+	/// bits for position and orientation. The PosAny, RotAny, and Any
+	/// combinations are handy when you only care if there's tracking at
+	/// all, and not whether it's directly measured or just an educated
+	/// guess.</summary>
+	[Flags]
+	public enum PoseState {
+		/// <summary>The pose has no tracking at all, neither position nor
+		/// orientation should be trusted.</summary>
+		Lost         = 0,
+		/// <summary>The position isn't directly tracked, but the system has an
+		/// educated guess for it. For example, a controller's accelerometer
+		/// can keep dead-reckoning the position for a short time after it
+		/// leaves optical view.</summary>
+		PosInferred  = 1 << 0,
+		/// <summary>The orientation isn't directly tracked, but the system has an
+		/// educated guess for it, often from an IMU after the source has
+		/// left direct view.</summary>
+		RotInferred  = 1 << 1,
+		/// <summary>The position is actively tracked by the underlying hardware,
+		/// to the best of its ability.</summary>
+		PosKnown     = 1 << 2,
+		/// <summary>The orientation is actively tracked by the underlying hardware,
+		/// to the best of its ability.</summary>
+		RotKnown     = 1 << 3,
+		/// <summary>Matches any positional tracking, whether the position is
+		/// directly known or just inferred.</summary>
+		PosAny       = PosInferred | PosKnown,
+		/// <summary>Matches any orientation tracking, whether the orientation is
+		/// directly known or just inferred.</summary>
+		RotAny       = RotInferred | RotKnown,
+		/// <summary>Matches any tracking at all, on position or orientation. A pose
+		/// with no overlap with this is fully lost.</summary>
+		Any          = PosInferred | PosKnown | RotInferred | RotKnown,
+	}
+
 	/// <summary>This is a bit flag that describes what an anchoring system is capable of
 	/// doing.</summary>
 	[Flags]
@@ -1563,6 +2101,35 @@ namespace StereoKit
 		/// possible. The timer interval is configurable via
 		/// `World.RefreshInterval`.</summary>
 		Timer,
+	}
+
+	/// <summary>Flags that describe which occlusion methods are active or
+	/// available. These can be combined to enable multiple occlusion
+	/// techniques simultaneously.</summary>
+	[Flags]
+	public enum OcclusionCaps {
+		/// <summary>No occlusion is active.</summary>
+		None         = 0,
+		/// <summary>Scene Understanding mesh-based occlusion (e.g. HoloLens).</summary>
+		Mesh         = 1 << 0,
+		/// <summary>Depth texture-based occlusion (e.g. META environment depth).</summary>
+		Depth        = 1 << 1,
+		/// <summary>When combined with Depth: hands will also occlude virtual
+		/// content. Without this flag, hands are removed from the depth
+		/// buffer and will not occlude.</summary>
+		Hands        = 1 << 2,
+	}
+
+	/// <summary>Capabilities for configuring the sensor depth system. These control
+	/// optional features that may or may not be supported on the current
+	/// platform. Check the capabilities for platform support.</summary>
+	[Flags]
+	public enum SensorDepthCaps {
+		/// <summary>No special capabilities.</summary>
+		None         = 0,
+		/// <summary>Enable hand removal filtering on depth data, removing hands from
+		/// the depth image.</summary>
+		HandRemoval  = 1 << 0,
 	}
 
 	/// <summary>This describes what technology is being used to power StereoKit's
@@ -1596,6 +2163,8 @@ namespace StereoKit
 		Android,
 		/// <summary>This is running in a browser.</summary>
 		Web,
+		/// <summary>This is running as a macOS app.</summary>
+		Macos,
 	}
 
 	/// <summary>This describes the graphics API that StereoKit is using for rendering.</summary>
@@ -1660,6 +2229,12 @@ namespace StereoKit
 		Anchor,
 		/// <summary>A RenderList</summary>
 		RenderList,
+		/// <summary>A Compute dispatch object</summary>
+		Compute,
+		/// <summary>A ComputeBuffer</summary>
+		ComputeBuffer,
+		/// <summary>A MaterialBuffer</summary>
+		MaterialBuffer,
 	}
 
 	/// <summary>This describes how a UI element moves when being dragged around by a user!</summary>
@@ -1675,6 +2250,10 @@ namespace StereoKit
 		/// <summary>Do not allow user input to change the element's pose at all! You may also be
 		/// interested in UI.Push/PopSurface.</summary>
 		None,
+		/// <summary>Behaves just like ui_move_exact, but opts out of uniform scaling. Use this
+		/// when a Handle is provided a scale value, but should only ever be translated
+		/// and rotated by multiple interactors, never scaled.</summary>
+		ExactNoscale,
 	}
 
 	/// <summary>A description of what type of window to draw! This is a bit flag, so it can
@@ -1781,8 +2360,11 @@ namespace StereoKit
 		ButtonRound,
 		/// <summary>Refers to UI.PanelBegin/End elements.</summary>
 		Panel,
-		/// <summary>Refers to the text position indicator carat on text input elements.</summary>
-		Carat,
+		/// <summary>Refers to the text position indicator caret on text input elements.</summary>
+		Caret,
+		/// <summary>Deprecated misspelling of `ui_vis_caret`, kept for backwards
+		/// compatibility.</summary>
+		Carat        = Caret,
 		/// <summary>Refers to the grabbable area indicator outside a window.</summary>
 		Aura,
 		/// <summary>A maximum enum value to allow for iterating through enum values.</summary>
@@ -1851,6 +2433,18 @@ namespace StereoKit
 		Center,
 		/// <summary>Same as `Center`, but omitting the text.</summary>
 		CenterNoText,
+	}
+
+	/// <summary>A bit-flag for modifying the behavior of a button, used with the lower-level
+	/// `UI.ButtonBehavior`.</summary>
+	[Flags]
+	public enum UIBtnFlag {
+		/// <summary>Default button behavior.</summary>
+		None         = 0,
+		/// <summary>Prevents the activation from being canceled when the interactor moves too
+		/// far from the button. Used for elements like sliders that legitimately track
+		/// an interactor well outside the button's bounds.</summary>
+		NoCancel     = 1 << 0,
 	}
 
 	/// <summary>This describes how a layout should be cut up! Used with `UI.LayoutPushCut`.</summary>

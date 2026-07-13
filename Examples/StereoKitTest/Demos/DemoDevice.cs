@@ -23,6 +23,9 @@ class DemoDevice : ITest
 		UI.Label(Device.Name, false);
 		UI.Label("Runtime", labelSize); UI.SameLine();
 		UI.Label(Device.Runtime, false);
+		UI.Label("Version", labelSize); UI.SameLine();
+		ulong v = Device.RuntimeVersion;
+		UI.Label($"{(v >> 48) & 0xFFFF}.{(v >> 32) & 0xFFFF}.{v & 0xFFFFFFFF}", false);
 		UI.Label("GPU", labelSize); UI.SameLine();
 		UI.Label(Device.GPU, false);
 		UI.Label("Tracking", labelSize); UI.SameLine();
@@ -31,6 +34,8 @@ class DemoDevice : ITest
 		UI.Label(Device.DisplayType.ToString(), false);
 		UI.Label("Blend", labelSize); UI.SameLine();
 		UI.Label(Device.DisplayBlend.ToString(), false);
+		UI.Label("Refresh", labelSize); UI.SameLine();
+		UI.Label($"{Device.DisplayRefreshRate:F0} Hz", false);
 
 		UI.HSeparator();
 

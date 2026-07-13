@@ -197,6 +197,20 @@ namespace StereoKit
 		public static bool Raycast(Ray ray, out Ray intersection)
 			=> NativeAPI.world_raycast(ray, out intersection);
 
+		/// <summary>Gets or sets the active occlusion methods using flags.
+		/// Use `OcclusionCapabilities` to check what the current device
+		/// supports.</summary>
+		public static OcclusionCaps Occlusion {
+			get => NativeAPI.world_get_occlusion();
+			set => NativeAPI.world_set_occlusion(value); }
+
+		/// <summary>Reports which occlusion methods are available on the
+		/// current device. For example, on Quest this may return
+		/// `OcclusionCaps.Depth | OcclusionCaps.Hands`, and on HoloLens it may
+		/// return `OcclusionCaps.Mesh`.</summary>
+		public static OcclusionCaps OcclusionCapabilities
+			=> NativeAPI.world_occlusion_capabilities();
+
 		/// <summary>Off by default. This tells StereoKit to load up and
 		/// display an occlusion surface that allows the real world to
 		/// occlude the application's digital content! Most systems may allow
@@ -206,18 +220,19 @@ namespace StereoKit
 		/// enabled. This will reset itself to false if occlusion isn't
 		/// possible. Loading occlusion data is asynchronous, so occlusion
 		/// may not occur immediately after setting this flag.</summary>
-		public static bool OcclusionEnabled { 
+		[Obsolete("Use World.Occlusion with OcclusionCaps.Mesh instead")]
+		public static bool OcclusionEnabled {
 			get => NativeAPI.world_get_occlusion_enabled();
 			set => NativeAPI.world_set_occlusion_enabled(value); }
 
-		/// <summary>Off by default. This tells StereoKit to load up 
+		/// <summary>Off by default. This tells StereoKit to load up
 		/// collision meshes for the environment, for use with World.Raycast.
 		/// Check SK.System.worldRaycastPresent to see if raycasting can be
 		/// enabled. This will reset itself to false if raycasting isn't
 		/// possible. Loading raycasting data is asynchronous, so collision
 		/// surfaces may not be available immediately after setting this
 		/// flag.</summary>
-		public static bool RaycastEnabled { 
+		public static bool RaycastEnabled {
 			get => NativeAPI.world_get_raycast_enabled();
 			set => NativeAPI.world_set_raycast_enabled(value); }
 
@@ -225,6 +240,7 @@ namespace StereoKit
 		/// material that will occlude geometry, but won't show up as visible
 		/// anywhere. You can override this with whatever material you would
 		/// like.</summary>
+		[Obsolete("Use World.Occlusion instead")]
 		public static Material OcclusionMaterial {
 			get => new Material(NativeAPI.world_get_occlusion_material());
 			set => NativeAPI.world_set_occlusion_material(value._inst); }

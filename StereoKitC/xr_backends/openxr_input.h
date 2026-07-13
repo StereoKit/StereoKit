@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../stereokit.h"
+
 namespace sk {
 
 typedef enum xr_top_level_ {
@@ -17,6 +19,7 @@ typedef enum xra_type_ {
 	xra_type_float,
 	xra_type_bool,
 	xra_type_xy,
+	xra_type_haptic,
 
 	xra_type_max
 } xr_action_type_;
@@ -40,5 +43,13 @@ void oxri_register_profile(xr_interaction_profile_t profile);
 
 void oxri_register    ();
 void oxri_update_poses();
+
+input_haptic_caps_ oxri_haptic_caps         (input_haptic_ haptic_type);
+float              oxri_haptic_preferred_rate(input_haptic_ haptic_type);
+void               oxri_haptic_pulse        (input_haptic_ haptic_type, float frequency, float amplitude, double duration_seconds);
+void               oxri_haptic_waveform     (input_haptic_ haptic_type, const float* samples,    int32_t sample_count, float sample_rate_hz, bool append, int32_t* out_prev_consumed);
+void               oxri_haptic_curve        (input_haptic_ haptic_type, const float* amplitudes, int32_t sample_count, float sample_rate_hz);
+void               oxri_haptic_stop         (input_haptic_ haptic_type);
+void               oxri_haptic_step         ();
 
 } // namespace sk

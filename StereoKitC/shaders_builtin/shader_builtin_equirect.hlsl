@@ -1,6 +1,6 @@
 //--name = sk/equirect_convert
-// Converts an equirectangular (lat/long) panorama to all 6 cubemap faces in a
-// single draw call using instancing.
+// Converts an equirectangular (lat/long) panorama to all 6 cubemap faces
+// using multiview.
 
 //--source = white
 
@@ -8,9 +8,8 @@ Texture2D    source   : register(t0);
 SamplerState source_s : register(s0);
 
 struct psIn {
-	float4 pos   : SV_POSITION;
-	float2 uv    : TEXCOORD0;
-	uint   layer : SV_RenderTargetArrayIndex;
+	float4 pos : SV_POSITION;
+	float2 uv  : TEXCOORD0;
 };
 
 // Convert UV coordinates to cubemap direction for a specific face
@@ -49,22 +48,21 @@ float2 direction_to_equirect_uv(float3 dir) {
 	return float2(u, v);
 }
 
-// Vertex shader - fullscreen triangle per cubemap face
-psIn vs(uint id : SV_VertexID, uint instance_id : SV_InstanceID) {
+// Vertex shader - fullscreen triangle, face index from SV_ViewID
+psIn vs(uint id : SV_VertexID) {
 	psIn output;
 
 	// Generate fullscreen triangle
-	output.uv    = float2(id & 2, (id << 1) & 2);
-	output.pos   = float4(output.uv * 2.0 - 1.0, 0, 1);
-	output.layer = instance_id; // Which cubemap face to render to
+	output.uv  = float2(id & 2, (id << 1) & 2);
+	output.pos = float4(output.uv * float2(2, -2) + float2(-1, 1), 0, 1);
 
 	return output;
 }
 
 // Pixel shader - sample from equirectangular map
-float4 ps(psIn input) : SV_Target {
+float4 ps(psIn input, uint face : SV_ViewID) : SV_Target {
 	// Get the 3D direction for this pixel on the cubemap face
-	float3 dir = uv_to_direction(input.uv, input.layer);
+	float3 dir = uv_to_direction(input.uv, face);
 
 	// Convert direction to equirectangular UV coordinates
 	float2 equirect_uv = direction_to_equirect_uv(dir);

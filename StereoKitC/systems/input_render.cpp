@@ -12,6 +12,7 @@
 #include "../xr_backends/openxr.h"
 #include "../xr_backends/extensions/hand_mesh.h"
 #include "../xr_backends/extensions/ext_interaction_render_model.h"
+#include "../xr_backends/extensions/fb_render_model.h"
 #include "../systems/defaults.h"
 
 namespace sk {
@@ -29,6 +30,7 @@ struct input_render_state_t {
 	hand_mesh_t        hand_fallback_mesh   [2];
 	hand_mesh_t        hand_articulated_mesh[2];
 	material_t         hand_material        [2];
+	mesh_t             finger_cap_mesh;
 	model_t            controller_model     [2];
 };
 static input_render_state_t local = {};
@@ -73,6 +75,11 @@ bool input_render_init() {
 	tex_release(gradient_tex);
 	material_release(hand_mat);
 
+	// Hand interaction profiles only give a poke pose, so draw just the index
+	// fingertip there instead of a full simulated hand.
+	local.finger_cap_mesh = mesh_create();
+	input_gen_finger_cap_mesh(local.finger_cap_mesh);
+
 	for (int32_t i = 0; i < handed_max; i++) {
 		// Set up the hand mesh
 		local.hand_fallback_mesh[i].root_transform = matrix_identity;
@@ -89,6 +96,7 @@ bool input_render_init() {
 ///////////////////////////////////////////
 
 void input_render_shutdown() {
+	mesh_release(local.finger_cap_mesh);
 	for (int32_t i = 0; i < handed_max; i++) {
 		model_release(local.controller_model[i]);
 		material_release(local.hand_material[i]);
@@ -129,17 +137,36 @@ void input_render_step_late() {
 				render_add_mesh(hand_active_mesh->mesh, local.hand_material[i], hand_active_mesh->root_transform, hand->pinch_state & button_state_active ? color128{ 1.5f, 1.5f, 1.5f, 1 } : color128{ 1,1,1,1 });
 			}
 		} else if (source == hand_source_simulated) {
-			const controller_t* control = input_controller((handed_)i);
-			if (!input_controller_is_hand((handed_)i) && (control->tracked & button_state_active) != 0) {
-				if (local.controller_model[i] != nullptr) {
-					// If the user has explicitly assigned a model
-					render_add_model(local.controller_model[i], matrix_trs(control->pose.position, control->pose.orientation));
-				} else if (xr_ext_interaction_render_model_available()) {
-					// If OpenXR has a model for the controller
-					xr_ext_interaction_render_model_draw_controller((handed_)i);
-				} else {
-					// Otherwise, our built-in backup models
-					render_add_model(i == handed_left ? sk_default_controller_l : sk_default_controller_r, matrix_trs(control->pose.position, control->pose.orientation));
+			const hand_t* hand = input_hand((handed_)i);
+			if (input_controller_is_hand((handed_)i)) {
+				// Is our hand simulation driven by an actual hand? If so, we
+				// don't want to draw our simulation and highlight that it
+				// doesn't match right. Draw a finger cap instead.
+				input_pose_ poke_pose = i == handed_left ? input_pose_l_poke : input_pose_r_poke;
+				if ((hand->tracked_state & button_state_active) != 0 && (input_pose_state(poke_pose) & pose_state_pos_known) && local.hand_material[i] != nullptr) {
+					pose_t poke = input_pose(poke_pose);
+					render_add_mesh(local.finger_cap_mesh, local.hand_material[i], matrix_trs(poke.position, poke.orientation, vec3_one), hand->pinch_state & button_state_active ? color128{ 1.5f, 1.5f, 1.5f, 1 } : color128{ 1,1,1,1 });
+				}
+			} else if (interaction_get_default_interactors() == default_interactors_hands && (hand->tracked_state & button_state_active) != 0 && local.hand_material[i] != nullptr) {
+				input_hand_update_fallback_mesh((handed_)i, &local.hand_fallback_mesh[i]);
+				render_add_mesh(local.hand_fallback_mesh[i].mesh, local.hand_material[i], local.hand_fallback_mesh[i].root_transform, hand->pinch_state & button_state_active ? color128{ 1.5f, 1.5f, 1.5f, 1 } : color128{ 1,1,1,1 });
+			} else {
+				const controller_t* control = input_controller((handed_)i);
+				if ((control->tracked & button_state_active) != 0) {
+					if (local.controller_model[i] != nullptr) {
+						// If the user has explicitly assigned a model
+						render_add_model(local.controller_model[i], matrix_trs(control->pose.position, control->pose.orientation));
+					} else if (xr_ext_interaction_render_model_available()) {
+						// If OpenXR has a model for the controller
+						xr_ext_interaction_render_model_draw_controller((handed_)i);
+					} else if (xr_fb_render_model_available()) {
+						// Fallback for runtimes that ship XR_FB_render_model
+						// but not the cross-vendor EXT extensions (Quest).
+						xr_fb_render_model_draw_controller((handed_)i);
+					} else {
+						// Otherwise, our built-in backup models
+						render_add_model(i == handed_left ? sk_default_controller_l : sk_default_controller_r, matrix_trs(control->pose.position, control->pose.orientation));
+					}
 				}
 			}
 		} else if (source == hand_source_overridden) {
@@ -198,6 +225,7 @@ void input_controller_model_set(handed_ hand, model_t model) {
 model_t input_controller_model_get(handed_ hand) {
 	model_t result = local.controller_model[hand];
 	if (result == nullptr && xr_ext_interaction_render_model_available()) result = xr_ext_interaction_render_model_get(hand);
+	if (result == nullptr && xr_fb_render_model_available             ()) result = xr_fb_render_model_get             (hand);
 	if (result == nullptr)                                                result = hand == handed_left ? sk_default_controller_l : sk_default_controller_r;
 	
 	model_addref(result);

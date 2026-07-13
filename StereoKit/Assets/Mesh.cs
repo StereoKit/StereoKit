@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -20,7 +21,8 @@ namespace StereoKit
 	/// </summary>
 	public class Mesh : IAsset
 	{
-		internal IntPtr _inst;
+		internal IntPtr                    _inst;
+		private  List<Assets.CallbackData> _callbacks;
 
 		/// <summary>Gets or sets the unique identifier of this asset resource!
 		/// This can be helpful for debugging, managing your assets, or finding
@@ -61,6 +63,30 @@ namespace StereoKit
 		/// </summary>
 		public int IndCount => NativeAPI.mesh_get_ind_count(_inst);
 
+		/// <summary>This tells you the current state of the Mesh asset.
+		/// A Mesh starts in the None state, transitions to LoadedMeta when
+		/// bounds are available (async path), and Loaded once GPU upload
+		/// completes.</summary>
+		public AssetState AssetState => NativeAPI.mesh_asset_state(_inst);
+
+		/// <summary>This event fires when the Mesh has finished loading
+		/// and has data ready for rendering.</summary>
+		public event Action<Mesh> OnLoaded {
+			add {
+				if (_callbacks == null) _callbacks = new List<Assets.CallbackData>();
+				AssetOnLoadCallback callback = (a, _) => { NativeAPI.mesh_addref(a); value(new Mesh(a)); };
+				_callbacks.Add(new Assets.CallbackData { action = value, callback = callback });
+				NativeAPI.mesh_on_load(_inst, callback, IntPtr.Zero);
+			}
+			remove {
+				if (_callbacks == null) throw new NullReferenceException();
+				int i = _callbacks.FindIndex(d => (Action<Mesh>)d.action == value);
+				if (i < 0) throw new KeyNotFoundException();
+				NativeAPI.mesh_on_load_remove(_inst, _callbacks[i].callback);
+				_callbacks.RemoveAt(i);
+			}
+		}
+
 		/// <summary>Creates an empty Mesh asset. Use SetVerts and SetInds to
 		/// add data to it!</summary>
 		public Mesh()
@@ -69,6 +95,19 @@ namespace StereoKit
 			if (_inst == IntPtr.Zero)
 				Log.Err("Couldn't create empty mesh!");
 		}
+		/// <summary>Creates a Mesh asset and sets its vertex and index
+		/// data with control over upload behavior. This is a shorthand
+		/// for creating a Mesh and calling SetData on it.</summary>
+		/// <param name="vertices">An array of vertices for the mesh.
+		/// Null is okay here, but may require a special shader.</param>
+		/// <param name="indices">A list of face indices, must be a
+		/// multiple of 3.</param>
+		/// <param name="flags">Flags controlling upload behavior. See
+		/// MeshData for options.</param>
+		/// <param name="priority">Loading priority for async upload.
+		/// Lower values load sooner.</param>
+		public Mesh(Vertex[] vertices, uint[] indices, MeshData flags = MeshData.CalcBounds, int priority = 0) : this()
+			=> SetData(vertices, indices, flags, priority);
 		internal Mesh(IntPtr mesh)
 		{
 			_inst = mesh;
@@ -78,6 +117,12 @@ namespace StereoKit
 		/// <summary>Release reference to the StereoKit asset.</summary>
 		~Mesh()
 		{
+			if (_callbacks != null)
+			{
+				foreach (var cb in _callbacks)
+					NativeAPI.mesh_on_load_remove(_inst, cb.callback);
+				_callbacks = null;
+			}
 			if (_inst != IntPtr.Zero)
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 		}
@@ -98,7 +143,7 @@ namespace StereoKit
 		/// <param name="vertices">An array of vertices to add to the mesh.
 		/// Remember to set all the relevant values! Your material will often
 		/// show black if the Normals or Colors are left at their default
-		/// values.</param>
+		/// values. Null is okay here, but may require a special shader.</param>
 		/// <param name="indices">A list of face indices, must be a multiple of
 		/// 3. Each index represents a vertex from the provided vertex array.
 		/// </param>
@@ -109,7 +154,70 @@ namespace StereoKit
 		/// frequently or need all the performance you can get, setting this to
 		/// false is a nice way to gain some speed!</param>
 		public void SetData(Vertex[] vertices, uint[] indices, bool calculateBounds = true)
-			=> NativeAPI.mesh_set_data(_inst, vertices, vertices.Length, indices, indices.Length, calculateBounds);
+			=> NativeAPI.mesh_set_data(_inst, vertices, vertices?.Length ?? 0, indices, indices.Length,
+				calculateBounds ? MeshData.CalcBounds : MeshData.None, 0);
+
+		/// <summary>Assigns the vertices and indices for this Mesh with
+		/// control over upload behavior via flags. Upload is synchronous
+		/// by default — pass MeshData.Async for background upload.</summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
+		/// Remember to set all the relevant values! Your material will often
+		/// show black if the Normals or Colors are left at their default
+		/// values. Null is okay here, but may require a special shader.</param>
+		/// <param name="indices">A list of face indices, must be a multiple of
+		/// 3. Each index represents a vertex from the provided vertex array.
+		/// </param>
+		/// <param name="flags">Flags controlling upload behavior. See
+		/// MeshData for options.</param>
+		/// <param name="priority">Loading priority for async upload. Lower
+		/// values load sooner.</param>
+		public void SetData(Vertex[] vertices, uint[] indices, MeshData flags, int priority = 0)
+			=> NativeAPI.mesh_set_data(_inst, vertices, vertices?.Length ?? 0, indices, indices.Length, flags, priority);
+
+		/// <summary>Assigns vertices with a custom vertex format along with
+		/// face indices for this Mesh in a single call! The format is derived
+		/// from T's [VertComponent] tagged fields, see SetVerts for details.
+		///
+		/// Calling SetData is slightly more efficient than calling SetVerts
+		/// and SetInds separately.</summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
+		/// </param>
+		/// <param name="indices">A list of face indices, must be a multiple of
+		/// 3. Each index represents a vertex from the provided vertex array.
+		/// </param>
+		/// <param name="calculateBounds">If true, this will also update the
+		/// Mesh's bounds based on the vertices provided. This requires the
+		/// format to contain a float3 position component.</param>
+		public void SetData<T>(T[] vertices, uint[] indices, bool calculateBounds = true) where T : unmanaged
+			=> SetData(vertices, indices, calculateBounds ? MeshData.CalcBounds : MeshData.None, 0);
+
+		/// <summary>Assigns vertices with a custom vertex format along with
+		/// face indices for this Mesh in a single call, with control over
+		/// upload behavior via flags! Upload is synchronous by default — pass
+		/// MeshData.Async for background upload. The format is derived from
+		/// T's [VertComponent] tagged fields, see SetVerts for details.
+		/// </summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
+		/// </param>
+		/// <param name="indices">A list of face indices, must be a multiple of
+		/// 3. Each index represents a vertex from the provided vertex array.
+		/// </param>
+		/// <param name="flags">Flags controlling upload behavior. See
+		/// MeshData for options.</param>
+		/// <param name="priority">Loading priority for async upload. Lower
+		/// values load sooner.</param>
+		public void SetData<T>(T[] vertices, uint[] indices, MeshData flags, int priority = 0) where T : unmanaged
+		{
+			VertComponent[] format = VertLayout<T>.Components;
+			if (vertices == null)
+			{
+				NativeAPI.mesh_set_data_fmt(_inst, format, format.Length, IntPtr.Zero, 0, indices, indices.Length, flags, priority);
+				return;
+			}
+			GCHandle pin = GCHandle.Alloc(vertices, GCHandleType.Pinned);
+			try     { NativeAPI.mesh_set_data_fmt(_inst, format, format.Length, pin.AddrOfPinnedObject(), vertices.Length, indices, indices.Length, flags, priority); }
+			finally { pin.Free(); }
+		}
 
 		/// <summary>Assigns the vertices for this Mesh! This will create a
 		/// vertex buffer object on the graphics card. If you're
@@ -137,7 +245,7 @@ namespace StereoKit
 		/// <summary>This marshalls the Mesh's vertex data into an array. If
 		/// KeepData is false, then the Mesh is _not_ storing verts on the CPU,
 		/// and this information will _not_ be available.
-		/// 
+		///
 		/// Due to the way marshalling works, this is _not_ a cheap function!
 		/// </summary>
 		/// <returns>An array of vertices representing the Mesh, or null if
@@ -153,6 +261,67 @@ namespace StereoKit
 			// AHHHHHH
 			for (uint i = 0; i < size; i++)
 				result[i] = Marshal.PtrToStructure<Vertex>(new IntPtr(ptr.ToInt64() + (szStruct * i)));
+			return result;
+		}
+
+		/// <summary>Assigns vertices with a custom vertex format to this Mesh!
+		/// The format is derived from T's fields, each of which must be tagged
+		/// with a [VertComponent] attribute describing what it is. The shader
+		/// this Mesh is drawn with must be one that works with the components
+		/// this format provides, StereoKit's built-in shaders all expect
+		/// position, normal, texcoord and color.
+		///
+		/// A T that doesn't exactly describe its own memory layout will throw
+		/// an ArgumentException here, see [VertComponent] docs for the rules.
+		/// </summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
+		/// </param>
+		/// <param name="calculateBounds">If true, this will also update the
+		/// Mesh's bounds based on the vertices provided. This requires the
+		/// format to contain a float3 position component.</param>
+		public void SetVerts<T>(T[] vertices, bool calculateBounds = true) where T : unmanaged
+		{
+			VertComponent[] format = VertLayout<T>.Components;
+			GCHandle        pin    = GCHandle.Alloc(vertices, GCHandleType.Pinned);
+			try     { NativeAPI.mesh_set_verts_fmt(_inst, format, format.Length, pin.AddrOfPinnedObject(), vertices.Length, calculateBounds); }
+			finally { pin.Free(); }
+		}
+
+		/// <summary>This marshalls the vertex data of a custom format Mesh
+		/// into an array of T. T's [VertComponent] derived format must exactly
+		/// match the format the Mesh was created with, and KeepData must be
+		/// true for vertex data to be available.
+		///
+		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// </summary>
+		/// <returns>An array of vertices representing the Mesh, or null if
+		/// KeepData is false.</returns>
+		public T[] GetVerts<T>() where T : unmanaged
+		{
+			NativeAPI.mesh_get_verts_fmt(_inst, out IntPtr fmtPtr, out int fmtCount, out IntPtr dataPtr, out int count, Memory.Reference);
+			if (dataPtr == IntPtr.Zero)
+				return null;
+
+			VertComponent[] expected = VertLayout<T>.Components;
+			if (fmtCount != expected.Length)
+				throw new InvalidOperationException($"This Mesh's vertex format has {fmtCount} components, but {typeof(T).Name} describes {expected.Length}!");
+			int szComp = Marshal.SizeOf(typeof(VertComponent));
+			for (int i = 0; i < fmtCount; i++)
+			{
+				VertComponent comp = Marshal.PtrToStructure<VertComponent>(new IntPtr(fmtPtr.ToInt64() + (szComp * i)));
+				if (comp.Format   != expected[i].Format   || comp.Count        != expected[i].Count ||
+					comp.Semantic != expected[i].Semantic || comp.SemanticSlot != expected[i].SemanticSlot)
+					throw new InvalidOperationException($"This Mesh's vertex format doesn't match component {i} of {typeof(T).Name}!");
+			}
+
+			// Bulk copy the raw bytes across via a pinned destination array.
+			T[]      result = new T[count];
+			int      bytes  = count * Marshal.SizeOf<T>();
+			byte[]   buffer = new byte[bytes];
+			Marshal.Copy(dataPtr, buffer, 0, bytes);
+			GCHandle pin    = GCHandle.Alloc(result, GCHandleType.Pinned);
+			try     { Marshal.Copy(buffer, 0, pin.AddrOfPinnedObject(), bytes); }
+			finally { pin.Free(); }
 			return result;
 		}
 
@@ -256,6 +425,76 @@ namespace StereoKit
 			return result;
 		}
 		
+		/// <summary>Indicates whether this Mesh has CPU skinning data
+		/// attached. A Mesh gains skin data when SetSkin is called, or
+		/// when it's loaded from a skinned glTF.</summary>
+		public bool HasSkin => NativeAPI.mesh_has_skin(_inst);
+
+		/// <summary>Creates an independent duplicate of this Mesh.
+		/// Vertices, indices, bounds, and (if present) skin data are
+		/// copied; the new Mesh has its own GPU buffers and shares no
+		/// state with the source.
+		///
+		/// This is useful when one source mesh is shared across N
+		/// animated entities: UpdateSkin mutates the target mesh's
+		/// vertex buffer in place, so each entity needs its own Mesh
+		/// instance to deform independently.
+		///
+		/// The source Mesh must have KeepData set to true.</summary>
+		/// <returns>A new Mesh that shares no GPU state with this one.
+		/// </returns>
+		public Mesh Copy()
+			=> new Mesh(NativeAPI.mesh_copy(_inst));
+
+		/// <summary>Attaches CPU skinning data to this Mesh. Once skin
+		/// data is set, call UpdateSkin each frame with the current
+		/// bone palette to deform the vertex buffer.
+		///
+		/// KeepData must be true and vertex data must already be set
+		/// before calling this — the deformation runs on the CPU and
+		/// needs a copy of the rest-pose vertices to work from.
+		///
+		/// The bone palette passed to UpdateSkin is expected to be
+		/// bone world transforms in the same coordinate system the
+		/// resting transforms were authored in. The skinning matrix
+		/// for bone `i` is computed as
+		/// `bonePalette[i] * inverse(boneRestingTransforms[i])`.
+		/// </summary>
+		/// <param name="boneIds">Per-vertex bone indices, packed 4 per
+		/// vertex (so this array has length VertCount * 4). Each index
+		/// references a slot in the bone palette and resting transforms.
+		/// </param>
+		/// <param name="boneWeights">Per-vertex bone weights, one Vec4
+		/// per vertex (length must equal VertCount). The four
+		/// components correspond to the four bone ids for that vertex.
+		/// Weights should sum to ~1 for a stable result.</param>
+		/// <param name="boneRestingTransforms">Bind-pose transform for
+		/// each bone, expressed in the mesh's model space. StereoKit
+		/// inverts these internally to produce the inverse-bind
+		/// matrices used by the skinning math.</param>
+		public void SetSkin(ushort[] boneIds, Vec4[] boneWeights, Matrix[] boneRestingTransforms)
+			=> NativeAPI.mesh_set_skin(_inst, boneIds, boneIds.Length / 4, boneWeights, boneWeights.Length, boneRestingTransforms, boneRestingTransforms.Length);
+
+		/// <summary>Drives the per-frame CPU deformation for a skinned
+		/// Mesh. SetSkin must have been called first. This walks every
+		/// vertex, blends the bone transforms by weight, and re-uploads
+		/// the deformed vertices to the GPU.
+		///
+		/// `bonePalette` holds the current world-space transform for
+		/// each bone, in the same coordinate system the resting
+		/// transforms passed to SetSkin were authored in. Its length
+		/// must match the bone count supplied to SetSkin.
+		///
+		/// Because deformation mutates this Mesh's vertex buffer in
+		/// place, two entities driven by different bone palettes need
+		/// their own Mesh instance — use Copy on a shared source mesh
+		/// to get per-instance deformation.</summary>
+		/// <param name="bonePalette">World-space transform per bone for
+		/// this frame. Length must match the bone count supplied to
+		/// SetSkin.</param>
+		public void UpdateSkin(Matrix[] bonePalette)
+			=> NativeAPI.mesh_update_skin(_inst, bonePalette, bonePalette.Length);
+
 		/// <summary>Retrieves the vertices associated with a particular
 		/// triangle on the Mesh.</summary>
 		/// <param name="triangleIndex">Starting index of the triangle, should

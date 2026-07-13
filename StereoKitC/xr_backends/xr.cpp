@@ -5,6 +5,7 @@
 
 #include "xr.h"
 #include "openxr.h"
+#include "../ui/interactor_modes.h"
 
 namespace sk {
 
@@ -15,6 +16,11 @@ bool xr_init() {
 #if defined(SK_XR_OPENXR)
 	result = openxr_init();
 #endif
+	if (result) {
+		interactor_modes_set_default(default_interactors_all);
+		input_hand_visible(handed_max, true);
+		input_set_finger_glow(true);
+	}
 	return result;
 }
 

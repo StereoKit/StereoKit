@@ -301,14 +301,14 @@ void virtualkeyboard_go_to(int32_t layout_idx) {
 
 bool _key_button(const keylayout_key_t* key, vec2 size) {
 	return key->is_sprite
-		? ui_button_img_sz("key", key->display_sprite, ui_btn_layout_center_no_text, size)
-		: ui_button_sz(key->display_text, size);
+		? ui_button_img("key", key->display_sprite, ui_btn_layout_center_no_text, size)
+		: ui_button(key->display_text, size);
 }
 
 bool _key_toggle(const keylayout_key_t* key, bool32_t *toggle, vec2 size) {
 	return key->is_sprite
-		? ui_toggle_img_sz("key", *toggle, key->display_sprite, key->display_sprite, ui_btn_layout_center_no_text, size)
-		: ui_toggle_img_sz(key->display_text, *toggle, nullptr, nullptr, ui_btn_layout_none, size);
+		? ui_toggle_img("key", *toggle, key->display_sprite, key->display_sprite, ui_btn_layout_center_no_text, size)
+		: ui_toggle_img(key->display_text, *toggle, nullptr, nullptr, ui_btn_layout_none, size);
 }
 
 ///////////////////////////////////////////
