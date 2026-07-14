@@ -57,26 +57,6 @@ namespace StereoKit
 		public float bottom;
 	}
 
-	/// <summary>This represents a single vertex in a Mesh, all StereoKit Meshes
-	/// currently use this exact layout!
-	/// It's good to fill out all values of a Vertex explicitly, as default
-	/// values for the normal (0,0,0) and color (0,0,0,0) will cause your
-	/// mesh to appear completely black, or even transparent in most shaders!</summary>
-	[StructLayout(LayoutKind.Sequential)]
-	public partial struct Vertex
-	{
-		/// <summary>Position of the vertex, in model space coordinates.</summary>
-		public Vec3 pos;
-		/// <summary>The normal of this vertex, or the direction the vertex is
-		/// facing. Preferably normalized.</summary>
-		public Vec3 norm;
-		/// <summary>The texture coordinates at this vertex.</summary>
-		public Vec2 uv;
-		/// <summary>The color of the vertex. If you aren't using it, set it to
-		/// white.</summary>
-		public Color32 col;
-	}
-
 	/// <summary>Used to represent lines for the line drawing functions! This is
 	/// just a snapshot of information about each individual point on a line.</summary>
 	[StructLayout(LayoutKind.Sequential)]

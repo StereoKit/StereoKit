@@ -80,6 +80,7 @@ transparency_msaa MSAA
 sk_settings_t SKSettings
 vind_t uint
 vert_t Vertex
+vert_component_t VertComponent
 model_node_id int
 sh_light_t SHLight
 openxr_handle_t ulong
@@ -123,6 +124,10 @@ ui_scroll_ UIScroll
 
 # Structs with existing hand-written versions elsewhere
 @noimpl hand_joint_t sound_inst_t gradient_key_t sh_light_t
+@noimpl vert_component_t
+
+# Functions with hand-written bindings in NativeAPI.Custom.cs
+# (none currently)
 @noimpl spherical_harmonics_t hand_t controller_t file_filter_t
 
 # Enums with hand-written struct implementations

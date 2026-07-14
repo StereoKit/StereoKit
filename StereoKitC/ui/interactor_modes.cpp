@@ -112,9 +112,11 @@ void interactor_modes_update() {
 	case default_interactors_controllers:                                            interact_mode_switch(interact_mode_controllers); break;
 	case default_interactors_mouse:                                                  interact_mode_switch(interact_mode_mouse);       break;
 	case default_interactors_all: {
+		// Hand interaction profiles arrive as controllers flagged as hands, but
+		// have poke/pinch poses, so they drive hand interactors.
 		hand_source_ source = input_hand_source(handed_right);
-		if  (source == hand_source_articulated || source == hand_source_overridden)  interact_mode_switch(interact_mode_hands);
-		else                                                                         interact_mode_switch(interact_mode_controllers);
+		if  (source == hand_source_articulated || source == hand_source_overridden || input_controller_is_hand(handed_right))  interact_mode_switch(interact_mode_hands);
+		else                                                                                                                   interact_mode_switch(interact_mode_controllers);
 	} break;
 	}
 
@@ -271,11 +273,15 @@ void interact_mode_hands_step(interact_mode_hands_t* ref_hands) {
 				button_state_inactive, hand->tracked_state);
 		}
 
-		// Pinch
+		// Hand interaction profiles give a real pinch point, so collapse the
+		// capsule onto it instead of the simulated thumb and index tips.
+		bool pinch_profile = input_controller_is_hand((handed_)i);
+		vec3 pinch_a       = pinch_profile ? hand->pinch_pt : hand->fingers[0][4].position;
+		vec3 pinch_b       = pinch_profile ? hand->pinch_pt : hand->fingers[1][4].position;
 		id = ref_hands->pinch[i];
 		interactor_set_radius(id, hand->fingers[1][4].radius);
 		interactor_update    (id,
-			hand->fingers[0][4].position, hand->fingers[1][4].position,
+			pinch_a, pinch_b,
 			pose_t{ hand->pinch_pt, hand->palm.orientation }, hand->pinch_pt, vec3_zero,
 			hand->pinch_state, hand->tracked_state);
 

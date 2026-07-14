@@ -108,6 +108,12 @@ bool ext_management_is_user_requested(const char* extension_name) {
 
 ///////////////////////////////////////////
 
+bool ext_management_is_excluded(const char* extension_name) {
+	return in_list(local.exts_exclude_m, extension_name) >= 0;
+}
+
+///////////////////////////////////////////
+
 void ext_management_request_ext(const char* extension_name) {
 	if (local.exts_collected || sk_is_initialized()) {
 		log_err("Must be called BEFORE StereoKit initialization!");

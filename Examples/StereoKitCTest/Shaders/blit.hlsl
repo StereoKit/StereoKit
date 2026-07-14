@@ -19,7 +19,7 @@ struct vsIn {
 	float2 uv   : TEXCOORD0;
 	float4 col  : COLOR0;
 };
-struct psIn : sk_ps_input_t {
+struct psIn {
 	float4 pos : SV_POSITION;
 	float2 uv  : TEXCOORD0;
 };

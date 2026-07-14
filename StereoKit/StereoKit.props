@@ -6,6 +6,7 @@
 		<SKOpenXRLoader          Condition="'$(SKOpenXRLoader)'          == ''">Standard</SKOpenXRLoader>
 		<SKShowDebugVars         Condition="'$(SKShowDebugVars)'         == ''">false</SKShowDebugVars>
 		<SKAutoFindShaders       Condition="'$(SKAutoFindShaders)'       == ''">True</SKAutoFindShaders>
+		<SKUseSVSL               Condition="'$(SKUseSVSL)'               == ''">false</SKUseSVSL>
 		<SKShaderCodeFolder      Condition="'$(SKShaderCodeFolder)'      == ''"></SKShaderCodeFolder>
 		<SKBuildShaderCode       Condition="'$(SKBuildShaderCode)'       == ''">true</SKBuildShaderCode>
 		<SKOpenXRLoaderFolder    Condition="'$(SKOpenXRLoaderFolder)'    == ''">$(ProjectDir)openxr_loader/</SKOpenXRLoaderFolder>
@@ -33,6 +34,7 @@
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKCopyAssets               : $(SKCopyAssets)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAutoFindShaders          : $(SKAutoFindShaders)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKBuildShaderCode          : $(SKBuildShaderCode)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKUseSVSL                  : $(SKUseSVSL)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderCodeFolder         : $(SKShaderCodeFolder)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShadercExe               : $(SKShadercExe)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderStandardInclude    : $(SKShaderStandardInclude)"/>

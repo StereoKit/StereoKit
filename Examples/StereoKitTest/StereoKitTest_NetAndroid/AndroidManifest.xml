@@ -36,7 +36,7 @@
 
 	<!-- AndroidXR items -->
 	<!-- https://developer.android.com/develop/xr/get-started#designing-xr -->
-	<uses-feature    android:name="android.software.xr.immersive"           android:required="true"  />
+	<uses-feature    android:name="android.software.xr.immersive"           android:required="false" />
 	<uses-feature    android:name="android.hardware.xr.input.hand_tracking" android:required="false" />
 	<uses-feature    android:name="android.hardware.xr.input.controller"    android:required="false" />
 	<uses-feature    android:name="android.hardware.xr.input.eye_tracking"  android:required="false" />

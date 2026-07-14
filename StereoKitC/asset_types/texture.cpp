@@ -1074,8 +1074,9 @@ void tex_compute_sh(tex_t texture, bool end_cmd) {
 	skr_buffer_t sh_buffer = {};
 	skr_buffer_create(nullptr, 1, sizeof(spherical_harmonics_t), skr_buffer_type_storage, (skr_use_)(skr_use_dynamic | skr_use_compute_write), &sh_buffer);
 
-	skr_compute_t sh_compute = {};
-	skr_compute_create(&sk_default_shader_sh_compute->gpu_shader, &sh_compute);
+	skr_compute_t      sh_compute = {};
+	skr_compute_info_t sh_info    = {};
+	skr_compute_create(&sk_default_shader_sh_compute->gpu_shader, sh_info, &sh_compute);
 
 	uint32_t params[4] = { (uint32_t)mip_size.x, (uint32_t)mip_level, 0, 0 };
 	skr_compute_set_params(&sh_compute, params, sizeof(params));

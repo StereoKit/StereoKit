@@ -12,6 +12,7 @@
 #include "../device.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
+#include "../systems/vert_format.h"
 #include "../sk_math.h"
 #include "../log.h"
 #include "../libraries/stref.h"
@@ -165,6 +166,13 @@ bool platform_init() {
 	vk_extensions.free();
 	if (!skr_result) {
 		log_fail_reason(95, log_error, "Failed to initialize sk_renderer!");
+		return false;
+	}
+
+	// The vertex format registry wraps skr vertex types, and travels with
+	// skr's lifecycle — its shutdown pairs with skr_shutdown.
+	if (!vert_format_sys_init()) {
+		log_fail_reason(95, log_error, "Failed to initialize vertex formats!");
 		return false;
 	}
 

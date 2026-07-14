@@ -11,6 +11,7 @@
 #include "render_.h"
 #include "world.h"
 #include "lighting.h"
+#include "vert_format.h"
 #include "../_stereokit.h"
 #include "../device.h"
 #include "../libraries/stref.h"
@@ -161,7 +162,6 @@ struct render_action_t {
 
 struct render_state_t {
 	bool32_t                initialized;
-	skr_vert_type_t         default_vert_type;
 	skr_render_list_t       gpu_render_list;
 
 	material_buffer_t       shader_globals;
@@ -217,15 +217,6 @@ bool render_init() {
 	profiler_zone();
 
 	local = {};
-
-	// Initialize the default vertex type for vert_t
-	skr_vert_component_t vert_components[] = {
-		{ skr_vertex_fmt_f32,            3, skr_semantic_position, 0, 0 },
-		{ skr_vertex_fmt_f32,            3, skr_semantic_normal,   0, 0 },
-		{ skr_vertex_fmt_f32,            2, skr_semantic_texcoord, 0, 0 },
-		{ skr_vertex_fmt_ui8_normalized, 4, skr_semantic_color,    0, 0 },
-	};
-	skr_vert_type_create(vert_components, _countof(vert_components), &local.default_vert_type);
 
 	local.initialized           = true;
 	local.sim_origin            = matrix_identity;
@@ -300,7 +291,6 @@ void render_shutdown() {
 
 	skr_buffer_destroy     (&local.shader_blit);
 	skr_render_list_destroy(&local.gpu_render_list);
-	skr_vert_type_destroy  (&local.default_vert_type);
 
 	local = {};
 
@@ -310,7 +300,7 @@ void render_shutdown() {
 ///////////////////////////////////////////
 
 const skr_vert_type_t* render_get_default_vert() {
-	return &local.default_vert_type;
+	return vert_format_get_skr(VERT_FORMAT_DEFAULT);
 }
 
 ///////////////////////////////////////////

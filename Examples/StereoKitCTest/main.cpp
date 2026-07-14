@@ -20,6 +20,7 @@ using namespace sk;
 #include "demo_desktop.h"
 #include "demo_bvh.h"
 #include "demo_aliasing.h"
+#include "demo_custom_verts.h"
 #include "log_window.h"
 
 #include <stdio.h>
@@ -91,6 +92,11 @@ scene_t demos[] = {
 		demo_aliasing_init,
 		demo_aliasing_update,
 		demo_aliasing_shutdown,
+	}, {
+		"Custom Verts",
+		demo_custom_verts_init,
+		demo_custom_verts_update,
+		demo_custom_verts_shutdown,
 	}, {
 		"Environment Map",
 		demo_envmap_init,

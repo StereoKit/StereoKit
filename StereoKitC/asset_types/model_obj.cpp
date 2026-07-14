@@ -1,5 +1,6 @@
 #include "model.h"
 #include "mesh_.h"
+#include "../systems/vert_format.h"
 #include "../libraries/stref.h"
 #include "../libraries/array.h"
 #include "../sk_memory.h"
@@ -101,7 +102,7 @@ static mesh_t obj_load_mesh(const void *file_data, const char *filename, int32_t
 	}
 
 	if (norms.count <= 0)
-		mesh_calculate_normals(&verts[0], verts.count, &faces[0], faces.count);
+		mesh_calculate_normals(VERT_FORMAT_DEFAULT, &verts[0], verts.count, &faces[0], faces.count);
 
 	mesh = mesh_create();
 	mesh_set_id  (mesh, id);

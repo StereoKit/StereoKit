@@ -55,6 +55,11 @@ void       xr_ext_hand_tracking_sys_update_poses   ();
 ///////////////////////////////////////////
 
 void xr_ext_hand_tracking_register() {
+	// Nothing here works without hand_tracking, including the data_source
+	// extension that depends on it, so skip the whole system if it's excluded.
+	if (ext_management_is_excluded(XR_EXT_HAND_TRACKING_EXTENSION_NAME))
+		return;
+
 	xr_system_t sys = {};
 	sys.request_exts    [sys.request_ext_count    ++] = XR_EXT_HAND_TRACKING_EXTENSION_NAME;
 	sys.request_opt_exts[sys.request_opt_ext_count++] = XR_EXT_HAND_TRACKING_DATA_SOURCE_EXTENSION_NAME;

@@ -791,6 +791,65 @@ namespace StereoKit
 		Granted      = 1,
 	}
 
+	/// <summary>The data format of a single element of a vertex component. Normalized
+	/// formats map their integer range onto 0-1 (unsigned) or -1-1 (signed)
+	/// when read by the GPU, other integer formats arrive as integers.</summary>
+	public enum VertFmt {
+		/// <summary>Invalid format, this is not a valid value for a component.</summary>
+		None         = 0,
+		/// <summary>32 bit float.</summary>
+		F32,
+		/// <summary>16 bit half float.</summary>
+		F16,
+		/// <summary>32 bit signed integer.</summary>
+		I32,
+		/// <summary>16 bit signed integer.</summary>
+		I16,
+		/// <summary>8 bit signed integer.</summary>
+		I8,
+		/// <summary>16 bit signed integer, normalized to -1-1 on the GPU.</summary>
+		I16Normalized,
+		/// <summary>8 bit signed integer, normalized to -1-1 on the GPU.</summary>
+		I8Normalized,
+		/// <summary>32 bit unsigned integer.</summary>
+		U32,
+		/// <summary>16 bit unsigned integer.</summary>
+		U16,
+		/// <summary>8 bit unsigned integer.</summary>
+		U8,
+		/// <summary>16 bit unsigned integer, normalized to 0-1 on the GPU.</summary>
+		U16Normalized,
+		/// <summary>8 bit unsigned integer, normalized to 0-1 on the GPU. A color32 is
+		/// 4 of these.</summary>
+		U8Normalized,
+	}
+
+	/// <summary>What a vertex component means! This is matched against the semantics
+	/// the shader's vertex inputs declare, so component order in a format
+	/// doesn't need to match the shader's input order.</summary>
+	public enum VertSemantic {
+		/// <summary>Invalid semantic, this is not a valid value for a component.</summary>
+		None         = 0,
+		/// <summary>Vertex position, in model space coordinates.</summary>
+		Position,
+		/// <summary>Direction the vertex is facing.</summary>
+		Normal,
+		/// <summary>Texture coordinates.</summary>
+		Texcoord,
+		/// <summary>Vertex color.</summary>
+		Color,
+		/// <summary>Tangent direction for normal mapping.</summary>
+		Tangent,
+		/// <summary>Binormal/bitangent direction for normal mapping.</summary>
+		Binormal,
+		/// <summary>Bone weights for skinning.</summary>
+		Blendweight,
+		/// <summary>Bone indices for skinning.</summary>
+		Blendindices,
+		/// <summary>Point size for point rendering.</summary>
+		Psize,
+	}
+
 	/// <summary>Culling is discarding an object from the render pipeline!
 	/// This enum describes how mesh faces get discarded on the graphics
 	/// card. With culling set to none, you can double the number of pixels
@@ -1811,12 +1870,26 @@ namespace StereoKit
 		/// hold something like a sword hilt or a tool handle.</summary>
 		LGrip,
 		/// <summary>The left hand/controller palm pose, located at the surface of the
-		/// palm facing outward. This uses the palm pose OpenXR extension when
-		/// available, and falls back to an approximation when it's not.</summary>
+		/// palm. Forward points along the fingers and Up toward the thumb, with
+		/// X+ into the palm on the right hand, and out of the palm on the left.
+		/// This is the controller's palm orientation, which faces along the
+		/// fingers rather than out from the palm. Uses the palm pose OpenXR
+		/// extension when available, and falls back to an approximation when
+		/// it's not.</summary>
 		LPalm,
 		/// <summary>The left hand/controller aim pose. This points forward from the hand
 		/// like a laser pointer, useful for UI interaction at a distance.</summary>
 		LAim,
+		/// <summary>The left poke pose, located at the tip of the index finger. This is
+		/// provided by hand interaction systems such as the OpenXR hand
+		/// interaction extension, and may be present even when full articulated
+		/// hand tracking is not.</summary>
+		LPoke,
+		/// <summary>The left pinch pose, located between the tips of the thumb and index
+		/// finger. This is provided by hand interaction systems such as the
+		/// OpenXR hand interaction extension, and may be present even when full
+		/// articulated hand tracking is not.</summary>
+		LPinch,
 		/// <summary>The left pose of a "detached controller", when the user has both hands
 		/// and controllers active in the scene.</summary>
 		LDetached,
@@ -1824,13 +1897,27 @@ namespace StereoKit
 		/// you'd hold something like a sword hilt or a tool handle.</summary>
 		RGrip,
 		/// <summary>The right hand/controller palm pose, located at the surface of the
-		/// palm facing outward. This uses the palm pose OpenXR extension when
-		/// available, and falls back to an approximation when it's not.</summary>
+		/// palm. Forward points along the fingers and Up toward the thumb, with
+		/// X+ into the palm on the right hand, and out of the palm on the left.
+		/// This is the controller's palm orientation, which faces along the
+		/// fingers rather than out from the palm. Uses the palm pose OpenXR
+		/// extension when available, and falls back to an approximation when
+		/// it's not.</summary>
 		RPalm,
 		/// <summary>The right hand/controller aim pose. This points forward from the
 		/// hand like a laser pointer, useful for UI interaction at a
 		/// distance.</summary>
 		RAim,
+		/// <summary>The right poke pose, located at the tip of the index finger. This is
+		/// provided by hand interaction systems such as the OpenXR hand
+		/// interaction extension, and may be present even when full articulated
+		/// hand tracking is not.</summary>
+		RPoke,
+		/// <summary>The right pinch pose, located between the tips of the thumb and index
+		/// finger. This is provided by hand interaction systems such as the
+		/// OpenXR hand interaction extension, and may be present even when full
+		/// articulated hand tracking is not.</summary>
+		RPinch,
 		/// <summary>The right pose of a "detached controller", when the user has both hands
 		/// and controllers active in the scene.</summary>
 		RDetached,

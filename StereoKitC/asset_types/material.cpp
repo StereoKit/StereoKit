@@ -38,6 +38,11 @@ skr_material_info_t material_build_info(material_t material) {
 
 	info.alpha_to_coverage = material->alpha_mode == transparency_msaa;
 	info.queue_offset      = material->gpu_mat.queue_offset;
+
+	// Spec constant overrides survive every pipeline rebuild by being re-fed
+	// here; sk_renderer resolves them into gpu_mat.key.spec_constant_values.
+	info.spec_constants      = material->spec_overrides;
+	info.spec_constant_count = material->spec_override_count;
 	return info;
 }
 
@@ -46,6 +51,75 @@ skr_material_info_t material_build_info(material_t material) {
 void material_recreate_gpu(material_t material) {
 	skr_material_info_t info = material_build_info(material);
 	skr_material_set_pipeline(&material->gpu_mat, info);
+}
+
+///////////////////////////////////////////
+// Spec constant routing. A scalar setter whose name matches a shader's
+// [[vk::constant_id]] constant persists a name-keyed override and rebuilds the
+// pipeline, instead of writing a cbuffer uniform.
+
+// Convert a value to the constant's declared 32-bit bit pattern, mirroring
+// sk_renderer's _skr_shader_resolve_spec_constants (bools resolve as int).
+static uint32_t spec_constant_to_bits(const sksc_shader_spec_constant_t *sc, double value) {
+	uint32_t bits = 0;
+	switch (sc->type) {
+	case sksc_shader_var_uint:  { uint32_t v = (uint32_t)value; memcpy(&bits, &v, sizeof(v)); } break;
+	case sksc_shader_var_float: { float    v = (float   )value; memcpy(&bits, &v, sizeof(v)); } break;
+	default:                    { int32_t  v = (int32_t )value; memcpy(&bits, &v, sizeof(v)); } break;
+	}
+	return bits;
+}
+
+// Reinterpret a resolved bit pattern as a double, per the constant's type.
+static double spec_constant_from_bits(const sksc_shader_spec_constant_t *sc, uint32_t bits) {
+	switch (sc->type) {
+	case sksc_shader_var_uint:  { uint32_t v; memcpy(&v, &bits, sizeof(v)); return (double)v; }
+	case sksc_shader_var_float: { float    v; memcpy(&v, &bits, sizeof(v)); return (double)v; }
+	default:                    { int32_t  v; memcpy(&v, &bits, sizeof(v)); return (double)v; }
+	}
+}
+
+// Meta index of a spec constant matching `name`, or -1. Capped to the
+// resolvable range, which bounds gpu_mat.key.spec_constant_values.
+static int32_t material_find_spec_constant(material_t material, const char *name) {
+	const sksc_shader_meta_t *meta = &material->shader->gpu_shader.meta;
+	if (meta->spec_constant_count == 0) return -1;
+	uint32_t count = meta->spec_constant_count < SKR_MAX_SPEC_CONSTANTS ? meta->spec_constant_count : SKR_MAX_SPEC_CONSTANTS;
+	uint64_t hash  = skr_hash(name);
+	for (uint32_t i = 0; i < count; i++)
+		if (meta->spec_constants[i].name_hash == hash) return (int32_t)i;
+	return -1;
+}
+
+// Persist a name-keyed override (append or update). The stored name points into
+// the shader meta, which outlives the override store.
+static void material_store_spec_override(material_t material, int32_t meta_idx, double value) {
+	const sksc_shader_spec_constant_t *sc = &material->shader->gpu_shader.meta.spec_constants[meta_idx];
+	for (int32_t i = 0; i < material->spec_override_count; i++) {
+		if (material->spec_overrides[i].name == sc->name) {
+			material->spec_overrides[i].value = value;
+			return;
+		}
+	}
+	material->spec_overrides[material->spec_override_count].name  = sc->name;
+	material->spec_overrides[material->spec_override_count].value = value;
+	material->spec_override_count++;
+}
+
+// Rebuild the pipeline only when the resolved value actually changes, so
+// steady-state re-sets are free.
+static void material_set_spec_constant(material_t material, int32_t meta_idx, double value) {
+	const sksc_shader_spec_constant_t *sc = &material->shader->gpu_shader.meta.spec_constants[meta_idx];
+	if (material->gpu_mat.key.spec_constant_values[meta_idx] == spec_constant_to_bits(sc, value))
+		return;
+	material_store_spec_override(material, meta_idx, value);
+	material_recreate_gpu       (material);
+}
+
+// Effective (override or default) value of a spec constant, as a double.
+static double material_get_spec_constant(material_t material, int32_t meta_idx) {
+	const sksc_shader_spec_constant_t *sc = &material->shader->gpu_shader.meta.spec_constants[meta_idx];
+	return spec_constant_from_bits(sc, material->gpu_mat.key.spec_constant_values[meta_idx]);
 }
 
 ///////////////////////////////////////////
@@ -212,6 +286,12 @@ material_t material_copy(material_t material) {
 	// Add references to shared assets
 	shader_addref(material->shader);
 	result->shader = material->shader;
+
+	// Carry spec overrides so future pipeline rebuilds keep them; names point
+	// into the shared shader meta and stay valid.
+	memcpy(result->spec_overrides, material->spec_overrides, sizeof(result->spec_overrides));
+	result->spec_override_count = material->spec_override_count;
+
 	if (result->chain != nullptr) material_addref(result->chain);
 	for (int32_t i = 0; i < (int32_t)_countof(result->variants); i++) {
 		if (result->variants[i] != nullptr)
@@ -365,6 +445,29 @@ void material_set_shader(material_t material, shader_t shader) {
 	// material_recreate_gpu (pipeline-only), changing shaders requires
 	// reallocating the param buffer and bind pool.
 	material->shader = shader;
+
+	// Prune spec overrides to constants present in the new shader, re-pointing
+	// their names into the new meta (the old meta is about to be released).
+	{
+		const sksc_shader_meta_t *new_meta   = &shader->gpu_shader.meta;
+		uint32_t                  new_count  = new_meta->spec_constant_count < SKR_MAX_SPEC_CONSTANTS ? new_meta->spec_constant_count : SKR_MAX_SPEC_CONSTANTS;
+		skr_spec_constant_t       kept[SKR_MAX_SPEC_CONSTANTS];
+		int32_t                   kept_count = 0;
+		for (int32_t i = 0; i < material->spec_override_count; i++) {
+			uint64_t hash = skr_hash(material->spec_overrides[i].name);
+			for (uint32_t j = 0; j < new_count; j++) {
+				if (new_meta->spec_constants[j].name_hash == hash) {
+					kept[kept_count].name  = new_meta->spec_constants[j].name;
+					kept[kept_count].value = material->spec_overrides[i].value;
+					kept_count++;
+					break;
+				}
+			}
+		}
+		memcpy(material->spec_overrides, kept, sizeof(kept));
+		material->spec_override_count = kept_count;
+	}
+
 	skr_material_destroy(&material->gpu_mat);
 	skr_material_info_t info = material_build_info(material);
 	skr_material_create(info, &material->gpu_mat);
@@ -599,6 +702,8 @@ material_t material_get_variant(material_t material, int32_t variant_idx) {
 ///////////////////////////////////////////
 
 void material_set_float(material_t material, const char *name, float value) {
+	int32_t spec_idx = material_find_spec_constant(material, name);
+	if (spec_idx >= 0) { material_set_spec_constant(material, spec_idx, (double)value); return; }
 	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_float, 1, &value);
 }
 
@@ -637,6 +742,8 @@ void material_set_vector2(material_t material, const char *name, vec2 value) {
 ///////////////////////////////////////////
 
 void material_set_int(material_t material, const char *name, int32_t value) {
+	int32_t spec_idx = material_find_spec_constant(material, name);
+	if (spec_idx >= 0) { material_set_spec_constant(material, spec_idx, (double)value); return; }
 	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_int, 1, &value);
 }
 
@@ -664,6 +771,8 @@ void material_set_int4(material_t material, const char *name, int32_t value1, in
 ///////////////////////////////////////////
 
 void material_set_bool(material_t material, const char *name, bool32_t value) {
+	int32_t spec_idx = material_find_spec_constant(material, name);
+	if (spec_idx >= 0) { material_set_spec_constant(material, spec_idx, value > 0 ? 1.0 : 0.0); return; }
 	uint32_t v = value > 0 ? 1 : 0;
 	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_uint, 1, &v);
 }
@@ -671,6 +780,8 @@ void material_set_bool(material_t material, const char *name, bool32_t value) {
 ///////////////////////////////////////////
 
 void material_set_uint(material_t material, const char *name, uint32_t value) {
+	int32_t spec_idx = material_find_spec_constant(material, name);
+	if (spec_idx >= 0) { material_set_spec_constant(material, spec_idx, (double)value); return; }
 	skr_material_set_param(&material->gpu_mat, name, sksc_shader_var_uint, 1, &value);
 }
 
@@ -789,6 +900,8 @@ bool32_t material_set_constant(material_t material, const char *name, material_b
 ///////////////////////////////////////////
 
 float material_get_float(material_t material, const char* name) {
+	int32_t spec_idx = material_find_spec_constant(material, name);
+	if (spec_idx >= 0) return (float)material_get_spec_constant(material, spec_idx);
 	float result = 0.0f;
 	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_float, 1, &result);
 	return result;
@@ -829,6 +942,8 @@ vec4 material_get_vector4(material_t material, const char* name) {
 ///////////////////////////////////////////
 
 int32_t material_get_int(material_t material, const char* name) {
+	int32_t spec_idx = material_find_spec_constant(material, name);
+	if (spec_idx >= 0) return (int32_t)material_get_spec_constant(material, spec_idx);
 	int32_t result = 0;
 	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_int, 1, &result);
 	return result;
@@ -837,6 +952,8 @@ int32_t material_get_int(material_t material, const char* name) {
 ///////////////////////////////////////////
 
 bool32_t material_get_bool(material_t material, const char* name) {
+	int32_t spec_idx = material_find_spec_constant(material, name);
+	if (spec_idx >= 0) return material_get_spec_constant(material, spec_idx) != 0;
 	uint32_t result = 0;
 	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_uint, 1, &result);
 	return result != 0;
@@ -845,6 +962,8 @@ bool32_t material_get_bool(material_t material, const char* name) {
 ///////////////////////////////////////////
 
 uint32_t material_get_uint(material_t material, const char* name) {
+	int32_t spec_idx = material_find_spec_constant(material, name);
+	if (spec_idx >= 0) return (uint32_t)material_get_spec_constant(material, spec_idx);
 	uint32_t result = 0;
 	skr_material_get_param(&material->gpu_mat, name, sksc_shader_var_uint, 1, &result);
 	return result;

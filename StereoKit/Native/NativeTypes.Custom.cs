@@ -196,8 +196,32 @@ namespace StereoKit
 		public DisplayBlend displayType { get => DisplayBlend.None;  set { } }
 	}
 
+	// Hand-written mirror of the C header's vert_t (@noimpl in APIGen) so
+	// the fields can carry VertComponent attributes. The doc comments here
+	// are duplicated from stereokit.h, keep them in sync!
+	/// <summary>This represents a single vertex in a Mesh, all StereoKit Meshes
+	/// currently use this exact layout!
+	/// It's good to fill out all values of a Vertex explicitly, as default
+	/// values for the normal (0,0,0) and color (0,0,0,0) will cause your
+	/// mesh to appear completely black, or even transparent in most shaders!</summary>
+	[StructLayout(LayoutKind.Sequential)]
 	public partial struct Vertex
 	{
+		/// <summary>Position of the vertex, in model space coordinates.</summary>
+		[VertComponent(VertSemantic.Position, VertFmt.F32, 3)]
+		public Vec3 pos;
+		/// <summary>The normal of this vertex, or the direction the vertex is
+		/// facing. Preferably normalized.</summary>
+		[VertComponent(VertSemantic.Normal, VertFmt.F32, 3)]
+		public Vec3 norm;
+		/// <summary>The texture coordinates at this vertex.</summary>
+		[VertComponent(VertSemantic.Texcoord, VertFmt.F32, 2)]
+		public Vec2 uv;
+		/// <summary>The color of the vertex. If you aren't using it, set it to
+		/// white.</summary>
+		[VertComponent(VertSemantic.Color, VertFmt.U8Normalized, 4)]
+		public Color32 col;
+
 		/// <summary>Create a new Vertex, use the overloads to take advantage
 		/// of default values. Vertex color defaults to White. UV defaults to
 		/// (0,0).</summary>
@@ -619,6 +643,53 @@ namespace StereoKit
 		/// <returns>An equivalent Pivot.</returns>
 		[Obsolete("Use Pivot instead")]
 		public static implicit operator Pivot(TextAlign a) => (Pivot)a;
+	}
+
+	/// <summary>A single component of a custom vertex layout, such as a
+	/// position or a UV coordinate. A vertex format is described by an array
+	/// of these, in the same order the components appear in the vertex data.
+	/// Data is always tightly packed, aligned to nothing, so the format
+	/// fully describes the vertex layout.
+	///
+	/// This maps to a compact 4 byte native representation, the properties
+	/// here disguise that byte packing.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VertComponent
+	{
+		private byte _format;
+		private byte _count;
+		private byte _semantic;
+		private byte _semanticSlot;
+
+		/// <summary>The data format of a single element of this component.
+		/// </summary>
+		public VertFmt      Format       { get => (VertFmt)_format;        set => _format       = (byte)value; }
+		/// <summary>How many format elements this component has, 1-4. A
+		/// float3 position would be 3.</summary>
+		public int          Count        { get => _count;                  set => _count        = (byte)value; }
+		/// <summary>What this component means, this is matched with the
+		/// shader's vertex input semantics.</summary>
+		public VertSemantic Semantic     { get => (VertSemantic)_semantic; set => _semantic     = (byte)value; }
+		/// <summary>Distinguishes multiple components with the same semantic,
+		/// like TEXCOORD0 vs TEXCOORD1. Usually 0.</summary>
+		public int          SemanticSlot { get => _semanticSlot;           set => _semanticSlot = (byte)value; }
+
+		/// <summary>Describes a single vertex component.</summary>
+		/// <param name="semantic">What this component means, this is matched
+		/// with the shader's vertex input semantics.</param>
+		/// <param name="format">The data format of a single element of this
+		/// component.</param>
+		/// <param name="count">How many format elements this component has,
+		/// 1-4. A float3 position would be 3.</param>
+		/// <param name="semanticSlot">Distinguishes multiple components with
+		/// the same semantic, like TEXCOORD0 vs TEXCOORD1.</param>
+		public VertComponent(VertSemantic semantic, VertFmt format, int count, int semanticSlot = 0)
+		{
+			_format       = (byte)format;
+			_count        = (byte)count;
+			_semantic     = (byte)semantic;
+			_semanticSlot = (byte)semanticSlot;
+		}
 	}
 
 }

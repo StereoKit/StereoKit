@@ -9,6 +9,7 @@
 #include "../sk_memory.h"
 #include "model.h"
 #include "mesh.h"
+#include "../systems/vert_format.h"
 #include "../libraries/stref.h"
 #include "../platforms/platform.h"
 
@@ -368,11 +369,24 @@ void model_recalculate_bounds_exact(model_t model) {
 
 		XMMATRIX      transform_model = XMLoadFloat4x4((XMFLOAT4X4*)&vis->transform_model.row);
 		const mesh_t  mesh            = vis->mesh;
-		const vert_t* verts           = mesh->verts;
 
-		if (verts != nullptr) {
+		// Positions read through the vertex format, so custom formats get
+		// exact bounds too. No readable position falls back to the mesh's
+		// precalculated bounds.
+		const uint8_t* pos_at = nullptr;
+		if (mesh->verts != nullptr) {
+			vert_fmt_ pos_fmt   = vert_fmt_none;
+			int32_t   pos_count = 0;
+			int32_t   pos_off   = vert_format_semantic_offset(mesh->vert_format, vert_semantic_position, 0, &pos_fmt, &pos_count);
+			if (pos_off >= 0 && pos_fmt == vert_fmt_f32 && pos_count >= 3)
+				pos_at = (const uint8_t*)mesh->verts + pos_off;
+		}
+
+		if (pos_at != nullptr) {
 			for (uint32_t i = 0; i < mesh->vert_count; i += 1) {
-				XMVECTOR pt = matrix_mul_pointx(transform_model, verts[i].pos);
+				vec3 p;
+				memcpy(&p, pos_at + i*mesh->vert_stride, sizeof(p));
+				XMVECTOR pt = matrix_mul_pointx(transform_model, p);
 
 				min = XMVectorMin(min, pt);
 				max = XMVectorMax(max, pt);

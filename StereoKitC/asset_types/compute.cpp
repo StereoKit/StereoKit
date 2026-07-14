@@ -9,7 +9,102 @@
 #include "assets.h"
 #include "../systems/render.h"
 
+#include <string.h>
+
 namespace sk {
+
+///////////////////////////////////////////
+
+static skr_compute_info_t compute_build_info(compute_t compute) {
+	skr_compute_info_t info = {};
+	info.spec_constants      = compute->spec_overrides;
+	info.spec_constant_count = compute->spec_override_count;
+	return info;
+}
+
+///////////////////////////////////////////
+
+static void compute_recreate_gpu(compute_t compute) {
+	skr_compute_set_pipeline(&compute->gpu_compute, compute_build_info(compute));
+}
+
+///////////////////////////////////////////
+// Spec constant routing. A scalar setter whose name matches a shader's
+// [[vk::constant_id]] constant persists a name-keyed override and rebuilds the
+// pipeline, instead of writing a cbuffer uniform. Unlike materials, skr_compute_t
+// exposes no resolved value array, so we resolve override-or-default locally.
+
+// Convert a value to the constant's declared 32-bit bit pattern, mirroring
+// sk_renderer's _skr_shader_resolve_spec_constants (bools resolve as int).
+static uint32_t spec_constant_to_bits(const sksc_shader_spec_constant_t *sc, double value) {
+	uint32_t bits = 0;
+	switch (sc->type) {
+	case sksc_shader_var_uint:  { uint32_t v = (uint32_t)value; memcpy(&bits, &v, sizeof(v)); } break;
+	case sksc_shader_var_float: { float    v = (float   )value; memcpy(&bits, &v, sizeof(v)); } break;
+	default:                    { int32_t  v = (int32_t )value; memcpy(&bits, &v, sizeof(v)); } break;
+	}
+	return bits;
+}
+
+// Reinterpret a resolved bit pattern as a double, per the constant's type.
+static double spec_constant_from_bits(const sksc_shader_spec_constant_t *sc, uint32_t bits) {
+	switch (sc->type) {
+	case sksc_shader_var_uint:  { uint32_t v; memcpy(&v, &bits, sizeof(v)); return (double)v; }
+	case sksc_shader_var_float: { float    v; memcpy(&v, &bits, sizeof(v)); return (double)v; }
+	default:                    { int32_t  v; memcpy(&v, &bits, sizeof(v)); return (double)v; }
+	}
+}
+
+// Meta index of a spec constant matching `name`, or -1. Capped to the
+// resolvable range (SKR_MAX_SPEC_CONSTANTS).
+static int32_t compute_find_spec_constant(compute_t compute, const char *name) {
+	const sksc_shader_meta_t *meta = &compute->shader->gpu_shader.meta;
+	if (meta->spec_constant_count == 0) return -1;
+	uint32_t count = meta->spec_constant_count < SKR_MAX_SPEC_CONSTANTS ? meta->spec_constant_count : SKR_MAX_SPEC_CONSTANTS;
+	uint64_t hash  = skr_hash(name);
+	for (uint32_t i = 0; i < count; i++)
+		if (meta->spec_constants[i].name_hash == hash) return (int32_t)i;
+	return -1;
+}
+
+// Effective (override or default) bit pattern of a spec constant.
+static uint32_t compute_resolved_spec_bits(compute_t compute, int32_t meta_idx) {
+	const sksc_shader_spec_constant_t *sc = &compute->shader->gpu_shader.meta.spec_constants[meta_idx];
+	for (int32_t i = 0; i < compute->spec_override_count; i++)
+		if (compute->spec_overrides[i].name == sc->name)
+			return spec_constant_to_bits(sc, compute->spec_overrides[i].value);
+	return sc->default_value;
+}
+
+// Persist a name-keyed override (append or update). The stored name points into
+// the shader meta, which outlives the override store.
+static void compute_store_spec_override(compute_t compute, int32_t meta_idx, double value) {
+	const sksc_shader_spec_constant_t *sc = &compute->shader->gpu_shader.meta.spec_constants[meta_idx];
+	for (int32_t i = 0; i < compute->spec_override_count; i++) {
+		if (compute->spec_overrides[i].name == sc->name) {
+			compute->spec_overrides[i].value = value;
+			return;
+		}
+	}
+	compute->spec_overrides[compute->spec_override_count].name  = sc->name;
+	compute->spec_overrides[compute->spec_override_count].value = value;
+	compute->spec_override_count++;
+}
+
+// Rebuild the pipeline only when the resolved value actually changes.
+static void compute_set_spec_constant(compute_t compute, int32_t meta_idx, double value) {
+	const sksc_shader_spec_constant_t *sc = &compute->shader->gpu_shader.meta.spec_constants[meta_idx];
+	if (compute_resolved_spec_bits(compute, meta_idx) == spec_constant_to_bits(sc, value))
+		return;
+	compute_store_spec_override(compute, meta_idx, value);
+	compute_recreate_gpu       (compute);
+}
+
+// Effective (override or default) value of a spec constant, as a double.
+static double compute_get_spec_constant(compute_t compute, int32_t meta_idx) {
+	const sksc_shader_spec_constant_t *sc = &compute->shader->gpu_shader.meta.spec_constants[meta_idx];
+	return spec_constant_from_bits(sc, compute_resolved_spec_bits(compute, meta_idx));
+}
 
 ///////////////////////////////////////////
 
@@ -23,7 +118,7 @@ compute_t compute_create(shader_t shader) {
 	shader_addref(shader);
 	result->shader = shader;
 
-	if (skr_compute_create(&shader->gpu_shader, &result->gpu_compute) != skr_err_success) {
+	if (skr_compute_create(&shader->gpu_shader, compute_build_info(result), &result->gpu_compute) != skr_err_success) {
 		log_err("compute_create: failed to create GPU compute object");
 		shader_release(shader);
 		result->shader = nullptr;
@@ -81,18 +176,24 @@ shader_t compute_get_shader(const compute_t compute) {
 ///////////////////////////////////////////
 
 void compute_set_float(compute_t compute, const char *name, float value) {
+	int32_t spec_idx = compute_find_spec_constant(compute, name);
+	if (spec_idx >= 0) { compute_set_spec_constant(compute, spec_idx, (double)value); return; }
 	skr_compute_set_param(&compute->gpu_compute, name, sksc_shader_var_float, 1, &value);
 }
 
 ///////////////////////////////////////////
 
 void compute_set_int(compute_t compute, const char *name, int32_t value) {
+	int32_t spec_idx = compute_find_spec_constant(compute, name);
+	if (spec_idx >= 0) { compute_set_spec_constant(compute, spec_idx, (double)value); return; }
 	skr_compute_set_param(&compute->gpu_compute, name, sksc_shader_var_int, 1, &value);
 }
 
 ///////////////////////////////////////////
 
 void compute_set_uint(compute_t compute, const char *name, uint32_t value) {
+	int32_t spec_idx = compute_find_spec_constant(compute, name);
+	if (spec_idx >= 0) { compute_set_spec_constant(compute, spec_idx, (double)value); return; }
 	skr_compute_set_param(&compute->gpu_compute, name, sksc_shader_var_uint, 1, &value);
 }
 
@@ -124,6 +225,8 @@ void compute_set_color(compute_t compute, const char *name, color128 color_gamma
 ///////////////////////////////////////////
 
 void compute_set_bool(compute_t compute, const char *name, bool32_t value) {
+	int32_t spec_idx = compute_find_spec_constant(compute, name);
+	if (spec_idx >= 0) { compute_set_spec_constant(compute, spec_idx, value ? 1.0 : 0.0); return; }
 	uint32_t val = value ? 1 : 0;
 	skr_compute_set_param(&compute->gpu_compute, name, sksc_shader_var_uint, 1, &val);
 }
@@ -137,6 +240,8 @@ void compute_set_matrix(compute_t compute, const char *name, matrix value) {
 ///////////////////////////////////////////
 
 float compute_get_float(compute_t compute, const char *name) {
+	int32_t spec_idx = compute_find_spec_constant(compute, name);
+	if (spec_idx >= 0) return (float)compute_get_spec_constant(compute, spec_idx);
 	float result = 0.0f;
 	skr_compute_get_param(&compute->gpu_compute, name, sksc_shader_var_float, 1, &result);
 	return result;
@@ -145,6 +250,8 @@ float compute_get_float(compute_t compute, const char *name) {
 ///////////////////////////////////////////
 
 int32_t compute_get_int(compute_t compute, const char *name) {
+	int32_t spec_idx = compute_find_spec_constant(compute, name);
+	if (spec_idx >= 0) return (int32_t)compute_get_spec_constant(compute, spec_idx);
 	int32_t result = 0;
 	skr_compute_get_param(&compute->gpu_compute, name, sksc_shader_var_int, 1, &result);
 	return result;
@@ -153,6 +260,8 @@ int32_t compute_get_int(compute_t compute, const char *name) {
 ///////////////////////////////////////////
 
 uint32_t compute_get_uint(compute_t compute, const char *name) {
+	int32_t spec_idx = compute_find_spec_constant(compute, name);
+	if (spec_idx >= 0) return (uint32_t)compute_get_spec_constant(compute, spec_idx);
 	uint32_t result = 0;
 	skr_compute_get_param(&compute->gpu_compute, name, sksc_shader_var_uint, 1, &result);
 	return result;
@@ -185,6 +294,8 @@ vec4 compute_get_vector4(compute_t compute, const char *name) {
 ///////////////////////////////////////////
 
 bool32_t compute_get_bool(compute_t compute, const char *name) {
+	int32_t spec_idx = compute_find_spec_constant(compute, name);
+	if (spec_idx >= 0) return compute_get_spec_constant(compute, spec_idx) != 0;
 	uint32_t result = 0;
 	skr_compute_get_param(&compute->gpu_compute, name, sksc_shader_var_uint, 1, &result);
 	return result != 0;
