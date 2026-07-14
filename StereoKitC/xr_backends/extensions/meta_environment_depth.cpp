@@ -192,8 +192,10 @@ bool xr_ext_meta_environment_depth_start(sensor_depth_caps_ flags) {
 	// once the async grant resolves.
 	permission_state_ scene_perm = permission_state(permission_type_scene);
 	if (scene_perm != permission_state_granted) {
-		if (scene_perm == permission_state_capable)
-			permission_request(permission_type_scene);
+		if (scene_perm == permission_state_capable) {
+			permission_type_ scene_permission = permission_type_scene;
+			permission_request(&scene_permission, 1);
+		}
 		else
 			log_warn("XR_META_environment_depth: USE_SCENE is not in the app manifest; depth cannot start.");
 		return false;

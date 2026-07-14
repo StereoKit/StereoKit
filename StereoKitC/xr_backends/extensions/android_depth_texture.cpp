@@ -382,8 +382,10 @@ bool xr_ext_android_depth_texture_start(sensor_depth_caps_ flags) {
 	// once the async grant resolves.
 	permission_state_ scene_perm = permission_state(permission_type_scene_fine);
 	if (scene_perm != permission_state_granted) {
-		if (scene_perm == permission_state_capable)
-			permission_request(permission_type_scene_fine);
+		if (scene_perm == permission_state_capable) {
+			permission_type_ scene_permission = permission_type_scene_fine;
+			permission_request(&scene_permission, 1);
+		}
 		else
 			log_warn("XR_ANDROID_depth_texture: SCENE_UNDERSTANDING_FINE is not in the app manifest; depth cannot start.");
 		return false;
