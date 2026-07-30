@@ -63,12 +63,15 @@ namespace StereoKit
 		/// <param name="deviceName">The name of the microphone device to
 		/// use, as seen in the GetDevices list. null will use the system's
 		/// default device preference.</param>
-		/// <returns>True if recording started successfully, false for 
+		/// <param name="inputPreset">A hint to the audio system about how
+		/// the microphone input should be processed. Support varies by
+		/// platform.</param>
+		/// <returns>True if recording started successfully, false for
 		/// failure. This could fail if the app does not have mic permissions,
 		/// or if the deviceName is for a mic that has since been unplugged.
 		/// </returns>
-		public static bool Start(string deviceName = null)
-			=> NativeAPI.mic_start(deviceName);
+		public static bool Start(string deviceName = null, MicInputPreset inputPreset = MicInputPreset.Default)
+			=> NativeAPI.mic_start(deviceName, inputPreset);
 
 		/// <summary>If the Microphone is recording, this will stop it.
 		/// </summary>

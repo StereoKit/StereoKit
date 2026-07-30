@@ -3,6 +3,7 @@
 // Copyright (c) 2019-2023 Nick Klingensmith
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
 
+using System;
 using System.Collections.Generic;
 using StereoKit;
 
@@ -18,6 +19,7 @@ class DemoRecordMic : ITest
 	/// and use that to create a sound for playback.
 	///
 	/// ![Audio recording window]({{site.screen_url}}/RecordAudioSnippet.jpg)
+	MicInputPreset inputPreset;
 	Sound       recordedSound   = null;
 	List<float> recordedData    = new List<float>();
 	float[]     sampleBuffer    = null;
@@ -36,7 +38,7 @@ class DemoRecordMic : ITest
 			{
 				// Clear out our data, and start up the mic!
 				recordedData.Clear();
-				recording = Microphone.Start();
+				recording = Microphone.Start(inputPreset: inputPreset);
 				if (!recording)
 					Log.Warn("Recording failed to start!");
 			}
@@ -114,6 +116,14 @@ class DemoRecordMic : ITest
 			{
 				micDeviceActive = device;
 			}
+		}
+
+		UI.HSeparator();
+		UI.Label("Input Preset");
+		foreach (MicInputPreset preset in Enum.GetValues<MicInputPreset>())
+		{
+			if (UI.Radio(preset.ToString(), inputPreset == preset, size))
+				inputPreset = preset;
 		}
 
 		UI.WindowEnd();

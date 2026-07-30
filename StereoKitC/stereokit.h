@@ -2475,9 +2475,40 @@ SK_API float        sound_inst_get_intensity(sound_inst_t sound_inst);
 
 ///////////////////////////////////////////
 
+/*Describes the input preset hint for microphone recording. These
+  presets tell the audio system how the microphone input should be
+  processed. Support varies by platform.*/
+typedef enum mic_input_preset_ {
+	/*The default input preset, no specific processing is
+	  requested.*/
+	mic_input_preset_default              = 0,
+	/*A general purpose input preset with no specific tuning.*/
+	mic_input_preset_generic,
+	/*Tuned for recording video with audio. Typically applies a
+	  wider frequency range capture with some background noise
+	  tolerance.*/
+	mic_input_preset_camcorder,
+	/*Tuned for speech and voice recognition. Applies noise
+	  suppression and gain control optimized for recognizing spoken
+	  words.*/
+	mic_input_preset_voice_recognition,
+	/*Tuned for real-time voice communication such as VoIP. Applies
+	  echo cancellation, noise suppression, and gain control for
+	  two-way conversation.*/
+	mic_input_preset_voice_communication,
+	/*Requests raw, unprocessed audio with minimal signal
+	  processing. Useful when the application wants to apply its own
+	  audio processing, or when recording for analysis.*/
+	mic_input_preset_unprocessed,
+	/*Tuned for real-time voice performance such as karaoke or live
+	  singing. Minimizes latency while keeping the voice sounding
+	  natural.*/
+	mic_input_preset_voice_performance,
+} mic_input_preset_;
+
 SK_API int32_t      mic_device_count     (void);
 SK_API const char*  mic_device_name      (int32_t index);
-SK_API bool32_t     mic_start            (const char *device_name sk_default(nullptr));
+SK_API bool32_t     mic_start            (const char *device_name sk_default(nullptr), mic_input_preset_ input_preset sk_default(mic_input_preset_default));
 SK_API void         mic_stop             (void);
 SK_API sound_t      mic_get_stream       (void);
 SK_API bool32_t     mic_is_recording     (void);
