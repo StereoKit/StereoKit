@@ -5,7 +5,7 @@
 using StereoKit;
 using System;
 using System.Collections.Concurrent;
-using System.Threading.Tasks;
+using System.Threading;
 
 /// <summary>The audio system's acceptance scene: a real-time rainstorm
 /// built entirely from the revamp's features. Individual drop transients
@@ -234,14 +234,27 @@ class DemoRainThunder : ITest
 	// second. Buffers fill on background threads as pure math, and Step
 	// turns finished pieces into Sounds on the main thread. Rain starts
 	// with the first variants, and gains variety as the pools fill in.
+	//
+	// Two *lowest-priority* threads, not Task.Run: a thread-pool swarm runs
+	// a worker per core the moment the scene starts, and on a mobile chip
+	// that starves the app's own main, render, and audio threads - seconds
+	// of stutter at entry. Two nice'd threads leave the cores to the frame.
 	ConcurrentQueue<Action> genReady = new ConcurrentQueue<Action>();
+	ConcurrentQueue<Action> genWork  = new ConcurrentQueue<Action>();
 	void GenAsync(int sampleCount, Action<float[]> fill, Action<float[]> finish)
 	{
-		Task.Run(() => {
+		genWork.Enqueue(() => {
 			float[] buf = new float[sampleCount];
 			fill(buf);
 			genReady.Enqueue(() => finish(buf));
 		});
+	}
+	void GenStart()
+	{
+		for (int t = 0; t < 2; t++)
+			new Thread(() => {
+				while (genWork.TryDequeue(out Action work)) work();
+			}) { IsBackground = true, Priority = ThreadPriority.Lowest }.Start();
 	}
 
 	// A pre-rendered foreground variant, filled into its pool slot when
@@ -553,6 +566,11 @@ class DemoRainThunder : ITest
 			washDark     = Sound.FromSamples(buf, SoundChannels.Ambisonic1);
 			washDarkInst = washDark.Play(Vec3.Zero, new SoundPlay { flags = SoundFlags.Loop });
 		});
+
+		// All the work is queued - the generation threads start last so the
+		// queue order above is also the priority order: drops first, so the
+		// rain makes sound in its first frames, big beds last.
+		GenStart();
 	}
 
 	public void Shutdown()

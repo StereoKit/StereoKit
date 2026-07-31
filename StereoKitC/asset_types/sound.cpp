@@ -506,6 +506,13 @@ static void sound_voice_abandon(au_voice_t* voice) {
 // Creates a file-streaming voice's decoder and prefetch ring, seeked to
 // `cursor` and prefilled so onset doesn't begin with underrun silence.
 // The fill mirrors audio_voice_prefetch: FuMa converts, and loops rewind.
+//
+// The prefill decodes synchronously on the caller by design, trading main
+// thread time for a guaranteed clean onset. It's cheaper than it looks:
+// miniaudio builds -O2 even in Debug, and 250ms of stereo mp3 measures
+// ~0.25ms on desktop x64. Underruns after onset pad with silence, so if
+// this ever needs amortizing, a partial fill here plus a per-frame cap in
+// audio_voice_prefetch degrades gracefully.
 static bool sound_voice_stream_attach(au_voice_t* voice, sound_t sound, uint64_t cursor, bool loop) {
 	int32_t           ch      = sound_channel_count(sound->channels);
 	ma_decoder*       decoder = sk_malloc_t(ma_decoder, 1);
@@ -681,6 +688,13 @@ void sound_play_pending_step() {
 		if (!voice->wait_load || atomic_load_i32(&voice->state) != au_voice_reserved)
 			continue;
 
+		// Stop first: a play nobody wants anymore shouldn't hold its slot
+		// hostage until the decode it was waiting on finishes.
+		if (atomic_load_i32(&voice->params.stop_request) != 0) {
+			sound_voice_abandon(voice);
+			continue;
+		}
+
 		sound_t      sound = voice->pending_sound;
 		asset_state_ state = (asset_state_)atomic_load_i32_acq((int32_t*)&sound->header.state);
 		if (state < asset_state_none) {
@@ -690,10 +704,6 @@ void sound_play_pending_step() {
 		}
 		if (state < asset_state_loaded)
 			continue;
-		if (atomic_load_i32(&voice->params.stop_request) != 0) {
-			sound_voice_abandon(voice);
-			continue;
-		}
 
 		voice->wait_load = false;
 		uint64_t elapsed = (uint64_t)((au_main_clock - voice->wait_started) * AU_SAMPLE_RATE);
@@ -818,13 +828,16 @@ void sound_destroy(sound_t sound) {
 ///////////////////////////////////////////
 
 // Voice handles stay valid through reserved and playing, a generation
-// mismatch or terminal state means the handle is dead.
+// mismatch or terminal state means the handle is dead. A stop request kills
+// the handle here too: the mixer needs a block to act on it, but the caller
+// shouldn't have to wait on the audio thread to observe their own stop.
 static au_voice_t* sound_inst_voice(sound_inst_t sound_inst) {
 	if (sound_inst._slot < 0 || sound_inst._slot >= AU_VOICE_COUNT) return nullptr;
 	au_voice_t* voice = &au_voices[sound_inst._slot];
 	if (voice->id != sound_inst._id) return nullptr;
 	int32_t state = atomic_load_i32(&voice->state);
 	if (state != au_voice_reserved && state != au_voice_playing) return nullptr;
+	if (atomic_load_i32(&voice->params.stop_request) != 0) return nullptr;
 	return voice;
 }
 
