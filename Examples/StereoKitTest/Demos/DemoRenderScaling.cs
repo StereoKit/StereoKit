@@ -28,16 +28,17 @@ class DemoRenderScaling : ITest
 	{
 		UI.WindowBegin("Render Scaling Settings", ref windowPose, new Vec2(0.3f,0));
 
-		if (Backend.XRType != BackendXRType.OpenXR)
-		{
-			UI.Label("These settings are only available in XR");
-			UI.PushEnabled(false);
-		}
+		// The scaling settings are still XR only, but MSAA works everywhere.
+		bool xr = Backend.XRType == BackendXRType.OpenXR;
+		if (!xr)
+			UI.Label("Scaling settings are only available in XR");
 
+		UI.PushEnabled(xr);
 		UI.Label("Swapchain scaling");
 		UI.Label($"{scaling:0.00}", V.XY(0.04f,0));
 		UI.SameLine();
 		UI.HSlider("scaling", ref scaling, 0.1f, 2, 0.05f);
+		UI.PopEnabled();
 
 		UI.HSeparator();
 
@@ -46,27 +47,33 @@ class DemoRenderScaling : ITest
 		UI.SameLine();
 		UI.HSlider("msaa", ref multisample, 1, 8, 1);
 
-		if (Input.Key(Key.Right).IsJustActive()) scaling = Math.Min(scaling + 0.1f, 2);
-		if (Input.Key(Key.Left ).IsJustActive()) scaling = Math.Max(scaling - 0.1f, 0.1f);
+		if (xr && Input.Key(Key.Right).IsJustActive()) scaling = Math.Min(scaling + 0.1f, 2);
+		if (xr && Input.Key(Key.Left ).IsJustActive()) scaling = Math.Max(scaling - 0.1f, 0.1f);
 		if (Input.Key(Key.Up   ).IsJustActive()) multisample = Math.Min(multisample + 1, 8);
 		if (Input.Key(Key.Down ).IsJustActive()) multisample = Math.Max(multisample - 1, 1);
 
 		if (UI.Button("Confirm") || Input.Key(Key.Space).IsJustActive())
 		{
+			// Read back what we set, since MSAA gets clamped to whatever the
+			// GPU actually supports.
 			Renderer.Multisample = (int)multisample;
-			Renderer.Scaling     = scaling;
+			multisample          = Renderer.Multisample;
+			if (xr)
+			{
+				Renderer.Scaling = scaling;
+				scaling          = Renderer.Scaling;
+			}
 		}
 
 		UI.HSeparator();
 
+		UI.PushEnabled(xr);
 		UI.Label("Viewport Scaling");
 		UI.Label($"{viewScaling:0.00}", V.XY(0.04f, 0));
 		UI.SameLine();
 		if (UI.HSlider("viewscaling", ref viewScaling, 0.1f, 1, 0))
 			Renderer.ViewportScaling = viewScaling;
-
-		if (Backend.XRType != BackendXRType.OpenXR)
-			UI.PopEnabled();
+		UI.PopEnabled();
 
 		UI.WindowEnd();
 

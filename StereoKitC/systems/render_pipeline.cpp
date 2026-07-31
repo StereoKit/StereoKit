@@ -18,8 +18,11 @@ struct pipeline_surface_t {
 	float                       viewport_scale;
 	int32_t                     array_count;
 	int32_t                     multisample;
+	int32_t                     width;
+	int32_t                     height;
 	color128                    clear_color;
-	tex_t                       tex;
+	tex_t                       tex;       // Null draws into resolve_target
+	tex_t                       depth_tex; // Used when tex is null
 	matrix*                     view_matrices;
 	matrix*                     proj_matrices;
 	bool32_t                    enabled;
@@ -51,11 +54,15 @@ void render_pipeline_draw() {
 		pipeline_surface_t* s = &local.surfaces[i];
 		if (s->enabled == false) continue;
 
-		int32_t width  = (int32_t)fmaxf(1, (float)s->tex->width  * s->viewport_scale);
-		int32_t height = (int32_t)fmaxf(1, (float)s->tex->height * s->viewport_scale);
+		// Drawing direct also means there's nothing left to resolve.
+		skr_tex_t* color_tex = s->tex ? &s->tex->gpu_tex : s->resolve_target;
+		if (color_tex == nullptr) continue;
+
+		int32_t width  = (int32_t)fmaxf(1, (float)s->width  * s->viewport_scale);
+		int32_t height = (int32_t)fmaxf(1, (float)s->height * s->viewport_scale);
 
 		// Get depth buffer if available
-		tex_t      depth_surface = s->tex->depth_buffer;
+		tex_t      depth_surface = s->tex ? s->tex->depth_buffer : s->depth_tex;
 		skr_tex_t* depth_tex     = depth_surface ? &depth_surface->gpu_tex : nullptr;
 
 		// Set up clear values and submit the pass - the pass system handles
@@ -66,9 +73,9 @@ void render_pipeline_draw() {
 		render_draw_queue(list, s->view_matrices, s->proj_matrices, 0, s->array_count, s->layer, 0, width, height);
 
 		skr_pass_t pass = {};
-		pass.color            = &s->tex->gpu_tex;
+		pass.color            = color_tex;
 		pass.depth            = depth_tex;
-		pass.resolve          = s->resolve_target;
+		pass.resolve          = s->tex ? s->resolve_target : nullptr;
 		pass.clear            = clear_flags;
 		pass.clear_color      = clear_color;
 		pass.clear_depth      = 1.0f;
@@ -77,6 +84,7 @@ void render_pipeline_draw() {
 		pass.view_count       = s->array_count;
 		pass.views_correlated = s->array_count > 1;
 		render_pass_add_draw(&pass);
+		render_pass_add_global_post_process(&pass);
 		skr_pass_submit(&pass);
 	}
 
@@ -131,6 +139,7 @@ void render_pipeline_surface_destroy(pipeline_surface_id surface_id) {
 	sk_free(surface->view_matrices);
 	sk_free(surface->proj_matrices);
 	tex_release(surface->tex);
+	tex_release(surface->depth_tex);
 	*surface = {};
 }
 
@@ -139,36 +148,66 @@ void render_pipeline_surface_destroy(pipeline_surface_id surface_id) {
 bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t width, int32_t height, int32_t multisample) {
 	pipeline_surface_t *surface = &local.surfaces[surface_id];
 
-	// If this is the first time getting called, the texture will be null, and
-	// we'll need to create a fresh new one.
-	if (surface->tex == nullptr) {
-		log_diagf("Creating target surface: <~grn>%d<~clr>x<~grn>%d<~clr>x<~grn>%d<~clr>@<~grn>%d<~clr>msaa", width, height, surface->array_count, multisample);
-
-		surface->tex         = tex_create(tex_type_image_nomips | tex_type_rendertarget, surface->color);
-		surface->multisample = multisample;
-		surface->enabled     = true;
-		tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample, nullptr);
-
-		char name[64];
-		snprintf(name, sizeof(name), "sk/render/pipeline_surface_%d", surface_id);
-		tex_set_id(surface->tex, name);
-
-		tex_add_zbuffer(surface->tex, surface->depth);
-		tex_t zbuffer = tex_get_zbuffer(surface->tex);
-		snprintf(name, sizeof(name), "sk/render/pipeline_surface_%d_depth", surface_id);
-		tex_set_id (zbuffer, name);
-		tex_release(zbuffer);
-		return true;
+	// The zbuffer has to match the color tex's sample count, so a multisample
+	// change rebuilds both from scratch rather than trying to retarget them.
+	if (surface->tex != nullptr && surface->multisample != multisample) {
+		tex_release(surface->tex);
+		surface->tex = nullptr;
 	}
 
-	// If the surface is the same size, like the OS is sending multiple resize
+	// At 1x there's no intermediate to allocate, just a depth buffer to pair
+	// with the swapchain image.
+	bool    needs_tex = multisample > 1;
+	bool    has_tex   = needs_tex ? surface->tex != nullptr : surface->depth_tex != nullptr;
+	char    name[64];
+
+	// If the surface is the same, like the OS is sending multiple resize
 	// commands at the same dimensions, we don't need to do anything more.
-	if (width == tex_get_width(surface->tex) && height == tex_get_height(surface->tex) && surface->multisample == multisample)
+	if (has_tex && width == surface->width && height == surface->height && surface->multisample == multisample)
 		return false;
 
-	log_diagf("Resizing target surface: <~grn>%d<~clr>x<~grn>%d<~clr>x<~grn>%d<~clr>@<~grn>%d<~clr>msaa", width, height, surface->array_count, multisample);
+	log_diagf("%s target surface: <~grn>%d<~clr>x<~grn>%d<~clr>x<~grn>%d<~clr>@<~grn>%d<~clr>msaa", has_tex ? "Resizing" : "Creating", width, height, surface->array_count, multisample);
+
+	// Only the very first sizing enables the surface, backends own the flag
+	// after that.
+	if (surface->width == 0) surface->enabled = true;
+	surface->width       = width;
+	surface->height      = height;
 	surface->multisample = multisample;
-	tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample, nullptr);
+
+	if (needs_tex) {
+		// Release the 1x depth first, it shares an id with the zbuffer below.
+		tex_release(surface->depth_tex);
+		surface->depth_tex = nullptr;
+
+		bool fresh = surface->tex == nullptr;
+		if (fresh) {
+			surface->tex = tex_create(tex_type_image_nomips | tex_type_rendertarget, surface->color);
+			snprintf(name, sizeof(name), "sk/render/pipeline_surface_%d", surface_id);
+			tex_set_id(surface->tex, name);
+		}
+		tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample, nullptr);
+
+		// An existing zbuffer already tracks the color tex, and already has
+		// the id below. Naming it a second time would collide with itself.
+		if (fresh) {
+			tex_add_zbuffer(surface->tex, surface->depth);
+			tex_t zbuffer = tex_get_zbuffer(surface->tex);
+			snprintf(name, sizeof(name), "sk/render/pipeline_surface_%d_depth", surface_id);
+			tex_set_id (zbuffer, name);
+			tex_release(zbuffer);
+		}
+	} else {
+		tex_release(surface->tex);
+		surface->tex = nullptr;
+
+		if (surface->depth_tex == nullptr) {
+			surface->depth_tex = tex_create(tex_type_zbuffer, surface->depth);
+			snprintf(name, sizeof(name), "sk/render/pipeline_surface_%d_depth", surface_id);
+			tex_set_id(surface->depth_tex, name);
+		}
+		tex_set_color_arr(surface->depth_tex, width, height, nullptr, surface->array_count, 1, nullptr);
+	}
 
 	render_update_projection();
 	return true;
@@ -245,8 +284,8 @@ void render_pipeline_surface_get_surface_info(pipeline_surface_id surface_id, in
 	*out_array_idx   = view_idx;
 	out_xywh_rect[0] = 0;
 	out_xywh_rect[1] = 0;
-	out_xywh_rect[2] = surface->tex ? (int32_t)fmaxf(1, (float)surface->tex->width  * surface->viewport_scale) : 0;
-	out_xywh_rect[3] = surface->tex ? (int32_t)fmaxf(1, (float)surface->tex->height * surface->viewport_scale) : 0;
+	out_xywh_rect[2] = surface->width  > 0 ? (int32_t)fmaxf(1, (float)surface->width  * surface->viewport_scale) : 0;
+	out_xywh_rect[3] = surface->height > 0 ? (int32_t)fmaxf(1, (float)surface->height * surface->viewport_scale) : 0;
 }
 
 ///////////////////////////////////////////
@@ -256,6 +295,16 @@ void render_pipeline_surface_set_tex(pipeline_surface_id surface_id, tex_t tex) 
 	if (tex)          tex_addref (tex);
 	if (surface->tex) tex_release(surface->tex);
 	surface->tex = tex;
+
+	// An externally provided tex brings its own size, sample count, and depth
+	// along with it. Callers that use this don't also call resize.
+	if (tex) {
+		surface->width       = tex->width;
+		surface->height      = tex->height;
+		surface->multisample = skr_tex_get_multisample(&tex->gpu_tex);
+		tex_release(surface->depth_tex);
+		surface->depth_tex = nullptr;
+	}
 }
 
 ///////////////////////////////////////////

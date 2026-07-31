@@ -1,9 +1,13 @@
 #include "model.h"
 #include "../libraries/array.h"
+#include "../libraries/stref.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
 
 #define MICRO_PLY_IMPL
+// Parse decimals with our own locale-independent parser instead of atof, which
+// misparses '.' decimals under locales like fr_FR.UTF-8 (see string_to_float).
+#define MICRO_PLY_ATOF(str) string_to_float(str)
 #include "../libraries/micro_ply.h"
 
 #include <stdio.h>

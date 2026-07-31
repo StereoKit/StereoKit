@@ -24,7 +24,7 @@
 /// - Left + Right - Hand animates to a closed fist.
 /// - Scroll Wheel - Moves the hand toward or away from the user.
 /// - Shift + Right - Mouse-look / rotate the head.
-/// - Left Alt - [Eye tracking]({{site.url}}/Pages/Reference/Input/Eyes.html) will point along the ray indicated by the mouse.
+/// - Left Alt - [Eye tracking]({{site.url}}/Pages/StereoKit/Input/Eyes.html) will point along the ray indicated by the mouse.
 /// - Ctrl + Shift - Switch between controlling left hand, right hand, or no hand.
 /// 
 /// To move around in space, you'll find controls that should be familiar to
@@ -78,10 +78,10 @@ class GuideUsingTheSimulator : ITest
 		/// recording and playing back input.
 		/// 
 		/// Overriding the hands is one important element that you may want
-		/// to do! [`Input.HandOverride`]({{site.url}}/Pages/Reference/Input/HandOverride.html)
+		/// to do! [`Input.HandOverride`]({{site.url}}/Pages/StereoKit/Input/HandOverride.html)
 		/// will set the hand input to a very specific pose, and hold that
 		/// pose until you call `Input.HandOverride` again with a new pose,
-		/// or call [`Input.HandClearOverride`]({{site.url}}/Pages/Reference/Input/HandClearOverride.html)
+		/// or call [`Input.HandClearOverride`]({{site.url}}/Pages/StereoKit/Input/HandClearOverride.html)
 		/// to restore control back to the user.
 		/// 
 		/// ![An overridden hand]({{site.screen_url}}/HandOverride.jpg)

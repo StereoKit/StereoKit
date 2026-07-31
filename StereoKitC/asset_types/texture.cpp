@@ -83,9 +83,10 @@ bool tex_format_is_mippable(tex_format_ format) {
 ///////////////////////////////////////////
 
 skr_tex_flags_ tex_type_to_skr_flags(tex_type_ type) {
-	// Z-buffers are write-only depth attachments (not sampled)
+	// Z-buffers are depth attachments (not sampled), in-pass readable so
+	// post-process effects can take depth as an input attachment.
 	if (type & tex_type_zbuffer) {
-		return skr_tex_flags_writeable;
+		return (skr_tex_flags_)(skr_tex_flags_writeable | skr_tex_flags_input_attachment);
 	}
 
 	// Most textures are sampled
@@ -94,7 +95,7 @@ skr_tex_flags_ tex_type_to_skr_flags(tex_type_ type) {
 	if (type & tex_type_dynamic)      flags = (skr_tex_flags_)(flags | skr_tex_flags_dynamic);
 	if (type & tex_type_mips)         flags = (skr_tex_flags_)(flags | skr_tex_flags_gen_mips);
 	if (type & tex_type_rendertarget) flags = (skr_tex_flags_)(flags | skr_tex_flags_writeable);
-	if (type & tex_type_depthtarget)  flags = (skr_tex_flags_)(flags | skr_tex_flags_writeable); // Readable depth (shadow maps)
+	if (type & tex_type_depthtarget)  flags = (skr_tex_flags_)(flags | skr_tex_flags_writeable | skr_tex_flags_input_attachment); // Readable depth (shadow maps)
 	if (type & tex_type_compute)      flags = (skr_tex_flags_)(flags | skr_tex_flags_compute);
 	if (type & tex_type_volume)       flags = (skr_tex_flags_)(flags | skr_tex_flags_3d);
 	return flags;
@@ -971,6 +972,57 @@ void* tex_get_surface(tex_t texture) {
 
 ///////////////////////////////////////////
 
+tex_t tex_create_from_hardware_buffer(void *hardware_buffer, bool32_t owns_buffer) {
+#if defined(SK_OS_ANDROID)
+	if (hardware_buffer == nullptr) return nullptr;
+	if (!skr_is_capable(skr_capability_external_ahb)) {
+		log_warn("tex_create_from_hardware_buffer: AHardwareBuffer import is not supported on this device!");
+		return nullptr;
+	}
+
+	tex_t result = tex_create(tex_type_image_nomips, tex_format_none);
+
+	skr_tex_external_ahb_info_t info = {};
+	info.hardware_buffer = hardware_buffer;
+	info.format          = skr_tex_fmt_none;
+	info.sampler         = tex_get_skr_sampler(result);
+	info.owns_buffer     = owns_buffer;
+
+	if (skr_tex_create_external_ahb(info, &result->gpu_tex) == skr_err_success) {
+		skr_vec3i_t size = skr_tex_get_size(&result->gpu_tex);
+		result->width    = size.x;
+		result->height   = size.y;
+		result->format   = (tex_format_)skr_tex_get_format(&result->gpu_tex);
+	}
+
+	result->header.state = skr_tex_is_valid(&result->gpu_tex)
+		? asset_state_loaded
+		: asset_state_error;
+	tex_set_fallback(result, result->header.state <= 0
+		? _tex_get_error_fallback(result)
+		: nullptr);
+	return result;
+#else
+	(void)hardware_buffer;
+	(void)owns_buffer;
+	return nullptr;
+#endif
+}
+
+///////////////////////////////////////////
+
+void* tex_get_hardware_buffer(tex_t texture) {
+#if defined(SK_OS_ANDROID)
+	assets_block_until(&texture->header, asset_state_loaded);
+	return texture->gpu_tex.ahb_handle;
+#else
+	(void)texture;
+	return nullptr;
+#endif
+}
+
+///////////////////////////////////////////
+
 void tex_set_fallback(tex_t texture, tex_t fallback) {
 	if (texture->header.state >= asset_state_loaded && fallback != nullptr) return;
 
@@ -1108,9 +1160,16 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		return;
 	}
 
+	// Texture creation caps the sample count to the GPU's max, so compare
+	// against the capped value, or we'd rebuild the texture on every call.
+	int32_t max_msaa = skr_get_max_msaa_samples();
+	if (multisample > max_msaa) multisample = max_msaa;
+	if (multisample < 1)        multisample = 1;
+
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->width != width || texture->height != height || (int32_t)texture->gpu_tex.layer_count != array_count;
-	if (!different_size && (array_data == nullptr || *array_data == nullptr))
+	bool different_msaa = skr_tex_is_valid(&texture->gpu_tex) && skr_tex_get_multisample(&texture->gpu_tex) != multisample;
+	if (!different_size && !different_msaa && (array_data == nullptr || *array_data == nullptr))
 		return;
 
 	// Build texture data descriptor from array_data
@@ -1153,8 +1212,8 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		tex_data.row_pitch   = 0; // tightly packed
 	}
 
-	if (!skr_tex_is_valid(&texture->gpu_tex) || different_size || (!different_size && !dynamic)) {
-		if (!different_size && !dynamic)
+	if (!skr_tex_is_valid(&texture->gpu_tex) || different_size || different_msaa || (!different_size && !dynamic)) {
+		if (!different_size && !different_msaa && !dynamic)
 			texture->type &= tex_type_dynamic;
 
 		// Convert tex_type_ to skr_tex_flags_
@@ -1953,7 +2012,7 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 	sh_windowing(sh, 0.01f);
 
 	// Set light_info before uploading so _tex_set_color_arr skips the
-	// redundant SH compute — this cubemap was generated from a gradient.
+	// redundant SH compute - this cubemap was generated from a gradient.
 	result->light_info  = sk_malloc_t(spherical_harmonics_t, 1);
 	*result->light_info = sh;
 
@@ -2039,7 +2098,7 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 	}
 
 	// Set light_info before uploading so _tex_set_color_arr skips the
-	// redundant SH compute — this cubemap was generated from SH data.
+	// redundant SH compute - this cubemap was generated from SH data.
 	result->light_info  = sk_malloc_t(spherical_harmonics_t, 1);
 	*result->light_info = lookup;
 

@@ -9,6 +9,10 @@
 		<SKUseSVSL               Condition="'$(SKUseSVSL)'               == ''">false</SKUseSVSL>
 		<SKShaderCodeFolder      Condition="'$(SKShaderCodeFolder)'      == ''"></SKShaderCodeFolder>
 		<SKBuildShaderCode       Condition="'$(SKBuildShaderCode)'       == ''">true</SKBuildShaderCode>
+		<!--A file-based app shares its folder with whatever else lives there, so
+		    it searches only that folder rather than the whole tree below it.-->
+		<SKShaderCodeRecursive   Condition="'$(SKShaderCodeRecursive)'   == '' and '$(FileBasedProgram)' == 'true'">false</SKShaderCodeRecursive>
+		<SKShaderCodeRecursive   Condition="'$(SKShaderCodeRecursive)'   == ''">true</SKShaderCodeRecursive>
 		<SKOpenXRLoaderFolder    Condition="'$(SKOpenXRLoaderFolder)'    == ''">$(ProjectDir)openxr_loader/</SKOpenXRLoaderFolder>
 		<SKShaderStandardInclude Condition="'$(SKShaderStandardInclude)' == ''">$(MSBuildThisFileDirectory)../tools/include/</SKShaderStandardInclude>
 	</PropertyGroup>
@@ -22,10 +26,14 @@
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETCoreApp'">Core</SKBuildNET>
 
 			<SKCopyAssets Condition="'$(SKCopyAssets)' == '' and $(SKAssetFolder.StartsWith('..'))">true</SKCopyAssets>
+			<!--A file-based app has no project file for an IDE to add Content
+			    items to, so nothing else will copy the assets for it.-->
+			<SKCopyAssets Condition="'$(SKCopyAssets)' == '' and '$(FileBasedProgram)' == 'true'">true</SKCopyAssets>
+
+			<SKShaderOutputFolder Condition="'$(SKShaderOutputFolder)' == ''">$(IntermediateOutputPath)$(SKAssetDestination)/</SKShaderOutputFolder>
 
 			<SKOpenXRLoaderFolder    Condition="'$(SKOpenXRLoaderFolder)'   !=''">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKOpenXRLoaderFolder)'))))</SKOpenXRLoaderFolder>
 			<SKShaderStandardInclude Condition="'$(SKShaderStandardInclude)'!=''">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKShaderStandardInclude)'))))</SKShaderStandardInclude>
-			<SKShaderCodeFolder      Condition="'$(SKShaderCodeFolder)'     !=''">$([MSBuild]::EnsureTrailingSlash($([MSBuild]::NormalizePath('$(SKShaderCodeFolder)'))))</SKShaderCodeFolder>
 		</PropertyGroup>
 
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] ____StereoKit MSBuild Variables____"/>
@@ -35,7 +43,9 @@
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKAutoFindShaders          : $(SKAutoFindShaders)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKBuildShaderCode          : $(SKBuildShaderCode)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKUseSVSL                  : $(SKUseSVSL)"/>
-		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderCodeFolder         : $(SKShaderCodeFolder)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderCodeFolder         : $(SKShaderCodeFolderNormalized)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderCodeRecursive      : $(SKShaderCodeRecursive)"/>
+		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderOutputFolder       : $(SKShaderOutputFolder)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShadercExe               : $(SKShadercExe)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKShaderStandardInclude    : $(SKShaderStandardInclude)"/>
 		<Message Condition="'$(SKShowDebugVars)'=='true'" Importance="high" Text="[StereoKit NuGet] SKOpenXRLoader             : $(SKOpenXRLoader)"/>

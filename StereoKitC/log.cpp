@@ -13,12 +13,20 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #if defined(SK_OS_WINDOWS)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+#endif
+
+#if defined(SK_OS_LINUX) || defined(SK_OS_MACOS)
+#include <unistd.h>
 #endif
 
 #if defined(SK_OS_ANDROID)
@@ -35,8 +43,9 @@ struct log_callback_t {
 };
 array_t<log_callback_t> log_listeners = {};
 
-log_        log_filter = log_diagnostic;
-log_colors_ log_colors = log_colors_ansi;
+log_        log_filter  = log_diagnostic;
+log_colors_ log_colors  = log_colors_ansi;
+int32_t     log_ansi_ok = -1; // -1 until the console gets checked
 
 char       *log_fail_reason_str = nullptr;
 int32_t     log_fail_confidence = -1;
@@ -148,6 +157,54 @@ void log_replace_colors(const char *src, char *dest, const char **color_tags, co
 
 ///////////////////////////////////////////
 
+#if defined(SK_OS_WINDOWS) || defined(SK_OS_LINUX) || defined(SK_OS_MACOS)
+
+// True when the variable is present, and isn't empty or "0".
+static bool log_env_flag(const char* name) {
+	const char* val = getenv(name);
+	return val != nullptr && val[0] != '\0' && !string_eq(val, "0");
+}
+
+///////////////////////////////////////////
+
+// Consoles don't all speak ANSI, so check the usual signals: opt-out env
+// vars, redirected output, and whether the terminal can do it at all.
+static bool log_detect_ansi() {
+	if (log_env_flag("NO_COLOR"))                                      return false;
+	if (log_env_flag("FORCE_COLOR") || log_env_flag("CLICOLOR_FORCE")) return true;
+
+#if defined(SK_OS_WINDOWS)
+	// Wine accepts the VT flag and reports it as set, then draws the
+	// escapes as literal text, so its console only does plain text.
+	HMODULE ntdll = GetModuleHandleA("ntdll.dll");
+	if (ntdll != nullptr && GetProcAddress(ntdll, "wine_get_version") != nullptr) return false;
+
+	// GetConsoleMode also fails when stdout is a file or a pipe, and VT
+	// processing is off by default in the classic console host.
+	HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+	DWORD  mode   = 0;
+	if (handle == INVALID_HANDLE_VALUE || !GetConsoleMode(handle, &mode)) return false;
+	return SetConsoleMode(handle, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
+#else
+	if (!isatty(fileno(stdout))) return false;
+	const char* term = getenv("TERM");
+	return term != nullptr && !string_eq(term, "dumb");
+#endif
+}
+
+///////////////////////////////////////////
+
+static bool log_use_ansi() {
+	if (log_colors != log_colors_ansi) return false;
+
+	if (log_ansi_ok == -1) log_ansi_ok = log_detect_ansi() ? 1 : 0;
+	return log_ansi_ok == 1;
+}
+
+#endif
+
+///////////////////////////////////////////
+
 void log_write(log_ level, const char *text) {
 	if (level < log_filter)
 		return;
@@ -164,7 +221,7 @@ void log_write(log_ level, const char *text) {
 	}
 
 	int32_t text_len   = 0;
-	int32_t color_tags = log_colors == log_colors_ansi ? log_count_color_tags(text, &text_len) : 0;
+	int32_t color_tags = log_count_color_tags(text, &text_len);
 
 	// Set up some memory if we have color tags we need to replace
 	char* replace_buffer = nullptr;
@@ -172,13 +229,15 @@ void log_write(log_ level, const char *text) {
 		replace_buffer = sk_stack_alloc_t(char, (text_len - color_tags*7) + color_tags * 8 + 1);
 
 #if defined(SK_OS_WINDOWS) || defined(SK_OS_LINUX) || defined(SK_OS_MACOS)
+	bool use_ansi = log_use_ansi();
+
 	const char* colored_text = text;
 	if (color_tags > 0) {
-		log_replace_colors(text, replace_buffer, log_tags, log_colorcodes, _countof(log_tags), sizeof(LOG_C_CLEAR) - 1);
+		log_replace_colors(text, replace_buffer, log_tags, use_ansi ? log_colorcodes : nullptr, _countof(log_tags), use_ansi ? sizeof(LOG_C_CLEAR) - 1 : 0);
 		colored_text = replace_buffer;
 	}
 
-	printf("[SK %s%s" LOG_C_CLEAR "] %s\n", color, tag, colored_text);
+	printf("[SK %s%s%s] %s\n", use_ansi ? color : "", tag, use_ansi ? LOG_C_CLEAR : "", colored_text);
 #endif
 
 	// The remaining outputs don't support colors

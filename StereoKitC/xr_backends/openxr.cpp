@@ -36,6 +36,7 @@
 #include <openxr/openxr_reflection.h>
 
 #include <sk_app.h>
+#include <sk_renderer.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -422,8 +423,13 @@ bool openxr_blank_frame() {
 	// up-to-date even on blank frames during init is helpful.
 	xr_time = frame_state.predictedDisplayTime;
 
+	uint32_t queue_family = skr_get_vk_graphics_queue_family();
+
 	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
-	xr_check(xrBeginFrame(xr_session, &begin_info),
+	skr_vk_queue_lock(queue_family);
+	XrResult begin_result = xrBeginFrame(xr_session, &begin_info);
+	skr_vk_queue_unlock(queue_family);
+	xr_check(begin_result,
 		"blank xrBeginFrame");
 
 	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
@@ -431,7 +437,11 @@ bool openxr_blank_frame() {
 	if      (xr_blend_valid(display_blend_opaque  )) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
 	else if (xr_blend_valid(display_blend_additive)) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ADDITIVE;
 	else if (xr_blend_valid(display_blend_blend   )) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
-	xr_check(xrEndFrame(xr_session, &end_info),
+
+	skr_vk_queue_lock(queue_family);
+	XrResult end_result = xrEndFrame(xr_session, &end_info);
+	skr_vk_queue_unlock(queue_family);
+	xr_check(end_result,
 		"blank xrEndFrame");
 
 	return true;

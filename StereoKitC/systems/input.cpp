@@ -56,6 +56,10 @@ struct evt_xy_t {
 
 struct input_state_t {
 	mouse_t               mouse_data;
+	mouse_mode_           mouse_mode;        // What the app asked for
+	mouse_mode_           mouse_mode_active; // What the cursor is actually doing
+	vec2                  mouse_lock_pos;    // Relative mode warps back here each frame
+	ska_window_t*         mouse_window;
 	controller_t          controllers[2];
 	bool                  controller_hand[2];
 	button_state_         controller_menubtn;
@@ -101,9 +105,11 @@ bool input_init() {
 	profiler_zone();
 
 	// Preserve values that may have been set before init, such as palm
-	// offsets from OpenXR interaction profile events.
-	pose_t palm_offset[2]     = { local.palm_offset[0],     local.palm_offset[1]     };
-	bool   controller_hand[2] = { local.controller_hand[0], local.controller_hand[1] };
+	// offsets from OpenXR interaction profile events, or the window the
+	// backend handed us - Platform initializes before Input.
+	pose_t        palm_offset[2]     = { local.palm_offset[0],     local.palm_offset[1]     };
+	bool          controller_hand[2] = { local.controller_hand[0], local.controller_hand[1] };
+	ska_window_t* mouse_window       = local.mouse_window;
 
 	local = {};
 	input_head_pose_local    = pose_identity;
@@ -112,6 +118,7 @@ bool input_init() {
 	local.palm_offset[1]     = palm_offset[1];
 	local.controller_hand[0] = controller_hand[0];
 	local.controller_hand[1] = controller_hand[1];
+	local.mouse_window       = mouse_window;
 
 	local.mtx_poses   = ft_mutex_create();
 	local.mtx_floats  = ft_mutex_create();
@@ -130,6 +137,9 @@ bool input_init() {
 ///////////////////////////////////////////
 
 void input_shutdown() {
+	if (local.mouse_mode_active != mouse_mode_normal)
+		ska_cursor_show(true);
+
 	ft_mutex_destroy(&local.mtx_poses);
 	ft_mutex_destroy(&local.mtx_floats);
 	ft_mutex_destroy(&local.mtx_buttons);
@@ -497,17 +507,56 @@ void input_mouse_update() {
 		local.mouse_data.scroll        = ska_scroll_accumulator;
 	}
 
+	// Losing focus always restores the cursor, so alt-tabbing out of a window
+	// that captured the mouse doesn't strand the user without one. Backends
+	// with no window of their own just remember the mode.
+	mouse_mode_ mode = local.mouse_data.available && local.mouse_window != nullptr
+		? local.mouse_mode
+		: mouse_mode_normal;
+	if (mode != local.mouse_mode_active) {
+		ska_cursor_show(mode == mouse_mode_normal);
+		local.mouse_lock_pos    = mouse_pos;
+		local.mouse_mode_active = mode;
+	}
+
 	// Mouse position and on-screen
 	if (local.mouse_data.available) {
-		local.mouse_data.pos_change = mouse_pos - local.mouse_data.pos;
-		local.mouse_data.pos        = mouse_pos;
+		if (local.mouse_mode_active == mouse_mode_relative) {
+			// The cursor is parked at mouse_lock_pos, so anything away from it is
+			// this frame's motion. Warping back means we never run out of screen,
+			// and the app sees a stationary pos.
+			local.mouse_data.pos_change = mouse_pos - local.mouse_lock_pos;
+			local.mouse_data.pos        = local.mouse_lock_pos;
+			if (mouse_pos.x != local.mouse_lock_pos.x || mouse_pos.y != local.mouse_lock_pos.y)
+				ska_mouse_warp(local.mouse_window, (int32_t)local.mouse_lock_pos.x, (int32_t)local.mouse_lock_pos.y);
+		} else {
+			local.mouse_data.pos_change = mouse_pos - local.mouse_data.pos;
+			local.mouse_data.pos        = mouse_pos;
+		}
 	}
 }
 
 ///////////////////////////////////////////
 
-void input_mouse_override_pos(vec2 override_pos) {
-	local.mouse_data.pos = { override_pos.x, override_pos.y };
+void input_mouse_set_window(ska_window_t* window) {
+	// Restore now, while the window that hid the cursor is still around.
+	if (window == nullptr && local.mouse_mode_active != mouse_mode_normal) {
+		ska_cursor_show(true);
+		local.mouse_mode_active = mouse_mode_normal;
+	}
+	local.mouse_window = window;
+}
+
+///////////////////////////////////////////
+
+void input_mouse_mode_set(mouse_mode_ mode) {
+	local.mouse_mode = mode;
+}
+
+///////////////////////////////////////////
+
+mouse_mode_ input_mouse_mode_get(void) {
+	return local.mouse_mode;
 }
 
 ///////////////////////////////////////////

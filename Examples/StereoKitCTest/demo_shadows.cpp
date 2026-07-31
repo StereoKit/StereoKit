@@ -152,8 +152,10 @@ static void setup_shadow_map(vec3 light_direction) {
 	render_global_texture(shadow_buffer_slot, nullptr);
 
 	// Render to shadow map (filter out VFX layer)
-	render_layer_ layer_filter = (render_layer_)(render_layer_all & ~render_layer_vfx);
-	render_to(shadow_map, 0, &view, &proj, 1, layer_filter, shadow_map_variant, render_clear_all, rect_t{});
+	render_settings_t settings = {};
+	settings.layer_filter     = (render_layer_)(render_layer_all & ~render_layer_vfx);
+	settings.material_variant = shadow_map_variant;
+	render_to(shadow_map, 0, &view, &proj, 1, &settings);
 
 	// Rebind the shadow map for reading
 	render_global_texture(shadow_buffer_slot, shadow_map);

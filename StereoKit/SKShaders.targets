@@ -26,34 +26,49 @@
 		<IncludeFolderNormalized Condition="'$(SKShaderStandardInclude)'!=''">$([MSBuild]::NormalizeDirectory('$(SKShaderStandardInclude)').TrimEnd('\'))</IncludeFolderNormalized>
 		<!-- Compile shaders with skshaderc's SVSL backend instead of glslang. -->
 		<SKShaderSVSL Condition="'$(SKUseSVSL)'=='true'">-svsl</SKShaderSVSL>
+		<!-- The SKShaderCode glob below is evaluated before any target runs, so
+		     these must be slash-normalized here rather than in a target. -->
+		<SKShaderCodeFolderNormalized Condition="'$(SKShaderCodeFolder)'!=''">$([MSBuild]::EnsureTrailingSlash('$(SKShaderCodeFolder)').Replace('\','/'))</SKShaderCodeFolderNormalized>
+		<SKAssetFolderNormalized      Condition="'$(SKAssetFolder)'     !=''">$([MSBuild]::EnsureTrailingSlash('$(SKAssetFolder)').Replace('\','/'))</SKAssetFolderNormalized>
+		<SKShaderCodeSearch           Condition="'$(SKShaderCodeRecursive)'=='true'">**/</SKShaderCodeSearch>
+		<!-- Scripting mode runs from the source folder rather than the output
+		     folder, so compiled shaders have to land beside their source. The
+		     asset glob then has to skip them, or they'd be added twice. -->
+		<SKShaderOutputFolder Condition="'$(SKShaderOutputFolder)'=='' and '$(FileBasedProgram)'=='true'">$(SKAssetFolderNormalized)</SKShaderOutputFolder>
+		<SKAssetShaderExclude Condition="'$(FileBasedProgram)'=='true'">$(SKAssetFolderNormalized)**/*.sks</SKAssetShaderExclude>
 	</PropertyGroup>
 
 	<!-- Automatically include shaders, library projects should not compile
 	     shader files -->
 	<ItemGroup Condition="'$(SKAutoFindShaders)'=='True'">
-		<SKShader Include="$(SKAssetFolder)/**/*.hlsl">
+		<SKShader Include="$(SKAssetFolder)/**/*.hlsl;$(SKAssetFolder)/**/*.svsl">
 			<RelFile>%(RecursiveDir)%(Filename)%(Extension)</RelFile>
 			<RelFolder>%(RecursiveDir)</RelFolder>
 		</SKShader>
 		<!-- This doesn't currently account for shader include files. -->
-		<UpToDateCheckInput Include="$(SKAssetFolder)/**/*.hlsl"/>
+		<UpToDateCheckInput Include="$(SKAssetFolder)/**/*.hlsl;$(SKAssetFolder)/**/*.svsl"/>
 	</ItemGroup>
 
 	<!-- This target builds all SKShader items. This is skipped for Library
 	     type projects. -->
-	<Target Name="StereoKit_ShaderBuild" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths" AfterTargets="StereoKit_Properties">
+	<Target Name="StereoKit_ShaderBuild" Condition="'@(SKShader)'!=''" BeforeTargets="AssignTargetPaths" AfterTargets="StereoKit_Properties" DependsOnTargets="StereoKit_Properties">
 
 		<!-- For debug builds, include shader debug info -->
 		<PropertyGroup>
 			<SKOpt Condition="'$(Configuration)'=='Release'">-o3</SKOpt>
 			<SKOpt Condition="'$(Configuration)'=='Debug'">-d</SKOpt>
+			<!-- Scripting mode's output folder has no configuration in its path,
+			     so switching configuration has to force a shader rebuild. -->
+			<SKShaderConfigFile Condition="'$(FileBasedProgram)'=='true'">$(BaseIntermediateOutputPath)sk_shader_config.txt</SKShaderConfigFile>
+			<SKShaderLastConfig Condition="Exists('$(SKShaderConfigFile)')">$([System.IO.File]::ReadAllText('$(SKShaderConfigFile)').Trim())</SKShaderLastConfig>
+			<SKShaderForce      Condition="'$(SKShaderConfigFile)'!='' and '$(SKShaderLastConfig)'!='$(Configuration)'">-f</SKShaderForce>
 		</PropertyGroup>
 
 		<!-- Setup metadata for custom build tool -->
 		<ItemGroup>
 			<SKShader Condition="'%(SKShader.RelFile)'!=''">
-				<Command>"$(SKShadercPath)" $(SKOpt) $(SKShaderSVSL) -e -i "$(IncludeFolderNormalized)" -o "$([System.String]::Copy('$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
-				<Outputs>$(IntermediateOutputPath)$(SKAssetDestination)/%(SKShader.RelFile).sks</Outputs>
+				<Command>"$(SKShadercPath)" $(SKOpt) $(SKShaderSVSL) $(SKShaderForce) -e -i "$(IncludeFolderNormalized)" -o "$([System.String]::Copy('$(SKShaderOutputFolder)%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
+				<Outputs>$(SKShaderOutputFolder)%(SKShader.RelFile).sks</Outputs>
 				<RelativeName>%(SKShader.RelFile).sks</RelativeName>
 			</SKShader>
 		</ItemGroup>
@@ -62,6 +77,8 @@
 		<Exec Command="%(SKShader.Command)" Condition="'%(SKShader.Command)'!=''" Outputs="%(SKShader.Outputs)">
 			<Output ItemName="Generated" TaskParameter="Outputs" />
 		</Exec>
+
+		<WriteLinesToFile Condition="'$(SKShaderConfigFile)'!=''" File="$(SKShaderConfigFile)" Lines="$(Configuration)" Overwrite="true" WriteOnlyWhenDifferent="true"/>
 
 		<!-- FileWrite them so they get cleaned up on rebuilds -->
 		<ItemGroup>
@@ -72,7 +89,7 @@
 	<!-- Ensure shader binaries get properly included in the build process -->
 	<Target Name="StereoKit_ShaderCopy" BeforeTargets="StereoKit_ContentCopy" DependsOnTargets="StereoKit_ShaderBuild">
 		<ItemGroup>
-			<SKContent Include="$(IntermediateOutputPath)$(SKAssetDestination)/**/*.sks" />
+			<SKContent Include="$(SKShaderOutputFolder)**/*.sks" />
 		</ItemGroup>
 	</Target>
 
@@ -80,7 +97,9 @@
 
 	<!-- Collect shader files that should be treated like code. -->
 	<ItemGroup>
-		<SKShaderCode Condition="'$(SKBuildShaderCode)'=='true'" Include="$(SKShaderCodeFolder)**/*.hlsl" Exclude="**/bin/**;**/obj/**;**/$(SKAssetFolder)/**"/>
+		<!-- The second asset folder pattern catches '..' relative folders, which
+		     the '**/' prefixed pattern can't match. -->
+		<SKShaderCode Condition="'$(SKBuildShaderCode)'=='true'" Include="$(SKShaderCodeFolderNormalized)$(SKShaderCodeSearch)*.hlsl;$(SKShaderCodeFolderNormalized)$(SKShaderCodeSearch)*.svsl" Exclude="**/bin/**;**/obj/**;**/$(SKAssetFolder)/**;$(SKAssetFolderNormalized)**"/>
 		<UpToDateCheckInput Include="@(SKShaderCode)"/>
 
 		<Compile Include="@(SKShaderCode->'$(IntermediateOutputPath)%(RecursiveDir)Material%(Filename).gen.cs')" KeepDuplicates="false">

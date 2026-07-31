@@ -89,13 +89,22 @@ void anchor_stage_shutdown() {
 
 	// Write our persistent anchors to file
 	if (anchor_stage_sys.persistent.count > 0) {
+		// string_from_float writes a locale-independent '.' decimal, so these
+		// always round-trip through string_to_float regardless of the user's
+		// locale (plain snprintf %g would emit "0,5" under fr_FR.UTF-8).
 		char* file_data = string_copy("");
 		char  line[512];
+		char  f[7][16];
 		for (int32_t i = 0; i < anchor_stage_sys.persistent.count; i++) {
 			anchor_t a = anchor_stage_sys.persistent[i];
-			snprintf(line, sizeof(line), "%.3g %.3g %.3g %.3g %.3g %.3g %.3g %s\n",
-				a->pose.position.x, a->pose.position.y, a->pose.position.z, 
-				a->pose.orientation.x, a->pose.orientation.y, a->pose.orientation.z, a->pose.orientation.w,
+			snprintf(line, sizeof(line), "%s %s %s %s %s %s %s %s\n",
+				string_from_float(a->pose.position.x,    f[0], sizeof(f[0]), 3),
+				string_from_float(a->pose.position.y,    f[1], sizeof(f[1]), 3),
+				string_from_float(a->pose.position.z,    f[2], sizeof(f[2]), 3),
+				string_from_float(a->pose.orientation.x, f[3], sizeof(f[3]), 3),
+				string_from_float(a->pose.orientation.y, f[4], sizeof(f[4]), 3),
+				string_from_float(a->pose.orientation.z, f[5], sizeof(f[5]), 3),
+				string_from_float(a->pose.orientation.w, f[6], sizeof(f[6]), 3),
 				a->name);
 			file_data = string_append(file_data, 1, line);
 		}

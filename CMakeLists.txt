@@ -181,11 +181,11 @@ elseif(WIN32)
   if (MSVC)
     set(WINDOWS_LIBS
     Comdlg32)
-
-    list(APPEND WINDOWS_LIBS WindowsApp) # Required for ISAC spatial audio code
   else()
     # MinGW/GCC cross-compile settings
-    add_compile_options(-mavx -mf16c)
+    # GCC spills 256-bit ymm with 32-byte-aligned vmovdqa, but only ever gets the
+    # 16 bytes Win64 guarantees, so keep it on 128-bit vectors. See GCC #54412.
+    add_compile_options(-mavx -mf16c -mprefer-vector-width=128)
     # Static runtime linking is applied per-target to StereoKitC only (see below)
     # Executables use the runtime from the DLL to avoid duplicate symbol errors
   endif()
@@ -297,15 +297,15 @@ set(SKR_BUILD_EXAMPLES OFF CACHE PATH "Faster build" FORCE)
 # If we're only using the SVSL shader compiler, we can drop glslang from
 # skshaderc and save ourselves a lot of binary size and build time!
 if (SK_USE_SVSL)
-  set(SKSHADERC_ENABLE_GLSLANG OFF CACHE BOOL "Not needed with SVSL" FORCE)
+  set(SKSHADERC_ENABLE_GLSLANG OFF CACHE BOOL "Not needed with SVSL")
 else()
-  set(SKSHADERC_ENABLE_GLSLANG ON  CACHE BOOL "Required for HLSL shaders" FORCE)
+  set(SKSHADERC_ENABLE_GLSLANG ON  CACHE BOOL "Required for HLSL shaders")
 endif()
 if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.7.9
+    GIT_TAG v2026.7.30
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to your
@@ -324,7 +324,7 @@ if (NOT SK_LOCAL_SK_APP)
   CPMAddPackage(
     NAME sk_app
     GITHUB_REPOSITORY StereoKit/sk_app
-    GIT_TAG v2026.5.20
+    GIT_TAG v2026.7.28
   )
 else()
   # For building directly with in-progress sk_app changes, point this to your
@@ -409,8 +409,6 @@ set(SK_SRC_LIBRARIES
   StereoKitC/libraries/ferr_hash.h
   StereoKitC/libraries/ferr_hash.cpp
   StereoKitC/libraries/gen_ids.h
-  StereoKitC/libraries/isac_spatial_sound.h
-  StereoKitC/libraries/isac_spatial_sound.cpp
   StereoKitC/libraries/micro_ply.h
   StereoKitC/libraries/miniaudio.h
   StereoKitC/libraries/miniaudio.cpp
@@ -442,6 +440,7 @@ set(SK_SRC_SYSTEMS
   StereoKitC/systems/_stereokit_systems.cpp
   StereoKitC/systems/audio.h
   StereoKitC/systems/audio.cpp
+  StereoKitC/systems/audio_mix.cpp
   StereoKitC/systems/bbox.h
   StereoKitC/systems/bbox.cpp
   StereoKitC/systems/bvh.h
@@ -633,13 +632,19 @@ add_library(StereoKitC ${LIBRARY_TYPE}
   ${SK_SRC_UI}
   ${SK_SRC_SHADERS_H} )
 
+# Realtime DSP built on inline SIMD wrappers is ~10x slower at -O0 and misses
+# the device deadline, so these files compile optimized in every config - the
+# trade is optimized-out values when stepping through them in a debugger.
+# (MSVC skipped: /O2 conflicts with Debug's default /RTC1 checks.)
+if (NOT MSVC)
+  set_source_files_properties(
+    StereoKitC/systems/audio_mix.cpp
+    StereoKitC/libraries/miniaudio.cpp
+    PROPERTIES COMPILE_OPTIONS "$<$<CONFIG:Debug>:-O2>")
+endif()
+
 if (ANDROID)
   set_property(TARGET StereoKitC PROPERTY CXX_STANDARD 11)
-  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD_REQUIRED ON)
-elseif (MSVC)
-  # C++/WinRT (isac_spatial_sound.cpp) needs C++20's <coroutine>, the
-  # <experimental/coroutine> it falls back to in C++17 is removed in VS2026.
-  set_property(TARGET StereoKitC PROPERTY CXX_STANDARD 20)
   set_property(TARGET StereoKitC PROPERTY CXX_STANDARD_REQUIRED ON)
 else()
   set_property(TARGET StereoKitC PROPERTY CXX_STANDARD 17)
@@ -698,11 +703,6 @@ if (NOT MSVC)
         COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}
         COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:StereoKitC>
         COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT} $<TARGET_FILE:StereoKitC>
-      )
-    endif()
-    if (SK_DYNAMIC_OPENXR AND SK_STRIP_DEBUG_SYMBOLS)
-      add_custom_command(TARGET StereoKitC POST_BUILD
-        COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:openxr_loader>
       )
     endif()
   endif()
@@ -838,9 +838,19 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 else()
   set(SK_ARCH "Unknown")
 endif()
+# The tool folders are lowercase, MSVC's platform names are not
+string(TOLOWER "${SK_ARCH}" SK_ARCH_LOWER)
 
 set(SK_DISTRIBUTE_FOLDER "bin/distribute")
-set(SK_DISTRIBUTE ON CACHE BOOL "Copy StereoKit bin & tool to the StereoKit source folder")
+# These copies feed C# builds and NuGet packing, only meaningful when working
+# in the StereoKit repo itself. Consumers pulling StereoKit in via CMake keep
+# their checkout untouched.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  set(SK_DISTRIBUTE_DEFAULT ON)
+else()
+  set(SK_DISTRIBUTE_DEFAULT OFF)
+endif()
+set(SK_DISTRIBUTE ${SK_DISTRIBUTE_DEFAULT} CACHE BOOL "Copy StereoKit bin & tool to the StereoKit source folder")
 
 if(SK_DISTRIBUTE)
   add_custom_command(TARGET StereoKitC POST_BUILD
@@ -849,11 +859,16 @@ if(SK_DISTRIBUTE)
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
 
-  # Copy shader compiler (Android uses pre-built binary, so no skshaderc target exists)
-  if(NOT ANDROID)
+  # Copy the shader compiler out of the build folder. tools/ is what local C#
+  # builds run, bin/tools/ is what the NuGet package packs. Targets that can't
+  # run a compiler of their own (Android, web) build no skshaderc to copy.
+  if(TARGET skshaderc)
+    set(SK_TOOL_PLATFORM "${SK_BIN_OS_LOWER}_${SK_ARCH_LOWER}")
     add_custom_command(TARGET StereoKitC POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_BIN_OS_LOWER}_${SK_ARCH}"
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:skshaderc>" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_BIN_OS_LOWER}_${SK_ARCH}")
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_TOOL_PLATFORM}"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:skshaderc>" "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_TOOL_PLATFORM}"
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/bin/tools/${SK_TOOL_PLATFORM}"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:skshaderc>" "${CMAKE_CURRENT_SOURCE_DIR}/bin/tools/${SK_TOOL_PLATFORM}")
   endif()
 
   if (SK_SEPARATE_DBG)
@@ -861,9 +876,15 @@ if(SK_DISTRIBUTE)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}" )
   endif()
   if (SK_DYNAMIC_OPENXR)
+    set(SK_OPENXR_LOADER_DIST_SRC "$<TARGET_FILE:openxr_loader>")
+    if (SK_STRIP_DEBUG_SYMBOLS AND NOT MSVC AND NOT APPLE)
+      set(SK_OPENXR_LOADER_DIST_SRC "${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:openxr_loader>.stripped")
+      add_custom_command(TARGET StereoKitC POST_BUILD
+        COMMAND ${CMAKE_STRIP} --strip-debug -o "${SK_OPENXR_LOADER_DIST_SRC}" "$<TARGET_FILE:openxr_loader>" )
+    endif()
     add_custom_command(TARGET StereoKitC POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard"
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:openxr_loader>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard/$<TARGET_FILE_NAME:openxr_loader>" )
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SK_OPENXR_LOADER_DIST_SRC}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard/$<TARGET_FILE_NAME:openxr_loader>" )
   endif()
   # Copy sk_app.jar on Android (Java classes for file dialogs, activity results)
   if (ANDROID AND TARGET sk_app_jar)
@@ -902,12 +923,12 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_draw.cpp
     Examples/StereoKitCTest/demo_aliasing.h
     Examples/StereoKitCTest/demo_aliasing.cpp
+    Examples/StereoKitCTest/demo_postfx.h
+    Examples/StereoKitCTest/demo_postfx.cpp
     Examples/StereoKitCTest/demo_bvh.h
     Examples/StereoKitCTest/demo_bvh.cpp
     Examples/StereoKitCTest/demo_custom_verts.h
     Examples/StereoKitCTest/demo_custom_verts.cpp
-    Examples/StereoKitCTest/demo_desktop.h
-    Examples/StereoKitCTest/demo_desktop.cpp
     Examples/StereoKitCTest/demo_picker.h
     Examples/StereoKitCTest/demo_picker.cpp
     Examples/StereoKitCTest/demo_mic.h
@@ -924,8 +945,6 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/demo_mixed_reality.cpp
     Examples/StereoKitCTest/demo_anchors.h
     Examples/StereoKitCTest/demo_anchors.cpp
-    Examples/StereoKitCTest/demo_windows.h
-    Examples/StereoKitCTest/demo_windows.cpp
     Examples/StereoKitCTest/demo_lines.h
     Examples/StereoKitCTest/demo_lines.cpp
     Examples/StereoKitCTest/demo_lighting.h
@@ -933,6 +952,11 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/skt_lighting.h
     Examples/StereoKitCTest/skt_lighting.cpp
   )
+
+  # Without a standard here we get the compiler's default, and GCC 16 moved that
+  # to C++20, where u8 literals are char8_t and no longer fit the C API.
+  set_property(TARGET StereoKitCTest PROPERTY CXX_STANDARD 17)
+  set_property(TARGET StereoKitCTest PROPERTY CXX_STANDARD_REQUIRED ON)
 
   target_link_libraries( StereoKitCTest PRIVATE StereoKitC )
   if (SK_DYNAMIC_OPENXR)
@@ -956,18 +980,58 @@ if (SK_BUILD_TESTS)
   skshaderc_compile_headers( StereoKitCTest
     ${CMAKE_BINARY_DIR}/shaders/
     "-e -O3 -f ${SK_SHADER_SVSL} ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
-    Examples/StereoKitCTest/Shaders/blit.hlsl
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
     Examples/StereoKitCTest/Shaders/skt_light_only.hlsl
     Examples/StereoKitCTest/Shaders/skt_shadow.hlsl
     Examples/StereoKitCTest/Shaders/skt_shadow_caster.hlsl
-    Examples/StereoKitCTest/Shaders/skt_vert_custom.hlsl)
+    Examples/StereoKitCTest/Shaders/skt_vert_custom.hlsl
+    Examples/StereoKitCTest/Shaders/skt_postfx_vignette.hlsl
+    Examples/StereoKitCTest/Shaders/skt_postfx_invert.hlsl
+    Examples/StereoKitCTest/Shaders/skt_postfx_depth_fog.hlsl)
 
   # Add source assets and compiled shaders to the app
   target_skapp_assets(StereoKitCTest ${CMAKE_CURRENT_BINARY_DIR}/shaders)
   target_skapp_assets(StereoKitCTest ${CMAKE_CURRENT_SOURCE_DIR}/Examples/Assets)
 
   #target_link_options   (StereoKitCTest PRIVATE ${SK_LINKER_FLAGS})
+endif()
+
+###########################################
+## SKTests                               ##
+###########################################
+
+# Headless native test runner (tools/tests). Each suite self-inits SK in
+# offscreen mode, so it needs no window, shaders, or assets - just StereoKitC.
+# Desktop only: it's a CLI test binary, not an interactive app.
+if (SK_BUILD_TESTS AND NOT ANDROID)
+  add_skapp ( SKTests
+    APP_NAME "StereoKit Native Tests" )
+
+  target_sources( SKTests PRIVATE
+    tools/tests/main.cpp
+    tools/tests/audio_tests.h
+    tools/tests/audio_tests.cpp
+    tools/tests/audio_render.cpp
+  )
+
+  # See the StereoKitCTest note: pin C++17 so the C API's u8 literals stay char.
+  set_property(TARGET SKTests PROPERTY CXX_STANDARD 17)
+  set_property(TARGET SKTests PROPERTY CXX_STANDARD_REQUIRED ON)
+
+  target_link_libraries( SKTests PRIVATE StereoKitC )
+  if (SK_DYNAMIC_OPENXR)
+    target_link_libraries( SKTests PRIVATE openxr_loader )
+  endif()
+
+  if (MINGW)
+    target_link_options(SKTests PRIVATE -static -Wl,--allow-multiple-definition)
+  endif()
+  if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
+    target_compile_options(SKTests PRIVATE "/MP8")
+  endif()
+
+  # MacOS needs MoltenVK beside the binary for the offscreen device to init.
+  skr_copy_moltenvk(SKTests)
 endif()
 
 ###########################################

@@ -13,6 +13,20 @@ namespace StereoKit
 		/// of the user-defined callbacks.</summary>
 		private static Queue<RenderOnScreenshotCallback> _renderCaptureCallbacks;
 
+		// Wrap a user screenshot callback in a native-compatible delegate, queued
+		// so the GC can't collect it before the native side fires it.
+		private static RenderOnScreenshotCallback QueueScreenshotCallback(ScreenshotCallback onScreenshot)
+		{
+			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
+			RenderOnScreenshotCallback native = (IntPtr data, TexFormat format, int w, int h, IntPtr context) =>
+			{
+				onScreenshot.Invoke(data, format, w, h);
+				_ = _renderCaptureCallbacks.Dequeue();
+			};
+			_renderCaptureCallbacks.Enqueue(native);
+			return native;
+		}
+
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
 		/// displays, since transparent displays have the real world behind them already! StereoKit has a
 		/// a default procedurally generated skybox. You can load one with `Tex.FromEquirectangular`, 
@@ -91,12 +105,18 @@ namespace StereoKit
 		}
 
 		/// <summary>Allows you to set the multisample (MSAA) level of the
-		/// render surface. Valid values are 1, 2, 4, 8, 16, though some OpenXR
-		/// runtimes may clamp this to lower values. Note that while this can
-		/// greatly smooth out edges, it also greatly increases RAM usage and
-		/// fill rate, so use it sparingly. Only works in XR mode. If known in
-		/// advance, set this via SKSettings in initialization. This is a
-		/// _very_ costly change to make.</summary>
+		/// render surface. Valid values are 1, 2, 4, and 8, though this is
+		/// clamped to what the GPU actually supports. Note that while this
+		/// can greatly smooth out edges, it also increases RAM usage and
+		/// fill rate. How much it costs depends a lot on the GPU! Tiled
+		/// renderers, like the mobile chips in most standalone XR headsets,
+		/// resolve MSAA in tile memory, which makes it nearly free. Desktop
+		/// GPUs instead pay memory bandwidth for the multisampled surface
+		/// and for resolving it, so MSAA is far more expensive there,
+		/// especially at high resolutions. A value of 1 skips the
+		/// multisampled surface entirely. If known in advance, set this via
+		/// SKSettings in initialization. This is a _very_ costly change to
+		/// make. Defaults to 4.</summary>
 		public static int Multisample {
 			get => NativeAPI.render_get_multisample();
 			set => NativeAPI.render_set_multisample(value);
@@ -392,8 +412,8 @@ namespace StereoKit
 		/// thread! You can use the color data directly by saving/processing it
 		/// inside your callback, or you can keep the data alive for as long as
 		/// it is referenced.</summary>
-		/// <param name="onScreenshot">Outputs a reference to the color data
-		/// and its length which represent the current scene from a requested
+		/// <param name="onScreenshot">A callback that receives the captured
+		/// pixel data, its format, and its dimensions for the requested
 		/// viewpoint.</param>
 		/// <param name="from">Viewpoint location.</param>
 		/// <param name="at">Direction the viewpoint is looking at.</param>
@@ -405,16 +425,7 @@ namespace StereoKit
 		/// degrees.</param>
 		/// <param name="texFormat">The pixel format of the color data.</param>
 		public static void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90, TexFormat texFormat = TexFormat.Rgba32)
-		{
-			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
-			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
-			{
-				onScreenshot.Invoke(dataPtr, w, h);
-				_ = _renderCaptureCallbacks.Dequeue();
-			};
-			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_capture(renderCaptureCallback, Pose.LookAt(from, at), width, height, fieldOfViewDegrees, texFormat, IntPtr.Zero);
-		}
+			=> NativeAPI.render_screenshot_capture(QueueScreenshotCallback(onScreenshot), Pose.LookAt(from, at), width, height, fieldOfViewDegrees, texFormat, IntPtr.Zero);
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given position at the given point, with a
@@ -423,8 +434,8 @@ namespace StereoKit
 		/// thread! You can use the color data directly by saving/processing it
 		/// inside your callback, or you can keep the data alive for as long as
 		/// it is referenced.</summary>
-		/// <param name="onScreenshot">Outputs a reference to the color data
-		/// and its length which represent the current scene from a requested
+		/// <param name="onScreenshot">A callback that receives the captured
+		/// pixel data, its format, and its dimensions for the requested
 		/// viewpoint.</param>
 		/// <param name="camera">A TRS matrix representing the location and
 		/// orientation of the camera. This matrix gets inverted later on, so
@@ -443,16 +454,7 @@ namespace StereoKit
 		/// surface!</param>
 		/// <param name="texFormat">The pixel format of the color data.</param>
 		public static void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect), TexFormat texFormat = TexFormat.Rgba32)
-		{
-			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
-			RenderOnScreenshotCallback renderCaptureCallback = (IntPtr dataPtr, int w, int h, IntPtr context) =>
-			{
-				onScreenshot.Invoke(dataPtr, w, h);
-				_ = _renderCaptureCallbacks.Dequeue();
-			};
-			_renderCaptureCallbacks.Enqueue(renderCaptureCallback);
-			NativeAPI.render_screenshot_viewpoint(renderCaptureCallback, camera, projection, width, height, layerFilter, clear, viewport, texFormat, IntPtr.Zero);
-		}
+			=> NativeAPI.render_screenshot_viewpoint(QueueScreenshotCallback(onScreenshot), camera, projection, width, height, layerFilter, clear, viewport, texFormat, IntPtr.Zero);
 
 		/// <summary>This renders the current scene to the indicated 
 		/// rendertarget texture, from the specified viewpoint. This call 
@@ -486,13 +488,45 @@ namespace StereoKit
 		/// If the width of this value is zero, then this will render to the
 		/// entire texture.</param>
 		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
-			=> NativeAPI.render_to(toRendertarget._inst, 0, in camera, in projection, 1, layerFilter, materialVariant, clear, viewport);
+			=> RenderTo(toRendertarget, 0, camera, projection, new RenderSettings { layerFilter = layerFilter, materialVariant = materialVariant, clear = clear, viewport = viewport });
 
 		/// <inheritdoc cref="RenderTo(Tex, Matrix, Matrix, RenderLayer, int, RenderClear, Rect)"/>
 		/// <param name="toTargetIndex">Index of the render target's array
 		/// texture we want to draw to.</param>
 		public static void RenderTo(Tex toRendertarget, int toTargetIndex, Matrix camera, Matrix projection, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
-			=> NativeAPI.render_to(toRendertarget._inst, toTargetIndex, in camera, in projection, 1, layerFilter, materialVariant, clear, viewport);
+			=> RenderTo(toRendertarget, toTargetIndex, camera, projection, new RenderSettings { layerFilter = layerFilter, materialVariant = materialVariant, clear = clear, viewport = viewport });
+
+		/// <summary>This renders the current scene to the indicated
+		/// rendertarget texture from the specified viewpoint, using a
+		/// RenderSettings struct for everything else - including
+		/// tile-friendly post-processing effects! This call enqueues a
+		/// render that occurs immediately before the screen itself is
+		/// rendered.</summary>
+		/// <param name="toRendertarget">The texture to which the scene will
+		/// be rendered to. This must be a Rendertarget type texture.</param>
+		/// <param name="camera">A TRS matrix representing the location and
+		/// orientation of the camera. This matrix gets inverted later on, so
+		/// no need to do it yourself.</param>
+		/// <param name="projection">The projection matrix describes how the
+		/// geometry is flattened onto the draw surface. Normally, you'd use
+		/// Matrix.Perspective, and occasionally Matrix.Orthographic might be
+		/// helpful as well.</param>
+		/// <param name="settings">Settings for this render pass, a
+		/// `default` here means all layers, the default material variant,
+		/// clear everything to transparent black, a full-target viewport,
+		/// and no post-processing.</param>
+		public static void RenderTo(Tex toRendertarget, Matrix camera, Matrix projection, RenderSettings settings)
+			=> RenderTo(toRendertarget, 0, camera, projection, settings);
+
+		/// <inheritdoc cref="RenderTo(Tex, Matrix, Matrix, RenderSettings)"/>
+		/// <param name="toTargetIndex">Index of the render target's array
+		/// texture we want to draw to.</param>
+		public static void RenderTo(Tex toRendertarget, int toTargetIndex, Matrix camera, Matrix projection, RenderSettings settings)
+		{
+			RenderSettingsNative native = settings.ToNative(out var pin);
+			NativeAPI.render_to(toRendertarget._inst, toTargetIndex, in camera, in projection, 1, in native);
+			if (pin.IsAllocated) pin.Free();
+		}
 
 		/// <summary>Multi-view variant of RenderTo. Queues a single render
 		/// pass that draws the active list into N views at once, with one
@@ -511,10 +545,46 @@ namespace StereoKit
 		/// <param name="clear">Whether and how to clear the rendertarget.</param>
 		/// <param name="viewport">Subregion in normalized 0-1 coordinates.</param>
 		public static void RenderTo(Tex toRendertarget, in Matrix[] cameras, in Matrix[] projections, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0, RenderClear clear = RenderClear.All, Rect viewport = default(Rect))
+			=> RenderTo(toRendertarget, cameras, projections, new RenderSettings { layerFilter = layerFilter, materialVariant = materialVariant, clear = clear, viewport = viewport });
+
+		/// <inheritdoc cref="RenderTo(Tex, Matrix, Matrix, RenderSettings)"/>
+		/// <param name="cameras">View transforms, one per view.</param>
+		/// <param name="projections">Projection matrices, one per view.
+		/// Length must match `cameras`.</param>
+		public static void RenderTo(Tex toRendertarget, in Matrix[] cameras, in Matrix[] projections, RenderSettings settings)
 		{
 			if (cameras.Length != projections.Length)
 				throw new ArgumentException("cameras and projections must have the same length");
-			NativeAPI.render_to(toRendertarget._inst, 0, cameras, projections, cameras.Length, layerFilter, materialVariant, clear, viewport);
+			RenderSettingsNative native = settings.ToNative(out var pin);
+			NativeAPI.render_to(toRendertarget._inst, 0, cameras, projections, cameras.Length, in native);
+			if (pin.IsAllocated) pin.Free();
+		}
+
+		/// <summary>Sets the main display's post-process chain! The
+		/// Materials apply in array order, at most 2 per pass, and calling
+		/// this with no arguments clears the chain. Post-processing here is
+		/// tile-renderer friendly: effects run as subpasses that stay in
+		/// tile memory on mobile GPUs, and they apply to the main display
+		/// and to screenshots - what you see is what you shoot.
+		///
+		/// A post-process Material's shader reads the scene through a
+		/// pixel-local input attachment named 'color' (in HLSL,
+		/// `[[vk::input_attachment_index(0)]] SubpassInput&lt;float4&gt; color;`
+		/// read with `color.SubpassLoad()`), draws as a bufferless
+		/// fullscreen triangle from SV_VertexID, and so cannot have vertex
+		/// inputs. It may also read depth through an input attachment named
+		/// 'depth' at index 1. Materials that don't qualify are rejected
+		/// with an error log. Regular textures and Material parameters work
+		/// normally, and can be animated per-frame.</summary>
+		/// <param name="postProcessChain">Materials whose shaders qualify
+		/// as post-process effects, applied in order. Empty clears the
+		/// chain.</param>
+		public static void SetPostProcess(params Material[] postProcessChain)
+		{
+			IntPtr[] materials = new IntPtr[postProcessChain?.Length ?? 0];
+			for (int i = 0; i < materials.Length; i++)
+				materials[i] = postProcessChain[i]?._inst ?? IntPtr.Zero;
+			NativeAPI.render_set_post_process(materials, materials.Length);
 		}
 
 		/// <summary>This attaches a texture resource globally across all

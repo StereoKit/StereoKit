@@ -89,7 +89,7 @@ class GuideWorkingWithMaterials : ITest
 	/// screen, and calculates the color of every pixel. Since each shader
 	/// program is different, each one has different parameters it works with!
 	/// 
-	/// While [`MatParamName`]({{site.url}}/Pages/Reference/MatParamName.html)
+	/// While [`MatParamName`]({{site.url}}/Pages/StereoKit/MatParamName.html)
 	/// helps to codify and standardize common parameter names, it's always
 	/// best to be somewhat familiar with the Shader that the Material is
 	/// using.
@@ -108,20 +108,20 @@ class GuideWorkingWithMaterials : ITest
 	/// Shaders use data embedded in comments to assign default values to
 	/// material properties, the `//--` indicates this. So in this case,
 	/// `color` is a float4 (Vec4 or Color in C#), with a default value of
-	/// `1,1,1,1`, white. This maps to [`MatParamName.ColorTint`]({{site.url}}/Pages/Reference/MatParamName.html),
+	/// `1,1,1,1`, white. This maps to [`MatParamName.ColorTint`]({{site.url}}/Pages/StereoKit/MatParamName.html),
 	/// but you could also use the name directly:
 	/// `newMaterial["color"] = Color.HSV(0.3f, 0.2f, 1.0f);`.
 	/// 
 	/// Materials also have a few properties that aren't part of the Shader,
-	/// things like [depth testing]({{site.url}}/Pages/Reference/Material/DepthTest.html)/[writing]({{site.url}}/Pages/Reference/Material/DepthWrite.html),
-	/// [transparency]({{site.url}}/Pages/Reference/Material/Transparency.html),
-	/// [face culling]({{site.url}}/Pages/Reference/Material/FaceCull.html),
-	/// or [wireframe]({{site.url}}/Pages/Reference/Material/Wireframe.html).
+	/// things like [depth testing]({{site.url}}/Pages/StereoKit/Material/DepthTest.html)/[writing]({{site.url}}/Pages/StereoKit/Material/DepthWrite.html),
+	/// [transparency]({{site.url}}/Pages/StereoKit/Material/Transparency.html),
+	/// [face culling]({{site.url}}/Pages/StereoKit/Material/FaceCull.html),
+	/// or [wireframe]({{site.url}}/Pages/StereoKit/Material/Wireframe.html).
 	/// 
 	/// ### Material from Shader
 	/// 
 	/// You can also create a completely new Material directly from a Shader!
-	/// StereoKit does keep the default Shaders around in the [`Shader`]({{site.url}}/Pages/Reference/Shader.html)
+	/// StereoKit does keep the default Shaders around in the [`Shader`]({{site.url}}/Pages/StereoKit/Shader.html)
 	/// class for this purpose, but you can also use Shader.FromFile to load a
 	/// pre-compiled shader file, and use that instead. More on that in the
 	/// [Shader guide (coming soon)]().
@@ -158,7 +158,7 @@ class GuideWorkingWithMaterials : ITest
 /// ![Interesting lighting]({{site.screen_url}}/MaterialDefault.jpg)
 /// 
 /// You can change the environment lighting with a nice cubemap, check out the
-/// [`Renderer.SkyLight`]({{site.url}}/Pages/Reference/Renderer/SkyLight.html)
+/// [`Renderer.SkyLight`]({{site.url}}/Pages/StereoKit/Renderer/SkyLight.html)
 /// property for a nice example of how to do this!
 /// 
 /// ## Materials and Performance
@@ -198,18 +198,18 @@ class GuideWorkingWithMaterials : ITest
 /// should cover the majority of use-cases. Here's a sampling, and check
 /// the docs for each one to see what properties they support!
 /// 
-/// ### [`Material.Default`]({{site.url}}/Pages/Reference/Default/Material.html)
+/// ### [`Material.Default`]({{site.url}}/Pages/StereoKit/Default/Material.html)
 /// ![Material.Default preview]({{site.screen_url}}/MaterialDefault.jpg)
 /// 
-/// ### [`Material.Unlit`]({{site.url}}/Pages/Reference/Default/MaterialUnlit.html)
+/// ### [`Material.Unlit`]({{site.url}}/Pages/StereoKit/Default/MaterialUnlit.html)
 /// ![Material.Unlit preview]({{site.screen_url}}/MaterialUnlit.jpg)
 /// 
-/// ### [`Material.PBR`]({{site.url}}/Pages/Reference/Default/MaterialPBR.html)
+/// ### [`Material.PBR`]({{site.url}}/Pages/StereoKit/Default/MaterialPBR.html)
 /// ![Material.PBR preview]({{site.screen_url}}/MaterialPBR.jpg)
 /// 
-/// ### [`Material.UI`]({{site.url}}/Pages/Reference/Default/MaterialUI.html)
+/// ### [`Material.UI`]({{site.url}}/Pages/StereoKit/Default/MaterialUI.html)
 /// ![Material.UI preview]({{site.screen_url}}/MaterialUI.jpg)
 /// 
-/// ### [`Material.UIBox`]({{site.url}}/Pages/Reference/Default/MaterialUIBox.html)
+/// ### [`Material.UIBox`]({{site.url}}/Pages/StereoKit/Default/MaterialUIBox.html)
 /// ![Material.UIBox preview]({{site.screen_url}}/MaterialUIBox.jpg)
 /// :End:

@@ -69,7 +69,8 @@ class DemoShadows : ITest
 	{
 		Renderer.SkyLight = oldLighting;
 		Renderer.SkyTex   = oldTex;
-		Renderer.SetGlobalBuffer(13, null);
+		Renderer.SetGlobalBuffer (13, null);
+		Renderer.SetGlobalTexture(13, null);
 	}
 	public void Step()
 	{
@@ -78,6 +79,7 @@ class DemoShadows : ITest
 		UI.Handle("Model", ref modelPose, model.Bounds);
 		model.Draw(modelPose.ToMatrix());
 
+		Tests.Screenshot("Demos/Shadows.jpg", 600, 600, 60, modelPose.position + V.XYZ(0.15f, 0.5f, 0.8f), modelPose.position);
 		Demo.ShowSummary(title, description,
 			new Bounds(V.XY0(0, -0.05f), V.XYZ(.6f, .4f, 0.6f)));
 	}

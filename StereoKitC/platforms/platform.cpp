@@ -13,6 +13,7 @@
 #include "../_stereokit.h"
 #include "../sk_memory.h"
 #include "../systems/vert_format.h"
+#include "../systems/render.h"
 #include "../sk_math.h"
 #include "../log.h"
 #include "../libraries/stref.h"
@@ -168,6 +169,10 @@ bool platform_init() {
 		log_fail_reason(95, log_error, "Failed to initialize sk_renderer!");
 		return false;
 	}
+
+	// The app's multisample request is unvalidated until now, since snapping
+	// it to a real sample count needs the GPU's limits.
+	render_set_multisample(render_get_multisample());
 
 	// The vertex format registry wraps skr vertex types, and travels with
 	// skr's lifecycle — its shutdown pairs with skr_shutdown.

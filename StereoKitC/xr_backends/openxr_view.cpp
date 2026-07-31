@@ -826,7 +826,11 @@ bool openxr_render_frame() {
 	{
 		profiler_zone_name("xrBeginFrame");
 
-		xr_check(xrBeginFrame(xr_session, &begin_info),
+		uint32_t queue_family = skr_get_vk_graphics_queue_family();
+		skr_vk_queue_lock(queue_family);
+		XrResult begin_result = xrBeginFrame(xr_session, &begin_info);
+		skr_vk_queue_unlock(queue_family);
+		xr_check(begin_result,
 			"xrBeginFrame");
 	}
 
@@ -946,7 +950,11 @@ bool openxr_render_frame() {
 	{
 		profiler_zone_name("xrEndFrame");
 
-		xr_check(xrEndFrame(xr_session, &end_info),
+		uint32_t queue_family = skr_get_vk_graphics_queue_family();
+		skr_vk_queue_lock(queue_family);
+		XrResult end_result = xrEndFrame(xr_session, &end_info);
+		skr_vk_queue_unlock(queue_family);
+		xr_check(end_result,
 			"xrEndFrame");
 	}
 	return true;
@@ -1048,13 +1056,21 @@ bool openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 	uint64_t                    dead_start   = stm_now();
 	uint32_t                    color_id;
 	XrSwapchainImageAcquireInfo acquire_info = { XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
-	if (XR_FAILED(xrAcquireSwapchainImage(display->swapchain_color.handle, &acquire_info, &color_id))) return false;
-	display->swapchain_color.acquired = true;
-	if (display->swapchain_depth.handle) {
-		uint32_t depth_id;
-		if (XR_FAILED(xrAcquireSwapchainImage(display->swapchain_depth.handle, &acquire_info, &depth_id))) return false;
-		display->swapchain_depth.acquired = true;
+
+	uint32_t queue_family = skr_get_vk_graphics_queue_family();
+	skr_vk_queue_lock(queue_family);
+	XrResult acquire_result = xrAcquireSwapchainImage(display->swapchain_color.handle, &acquire_info, &color_id);
+	if (XR_SUCCEEDED(acquire_result)) {
+		display->swapchain_color.acquired = true;
+		if (display->swapchain_depth.handle) {
+			uint32_t depth_id;
+			acquire_result = xrAcquireSwapchainImage(display->swapchain_depth.handle, &acquire_info, &depth_id);
+			if (XR_SUCCEEDED(acquire_result))
+				display->swapchain_depth.acquired = true;
+		}
 	}
+	skr_vk_queue_unlock(queue_family);
+	if (XR_FAILED(acquire_result)) return false;
 
 	// Wait until the image is available to render to. The compositor could
 	// still be reading from it.
@@ -1086,8 +1102,11 @@ bool openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 void openxr_display_swapchain_release(device_display_t *display) {
 	// And tell OpenXR we're done with rendering to this one!
 	XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
+	uint32_t queue_family = skr_get_vk_graphics_queue_family();
+	skr_vk_queue_lock(queue_family);
 	if (display->swapchain_color.acquired) xrReleaseSwapchainImage(display->swapchain_color.handle, &release_info);
 	if (display->swapchain_depth.acquired) xrReleaseSwapchainImage(display->swapchain_depth.handle, &release_info);
+	skr_vk_queue_unlock(queue_family);
 	display->swapchain_color.acquired = false;
 	display->swapchain_depth.acquired = false;
 

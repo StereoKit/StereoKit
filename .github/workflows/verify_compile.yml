@@ -25,8 +25,8 @@ jobs:
 
     - name: Build Native Win32 x64
       run: |
-        cmake --preset Win32_x64_Release
-        cmake --build --preset Win32_x64_Release
+        cmake --preset Win32_x64_Release_Fast
+        cmake --build --preset Win32_x64_Release_Fast
 
   native-macos:
     runs-on: macos-14
@@ -46,8 +46,8 @@ jobs:
 
     - name: Build Native macOS ARM64
       run: |
-        cmake --preset MacOS_Arm64_Release
-        cmake --build --preset MacOS_Arm64_Release
+        cmake --preset MacOS_Arm64_Release_Fast
+        cmake --build --preset MacOS_Arm64_Release_Fast
 
   native-linux-android-dotnet:
     runs-on: ubuntu-22.04
@@ -72,8 +72,8 @@ jobs:
 
     - name: Build Native Linux x64
       run: |
-        cmake --preset Linux_x64_Release
-        cmake --build --preset Linux_x64_Release
+        cmake --preset Linux_x64_Debug_Fast
+        cmake --build --preset Linux_x64_Debug_Fast
 
     - name: Set up Android NDK
       uses: nttld/setup-ndk@v1.4.2
@@ -97,8 +97,8 @@ jobs:
 
     - name: Build Native Android ARM64
       run: |
-        cmake --preset Android_Arm64_Release
-        cmake --build --preset Android_Arm64_Release
+        cmake --preset Android_Arm64_Release_Fast
+        cmake --build --preset Android_Arm64_Release_Fast
       env:
         NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
 
@@ -108,4 +108,4 @@ jobs:
         dotnet-version: 7.0.x
 
     - name: Build Sample Project
-      run: dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Release
+      run: dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Debug

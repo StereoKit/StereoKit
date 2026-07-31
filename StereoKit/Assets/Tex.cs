@@ -491,6 +491,41 @@ namespace StereoKit
 		public IntPtr GetNativeSurface()
 			=> NativeAPI.tex_get_surface(_inst);
 
+		/// <summary>Imports an Android AHardwareBuffer as an external
+		/// texture, YCbCr camera or decoder buffers come in via sampler
+		/// conversion. This allows zero-copy access to hardware decoder or
+		/// camera output. This is only functional on Android, and requires
+		/// device support for hardware buffer import.</summary>
+		/// <param name="hardwareBuffer">An AHardwareBuffer* coerced into an
+		/// IntPtr.</param>
+		/// <param name="ownsBuffer">Should ownership of the hardware buffer
+		/// be passed on to StereoKit? If so, StereoKit will release it when
+		/// the texture is destroyed.</param>
+		/// <returns>A Tex asset wrapping the hardware buffer, or null if the
+		/// buffer is null, the device doesn't support importing hardware
+		/// buffers, or the import failed.</returns>
+		public static Tex FromHardwareBuffer(IntPtr hardwareBuffer, bool ownsBuffer = false)
+		{
+			IntPtr inst = NativeAPI.tex_create_from_hardware_buffer(hardwareBuffer, ownsBuffer);
+			if (inst == IntPtr.Zero) return null;
+			if (NativeAPI.tex_asset_state(inst) < AssetState.None)
+			{
+				NativeAPI.assets_releaseref_threadsafe(inst);
+				return null;
+			}
+			return new Tex(inst);
+		}
+
+		/// <summary>This will return the AHardwareBuffer* backing this
+		/// texture, if it was created from one. This call will block
+		/// execution until the texture is loaded, if it is not already.
+		/// </summary>
+		/// <returns>An AHardwareBuffer* coerced into an IntPtr, or
+		/// IntPtr.Zero if the texture is not backed by a hardware buffer, or
+		/// when not on Android.</returns>
+		public IntPtr GetHardwareBuffer()
+			=> NativeAPI.tex_get_hardware_buffer(_inst);
+
 		/// <summary>Retrieve the color data of the texture from the GPU. This
 		/// can be a very slow operation, so use it cautiously.</summary>
 		/// <typeparam name="T">This should be a struct or basic type used to

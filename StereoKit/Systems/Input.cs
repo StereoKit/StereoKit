@@ -364,6 +364,18 @@ namespace StereoKit
 		/// </summary>
 		public static Mouse Mouse => Marshal.PtrToStructure<Mouse>(NativeAPI.input_mouse());
 
+		/// <summary>How should the mouse cursor behave? Use this to hide the
+		/// cursor, or to capture it for mouse-look style camera control. Only
+		/// the Simulator and Window backends have a cursor to act on, but the
+		/// mode is remembered everywhere. StereoKit restores the cursor
+		/// whenever the app loses focus, and this keeps reporting the mode you
+		/// asked for while that happens.</summary>
+		public static MouseMode MouseMode
+		{
+			set => NativeAPI.input_mouse_mode_set(value);
+			get => NativeAPI.input_mouse_mode_get();
+		}
+
 		/// <summary>This controls the visibility of StereoKit's finger glow
 		/// effect on the UI. When true, SK will fill out global shader
 		/// variable `sk_fingertip[2]` with the location of the pointer

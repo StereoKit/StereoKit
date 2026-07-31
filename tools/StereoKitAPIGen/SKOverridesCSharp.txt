@@ -78,6 +78,7 @@ color128 Color
 transparency_msaa MSAA
 
 sk_settings_t SKSettings
+backend_vulkan_request_t BackendVulkanRequest
 vind_t uint
 vert_t Vertex
 vert_component_t VertComponent
@@ -110,25 +111,37 @@ ui_dir_ UIDir
 ui_corner_ UICorner
 ui_scroll_ UIScroll
 
+# The acoustic environment parameter struct
+audio_env_t AudioEnvironment
+
 # Skip code generation for hand-written types (use @noimpl directive)
 # Math types with operators, constructors, helpers
 @noimpl vec2 vec3 vec4 color32 color128 quat matrix
 @noimpl pose_t bounds_t ray_t plane_t sphere_t
 
 # Complex structs in NativeTypes.cs with special handling
-@noimpl sk_settings_t rect_t
+@noimpl sk_settings_t rect_t sound_play_t
 @noimpl hand_sim_id_t id_hash_t
+# Request struct has string/feature arrays, hand-marshaled in Backend.Vulkan.Request
+@noimpl backend_vulkan_request_t
 
 # UI types with special handling
 # (none currently)
 
 # Structs with existing hand-written versions elsewhere
 @noimpl hand_joint_t sound_inst_t gradient_key_t sh_light_t
-@noimpl vert_component_t
+@noimpl vert_t vert_component_t
 
 # Functions with hand-written bindings in NativeAPI.Custom.cs
-# (none currently)
+# render_to/render_list_draw_now take render_settings_t by typed ref there,
+# rather than the generator's IntPtr.
+@noimpl render_to render_list_draw_now
+# sound_generate's callback is the batch delegate, and sound_create_mem takes
+# a raw byte blob - neither is inferable from the void*/fnptr signature.
+@noimpl sound_generate sound_create_mem
 @noimpl spherical_harmonics_t hand_t controller_t file_filter_t
+# Request takes arrays of strings/features, hand-marshaled in NativeAPI.Custom.cs
+@noimpl backend_vulkan_request
 
 # Enums with hand-written struct implementations
 @noimpl text_align_

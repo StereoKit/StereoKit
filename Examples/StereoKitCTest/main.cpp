@@ -16,14 +16,14 @@ using namespace sk;
 #include "demo_draw.h"
 #include "demo_envmap.h"
 #include "demo_shadows.h"
-#include "demo_windows.h"
-#include "demo_desktop.h"
 #include "demo_bvh.h"
 #include "demo_aliasing.h"
+#include "demo_postfx.h"
 #include "demo_custom_verts.h"
 #include "log_window.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include <string>
 
@@ -93,6 +93,11 @@ scene_t demos[] = {
 		demo_aliasing_update,
 		demo_aliasing_shutdown,
 	}, {
+		"PostFX",
+		demo_postfx_init,
+		demo_postfx_update,
+		demo_postfx_shutdown,
+	}, {
 		"Custom Verts",
 		demo_custom_verts_init,
 		demo_custom_verts_update,
@@ -108,19 +113,6 @@ scene_t demos[] = {
 		demo_mixed_reality_update,
 		demo_mixed_reality_shutdown,
 	},
-#if defined(_WIN32)
-	{
-		"Windows",
-		demo_windows_init,
-		demo_windows_update,
-		demo_windows_shutdown,
-	}, {
-		"Desktop",
-		demo_desktop_init,
-		demo_desktop_update,
-		demo_desktop_shutdown,
-	}
-#endif
 };
 
 
@@ -134,7 +126,14 @@ void ruler_window();
 // Placed behind the viewer, where the log has traditionally lived.
 pose_t log_pose = pose_t{vec3{0, -0.1f, 0.5f}, quat_lookat(vec3_zero, vec3_forward)};
 
-int main() {
+int main(int argc, char* argv[]) {
+	// Optional starting scene by name, like `-scene Shadows`
+	const char* start_scene = nullptr;
+	for (int i = 1; i < argc - 1; i++) {
+		if (strcmp(argv[i], "-scene") == 0)
+			start_scene = argv[i + 1];
+	}
+
 	// Subscribe before sk_init so the window catches logs from startup.
 	log_window_init();
 	log_set_filter(log_diagnostic);
@@ -149,7 +148,12 @@ int main() {
 
 	common_init();
 
-	scene_set_active(demos[0]);
+	scene_t* active = &demos[0];
+	if (start_scene) {
+		for (size_t i = 0; i < sizeof(demos)/sizeof(demos[0]); i++)
+			if (demos[i].name == start_scene) active = &demos[i];
+	}
+	scene_set_active(*active);
 
 	sk_run(common_update, common_shutdown);
 

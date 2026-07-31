@@ -138,7 +138,32 @@ namespace StereoKit
 		/// Material has no corresponding variant, it will not be drawn.
 		/// </param>
 		public void DrawNow(Tex toRenderTarget, Matrix camera, Matrix projection, Color clearColor = default, RenderClear clear = RenderClear.All, Rect viewportPct = default, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0)
-			=> NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, in camera, in projection, 1, clearColor, clear, viewportPct, layerFilter, materialVariant);
+			=> DrawNow(toRenderTarget, camera, projection, new RenderSettings { clearColor = clearColor, clear = clear, viewport = viewportPct, layerFilter = layerFilter, materialVariant = materialVariant });
+
+		/// <summary>This renders the RenderList to the rendertarget texture
+		/// immediately, from the specified viewpoint, using a RenderSettings
+		/// struct for everything else - including tile-friendly post-process
+		/// effects! See Renderer.SetPostProcess for post-process shader
+		/// requirements.</summary>
+		/// <param name="toRenderTarget">The rendertarget texture to draw to.
+		/// </param>
+		/// <param name="camera">A TRS matrix representing the location and
+		/// orientation of the camera. This matrix gets inverted later on, so
+		/// no need to do it yourself.</param>
+		/// <param name="projection">The projection matrix describes how the
+		/// geometry is flattened onto the draw surface. Normally, you'd use
+		/// Matrix.Perspective, and occasionally Matrix.Orthographic might be
+		/// helpful as well.</param>
+		/// <param name="settings">Settings for this render pass, a `default`
+		/// here means all layers, the default material variant, clear
+		/// everything to transparent black, a full-target viewport, and no
+		/// post-processing.</param>
+		public void DrawNow(Tex toRenderTarget, Matrix camera, Matrix projection, RenderSettings settings)
+		{
+			RenderSettingsNative native = settings.ToNative(out var pin);
+			NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, in camera, in projection, 1, in native);
+			if (pin.IsAllocated) pin.Free();
+		}
 
 		/// <summary>Multi-view variant of DrawNow. Renders the list once
 		/// across multiple views in a single pass, with one camera +
@@ -164,10 +189,21 @@ namespace StereoKit
 		/// <param name="materialVariant">Which material variant to use.
 		/// 0 is the default; non-zero indexes into Material.Variants.</param>
 		public void DrawNow(Tex toRenderTarget, in Matrix[] cameras, in Matrix[] projections, Color clearColor = default, RenderClear clear = RenderClear.All, Rect viewportPct = default, RenderLayer layerFilter = RenderLayer.All, int materialVariant = 0)
+			=> DrawNow(toRenderTarget, cameras, projections, new RenderSettings { clearColor = clearColor, clear = clear, viewport = viewportPct, layerFilter = layerFilter, materialVariant = materialVariant });
+
+		/// <inheritdoc cref="DrawNow(Tex, Matrix, Matrix, RenderSettings)"/>
+		/// <param name="cameras">View transforms, one per view. Length
+		/// must equal `projections.Length` and cannot exceed
+		/// Renderer.MaxViews.</param>
+		/// <param name="projections">Projection matrices, one per view.
+		/// Same length as `cameras`.</param>
+		public void DrawNow(Tex toRenderTarget, in Matrix[] cameras, in Matrix[] projections, RenderSettings settings)
 		{
 			if (cameras.Length != projections.Length)
 				throw new ArgumentException("cameras and projections must have the same length");
-			NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, cameras, projections, cameras.Length, clearColor, clear, viewportPct, layerFilter, materialVariant);
+			RenderSettingsNative native = settings.ToNative(out var pin);
+			NativeAPI.render_list_draw_now(_inst, toRenderTarget._inst, cameras, projections, cameras.Length, in native);
+			if (pin.IsAllocated) pin.Free();
 		}
 
 		/// <summary>The default RenderList used by the Renderer for the

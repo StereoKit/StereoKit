@@ -35,31 +35,9 @@ namespace StereoKit.Framework
 		static long ToNativeFormat(TexFormat format)
 		{
 			long nativeFormat;
-			if (Backend.Graphics == BackendGraphics.D3D11)
-			{
-				switch (format)
-				{
-					case TexFormat.Rgba32:       nativeFormat = 29; break;
-					case TexFormat.Rgba32Linear: nativeFormat = 28; break;
-					case TexFormat.Bgra32:       nativeFormat = 91; break;
-					case TexFormat.Bgra32Linear: nativeFormat = 87; break;
-					case TexFormat.Rgb10a2:      nativeFormat = 24; break;
-					case TexFormat.Rg11b10:      nativeFormat = 26; break;
-					default: throw new NotImplementedException();
-				}
-			}
-			else if (Backend.Graphics == BackendGraphics.OpenGLES_EGL)
-			{
-				switch (format)
-				{
-					case TexFormat.Rgba32:       nativeFormat = 0x8C43; break;
-					case TexFormat.Rgba32Linear: nativeFormat = 0x8058; break;
-					case TexFormat.Rgb10a2:      nativeFormat = 0x8059; break;
-					case TexFormat.Rg11b10:      nativeFormat = 0x8C3A; break;
-					default: throw new NotImplementedException();
-				}
-			}
-			else if (Backend.Graphics == BackendGraphics.Vulkan)
+			// StereoKit is Vulkan-only for now. New graphics backends (e.g. a
+			// future WebGPU) would add their own format mapping branch here.
+			if (Backend.Graphics == BackendGraphics.Vulkan)
 			{
 				switch (format)
 				{
@@ -378,33 +356,9 @@ namespace StereoKit.Framework
 				_images = new Tex[imageCount];
 
 				GCHandle mem;
-				if (Backend.Graphics == BackendGraphics.D3D11)
-				{
-					XrSwapchainImageD3D11KHR[] d3dImages = new XrSwapchainImageD3D11KHR[imageCount];
-					for (int i = 0; i < d3dImages.Length; i++) d3dImages[i].type = XrStructureType.SWAPCHAIN_IMAGE_D3D11_KHR;
-					mem = GCHandle.Alloc(d3dImages, GCHandleType.Pinned);
-					if (_inst.xrEnumerateSwapchainImages(handle, imageCount, out uint finalCount, mem.AddrOfPinnedObject()) != XrResult.Success) throw new Exception();
-
-					for (uint i = 0; i< d3dImages.Length; i++)
-					{
-						_images[i] = new Tex(TexType.Rendertarget, format);
-						_images[i].SetNativeSurface(d3dImages[i].ID3D11Texture2DTexture, TexType.Rendertarget, ToNativeFormat(format), width, height);
-					}
-				}
-				else if (Backend.Graphics == BackendGraphics.OpenGLES_EGL)
-				{
-					XrSwapchainImageOpenGLESKHR[] glesImages = new XrSwapchainImageOpenGLESKHR[imageCount];
-					for (int i = 0; i < glesImages.Length; i++) glesImages[i].type = XrStructureType.SWAPCHAIN_IMAGE_OPENGL_ES_KHR;
-					mem = GCHandle.Alloc(glesImages, GCHandleType.Pinned);
-					if (_inst.xrEnumerateSwapchainImages(handle, imageCount, out uint finalCount, mem.AddrOfPinnedObject()) != XrResult.Success) throw new Exception();
-
-					for (uint i = 0; i < glesImages.Length; i++)
-					{
-						_images[i] = new Tex(TexType.Rendertarget, format);
-						_images[i].SetNativeSurface((IntPtr)glesImages[i].image, TexType.Rendertarget, ToNativeFormat(format), width, height);
-					}
-				}
-				else if (Backend.Graphics == BackendGraphics.Vulkan)
+				// StereoKit is Vulkan-only for now. New graphics backends (e.g. a
+				// future WebGPU) would add their own swapchain image branch here.
+				if (Backend.Graphics == BackendGraphics.Vulkan)
 				{
 					XrSwapchainImageVulkanKHR[] vkImages = new XrSwapchainImageVulkanKHR[imageCount];
 					for (int i = 0; i < vkImages.Length; i++) vkImages[i].type = XrStructureType.SWAPCHAIN_IMAGE_VULKAN_KHR;

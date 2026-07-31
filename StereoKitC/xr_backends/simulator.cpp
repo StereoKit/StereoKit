@@ -37,6 +37,8 @@ vec3           sim_head_rot;
 vec3           sim_head_pos;
 pose_t         sim_bounds_pose;
 bool           sim_mouse_look;
+bool           sim_mouse_look_prev; // Mouse-look state the mouse mode was last synced to
+mouse_mode_    sim_mouse_mode_prev; // App's mouse mode, restored when mouse-look ends
 
 ska_window_t*       ska_win;
 skr_surface_t       sim_skr_surface;
@@ -65,11 +67,13 @@ bool simulator_init() {
 	device_data.runtime           = string_copy("Simulator");
 	device_data.runtime_version   = 0;
 
-	sim_head_rot     = { -21, 0.0001f, 0 };
-	sim_head_pos     = { 0, 0.2f, 0.0f };
-	sim_mouse_look   = false;
-	ska_win          = nullptr;
-	sim_skr_surface  = {};
+	sim_head_rot        = { -21, 0.0001f, 0 };
+	sim_head_pos        = { 0, 0.2f, 0.0f };
+	sim_mouse_look      = false;
+	sim_mouse_look_prev = false;
+	sim_mouse_mode_prev = mouse_mode_normal;
+	ska_win             = nullptr;
+	sim_skr_surface     = {};
 
 	quat initial_rot = quat_from_angles(0, sim_head_rot.y, 0);
 	switch (sk_get_settings_ref()->origin) {
@@ -117,6 +121,7 @@ bool simulator_init() {
 		sim_surface_resize(sim_surface, sim_skr_surface.size.x, sim_skr_surface.size.y);
 
 	interactor_modes_set_default(default_interactors_mouse);
+	input_mouse_set_window(ska_win);
 	input_hand_visible(handed_max, false);
 	input_set_finger_glow(false);
 	anchors_init();
@@ -128,7 +133,7 @@ bool simulator_init() {
 void sim_surface_resize(pipeline_surface_id surface, int32_t width, int32_t height) {
 	device_data.display_width  = width;
 	device_data.display_height = height;
-	render_pipeline_surface_resize(surface, width, height, 8);
+	render_pipeline_surface_resize(surface, width, height, render_get_multisample());
 }
 
 ///////////////////////////////////////////
@@ -165,6 +170,7 @@ void simulator_shutdown() {
 	skr_surface_destroy(&sim_skr_surface);
 	sim_skr_surface = {};
 
+	input_mouse_set_window(nullptr);
 	ska_window_destroy(ska_win);
 	ska_win = nullptr;
 	anchors_shutdown(NULL);
@@ -232,12 +238,6 @@ void simulator_step_begin() {
 			sim_head_rot.x -= mouse->pos_change.y * sim_rot_speed.y * time_stepf_unscaled();
 			sim_head_rot.x = fmaxf(-89.9f, fminf(sim_head_rot.x, 89.9f));
 			orientation = quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z);
-
-			vec2 prev_pt = mouse->pos - mouse->pos_change;
-
-			ska_mouse_warp(ska_win, (int32_t)prev_pt.x, (int32_t)prev_pt.y);
-			input_mouse_override_pos(prev_pt);
-
 		} else {
 			orientation = quat_from_angles(sim_head_rot.x, sim_head_rot.y, sim_head_rot.z);
 		}
@@ -248,6 +248,14 @@ void simulator_step_begin() {
 	}
 	if (input_key(key_mouse_right) & button_state_just_inactive) {
 		sim_mouse_look = false;
+	}
+
+	// Mouse-look borrows relative mode for the length of the drag, and hands it
+	// back afterwards so an app that set its own mode still has it.
+	if (sim_mouse_look != sim_mouse_look_prev) {
+		if (sim_mouse_look) sim_mouse_mode_prev = input_mouse_mode_get();
+		input_mouse_mode_set(sim_mouse_look ? mouse_mode_relative : sim_mouse_mode_prev);
+		sim_mouse_look_prev = sim_mouse_look;
 	}
 
 	bool sim_tracked = (input_key(key_alt) & button_state_active) > 0 ? true : false;
@@ -299,13 +307,15 @@ void simulator_step_end() {
 		render_pipeline_skip_present();
 
 	// Resize AFTER frame_end (not mid-frame) to avoid command buffer ref_count imbalance
-	if (acquire == skr_acquire_needs_resize && skr_surface_is_valid(&sim_skr_surface)) {
-		skr_surface_resize(&sim_skr_surface);
-		if (sim_skr_surface.size.x > 0 && sim_skr_surface.size.y > 0)
-			sim_surface_resize(sim_surface, sim_skr_surface.size.x, sim_skr_surface.size.y);
-	} else if (acquire == skr_acquire_surface_lost) {
+	if (acquire == skr_acquire_surface_lost) {
 		vkDeviceWaitIdle(skr_get_vk_device());
 		skr_surface_destroy(&sim_skr_surface);
+	} else if (skr_surface_is_valid(&sim_skr_surface)) {
+		if (acquire == skr_acquire_needs_resize)
+			skr_surface_resize(&sim_skr_surface);
+		// Also picks up multisample changes, and no-ops when nothing changed.
+		if (sim_skr_surface.size.x > 0 && sim_skr_surface.size.y > 0)
+			sim_surface_resize(sim_surface, sim_skr_surface.size.x, sim_skr_surface.size.y);
 	}
 }
 

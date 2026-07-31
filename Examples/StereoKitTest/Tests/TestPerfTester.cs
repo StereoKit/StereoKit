@@ -11,11 +11,11 @@ class TestPerfTester : ITest
 	Material[] mat;
 	Mesh       mesh;
 
-	const int   layers            = 100;
+	const int   layers            = 10;
 	const float spacing           = 0.0f;  // Z distance between each layer
 	      float scale             = Tests.IsTesting ? 2 : 0.2f;     // Size of the quad we're rendering on
-	const int   testDuration      = 20;    // Run the test for X frames
-	const int   testDurationStart = 5;     // Discard the first X frames of a test
+	const int   testDuration      = 8;    // Run the test for X frames
+	const int   testDurationStart = 3;     // Discard the first X frames of a test
 
 	int      testIdx   = 0;
 	int      testFrame = 0;

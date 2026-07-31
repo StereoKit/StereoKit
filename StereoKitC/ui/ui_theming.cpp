@@ -227,12 +227,15 @@ void ui_theming_init() {
 	material_set_id(skui_mat, "sk/ui/default_mat");
 
 	// Create a sound for the HSlider
-	skui_snd_tick = sound_generate([](float t){
-		float x     = t / 0.03f;
-		float band1 = sinf(t*8000) * (x * powf(1 - x, 10)) / 0.03f;
-		float band2 = sinf(t*6550) * (x * powf(1 - x, 12)) / 0.03f;
+	skui_snd_tick = sound_generate([](float* out, uint64_t start, uint64_t count){
+		for (uint64_t i = 0; i < count; i++) {
+			float t     = (float)(start + i) / 48000.0f;
+			float x     = t / 0.03f;
+			float band1 = sinf(t*8000) * (x * powf(1 - x, 10)) / 0.03f;
+			float band2 = sinf(t*6550) * (x * powf(1 - x, 12)) / 0.03f;
 
-		return (band1*0.6f + band2*0.4f) * 0.05f;
+			out[i] = (band1*0.6f + band2*0.4f) * 0.05f;
+		}
 	}, .03f);
 	sound_set_id(skui_snd_tick, "sk/ui/tick_snd");
 
@@ -240,6 +243,16 @@ void ui_theming_init() {
 	skui_snd_uninteract = sound_find(default_id_sound_unclick);
 	skui_snd_grab       = sound_find(default_id_sound_grab);
 	skui_snd_ungrab     = sound_find(default_id_sound_ungrab);
+
+	// Loudness for the interaction sounds, tuned by ear from a baseline of
+	// fingertip taps and object handling at arm's length. Grabs sit close
+	// to clicks: their low frequency content needs the extra level to
+	// perceive equally loud.
+	sound_set_decibels(skui_snd_tick,       53);
+	sound_set_decibels(skui_snd_interact,   63);
+	sound_set_decibels(skui_snd_uninteract, 63);
+	sound_set_decibels(skui_snd_grab,       62);
+	sound_set_decibels(skui_snd_ungrab,     62);
 
 	ui_theme_visuals_assign();
 
@@ -337,7 +350,9 @@ void ui_theming_update() {
 
 	// Play it, and clean everything up, we're done here!
 	if (skui_active_sound_off) {
-		sound_play(skui_active_sound_off, skui_active_sound_pos, 1);
+		sound_play_t play = {};
+		play.bus = sound_bus_ui;
+		sound_play(skui_active_sound_off, skui_active_sound_pos, &play);
 	}
 	sound_release(skui_active_sound_off);
 	skui_active_sound_off        = nullptr;
@@ -486,22 +501,33 @@ void ui_play_sound_on_off(ui_vis_ element_visual, id_hash_t element_id, vec3 at_
 	skui_active_sound_pos        = hierarchy_to_world_point(at_local);
 	skui_active_sound_element_id = element_id;
 
-	if (snd_on)
-		skui_active_sound_inst = sound_play(snd_on, skui_active_sound_pos, 1);
+	if (snd_on) {
+		sound_play_t play = {};
+		play.bus = sound_bus_ui;
+		skui_active_sound_inst = sound_play(snd_on, skui_active_sound_pos, &play);
+	}
 }
 
 ///////////////////////////////////////////
 
 void ui_play_sound_on(ui_vis_ element_visual, vec3 at_local) {
 	sound_t snd = ui_get_sound_on(element_visual);
-	if (snd) sound_play(snd, hierarchy_to_world_point(at_local), 1);
+	if (snd == nullptr) return;
+
+	sound_play_t play = {};
+	play.bus = sound_bus_ui;
+	sound_play(snd, hierarchy_to_world_point(at_local), &play);
 }
 
 ///////////////////////////////////////////
 
 void ui_play_sound_off(ui_vis_ element_visual, vec3 at_local) {
 	sound_t snd = ui_get_sound_off(element_visual);
-	if (snd) sound_play(snd, hierarchy_to_world_point(at_local), 1);
+	if (snd == nullptr) return;
+
+	sound_play_t play = {};
+	play.bus = sound_bus_ui;
+	sound_play(snd, hierarchy_to_world_point(at_local), &play);
 }
 
 ///////////////////////////////////////////

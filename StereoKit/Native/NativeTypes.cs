@@ -70,6 +70,40 @@ namespace StereoKit
 		public Color32 color;
 	}
 
+	/// <summary>A perceptual description of the acoustic space sounds play in - an
+	/// environment rather than a literal room, so it covers halls through
+	/// forests. Spatial sounds feed a shared reverb whose level stays constant
+	/// with distance, so the direct-to-reverb balance naturally carries how far
+	/// away a sound is. A wet of 0 disables the system entirely at zero cost,
+	/// and a zeroed struct is the off state. Language bindings provide preset
+	/// values for common spaces as starting points.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public partial struct AudioEnvironment
+	{
+		/// <summary>Reverb level, 0-1. 0 turns environmental acoustics off completely,
+		/// and is the default.</summary>
+		public float wet;
+		/// <summary>Decay time in seconds - how long the tail takes to fall 60dB at mid
+		/// frequencies. Rooms are ~0.4s, cathedrals a few seconds. Clamped to
+		/// 0.05-10.</summary>
+		public float decay;
+		/// <summary>0-1, extra high frequency decay. Soft or leafy spaces are high,
+		/// tiled rooms are low.</summary>
+		public float damp;
+		/// <summary>Size of the space in meters, clamped to 2-40. Drives the spacing of
+		/// the echoes that build the tail. Changing this restarts the tail,
+		/// where the other fields all glide smoothly.</summary>
+		public float size;
+		/// <summary>0-1, how quickly discrete echoes blur into a dense wash. Scattered
+		/// spaces like forests are high, bare rooms lower.</summary>
+		public float scatter;
+		/// <summary>0-1, level of the distinct early reflections off the space's
+		/// surfaces - the first bounces that glue a sound to the room. The
+		/// ground bounce keeps a minimum presence; walls and ceiling scale
+		/// fully with this, so outdoor spaces sit near 0.</summary>
+		public float reflect;
+	}
+
 	/// <summary>Pointer is an abstraction of a number of different input sources,
 	/// and a way to surface input events!</summary>
 	[StructLayout(LayoutKind.Sequential)]
@@ -99,8 +133,11 @@ namespace StereoKit
 		/// <summary>Position of the mouse relative to the window it's in! This is the number
 		/// of pixels from the top left corner of the screen.</summary>
 		public Vec2 pos;
-		/// <summary>How much has the mouse's position changed in the current frame? Measured
-		/// in pixels.</summary>
+		/// <summary>How much has the mouse moved during this frame? Measured in pixels. This
+		/// is all motion since the last frame, which is not always the same as the
+		/// difference between this frame's position and the last frame's! In relative
+		/// mouse mode, the position doesn't move at all, and this is the only place
+		/// mouse motion shows up.</summary>
 		public Vec2 posChange;
 		/// <summary>What's the current scroll value for the mouse's scroll wheel?</summary>
 		public float scroll;

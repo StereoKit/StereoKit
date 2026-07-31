@@ -49,11 +49,11 @@ class GuideDrawing : ITest
 
 		/// :CodeDoc: Guides Drawing
 		/// At its core, drawing things in 3D is done through a combination of
-		/// [`Mesh`]({{site.url}}/Pages/Reference/Mesh.html)es and 
-		/// [`Material`]({{site.url}}/Pages/Reference/Material.html)s. A Mesh
+		/// [`Mesh`]({{site.url}}/Pages/StereoKit/Mesh.html)es and 
+		/// [`Material`]({{site.url}}/Pages/StereoKit/Material.html)s. A Mesh
 		/// is a collection of triangles in 3D space that describe where the
 		/// surface of that 3D object is. And a Material is then a collection
-		/// of parameters, [`Tex`]({{site.url}}/Pages/Reference/Tex.html)tures
+		/// of parameters, [`Tex`]({{site.url}}/Pages/StereoKit/Tex.html)tures
 		/// (2d images), and Shader code that are combined to describe the
 		/// visual properties of the Mesh's surface!
 		/// 
@@ -62,17 +62,17 @@ class GuideDrawing : ITest
 		/// 
 		/// And in addition to that, you'll need to know a little bit about
 		/// matrices, which are a math construct used to describe the location,
-		/// orientation and scale of geometry within the 3D space! A [`Matrix`]({{site.url}}/Pages/Reference/Matrix.html)
+		/// orientation and scale of geometry within the 3D space! A [`Matrix`]({{site.url}}/Pages/StereoKit/Matrix.html)
 		/// isn't difficult the way we're using it, so don't worry if math 
 		/// isn't your thing.
 		/// 
-		/// And then StereoKit also has a [`Model`]({{site.url}}/Pages/Reference/Model.html),
+		/// And then StereoKit also has a [`Model`]({{site.url}}/Pages/StereoKit/Model.html),
 		/// which is a high level combination of Meshes, Material, Matrices,
 		/// and a few more things! Most of the time, you'll probably be drawing
 		/// Models loaded from file, but it's important to have options.
 		/// 
-		/// Then lastly, StereoKit has easy systems for drawing [`Line`]({{site.url}}/Pages/Reference/Lines.html)s,
-		/// [`Text`]({{site.url}}/Pages/Reference/Text.html), [`Sprite`]({{site.url}}/Pages/Reference/Sprite.html)s
+		/// Then lastly, StereoKit has easy systems for drawing [`Line`]({{site.url}}/Pages/StereoKit/Lines.html)s,
+		/// [`Text`]({{site.url}}/Pages/StereoKit/Text.html), [`Sprite`]({{site.url}}/Pages/StereoKit/Sprite.html)s
 		/// and various other things! These are still based on Meshes and
 		/// Materials under the hood, but have some complex features that can
 		/// make them difficult to build from scratch.
@@ -80,19 +80,19 @@ class GuideDrawing : ITest
 		/// ## Meshes and Materials
 		/// 
 		/// To simplify things here, we're going to use the built-in assets,
-		/// [`Mesh.Sphere`]({{site.url}}/Pages/Reference/Mesh/Sphere.html) 
-		/// and [`Material.Default`]({{site.url}}/Pages/Reference/Material/Default.html).
+		/// [`Mesh.Sphere`]({{site.url}}/Pages/StereoKit/Mesh/Sphere.html) 
+		/// and [`Material.Default`]({{site.url}}/Pages/StereoKit/Material/Default.html).
 		/// Mesh.Sphere is a built-in mesh generated using math when StereoKit
 		/// starts up, and Material.Default is a high performance simple
 		/// Material that serves as StereoKit's default Material. (For more
-		/// built-in assets, see the [`Default`]({{site.url}}/Pages/Reference/Default.html)s)
+		/// built-in assets, see the [`Default`]({{site.url}}/Pages/StereoKit/Default.html)s)
 		/// 
 		Mesh.Sphere.Draw(Material.Default, Matrix.Identity);
 		/// 
 		/// ![Default sphere and material]({{site.screen_url}}/Drawing_Defaults.jpg)
 		/// _Drawing the default sphere Mesh with the default Material._
 		/// 
-		/// [`Matrix.Identity`]({{site.url}}/Pages/Reference/Matrix/Identity.html)
+		/// [`Matrix.Identity`]({{site.url}}/Pages/StereoKit/Matrix/Identity.html)
 		/// can be though of as a 'No transform' Matrix, so this is drawing the
 		/// sphere at the origin of the 3D space.
 		/// 
@@ -105,21 +105,21 @@ class GuideDrawing : ITest
 		/// So how do you get a Mesh to begin with? In most cases you'll just
 		/// be working with Models, but you can get a Mesh directly from a few
 		/// places:
-		///  - [`Mesh.Sphere`]({{site.url}}/Pages/Reference/Mesh/Sphere.html), [`Mesh.Cube`]({{site.url}}/Pages/Reference/Mesh/Cube.html), and [`Mesh.Quad`]({{site.url}}/Pages/Reference/Mesh/Quad.html) are built-in mesh assets that are handy to have around.
-		///  - [`Mesh`]({{site.url}}/Pages/Reference/Mesh.html) has a number of static methods for generating procedural shapes, such as [`Mesh.GenerateRoundedCube`]({{site.url}}/Pages/Reference/Mesh/GenerateRoundedCube.html) or [`Mesh.GeneratePlane`]({{site.url}}/Pages/Reference/Mesh/GeneratePlane.html).
-		///  - A Mesh can be extracted from one of a [Model's nodes]({{site.url}}/Pages/Reference/ModelNode/Mesh.html).
-		///  - You can create a Mesh from a list of vertices and indices. This is more advanced, but [check the sample here]({{site.url}}/Pages/Reference/Mesh/SetVerts.html).
+		///  - [`Mesh.Sphere`]({{site.url}}/Pages/StereoKit/Mesh/Sphere.html), [`Mesh.Cube`]({{site.url}}/Pages/StereoKit/Mesh/Cube.html), and [`Mesh.Quad`]({{site.url}}/Pages/StereoKit/Mesh/Quad.html) are built-in mesh assets that are handy to have around.
+		///  - [`Mesh`]({{site.url}}/Pages/StereoKit/Mesh.html) has a number of static methods for generating procedural shapes, such as [`Mesh.GenerateRoundedCube`]({{site.url}}/Pages/StereoKit/Mesh/GenerateRoundedCube.html) or [`Mesh.GeneratePlane`]({{site.url}}/Pages/StereoKit/Mesh/GeneratePlane.html).
+		///  - A Mesh can be extracted from one of a [Model's nodes]({{site.url}}/Pages/StereoKit/ModelNode/Mesh.html).
+		///  - You can create a Mesh from a list of vertices and indices. This is more advanced, but [check the sample here]({{site.url}}/Pages/StereoKit/Mesh/SetVerts.html).
 		///  
 		/// And where do you get a Material? Well, 
-		///  - See built-in Materials like [`Material.PBR`]({{site.url}}/Pages/Reference/Default/MaterialPBR.html) for high-quality surface or [`Material.Unlit`]({{site.url}}/Pages/Reference/Default/MaterialUnlit.html) for fast/stylistic surfaces.
-		///  - A Material [constructor]({{site.url}}/Pages/Reference/Material/Material.html) can be called with a Shader. Check out [the Material guide]({{site.url}}/Pages/Guides/Working-with-Materials.html) for in-depth usage (Materials and Shaders are a lot of fun!).
-		///  - You can call [`Material.Copy`]({{site.url}}/Pages/Reference/Material/Copy.html) to create a duplicate of an existing Material.
+		///  - See built-in Materials like [`Material.PBR`]({{site.url}}/Pages/StereoKit/Default/MaterialPBR.html) for high-quality surface or [`Material.Unlit`]({{site.url}}/Pages/StereoKit/Default/MaterialUnlit.html) for fast/stylistic surfaces.
+		///  - A Material [constructor]({{site.url}}/Pages/StereoKit/Material/Material.html) can be called with a Shader. Check out [the Material guide]({{site.url}}/Pages/Guides/Working-with-Materials.html) for in-depth usage (Materials and Shaders are a lot of fun!).
+		///  - You can call [`Material.Copy`]({{site.url}}/Pages/StereoKit/Material/Copy.html) to create a duplicate of an existing Material.
 		/// 
 		/// ## Matrix basics
 		/// 
 		/// If you like math, this explanation is not really for you! But if
 		/// you like results, this will get you going where you need to go. The
-		/// important thing to know about a [`Matrix`]({{site.url}}/Pages/Reference/Matrix.html),
+		/// important thing to know about a [`Matrix`]({{site.url}}/Pages/StereoKit/Matrix.html),
 		/// is that it's a good way to represent an object's transform (Translation,
 		/// Rotation, and Scale).
 		/// 
@@ -196,16 +196,16 @@ class GuideDrawing : ITest
 		/// 
 		/// But here's the quick list of where you can get a Model to begin
 		/// with:
-		///  - [`Model.FromFile`]({{site.url}}/Pages/Reference/Model/FromFile.html) is the easiest, most common way to get a Model!
-		///  - [`Model.FromMesh`]({{site.url}}/Pages/Reference/Model/FromMesh.html) will let you create a very simple Model with a single function call.
-		///  - The [Model constructor]({{site.url}}/Pages/Reference/Model/Model.html) lets you create an empty Model, which you can then fill with ModelNodes via [`Model.AddNode`]({{site.url}}/Pages/Reference/Model/AddNode.html)
-		///  - You can call [`Model.Copy`]({{site.url}}/Pages/Reference/Model/Copy.html) to create a duplicate of an existing Model.
+		///  - [`Model.FromFile`]({{site.url}}/Pages/StereoKit/Model/FromFile.html) is the easiest, most common way to get a Model!
+		///  - [`Model.FromMesh`]({{site.url}}/Pages/StereoKit/Model/FromMesh.html) will let you create a very simple Model with a single function call.
+		///  - The [Model constructor]({{site.url}}/Pages/StereoKit/Model/Model.html) lets you create an empty Model, which you can then fill with ModelNodes via [`Model.AddNode`]({{site.url}}/Pages/StereoKit/Model/AddNode.html)
+		///  - You can call [`Model.Copy`]({{site.url}}/Pages/StereoKit/Model/Copy.html) to create a duplicate of an existing Model.
 		/// 
 		/// ## Lines
 		/// 
 		/// Being able to easily draw a line is incredibly useful for
 		/// debugging, and generally quite practical for many other purposes as
-		/// well! StereoKit has the [`Lines`]({{site.url}}/Pages/Reference/Lines.html)
+		/// well! StereoKit has the [`Lines`]({{site.url}}/Pages/StereoKit/Lines.html)
 		/// class to assist with this, and is pretty straightforward to use. 
 		/// There's a few variations, but at it's simplest, it's a few points,
 		/// a color, and a thickness.
@@ -231,7 +231,7 @@ class GuideDrawing : ITest
 		/// _'Hello' in Japanese, I'm pretty sure._
 		/// 
 		/// You can create additional font styles and fonts to use with text
-		/// drawing, and there are a number of overloads for [`Text.Add`]({{site.url}}/Pages/Reference/Text/Add.html)
+		/// drawing, and there are a number of overloads for [`Text.Add`]({{site.url}}/Pages/StereoKit/Text/Add.html)
 		/// that allow you to change the layout or constrain to a particular
 		/// area. Check the docs for the method for more information about that!
 		/// 

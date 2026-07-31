@@ -59,6 +59,12 @@ class Program
 		WindowLog = SK.AddStepper<LogWindow>();
 		WindowLog.Enabled = false;
 
+		// Vulkan backend requests also need registered before SK.Initialize.
+		// This empty request enables vacuously, so TestBackendVulkan can verify
+		// the request round-trip after initialization.
+		if (Tests.IsTesting)
+			Backend.Vulkan.Request(new BackendVulkanRequest { name = "sk_test_request" });
+
 		// Initialize StereoKit
 		if (!SK.Initialize(settings))
 			Environment.Exit(1);

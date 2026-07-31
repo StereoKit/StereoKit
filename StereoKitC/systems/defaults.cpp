@@ -353,42 +353,54 @@ bool defaults_init() {
 	text_style_set_line_height_pct(sk_default_text_style, 1.1f);
 
 	// Sounds
-	sk_default_click = sound_generate([](float t){
-		float x = t / 0.03f;
-		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
-		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
-		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
-		float band4 = sinf(t*500)  * (x * powf(1 - x, 6))  / 0.03f;
-		float silencer = fmaxf(0,fminf(1,(0.03f-t)*200));
+	sk_default_click = sound_generate([](float* out, uint64_t start, uint64_t count){
+		for (uint64_t i = 0; i < count; i++) {
+			float t = (float)(start + i) / 48000.0f;
+			float x = t / 0.03f;
+			float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
+			float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
+			float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
+			float band4 = sinf(t*500)  * (x * powf(1 - x, 6))  / 0.03f;
+			float silencer = fmaxf(0,fminf(1,(0.03f-t)*200));
 
-		return (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f * silencer;
+			out[i] = (band1*0.6f + band2*0.2f + band3*0.1f + band4*0.1f) * 0.2f * silencer;
+		}
 		}, .08f);
-	sk_default_unclick = sound_generate([](float t){
-		float x = t / 0.03f;
-		float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
-		float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
-		float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
-		float band4 = sinf(t*500)  * (x * powf(1 - x, 6))  / 0.03f;
+	sk_default_unclick = sound_generate([](float* out, uint64_t start, uint64_t count){
+		for (uint64_t i = 0; i < count; i++) {
+			float t = (float)(start + i) / 48000.0f;
+			float x = t / 0.03f;
+			float band1 = sinf(t*7500) * (x * powf(1 - x, 10)) / 0.03f;
+			float band2 = sinf(t*4750) * (x * powf(1 - x, 12)) / 0.03f;
+			float band3 = sinf(t*2500) * (x * powf(1 - x, 12)) / 0.03f;
+			float band4 = sinf(t*500)  * (x * powf(1 - x, 6))  / 0.03f;
 
-		return (band1*0.2f + band2*0.4f + band3*0.1f + band4*0.1f) * 0.2f;
+			out[i] = (band1*0.2f + band2*0.4f + band3*0.1f + band4*0.1f) * 0.2f;
+		}
 		}, .03f);
-	sk_default_grab = sound_generate([](float t){
-		float x = t / 0.04f;
-		float band1 = sinf(t*4000*3.14f) * (x * powf(1 - x, 10)) / 0.04f;
-		float band2 = sinf(t*6000*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
-		float band3 = sinf(t*1000*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
-		float band4 = sinf(t*400*3.14f)  * (x * powf(1 - x, 6))  / 0.04f;
+	sk_default_grab = sound_generate([](float* out, uint64_t start, uint64_t count){
+		for (uint64_t i = 0; i < count; i++) {
+			float t = (float)(start + i) / 48000.0f;
+			float x = t / 0.04f;
+			float band1 = sinf(t*4000*3.14f) * (x * powf(1 - x, 10)) / 0.04f;
+			float band2 = sinf(t*6000*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
+			float band3 = sinf(t*1000*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
+			float band4 = sinf(t*400*3.14f)  * (x * powf(1 - x, 6))  / 0.04f;
 
-		return (band1*0.05f + band2*0.05f + band3*0.2f + band4*0.7f) * 0.1f;
+			out[i] = (band1*0.05f + band2*0.05f + band3*0.2f + band4*0.7f) * 0.1f;
+		}
 		}, .04f);
-	sk_default_ungrab = sound_generate([](float t){
-		float x = t / 0.04f;
-		float band1 = sinf(t*3000*3.14f) * (x * powf(1 - x, 10)) / 0.04f;
-		float band2 = sinf(t*5000*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
-		float band3 = sinf(t*800*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
-		float band4 = sinf(t*300*3.14f)  * (x * powf(1 - x, 6))  / 0.04f;
+	sk_default_ungrab = sound_generate([](float* out, uint64_t start, uint64_t count){
+		for (uint64_t i = 0; i < count; i++) {
+			float t = (float)(start + i) / 48000.0f;
+			float x = t / 0.04f;
+			float band1 = sinf(t*3000*3.14f) * (x * powf(1 - x, 10)) / 0.04f;
+			float band2 = sinf(t*5000*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
+			float band3 = sinf(t*800*3.14f) * (x * powf(1 - x, 12)) / 0.04f;
+			float band4 = sinf(t*300*3.14f)  * (x * powf(1 - x, 6))  / 0.04f;
 
-		return (band1*0.05f + band2*0.05f + band3*0.1f + band4*0.8f) * 0.1f;
+			out[i] = (band1*0.05f + band2*0.05f + band3*0.1f + band4*0.8f) * 0.1f;
+		}
 		}, .04f);
 
 	sound_set_id(sk_default_click,   default_id_sound_click);

@@ -110,6 +110,7 @@ bool window_init() {
 		window_surface_resize(local->surface, local->skr_surface.size.x, local->skr_surface.size.y);
 
 	interactor_modes_set_default(default_interactors_mouse);
+	input_mouse_set_window(local->ska_win);
 	input_hand_visible(handed_max, false);
 	input_set_finger_glow(false);
 	return true;
@@ -127,7 +128,7 @@ void window_physical_key_interact() {
 void window_surface_resize(pipeline_surface_id surface, int32_t width, int32_t height) {
 	device_data.display_width  = width;
 	device_data.display_height = height;
-	render_pipeline_surface_resize(surface, width, height, 8);
+	render_pipeline_surface_resize(surface, width, height, render_get_multisample());
 }
 
 ///////////////////////////////////////////
@@ -158,6 +159,8 @@ void window_shutdown() {
 	}
 
 	render_pipeline_shutdown();
+
+	input_mouse_set_window(nullptr);
 
 	// Destroy the renderer surface before the window
 	skr_surface_destroy(&local->skr_surface);
@@ -236,13 +239,15 @@ void window_step_end() {
 		render_pipeline_skip_present();
 
 	// Resize AFTER frame_end (not mid-frame) to avoid command buffer ref_count imbalance
-	if (acquire == skr_acquire_needs_resize && skr_surface_is_valid(&local->skr_surface)) {
-		skr_surface_resize(&local->skr_surface);
-		if (local->skr_surface.size.x > 0 && local->skr_surface.size.y > 0)
-			window_surface_resize(local->surface, local->skr_surface.size.x, local->skr_surface.size.y);
-	} else if (acquire == skr_acquire_surface_lost) {
+	if (acquire == skr_acquire_surface_lost) {
 		vkDeviceWaitIdle(skr_get_vk_device());
 		skr_surface_destroy(&local->skr_surface);
+	} else if (skr_surface_is_valid(&local->skr_surface)) {
+		if (acquire == skr_acquire_needs_resize)
+			skr_surface_resize(&local->skr_surface);
+		// Also picks up multisample changes, and no-ops when nothing changed.
+		if (local->skr_surface.size.x > 0 && local->skr_surface.size.y > 0)
+			window_surface_resize(local->surface, local->skr_surface.size.x, local->skr_surface.size.y);
 	}
 }
 

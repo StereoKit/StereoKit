@@ -7,9 +7,18 @@
   },
   "configurePresets": [
     {
+      "name":        "SVSL",
+      "description": "Compile shaders with skshaderc's SVSL backend instead of the glslang HLSL pipeline",
+      "hidden":      true,
+      "cacheVariables": {
+        "SK_USE_SVSL": "ON"
+      }
+    },
+    {
       "name":        "Fast",
       "description": "Disable tests for faster builds",
       "hidden":      true,
+      "inherits":    ["SVSL"],
       "cacheVariables": {
         "SK_BUILD_TESTS": "OFF"
       }
@@ -67,7 +76,7 @@
     {
       "name":        "Win32_x64_Debug",
       "description": "Debug build for Win32 x64",
-      "inherits":    "Win32_x64_Base"
+      "inherits":    ["Win32_x64_Base", "SVSL"]
     },
     {
       "name":      "Win32_x64_Debug_Fast",
@@ -84,7 +93,7 @@
     {
       "name":        "Win32_Arm64_Debug",
       "description": "Debug build for Win32 Arm64",
-      "inherits":    "Win32_Arm64_Base"
+      "inherits":    ["Win32_Arm64_Base", "SVSL"]
     },
     {
       "name":      "Win32_Arm64_Debug_Fast",
@@ -142,7 +151,7 @@
     {
       "name":        "MinGW_x64_Debug",
       "description": "Debug cross-compile for Win32 x64 using MinGW",
-      "inherits":    ["MinGW_x64_Base", "BuildType_Debug"]
+      "inherits":    ["MinGW_x64_Base", "BuildType_Debug", "SVSL"]
     },
     {
       "name":      "MinGW_x64_Debug_Fast",
@@ -173,7 +182,7 @@
     {
       "name":        "MinGW_Arm64_Debug",
       "description": "Debug cross-compile for Win32 Arm64 using MinGW (requires llvm-mingw)",
-      "inherits":    ["MinGW_Arm64_Base", "BuildType_Debug"]
+      "inherits":    ["MinGW_Arm64_Base", "BuildType_Debug", "SVSL"]
     },
     {
       "name":      "MinGW_Arm64_Debug_Fast",
@@ -217,7 +226,7 @@
       "name":        "Linux_x64_Debug",
       "description": "Debug build for Linux x64",
       "hidden":      false,
-      "inherits":    "Linux_x64",
+      "inherits":    ["Linux_x64", "SVSL"],
       "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
@@ -226,7 +235,7 @@
     {
       "name":        "Linux_x64_Debug_Fast",
       "inherits":    ["Linux_x64_Debug", "Fast"],
-      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Fast"
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Debug_Fast"
     },
     {
       "name":        "Linux_Arm64",
@@ -239,7 +248,7 @@
       "name":        "Linux_Arm64_Release",
       "description": "Release build for Linux Arm64",
       "inherits":    ["Linux_Arm64", "BuildType_Release"],
-      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_ARM64_Release",
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_Arm64_Release",
       "cacheVariables": {
         "CMAKE_AR":               "/usr/bin/aarch64-linux-gnu-ar",
         "CMAKE_LINKER":           "/usr/bin/aarch64-linux-gnu-ld",
@@ -252,13 +261,13 @@
     {
       "name":        "Linux_Arm64_Release_Fast",
       "inherits":    ["Linux_Arm64_Release", "Fast"],
-      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_ARM64_Release_Fast"
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_Arm64_Release_Fast"
     },
     {
       "name":        "Linux_Arm64_Debug",
       "description": "Debug build for Linux Arm64",
       "hidden":      false,
-      "inherits":    "Linux_Arm64",
+      "inherits":    ["Linux_Arm64", "SVSL"],
       "binaryDir":   "${sourceDir}/bin/intermediate/Linux_Arm64_Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
@@ -295,7 +304,7 @@
     {
       "name":        "MacOS_Arm64_Debug",
       "description": "Debug build for MacOS ARM64",
-      "inherits":    ["MacOS_Arm64_Base", "BuildType_Debug"],
+      "inherits":    ["MacOS_Arm64_Base", "BuildType_Debug", "SVSL"],
       "binaryDir":   "${sourceDir}/bin/intermediate/MacOS_Arm64_Debug"
     },
     {
@@ -332,7 +341,7 @@
       "name":      "Android_Arm64_Base",
       "inherits":  "Android",
       "hidden":    true,
-      "binaryDir": "${sourceDir}/bin/intermediate/Android_ARM64",
+      "binaryDir": "${sourceDir}/bin/intermediate/Android_Arm64",
       "cacheVariables": {
         "ANDROID_ABI":            "arm64-v8a",
         "CMAKE_ANDROID_ARCH_ABI": "arm64-v8a"
@@ -341,24 +350,24 @@
     {
       "name":        "Android_Arm64_Debug",
       "description": "Debug build for Android ARM64",
-      "inherits":    ["Android_Arm64_Base", "BuildType_Debug"],
-      "binaryDir":   "${sourceDir}/bin/intermediate/Android_ARM64_Debug"
+      "inherits":    ["Android_Arm64_Base", "BuildType_Debug", "SVSL"],
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_Arm64_Debug"
     },
     {
       "name":        "Android_Arm64_Debug_Fast",
       "inherits":    ["Android_Arm64_Debug", "Fast"],
-      "binaryDir":   "${sourceDir}/bin/intermediate/Android_ARM64_Debug_Fast"
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_Arm64_Debug_Fast"
     },
     {
       "name":        "Android_Arm64_Release",
       "description": "Release build for Android ARM64",
       "inherits":    ["Android_Arm64_Base", "BuildType_Release"],
-      "binaryDir":   "${sourceDir}/bin/intermediate/Android_ARM64_Release"
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_Arm64_Release"
     },
     {
       "name":        "Android_Arm64_Release_Fast",
       "inherits":    ["Android_Arm64_Release", "Fast"],
-      "binaryDir":   "${sourceDir}/bin/intermediate/Android_ARM64_Release_Fast"
+      "binaryDir":   "${sourceDir}/bin/intermediate/Android_Arm64_Release_Fast"
     },
     {
       "name":      "Android_x64_Base",
@@ -384,7 +393,7 @@
     {
       "name":        "Android_x64_Debug",
       "description": "Debug build for Android x64",
-      "inherits":    ["Android_x64_Base", "BuildType_Debug"],
+      "inherits":    ["Android_x64_Base", "BuildType_Debug", "SVSL"],
       "binaryDir":   "${sourceDir}/bin/intermediate/Android_x64_Debug"
     },
     {
