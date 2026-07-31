@@ -31,8 +31,6 @@ struct lighting_state_t {
 	lighting_mode_          mode;
 	vec4                    ambient[7];
 	spherical_harmonics_t   ambient_src;
-	vec3                    directional_dir;
-	color128                directional_color;
 	tex_t                   reflection;
 	tex_t                   reflection_pending_tex;
 
@@ -135,10 +133,9 @@ bool lighting_init() {
 	render_set_skytex   (sky_cubemap);
 	render_enable_skytex(true);
 
-	lighting_set_reflection (sky_cubemap);
-	lighting_set_ambient    (sk_default_lighting);
-	lighting_set_directional(sh_dominant_dir(sk_default_lighting), {0,0,0,1});
-	lighting_set_mode       (lighting_mode_auto);
+	lighting_set_reflection(sky_cubemap);
+	lighting_set_ambient   (sk_default_lighting);
+	lighting_set_mode      (lighting_mode_auto);
 	
 	tex_release(sky_cubemap);
 
@@ -167,7 +164,7 @@ void lighting_step() {
 		spherical_harmonics_t sh;
 		if (xr_ext_light_estimation_update_sh(&sh)) {
 			_lighting_set_ambient(sh);
-			
+
 			tex_t reflection = tex_gen_cubemap_sh(local.ambient_src, 32, 0.2f, 2.0f);
 			_lighting_set_reflection(reflection);
 			tex_release(reflection);
@@ -356,21 +353,6 @@ void lighting_set_ambient(const spherical_harmonics_t& ambient_lighting) {
 
 spherical_harmonics_t lighting_get_ambient(void) {
 	return local.ambient_src;
-}
-
-///////////////////////////////////////////
-
-void lighting_set_directional(vec3 dir, color128 color_linear) {
-	if (local.mode == lighting_mode_world) return;
-	local.directional_dir   = dir;
-	local.directional_color = color_linear;
-}
-
-///////////////////////////////////////////
-
-void lighting_get_directional(vec3* out_dir, color128* out_color_linear) {
-	if (out_dir)          *out_dir          = local.directional_dir;
-	if (out_color_linear) *out_color_linear = local.directional_color;
 }
 
 ///////////////////////////////////////////

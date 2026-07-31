@@ -42,8 +42,8 @@ class DemoLighting : ITest
 	public void Initialize() {
 		lightProbeMat = Material.PBR.Copy();
 		lightProbeMat[MatParamName.RoughnessAmount] = 0.0f;
-		lightProbeMat[MatParamName.MetallicAmount] = 0.0f;
-		lightProbeMat[MatParamName.ColorTint] = new Color(0,0,0,1);
+		lightProbeMat[MatParamName.MetallicAmount] = 1.0f;
+		lightProbeMat[MatParamName.ColorTint] = new Color(1,1,1,1);
 	}
 	public void Shutdown() => Platform.FilePickerClose();
 	public void Step()
@@ -114,8 +114,10 @@ class DemoLighting : ITest
 		UI.Handle("Light Tool", ref lightToolPose, new Bounds(Vec3.One * 0.12f));
 		Hierarchy.Push(Matrix.T(lightToolPose.position));
 		lightMesh.Draw(lightProbeMat, Matrix.S(0.04f));
-		
-		Lighting.GetDirectional(out Vec3 lightDir, out Color lightColor);
+
+		// A line pointing at the brightest part of the ambient lighting
+		Vec3  lightDir   = Lighting.Ambient.DominantLightDirection;
+		Color lightColor = Lighting.Ambient.Sample(-lightDir);
 		Lines.Add(-lightDir * 0.02f, -lightDir * 0.06f, lightColor, lightColor, 0.005f);
 		DrawSH(Lighting.Ambient, 0.02f, 0.06f);
 		if (mode == LightMode.Lights)

@@ -684,8 +684,6 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern LightingMode lighting_get_mode();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         lighting_set_ambient(in SphericalHarmonics ambient_lighting);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics lighting_get_ambient();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         lighting_set_directional(Vec3 dir, Color color_linear);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         lighting_get_directional(out Vec3 out_dir, out Color out_color_linear);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         lighting_set_reflection(IntPtr ibl_cubemap);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       lighting_get_reflection();
 

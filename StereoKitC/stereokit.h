@@ -2434,8 +2434,6 @@ SK_API bool32_t              lighting_set_mode        (lighting_mode_ mode);
 SK_API lighting_mode_        lighting_get_mode        (void);
 SK_API void                  lighting_set_ambient     (const sk_ref(spherical_harmonics_t) ambient_lighting);
 SK_API spherical_harmonics_t lighting_get_ambient     (void);
-SK_API void                  lighting_set_directional (vec3      dir, color128      color_linear);
-SK_API void                  lighting_get_directional (vec3* out_dir, color128* out_color_linear);
 SK_API void                  lighting_set_reflection  (tex_t ibl_cubemap);
 SK_API tex_t                 lighting_get_reflection  (void);
 

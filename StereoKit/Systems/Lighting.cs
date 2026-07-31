@@ -24,10 +24,6 @@ public static class Lighting
         get { IntPtr inst = NativeAPI.lighting_get_reflection(); return inst == IntPtr.Zero ? null : new Tex(inst); }
         set { NativeAPI.lighting_set_reflection(value != null ? value._inst : IntPtr.Zero); }
     }
-    public static void SetDirectional(Vec3 direction, Color colorLinear)
-        => NativeAPI.lighting_set_directional(direction, colorLinear);
-    public static void GetDirectional(out Vec3 direction, out Color colorLinear)
-        => NativeAPI.lighting_get_directional(out direction, out colorLinear);
     public static bool ModeAvailable(LightingMode mode)
         => NativeAPI.lighting_mode_available(mode);
 }
