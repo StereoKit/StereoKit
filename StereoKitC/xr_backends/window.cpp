@@ -218,7 +218,7 @@ void window_step_end() {
 
 	matrix view = matrix_invert(render_get_cam_final());
 	matrix proj = render_get_projection_matrix();
-	render_pipeline_surface_set_clear      (local->surface, render_get_clear_color_ln());
+	render_pipeline_surface_set_clear      (local->surface, render_get_clear_color_ln(), render_sky_covers(render_get_filter()));
 	render_pipeline_surface_set_layer      (local->surface, render_get_filter());
 	render_pipeline_surface_set_perspective(local->surface, &view, &proj, 1);
 

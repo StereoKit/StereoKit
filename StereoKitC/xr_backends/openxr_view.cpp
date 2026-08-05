@@ -1091,7 +1091,7 @@ bool openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 		render_pipeline_surface_set_resolve_target(display->render_surface, &display->swapchain_color.textures[color_id]->gpu_tex);
 	}
 	display->render_surface_tex = color_id;
-	render_pipeline_surface_set_clear(display->render_surface, color);
+	render_pipeline_surface_set_clear(display->render_surface, color, render_sky_covers(render_filter));
 	render_pipeline_surface_set_layer(display->render_surface, render_filter);
 
 	return true;

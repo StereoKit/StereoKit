@@ -1053,7 +1053,10 @@ void render_check_screenshots() {
 		// Create render targets for screenshot
 		// Depth matches the display's preferred (stencil-free) format, so
 		// depth-reading post-process effects work in screenshots too.
-		tex_t color_surface = tex_create_rendertarget(w, h, 8, local.screenshot_list[i].tex_format, tex_format_none);
+		// The MSAA surface only ever feeds resolve_tex, so it's transient. The
+		// readback below reads the resolve, never this.
+		tex_t color_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget | tex_type_transient_internal, local.screenshot_list[i].tex_format);
+		tex_set_color_arr(color_surface, w, h, nullptr, 1, 8, nullptr);
 		tex_t depth_surface = tex_create_rendertarget(w, h, 8, tex_get_supported_depth_format(render_preferred_depth_fmt(), true, 8), tex_format_none);
 		tex_t resolve_tex   = tex_create_rendertarget(w, h, 1, local.screenshot_list[i].tex_format, tex_format_none);
 
@@ -1075,8 +1078,9 @@ void render_check_screenshots() {
 
 		// Determine clear flags
 		render_clear_ clear      = render_clear_resolve(local.screenshot_list[i].clear);
-		skr_clear_    clear_flags = skr_clear_none;
-		if (clear & render_clear_color) clear_flags = (skr_clear_)(clear_flags | skr_clear_color);
+		// The color surface is brand new every shot, so skipping the clear has
+		// nothing to preserve. Discard, or we'd load undefined contents.
+		skr_clear_    clear_flags = (clear & render_clear_color) ? skr_clear_color : skr_clear_color_discard;
 		if (clear & render_clear_depth) clear_flags = (skr_clear_)(clear_flags | skr_clear_depth | skr_clear_stencil);
 
 		// Render!

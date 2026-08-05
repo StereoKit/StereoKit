@@ -10,6 +10,7 @@
 // flags combine). The benchmark is a measurement, not a test, so it's opt-in.
 
 #include "audio_tests.h"
+#include "asset_tests.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +35,7 @@ int main(int argc, char* argv[]) {
 
 	if (all || has_flag(argc, argv, "-audiotest"))   failures += audio_tests_run();
 	if (all || has_flag(argc, argv, "-audiostress")) failures += audio_stress_run();
+	if (all || has_flag(argc, argv, "-assettest"))   failures += asset_tests_run();
 
 	if (has_flag(argc, argv, "-audiobench")) failures += audio_bench_run();
 

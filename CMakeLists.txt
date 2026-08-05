@@ -305,7 +305,7 @@ if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.7.30
+    GIT_TAG v2026.8.3
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to your
@@ -324,7 +324,7 @@ if (NOT SK_LOCAL_SK_APP)
   CPMAddPackage(
     NAME sk_app
     GITHUB_REPOSITORY StereoKit/sk_app
-    GIT_TAG v2026.7.28
+    GIT_TAG v2026.8.3
   )
 else()
   # For building directly with in-progress sk_app changes, point this to your
@@ -1012,6 +1012,8 @@ if (SK_BUILD_TESTS AND NOT ANDROID)
     tools/tests/audio_tests.h
     tools/tests/audio_tests.cpp
     tools/tests/audio_render.cpp
+    tools/tests/asset_tests.h
+    tools/tests/asset_tests.cpp
   )
 
   # See the StereoKitCTest note: pin C++17 so the C API's u8 literals stay char.

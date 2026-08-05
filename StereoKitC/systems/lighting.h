@@ -9,7 +9,8 @@
 
 namespace sk {
 
-const int32_t render_skytex_register = 11;
+const int32_t       render_skytex_register = 11;
+const render_layer_ render_sky_layer       = render_layer_vfx;
 
 bool lighting_init         ();
 void lighting_step         ();

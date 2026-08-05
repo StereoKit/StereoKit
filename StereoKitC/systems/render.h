@@ -44,6 +44,8 @@ void          render_pass_add_post_process(skr_pass_t* pass, const material_t* m
 void          render_pass_add_global_post_process(skr_pass_t* pass);
 bool32_t      render_material_is_post_process  (material_t material);
 void          render_check_screenshots    ();
+void          render_check_pending_skytex ();
+bool32_t      render_sky_covers           (render_layer_ filter);
 void          render_global_buffer_internal (int32_t register_slot, material_buffer_t buffer);
 void          render_global_texture_internal(int32_t register_slot, tex_t             texture);
 void          render_queue_compute          (compute_t compute, uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z);

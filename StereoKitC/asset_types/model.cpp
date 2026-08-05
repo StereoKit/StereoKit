@@ -251,8 +251,8 @@ model_t model_create_mem(const char *filename, const void *data, size_t data_siz
 	memcpy(load->file_data, data, data_size);
 
 	static const asset_load_action_t actions[] = {
-		asset_load_action_t {model_load_metadata, asset_thread_asset},
-		asset_load_action_t {model_load_meshes,   asset_thread_asset},
+		model_load_metadata,
+		model_load_meshes,
 	};
 
 	asset_task_t task = {};
@@ -296,9 +296,9 @@ model_t model_create_file(const char *filename, shader_t shader, int32_t priorit
 	if (shader) shader_addref(shader);
 
 	static const asset_load_action_t actions[] = {
-		asset_load_action_t {model_load_file,     asset_thread_asset},
-		asset_load_action_t {model_load_metadata, asset_thread_asset},
-		asset_load_action_t {model_load_meshes,   asset_thread_asset},
+		model_load_file,
+		model_load_metadata,
+		model_load_meshes,
 	};
 
 	asset_task_t task = {};

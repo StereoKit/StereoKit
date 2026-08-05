@@ -20,7 +20,7 @@ void                render_pipeline_surface_set_enabled       (pipeline_surface_
 bool32_t            render_pipeline_surface_get_enabled       (pipeline_surface_id surface);
 void                render_pipeline_surface_set_layer         (pipeline_surface_id surface, render_layer_ layer);
 void                render_pipeline_surface_set_viewport_scale(pipeline_surface_id surface, float viewport_rect_scale);
-void                render_pipeline_surface_set_clear         (pipeline_surface_id surface, color128 color);
+void                render_pipeline_surface_set_clear         (pipeline_surface_id surface, color128 color, bool32_t fully_covered);
 void                render_pipeline_surface_set_perspective   (pipeline_surface_id surface, matrix* view_matrices, matrix* proj_matrices, int32_t count);
 void                render_pipeline_surface_set_resolve_target(pipeline_surface_id surface, skr_tex_t* resolve_target);
 

@@ -71,6 +71,21 @@ material_t sprite_create_material(int index_id) {
 
 ///////////////////////////////////////////
 
+// Single sprites have nothing to finalize but state; atlas placement will
+// happen here later, since packing needs the image's dimensions.
+static bool32_t sprite_finalize(asset_task_t*, asset_header_t* asset, void*) {
+	asset->state = asset_state_loaded;
+	return true;
+}
+
+// A sprite can't fail: a failed image resolves to the error fallback
+// texture, so the sprite finalizes as loaded and shows that fallback.
+static void sprite_finalize_failed(asset_header_t* asset, void*) {
+	asset->state = asset_state_loaded;
+}
+
+///////////////////////////////////////////
+
 sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 	if (type == sprite_type_atlased) {
 		if (sprite_warning == false) {
@@ -95,8 +110,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 
 	tex_addref(image);
 
-	assets_block_until((asset_header_t*)image, asset_state_loaded_meta);
-
+	result->header.state = asset_state_loading;
 	result->texture = image;
 	result->uvs[0] = vec2{ 0,0 };
 	result->uvs[1] = vec2{ 1,1 };
@@ -141,6 +155,20 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 
 		result->buffer_index = index;
 	}
+
+	// The sprite finalizes through a task gated on the image, so creation
+	// never stalls on the image's metadata parse.
+	static const asset_load_action_t actions[] = { sprite_finalize };
+	asset_task_t task  = {};
+	task.asset         = &result->header;
+	task.on_failure    = sprite_finalize_failed;
+	task.actions       = (asset_load_action_t*)actions;
+	task.action_count  = _countof(actions);
+	task.priority      = asset_priority_default;
+	task.sort          = asset_sort(asset_priority_default, 0);
+	task.depends_on    = (asset_header_t*)image;
+	task.depends_state = asset_state_loaded_meta;
+	assets_add_task(task);
 
 	sprite_index += 1;
 	return result;

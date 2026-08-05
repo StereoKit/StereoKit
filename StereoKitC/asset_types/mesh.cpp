@@ -389,8 +389,8 @@ static void _mesh_set_data(mesh_t mesh, int32_t format_id, const void* vertices,
 		}
 
 		static const asset_load_action_t actions[] = {
-			asset_load_action_t {mesh_load_process, asset_thread_asset},
-			asset_load_action_t {mesh_load_upload,  asset_thread_asset},
+			mesh_load_process,
+			mesh_load_upload,
 		};
 
 		asset_task_t task = {};

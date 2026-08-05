@@ -89,8 +89,11 @@ skr_tex_flags_ tex_type_to_skr_flags(tex_type_ type) {
 		return (skr_tex_flags_)(skr_tex_flags_writeable | skr_tex_flags_input_attachment);
 	}
 
-	// Most textures are sampled
-	skr_tex_flags_ flags = skr_tex_flags_readable;
+	// Most textures are sampled, transient attachments never are. Both halves
+	// matter here, sk_renderer tests in_tile_msaa && !readable.
+	skr_tex_flags_ flags = (type & tex_type_transient_internal)
+		? skr_tex_flags_in_tile_msaa
+		: skr_tex_flags_readable;
 	if (type & tex_type_cubemap)      flags = (skr_tex_flags_)(flags | skr_tex_flags_cubemap);
 	if (type & tex_type_dynamic)      flags = (skr_tex_flags_)(flags | skr_tex_flags_dynamic);
 	if (type & tex_type_mips)         flags = (skr_tex_flags_)(flags | skr_tex_flags_gen_mips);
@@ -498,9 +501,9 @@ tex_t tex_create_file_type(const char *file, tex_type_ type, bool32_t srgb_data,
 	load_data->file_names[0] = string_copy(file);
 
 	static const asset_load_action_t actions[] = {
-		asset_load_action_t {tex_load_arr_files,  asset_thread_asset},
-		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
-		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
+		tex_load_arr_files,
+		tex_load_arr_parse,
+		tex_load_arr_upload,
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, asset_complexity_bytes(platform_file_size(file))) );
 
@@ -540,8 +543,8 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 	tex_set_meta(result, load_data->color_width, load_data->color_height, 1, format);
 
 	static const asset_load_action_t actions[] = {
-		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
-		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
+		tex_load_arr_parse,
+		tex_load_arr_upload,
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, asset_complexity_bytes(data_size)) );
 
@@ -643,9 +646,9 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 	}
 
 	static const asset_load_action_t actions[] = {
-		asset_load_action_t {tex_load_arr_files,  asset_thread_asset},
-		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
-		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
+		tex_load_arr_files,
+		tex_load_arr_parse,
+		tex_load_arr_upload,
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, asset_complexity_bytes(total_size)) );
 
@@ -794,9 +797,9 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 	///////////////////////////////////////////
 
 	static const asset_load_action_t actions[] = {
-		asset_load_action_t {load,               asset_thread_asset},
-		asset_load_action_t {tex_load_arr_parse, asset_thread_asset},
-		asset_load_action_t {upload,             asset_thread_asset},
+		load,
+		tex_load_arr_parse,
+		upload,
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, asset_complexity_bytes(platform_file_size(cubemap_file))) );
 
@@ -1361,13 +1364,13 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 	tex_set_meta(texture, load_data->color_width, load_data->color_height, 1, format);
 
 	static const asset_load_action_t actions[] = {
-		asset_load_action_t {tex_load_arr_parse,  asset_thread_asset},
-		asset_load_action_t {tex_load_arr_upload, asset_thread_asset},
+		tex_load_arr_parse,
+		tex_load_arr_upload,
 	};
 	asset_task_t task = tex_make_loading_task(texture, load_data, actions, _countof(actions), priority, asset_complexity_bytes(data_size));
 	if (blocking) {
 		for (int32_t i = 0; i < 2; i++) {
-			if (!actions[i].action(&task, &texture->header, load_data))
+			if (!actions[i](&task, &texture->header, load_data))
 				break;
 		}
 		tex_load_free(&texture->header, load_data);

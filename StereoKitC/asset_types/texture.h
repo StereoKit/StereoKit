@@ -7,6 +7,10 @@
 
 namespace sk {
 
+// Internal only, an attachment resolved in-pass and never read. Drops every
+// usage bit but COLOR_ATTACHMENT, and reading one is a validation error.
+const tex_type_ tex_type_transient_internal = (tex_type_)(1 << 30);
+
 struct _tex_t {
 	asset_header_t   header;
 	tex_t            fallback;

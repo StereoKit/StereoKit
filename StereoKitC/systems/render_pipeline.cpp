@@ -21,6 +21,7 @@ struct pipeline_surface_t {
 	int32_t                     width;
 	int32_t                     height;
 	color128                    clear_color;
+	bool32_t                    clear_covered; // Draw fills every pixel, clear is skippable
 	tex_t                       tex;       // Null draws into resolve_target
 	tex_t                       depth_tex; // Used when tex is null
 	matrix*                     view_matrices;
@@ -67,8 +68,11 @@ void render_pipeline_draw() {
 
 		// Set up clear values and submit the pass - the pass system handles
 		// multi-view fallback automatically via the view_desc.
+		// A fully covered surface overwrites every pixel, so the clear is
+		// wasted work. Passthrough covers none, and there the clear _is_ the
+		// content.
 		skr_vec4_t clear_color = { s->clear_color.r, s->clear_color.g, s->clear_color.b, s->clear_color.a };
-		skr_clear_ clear_flags = (skr_clear_)(skr_clear_color | skr_clear_depth | skr_clear_stencil);
+		skr_clear_ clear_flags = (skr_clear_)((s->clear_covered ? skr_clear_color_discard : skr_clear_color) | skr_clear_depth | skr_clear_stencil);
 
 		render_draw_queue(list, s->view_matrices, s->proj_matrices, 0, s->array_count, s->layer, 0, width, height);
 
@@ -182,7 +186,9 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 
 		bool fresh = surface->tex == nullptr;
 		if (fresh) {
-			surface->tex = tex_create(tex_type_image_nomips | tex_type_rendertarget, surface->color);
+			// needs_tex is the "will be resolved" condition, so this tex is
+			// only ever an MSAA intermediate. Nothing samples or copies it.
+			surface->tex = tex_create(tex_type_image_nomips | tex_type_rendertarget | tex_type_transient_internal, surface->color);
 			snprintf(name, sizeof(name), "sk/render/pipeline_surface_%d", surface_id);
 			tex_set_id(surface->tex, name);
 		}
@@ -264,6 +270,13 @@ void render_pipeline_surface_present_swapchain(pipeline_surface_id surface_id, s
 void render_pipeline_surface_to_tex(pipeline_surface_id surface_id, tex_t destination, material_t mat) {
 	pipeline_surface_t* surface = &local.surfaces[surface_id];
 
+	// A multisampled surface renders into a transient MSAA intermediate that
+	// can't be sampled or copied, only the direct-render tex is readable.
+	if (surface->tex == nullptr || (surface->tex->type & tex_type_transient_internal)) {
+		log_err("render_pipeline_surface_to_tex: this surface has no readable texture, read its resolve target instead");
+		return;
+	}
+
 	if (mat) {
 		material_set_texture(mat, "source", surface->tex);
 		render_blit(destination, mat);
@@ -311,6 +324,14 @@ void render_pipeline_surface_set_tex(pipeline_surface_id surface_id, tex_t tex) 
 
 tex_t render_pipeline_surface_get_tex(pipeline_surface_id surface_id) {
 	pipeline_surface_t* surface = &local.surfaces[surface_id];
+
+	// A multisampled surface's tex is a transient that can't be sampled or
+	// copied, so handing it out is never useful. Same as _to_tex below.
+	if (surface->tex && (surface->tex->type & tex_type_transient_internal)) {
+		log_err("render_pipeline_surface_get_tex: this surface has no readable texture, read its resolve target instead");
+		return nullptr;
+	}
+
 	if (surface->tex) tex_addref(surface->tex);
 	return surface->tex;
 }
@@ -341,8 +362,9 @@ void render_pipeline_surface_set_viewport_scale(pipeline_surface_id surface, flo
 
 ///////////////////////////////////////////
 
-void render_pipeline_surface_set_clear(pipeline_surface_id surface, color128 color) {
-	local.surfaces[surface].clear_color = color;
+void render_pipeline_surface_set_clear(pipeline_surface_id surface, color128 color, bool32_t fully_covered) {
+	local.surfaces[surface].clear_color   = color;
+	local.surfaces[surface].clear_covered = fully_covered;
 }
 
 ///////////////////////////////////////////

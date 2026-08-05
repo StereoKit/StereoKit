@@ -240,7 +240,7 @@ static void sound_load_failure(asset_header_t* asset, void*) {
 }
 
 static asset_load_action_t sound_load_actions[] = {
-	{ sound_load_decode, asset_thread_asset },
+	sound_load_decode,
 };
 
 ///////////////////////////////////////////
