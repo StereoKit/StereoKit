@@ -17,17 +17,19 @@ class DemoPBR : ITest
 	Material   selectionMat;
 
 	Tex oldSkyTex;
+	Tex oldReflection;
 	SphericalHarmonics oldSkyLight;
 
 	Pose modelPose = Pose.Identity;
 
 	public void Initialize()
 	{
-		oldSkyTex   = Renderer.SkyTex;
-		oldSkyLight = Renderer.SkyLight;
-		sphereMesh  = Mesh.GenerateSphere(1, 7);
-		Renderer.SkyTex = Tex.FromCubemap(@"old_depot.hdr");
-		Renderer.SkyTex.OnLoaded += t => Renderer.SkyLight = t.CubemapLighting;
+		oldSkyTex     = Renderer.SkyTex;
+		oldSkyLight   = Lighting.Ambient;
+		oldReflection = Lighting.Reflection;
+		sphereMesh    = Mesh.GenerateSphere(1, 7);
+
+		Lighting.SetEnvironment(Tex.FromCubemap(@"old_depot.hdr"));
 		selectionMat = new Material("interactable.hlsl");
 		selectionMat.Transparency = Transparency.Add;
 		selectionMat.DepthTest = DepthTest.Equal;
@@ -63,8 +65,9 @@ class DemoPBR : ITest
 
 	public void Shutdown()
 	{
-		Renderer.SkyTex   = oldSkyTex;
-		Renderer.SkyLight = oldSkyLight;
+		Renderer.SkyTex     = oldSkyTex;
+		Lighting.Reflection = oldReflection;
+		Lighting.Ambient    = oldSkyLight;
 	}
 
 	public void Step()

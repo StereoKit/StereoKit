@@ -872,11 +872,11 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 		local.global_buffer.fingertip[i] = { tip.x, tip.y, tip.z, 0 };
 	}
 
-	// TODO: This is a little odd now that textures like this go through the
-	// render_global_textures system.
-	tex_t sky_tex = local.global_textures[render_skytex_register];
-	local.global_buffer.cubemap_i = sky_tex != nullptr
-		? vec4{ (float)sky_tex->width, (float)sky_tex->height, sky_tex->gpu_tex.mip_levels > 0 ? (float)(sky_tex->gpu_tex.mip_levels - 1) : 0, 0 }
+	// sk_cubemap_i describes the reflection cubemap: dimensions for mip
+	// selection, last mip index for stereokit_pbr.hlsli's roughness curve.
+	tex_t reflection_tex = local.global_textures[render_reflection_register];
+	local.global_buffer.cubemap_i = reflection_tex != nullptr
+		? vec4{ (float)reflection_tex->width, (float)reflection_tex->height, reflection_tex->gpu_tex.mip_levels > 0 ? (float)(reflection_tex->gpu_tex.mip_levels - 1) : 0, 0 }
 		: vec4{};
 
 	// Upload shader globals
@@ -1057,7 +1057,9 @@ void render_check_screenshots() {
 		// readback below reads the resolve, never this.
 		tex_t color_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget | tex_type_transient_internal, local.screenshot_list[i].tex_format);
 		tex_set_color_arr(color_surface, w, h, nullptr, 1, 8, nullptr);
-		tex_t depth_surface = tex_create_rendertarget(w, h, 8, tex_get_supported_depth_format(render_preferred_depth_fmt(), true, 8), tex_format_none);
+		// Passed as the DEPTH format, not the color one: only depth targets
+		// get input attachment usage, which postfx needs to read depth.
+		tex_t depth_surface = tex_create_rendertarget(w, h, 8, tex_format_none, tex_get_supported_depth_format(render_preferred_depth_fmt(), true, 8));
 		tex_t resolve_tex   = tex_create_rendertarget(w, h, 1, local.screenshot_list[i].tex_format, tex_format_none);
 
 		// Set up viewport

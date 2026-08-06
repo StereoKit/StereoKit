@@ -57,12 +57,12 @@ class TestPerfTester : ITest
 		testFrame = testDuration;
 		testIdx = -1;
 
-		Renderer.EnableSky = false;
+		Renderer.SkyVisible = false;
 	}
 
 	public void Shutdown()
 	{
-		Renderer.EnableSky = true;
+		Renderer.SkyVisible = true;
 	}
 
 	public void Step()

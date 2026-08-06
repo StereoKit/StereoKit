@@ -32,6 +32,7 @@ class DemoShadows : ITest
 
 	SphericalHarmonics oldLighting;
 	Tex                oldTex;
+	Tex                oldReflection;
 
 	public void Initialize()
 	{
@@ -56,19 +57,23 @@ class DemoShadows : ITest
 		floorMat[MatParamName.TexTransform] = new Vec4(0, 0, 2, 2);
 		model = GenerateModel(floorMat, shadowMat);
 
-		oldLighting = Renderer.SkyLight;
-		oldTex      = Renderer.SkyTex;
+		oldLighting   = Lighting.Ambient;
+		oldTex        = Renderer.SkyTex;
+		oldReflection = Lighting.Reflection;
 
-		Renderer.SkyTex = Tex.FromCubemap(@"old_depot.hdr");
-		Renderer.SkyTex.OnLoaded += t => { Renderer.SkyLight = t.CubemapLighting; lightDir = t.CubemapLighting.DominantLightDirection; };
+		// The environment provides visuals and lighting; the shadow direction
+		// additionally needs the reflection's lighting data once it's ready.
+		Lighting.SetEnvironment(Tex.FromCubemap(@"old_depot.hdr"), out Tex reflection);
+		reflection.OnLoaded += t => lightDir = t.CubemapLighting.DominantLightDirection;
 
 		Renderer.SetGlobalBuffer(13, shadowBuffer);
 	}
 
 	public void Shutdown()
 	{
-		Renderer.SkyLight = oldLighting;
-		Renderer.SkyTex   = oldTex;
+		Renderer.SkyTex     = oldTex;
+		Lighting.Reflection = oldReflection;
+		Lighting.Ambient    = oldLighting;
 		Renderer.SetGlobalBuffer (13, null);
 		Renderer.SetGlobalTexture(13, null);
 	}

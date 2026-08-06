@@ -16,7 +16,7 @@ cbuffer stereokit_buffer : register(b1) {
 	float4   sk_camera_pos [SK_MAX_VIEWS];
 	float4   sk_camera_dir [SK_MAX_VIEWS];
 	float4   sk_fingertip  [2];
-	float4   sk_cubemap_i;   // .xy = width/height, .z  = mip count, .w = unused
+	float4   sk_cubemap_i;   // Reflection: .xy = size, .z = last mip index
 	float4   sk_screen_size; // .xy = width/height, .zw = 1/width, 1/height
 	float    sk_time;
 	uint     sk_view_count;

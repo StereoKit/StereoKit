@@ -371,12 +371,12 @@ class DemoRainThunder : ITest
 		// flashes read far better against it. Restored at shutdown, as is
 		// whatever acoustic environment the scene arrived with.
 		envOriginal = Audio.Environment;
-		skyOriginal = Renderer.SkyLight;
+		skyOriginal = Lighting.Ambient;
 		SphericalHarmonics sky = skyOriginal;
 		sky.coefficient1 *= 0.5f; sky.coefficient2 *= 0.5f; sky.coefficient3 *= 0.5f;
 		sky.coefficient4 *= 0.5f; sky.coefficient5 *= 0.5f; sky.coefficient6 *= 0.5f;
 		sky.coefficient7 *= 0.5f; sky.coefficient8 *= 0.5f; sky.coefficient9 *= 0.5f;
-		Renderer.SkyLight = sky;
+		Lighting.Ambient = sky;
 
 		// -- Drop variants --
 		// Sample the population: mostly small drops, a fat tail of big
@@ -576,7 +576,7 @@ class DemoRainThunder : ITest
 	public void Shutdown()
 	{
 		Audio.Environment = envOriginal;
-		Renderer.SkyLight = skyOriginal;
+		Lighting.Ambient  = skyOriginal;
 		skyFlashOn        = false;
 		washBrightInst.Stop();
 		washDarkInst  .Stop();
@@ -796,15 +796,15 @@ class DemoRainThunder : ITest
 		bool lit = flashLevel > 0.008f || strokesLeft > 0;
 		if (lit)
 		{
-			if (!skyFlashOn) { skyBase = Renderer.SkyLight; skyFlashOn = true; }
+			if (!skyFlashOn) { skyBase = Lighting.Ambient; skyFlashOn = true; }
 			SphericalHarmonics sky = skyBase;
 			sky.Add(flashDir, new Color(1, 0.96f, 1)     * 6.0f * flashLevel);
 			sky.Add(Vec3.Up,  new Color(0.8f, 0.8f, 1)   * 2.4f * flashLevel);
-			Renderer.SkyLight = sky;
+			Lighting.Ambient = sky;
 		}
 		else if (skyFlashOn)
 		{
-			Renderer.SkyLight = skyBase;
+			Lighting.Ambient = skyBase;
 			skyFlashOn        = false;
 		}
 	}

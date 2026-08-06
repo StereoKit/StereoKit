@@ -57,7 +57,7 @@ namespace StereoKit.Framework
 
 		public static void ApplyLighting()
 		{
-			var light = Renderer.SkyLight;
+			var light = Lighting.Ambient;
 			light.Brightness(0.02f);
 			Renderer.SkyTex = Tex.GenCubemap(light);
 		}

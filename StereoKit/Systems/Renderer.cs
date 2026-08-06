@@ -27,10 +27,18 @@ namespace StereoKit
 			return native;
 		}
 
-		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
-		/// displays, since transparent displays have the real world behind them already! StereoKit has a
-		/// a default procedurally generated skybox. You can load one with `Tex.FromEquirectangular`, 
-		/// `Tex.GenCubemap`. If you're trying to affect the lighting, see `Renderer.SkyLight`.</summary>
+		/// <summary>The cubemap texture the skybox backdrop draws! This is
+		/// only visible on Opaque displays, since transparent displays have
+		/// the real world behind them already. It's shorthand for the sky
+		/// material's 'source' texture parameter, and survives material
+		/// swaps.
+		///
+		/// This is purely visual, and does not affect scene lighting. The
+		/// typical way to set up a sky is `Lighting.SetEnvironment`, which
+		/// assigns this along with the lighting it derives from the same
+		/// cubemap. Assign this directly to draw a different sky than the
+		/// one you're lighting with, or for back-compat with the old
+		/// SkyTex/SkyLight pattern.</summary>
 		public static Tex SkyTex
 		{
 			get  { IntPtr ptr = NativeAPI.render_get_skytex(); return ptr == IntPtr.Zero ? null : new Tex(ptr); }
@@ -44,7 +52,7 @@ namespace StereoKit
 		/// 
 		/// This value will never be null! If you try setting this to null, it
 		/// will assign SK's built-in default sky material. If you want to turn
-		/// off the skybox, see `Renderer.EnableSky` instead.
+		/// off the skybox, see `Renderer.SkyVisible` instead.
 		/// 
 		/// Recommended Material settings would be:
 		/// - DepthWrite: false
@@ -65,12 +73,22 @@ namespace StereoKit
 			get => NativeAPI.render_get_skylight();
 		}
 
-		/// <summary>Enables or disables rendering of the skybox texture! It's enabled by default on Opaque
-		/// displays, and completely unavailable for transparent displays.</summary>
+		/// <summary>Is the skybox backdrop drawn? On by default on Opaque
+		/// displays, and never drawn on transparent displays, where the real
+		/// world is the backdrop. This only affects the visual, leaving
+		/// scene lighting from `Lighting` untouched.</summary>
+		public static bool SkyVisible
+		{
+			get => NativeAPI.render_get_sky_visible();
+			set => NativeAPI.render_set_sky_visible(value);
+		}
+
+		/// <summary>Enables or disables rendering of the skybox.</summary>
+		[Obsolete("Use SkyVisible")]
 		public static bool EnableSky
 		{
-			get => NativeAPI.render_enabled_skytex();
-			set => NativeAPI.render_enable_skytex(value);
+			get => NativeAPI.render_get_sky_visible();
+			set => NativeAPI.render_set_sky_visible(value);
 		}
 
 		/// <summary>By default, StereoKit renders all first-person layers.

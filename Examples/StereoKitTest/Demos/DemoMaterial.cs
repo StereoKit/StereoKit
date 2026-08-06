@@ -26,21 +26,26 @@ class DemoMaterial : ITest
 	Material matUI;
 
 	Tex                oldSkyTex;
+	Tex                oldReflection;
 	SphericalHarmonics oldSkyLight;
 
 	public void Initialize()
 	{
 		oldSkyTex         = Renderer.SkyTex;
-		oldSkyLight       = Renderer.SkyLight;
+		oldSkyLight       = Lighting.Ambient;
+		oldReflection     = Lighting.Reflection;
 
-		/// :CodeSample: Renderer.SkyTex Renderer.SkyLight Tex.FromCubemapEquirectangular
+		/// :CodeSample: Lighting.SetEnvironment Tex.FromCubemapEquirectangular
 		/// ### Setting lighting to an equirect cubemap
 		/// Changing the environment's lighting based on an image is a really
 		/// great way to instantly get a particular feel to your scene! A neat
 		/// place to find compatible equirectangular images for this is
 		/// [Poly Haven](https://polyhaven.com/hdris)
-		Renderer.SkyTex   = Tex.FromCubemap("old_depot.hdr");
-		Renderer.SkyLight = Renderer.SkyTex.CubemapLighting;
+		///
+		/// This one call shows the cubemap as the skybox, and derives the
+		/// scene's reflections and ambient light from it, all chained off
+		/// the async file load.
+		Lighting.SetEnvironment(Tex.FromCubemap("old_depot.hdr"));
 		/// And here's what it looks like applied to the default Material!
 		/// ![Default Material example]({{site.screen_url}}/MaterialDefault.jpg)
 		/// :End:
@@ -203,7 +208,8 @@ class DemoMaterial : ITest
 
 	public void Shutdown()
 	{
-		Renderer.SkyTex   = oldSkyTex;
-		Renderer.SkyLight = oldSkyLight;
+		Renderer.SkyTex     = oldSkyTex;
+		Lighting.Reflection = oldReflection;
+		Lighting.Ambient    = oldSkyLight;
 	}
 }

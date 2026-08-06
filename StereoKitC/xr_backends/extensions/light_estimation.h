@@ -16,6 +16,16 @@ bool xr_ext_android_light_estimation_available(void);
 bool xr_ext_light_estimation_start            (void);
 void xr_ext_light_estimation_stop             (void);
 bool xr_ext_light_estimation_update_sh        (spherical_harmonics_t* ref_sh);
+
+// True when the system can provide cubemap light estimates at all. Starting
+// them also needs permission_type_scene_fine.
+bool xr_ext_light_estimation_cubemap_available(void);
+
+// Format and face resolution that started cubemap estimates arrive in, so the
+// caller can create a matching cubemap for the update below.
+bool xr_ext_light_estimation_reflection_info  (tex_format_* out_format, int32_t* out_face_size);
+// Uploads the most recent cubemap estimate into ref_cubemap, sized by
+// xr_ext_light_estimation_reflection_info. False when there's nothing new.
 bool xr_ext_light_estimation_update_reflection(tex_t ref_cubemap);
 
 }

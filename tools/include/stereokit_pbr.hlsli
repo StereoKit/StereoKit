@@ -67,7 +67,6 @@ min16float4 sk_pbr_shade(min16float4 albedo, min16float3 irradiance, min16float 
 
 	min16float3 F0 = lerp(0.04h, albedo.rgb, metal);
 	min16float3 F  = sk_pbr_fresnel_schlick_roughness(ndotv, F0, rough);
-	min16float3 kS = F;
 
 	min16float2 envBRDF  = sk_pbr_brdf_appx(rough, ndotv);
 	min16float3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
@@ -79,8 +78,9 @@ min16float4 sk_pbr_shade(min16float4 albedo, min16float3 irradiance, min16float 
 	min16float3 energyCompensation = 1.0h + F0 * (1.0h / max(envBRDF.x + envBRDF.y, 0.001h) - 1.0h);
 	specular *= energyCompensation;
 
-	min16float3 kD = 1.0h - kS;
-	kD *= 1.0h - metal;
+	// Diffuse weight is plain Disney-style (1 - metal). Attenuating by Fresnel
+	// too ((1 - F) * (1 - metal)) loses up to ~20% energy at mid-metallic.
+	min16float kD = 1.0h - metal;
 
 	min16float3 diffuse = albedo.rgb * irradiance * ao;
 	// Gotanda (tri-Ace, 2014): roughness-dependent retroreflection boost

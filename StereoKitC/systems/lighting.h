@@ -9,8 +9,13 @@
 
 namespace sk {
 
-const int32_t       render_skytex_register = 11;
-const render_layer_ render_sky_layer       = render_layer_vfx;
+// Global shader register for the specular reflection cubemap, the GGX
+// convolved chain sk_cubemap/sk_cubemap_i refer to. The sky is not a global.
+const int32_t       render_reflection_register = 11;
+const render_layer_ render_sky_layer           = render_layer_vfx;
+
+// Max face resolution for reflections the lighting system generates.
+#define SK_LIGHTING_REFLECTION_SIZE 64
 
 bool lighting_init         ();
 void lighting_step         ();

@@ -25,10 +25,8 @@ class DemoLighting : ITest
 	string title       = "Lighting Editor";
 	string description = "";
 
-	static List<Light> lights         = new List<Light>();
-	static Tex         cubemap        = null;
-	static bool        cubelightDirty = false;
-	static string      cubemapFile    = "";
+	static List<Light> lights      = new List<Light>();
+	static string      cubemapFile = "";
 
 	Pose       windowPose    = (Demo.contentPose * Matrix.T(-0.2f, 0, 0)).Pose;
 	Pose       previewPose   = (Demo.contentPose * Matrix.T(0.2f, -0.1f, 0)).Pose;
@@ -131,11 +129,6 @@ class DemoLighting : ITest
 		}
 		Hierarchy.Pop();
 
-		if (cubelightDirty && cubemap.AssetState == AssetState.Loaded) {
-			Lighting.Ambient = cubemap.CubemapLighting;
-			cubelightDirty = false;
-		}
-
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.08f), V.XYZ(.7f, .3f, 0.1f)));
 	}
 
@@ -193,11 +186,9 @@ class DemoLighting : ITest
 	void LoadSkyImage(string file)
 	{
 		cubemapFile = Path.GetFileName(file);
-		cubemap     = Tex.FromCubemap(file);
 
-		Renderer.SkyTex     = cubemap;
-		Lighting.Reflection = cubemap;
-		cubelightDirty      = true;
+		// Skybox, reflection, and ambient all chain off the async file load.
+		Lighting.SetEnvironment(Tex.FromCubemap(file));
 	}
 
 	void UpdateLights()
@@ -208,9 +199,10 @@ class DemoLighting : ITest
 				color       = Color.HSV(a.color) * LightIntensity(a.pose.position) })
 			.ToArray());
 
-		Renderer.SkyTex     = Tex.GenCubemap(lighting);
-		Lighting.Reflection = Renderer.SkyTex;
-		Lighting.Ambient    = lighting;
+		// The exact SH is already known here, so it overrides the ambient the
+		// environment would derive. Overrides come after SetEnvironment.
+		Lighting.SetEnvironment(Tex.GenCubemap(lighting));
+		Lighting.Ambient = lighting;
 	}
 
 	float LightIntensity(Vec3 pos)

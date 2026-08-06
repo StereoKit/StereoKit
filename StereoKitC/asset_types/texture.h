@@ -32,8 +32,14 @@ struct _tex_t {
 	skr_tex_t        gpu_tex;
 	tex_t            depth_buffer;
 	spherical_harmonics_t *light_info;
+	skr_buffer_t     sh_buffer;  // SH projection result, GPU side
+	skr_future_t     sh_future;  // completes when sh_buffer is readable
+	bool32_t         sh_pending; // readback pending, resolved lazily on query
 };
 
-void tex_destroy(tex_t texture);
+void tex_destroy       (tex_t texture);
+// Non-blocking tex_get_cubemap_lighting: false while a readback is still
+// on the GPU, or when the texture has no lighting data.
+bool32_t tex_cubemap_lighting_try(tex_t cubemap_texture, spherical_harmonics_t* out_sh);
 
 } // namespace sk

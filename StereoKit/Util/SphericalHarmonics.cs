@@ -26,35 +26,46 @@ namespace StereoKit
 	/// lightmap data, or a light probe grid, but StereoKit just uses a
 	/// single SH for the entire scene. It's a gross oversimplification, but
 	/// looks quite good, and is really fast! That's extremely great when
-	/// you're trying to hit 60fps, or even 144fps.</summary>
+	/// you're trying to hit 60fps, or even 144fps.
+	///
+	/// StereoKit's coefficient convention: each coefficient field documents
+	/// the basis term it stores, and all basis signs are positive, so a
+	/// light from above lands as a _positive_ `coefficient2` (the linear y
+	/// term), and the linear band points _toward_ the brightest region.
+	/// Watch out when importing coefficients from elsewhere: SH sign
+	/// conventions vary, and many libraries (ARCore, DirectXMath) flip the
+	/// odd terms (coefficients 2, 4, 6, and 8) relative to this. If
+	/// imported lighting shows up rotated 180 degrees, with up reading as
+	/// down, negate those four.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct SphericalHarmonics
 	{
-		/// <summary>A set of RGB coefficients</summary>
+		/// <summary>Band 0, the constant/ambient term.</summary>
 		public Vec3 coefficient1;
-		/// <summary>A set of RGB coefficients</summary>
+		/// <summary>Band 1, the linear y term.</summary>
 		public Vec3 coefficient2;
-		/// <summary>A set of RGB coefficients</summary>
+		/// <summary>Band 1, the linear z term.</summary>
 		public Vec3 coefficient3;
-		/// <summary>A set of RGB coefficients</summary>
+		/// <summary>Band 1, the linear x term.</summary>
 		public Vec3 coefficient4;
-		/// <summary>A set of RGB coefficients</summary>
+		/// <summary>Band 2, the xy term.</summary>
 		public Vec3 coefficient5;
-		/// <summary>A set of RGB coefficients</summary>
+		/// <summary>Band 2, the yz term.</summary>
 		public Vec3 coefficient6;
-		/// <summary>A set of RGB coefficients</summary>
+		/// <summary>Band 2, the 3z^2-1 term.</summary>
 		public Vec3 coefficient7;
-		/// <summary>A set of RGB coefficients</summary>
+		/// <summary>Band 2, the xz term.</summary>
 		public Vec3 coefficient8;
-		/// <summary>A set of RGB coefficients</summary>
+		/// <summary>Band 2, the x^2-y^2 term.</summary>
 		public Vec3 coefficient9;
 
-		/// <summary>Returns the dominant direction of the light represented
-		/// by this spherical harmonics data. The direction value is 
-		/// normalized.
-		/// 
-		/// You can get the color of the light in this direction by using the
-		/// struct's Sample method: 
+		/// <summary>The direction the dominant light is _traveling_,
+		/// pointing away from the light source, the opposite of
+		/// `SHLight.directionTo`. The direction value is normalized.
+		///
+		/// Since this points away from the light, negate it to look _at_
+		/// the light, like when sampling the light's color with the
+		/// struct's Sample method:
 		/// `light.Sample(-light.DominantLightDirection)`. </summary>
 		public Vec3 DominantLightDirection => NativeAPI.sh_dominant_dir(this);
 
@@ -93,7 +104,8 @@ namespace StereoKit
 				coefficient9 };
 		}
 
-		/// <summary>Look up the color information in a particular direction!</summary>
+		/// <summary>Look up the color information in a particular direction:
+		/// the irradiance for a surface whose normal faces that way.</summary>
 		/// <param name="normal">The direction to look in. Should be normalized.</param>
 		/// <returns>The Color represented by the SH in the given direction.</returns>
 		public Color Sample(Vec3 normal) => NativeAPI.sh_lookup(this, normal);
@@ -103,7 +115,7 @@ namespace StereoKit
 		/// light from a field of points.</summary>
 		/// <param name="lightDir">Direction to the light source.</param>
 		/// <param name="lightColor">Color of the light, in linear color
-		/// space.</param>
+		/// space. Values can exceed 1.</param>
 		public void Add(Vec3 lightDir, Color lightColor)
 			=> NativeAPI.sh_add(ref this, lightDir, new Vec3(lightColor.r, lightColor.g, lightColor.b));
 

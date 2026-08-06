@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // The authors below grant copyright rights under the MIT license:
-// Copyright (c) 2019-2024 Nick Klingensmith
-// Copyright (c) 2024 Qualcomm Technologies, Inc.
+// Copyright (c) 2026 Nick Klingensmith
+// Copyright (c) 2026 Qualcomm Technologies, Inc.
 
 #include "lighting.h"
 #include "render.h"
@@ -27,6 +27,7 @@ struct lighting_state_t {
 	material_t              sky_mat_default;
 	bool32_t                sky_show;
 	bool32_t                sky_drawn; // Sky was added to this frame's list
+	tex_t                   sky_tex;
 	tex_t                   sky_pending_tex;
 
 	lighting_mode_          mode;
@@ -34,6 +35,9 @@ struct lighting_state_t {
 	spherical_harmonics_t   ambient_src;
 	tex_t                   reflection;
 	tex_t                   reflection_pending_tex;
+	bool                    ambient_auto_pending; // reflection SH -> ambient
+	tex_t                   world_env;           // raw environment estimate
+	tex_t                   world_reflection;    // the estimate, convolved
 
 	bool                    pending_scene_permission;
 };
@@ -79,11 +83,17 @@ static tex_t check_pending_cubemap(tex_t* ref_pending, const char* description) 
 
 ///////////////////////////////////////////
 
+// TODO: back-compat? Apps that only set a sky texture used to get reflections
+// from it for free. Could derive one here if the app never set a reflection.
 static void check_pending_skytex() {
 	tex_t tex = check_pending_cubemap(&local.sky_pending_tex, "Skytex");
 	if (tex != nullptr) {
-		render_global_texture(render_skytex_register, tex);
-		tex_release(tex);
+		if (local.sky_tex != nullptr) tex_release(local.sky_tex);
+		local.sky_tex = tex;
+
+		// Custom sky materials need a 'source' cubemap parameter for this.
+		if (local.sky_mat != nullptr && !material_set_texture(local.sky_mat, "source", local.sky_tex))
+			log_warn("Sky material has no 'source' texture parameter, skytex was not applied.");
 	}
 }
 
@@ -94,6 +104,9 @@ static void check_pending_reflection() {
 	if (tex != nullptr) {
 		if (local.reflection != nullptr) tex_release(local.reflection);
 		local.reflection = tex;
+
+		// Shaders read the reflection cubemap from the sk_cubemap global.
+		render_global_texture(render_reflection_register, local.reflection);
 	}
 }
 
@@ -102,6 +115,18 @@ static void check_pending_reflection() {
 void lighting_check_pending() {
 	check_pending_skytex();
 	check_pending_reflection();
+
+	// Apply the reflection's lighting data once its SH readback lands. The
+	// pending check keeps a stale result from applying mid-regeneration.
+	spherical_harmonics_t sh;
+	if (local.ambient_auto_pending &&
+	    local.mode                   != lighting_mode_world &&
+	    local.reflection             != nullptr &&
+	    local.reflection_pending_tex == nullptr &&
+	    tex_cubemap_lighting_try(local.reflection, &sh)) {
+		_lighting_set_ambient(sh);
+		local.ambient_auto_pending = false;
+	}
 }
 
 ///////////////////////////////////////////
@@ -130,14 +155,21 @@ bool lighting_init() {
 
 	// Create a default skybox texture
 	tex_t sky_cubemap = tex_find(default_id_cubemap);
-	
-	render_set_skytex   (sky_cubemap);
-	render_enable_skytex(true);
 
-	lighting_set_reflection(sky_cubemap);
-	lighting_set_ambient   (sk_default_lighting);
-	lighting_set_mode      (lighting_mode_auto);
-	
+	render_set_skytex     (sky_cubemap);
+	render_set_sky_visible(true);
+
+	// The default cubemap is a mip 0 skybox, and reflections need a mip chain.
+	tex_t default_reflection = tex_gen_cubemap_reflection(sky_cubemap, nullptr, SK_LIGHTING_REFLECTION_SIZE);
+	if (default_reflection != nullptr) {
+		tex_set_id(default_reflection, "sk/lighting/reflection_default");
+		lighting_set_reflection(default_reflection);
+		tex_release(default_reflection);
+	}
+
+	lighting_set_ambient(sk_default_lighting);
+	lighting_set_mode   (lighting_mode_auto);
+
 	tex_release(sky_cubemap);
 
 	return true;
@@ -163,12 +195,35 @@ void lighting_step() {
 
 	if (local.mode == lighting_mode_world) {
 		spherical_harmonics_t sh;
-		if (xr_ext_light_estimation_update_sh(&sh)) {
+		bool sh_updated = xr_ext_light_estimation_update_sh(&sh);
+		if (sh_updated)
 			_lighting_set_ambient(sh);
 
-			tex_t reflection = tex_gen_cubemap_sh(local.ambient_src, 32, 0.2f, 2.0f);
-			_lighting_set_reflection(reflection);
-			tex_release(reflection);
+		// Reflections come from the cubemap estimate when the device has one,
+		// otherwise they're approximated from the SH. Either way it convolves
+		// into a persistent texture, created on the first update.
+		tex_t       env        = nullptr;
+		tex_format_ env_format = tex_format_none;
+		int32_t     env_size   = 0;
+		if (xr_ext_light_estimation_reflection_info(&env_format, &env_size)) {
+			if (local.world_env == nullptr)
+				local.world_env = tex_create((tex_type_)(tex_type_image_nomips | tex_type_cubemap | tex_type_dynamic), env_format);
+			if (xr_ext_light_estimation_update_reflection(local.world_env)) {
+				env = local.world_env;
+				tex_addref(env);
+			}
+		} else if (sh_updated) {
+			env = tex_gen_cubemap_sh(local.ambient_src, SK_LIGHTING_REFLECTION_SIZE / 2, 0.2f, 2.0f);
+		}
+
+		if (env != nullptr) {
+			tex_t refl = tex_gen_cubemap_reflection(env, local.world_reflection, SK_LIGHTING_REFLECTION_SIZE);
+			if (refl != nullptr) {
+				if (local.world_reflection == nullptr) local.world_reflection = refl;
+				else                                   tex_release(refl);
+				_lighting_set_reflection(local.world_reflection);
+			}
+			tex_release(env);
 		}
 	}
 
@@ -196,9 +251,12 @@ bool32_t render_sky_covers(render_layer_ filter) {
 ///////////////////////////////////////////
 
 void lighting_shutdown() {
+	tex_release     (local.sky_tex);
 	tex_release     (local.sky_pending_tex);
 	tex_release     (local.reflection);
 	tex_release     (local.reflection_pending_tex);
+	tex_release     (local.world_env);
+	tex_release     (local.world_reflection);
 	material_release(local.sky_mat_default);
 	material_release(local.sky_mat);
 	mesh_release    (local.sky_mesh);
@@ -229,8 +287,8 @@ tex_t render_get_skytex() {
 		return local.sky_pending_tex;
 	}
 
-	// Fall back to what's in the global texture slot
-	return render_get_global_texture(render_skytex_register);
+	if (local.sky_tex != nullptr) tex_addref(local.sky_tex);
+	return local.sky_tex;
 }
 
 ///////////////////////////////////////////
@@ -245,6 +303,11 @@ void render_set_skymaterial(material_t sky_material) {
 	material_addref(sky_material);
 	if (local.sky_mat != nullptr) material_release(local.sky_mat);
 	local.sky_mat = sky_material;
+
+	// Apply the current sky texture, so texture and material can be set in
+	// either order.
+	if (local.sky_tex != nullptr && !material_set_texture(local.sky_mat, "source", local.sky_tex))
+		log_warn("Sky material has no 'source' texture parameter, skytex was not applied.");
 }
 
 ///////////////////////////////////////////
@@ -268,13 +331,13 @@ spherical_harmonics_t render_get_skylight() {
 
 ///////////////////////////////////////////
 
-void render_enable_skytex(bool32_t show_sky) {
-	local.sky_show = show_sky;
+void render_set_sky_visible(bool32_t visible) {
+	local.sky_show = visible;
 }
 
 ///////////////////////////////////////////
 
-bool32_t render_enabled_skytex() {
+bool32_t render_get_sky_visible() {
 	return local.sky_show;
 }
 
@@ -309,14 +372,19 @@ bool32_t lighting_set_mode(lighting_mode_ mode) {
 	if (local.mode == mode) return true;
 
 	if (mode == lighting_mode_world) {
-		// Request permission if we need it
+		// Scene permission gates light estimation itself, while fine scene
+		// understanding additionally unlocks cubemap estimates.
+		permission_type_ request[2];
+		int32_t          request_count = 0;
+		if (permission_state(permission_type_scene) == permission_state_capable)
+			request[request_count++] = permission_type_scene;
+		if (xr_ext_light_estimation_cubemap_available() && permission_state(permission_type_scene_fine) == permission_state_capable)
+			request[request_count++] = permission_type_scene_fine;
+		if (request_count > 0)
+			permission_request(request, request_count);
+
+		// Permissions may be granted immediately
 		permission_state_ perms = permission_state(permission_type_scene);
-		if (perms == permission_state_capable) {
-			permission_type_ scene_permission = permission_type_scene;
-			permission_request(&scene_permission, 1);
-			// Permissions may be granted immediately
-			perms = permission_state(permission_type_scene);
-		}
 
 		if (perms != permission_state_granted) {
 			// If we're still waiting on permission, set a flag
@@ -354,6 +422,27 @@ lighting_mode_ lighting_get_mode(void) {
 
 ///////////////////////////////////////////
 
+void lighting_set_environment(tex_t sky_cubemap, tex_t* out_reflection) {
+	if (out_reflection != nullptr) *out_reflection = nullptr;
+	if (local.mode == lighting_mode_world) {
+		log_warn("lighting_set_environment is ignored in world lighting mode, lighting comes from the device there.");
+		return;
+	}
+
+	render_set_skytex(sky_cubemap);
+
+	tex_t reflection = tex_gen_cubemap_reflection(sky_cubemap);
+	if (reflection == nullptr) return;
+	_lighting_set_reflection(reflection);
+	// Once the reflection's SH readback lands, it becomes the ambient too.
+	local.ambient_auto_pending = true;
+	// The reference transfers to the caller when they want it.
+	if (out_reflection != nullptr) *out_reflection = reflection;
+	else                           tex_release(reflection);
+}
+
+///////////////////////////////////////////
+
 static void _lighting_set_ambient(const spherical_harmonics_t& ambient_lighting) {
 	local.ambient_src = ambient_lighting;
 	sh_to_fast(ambient_lighting, local.ambient);
@@ -363,6 +452,8 @@ static void _lighting_set_ambient(const spherical_harmonics_t& ambient_lighting)
 
 void lighting_set_ambient(const spherical_harmonics_t& ambient_lighting) {
 	if (local.mode == lighting_mode_world) return;
+	// An explicit ambient overrides whatever a pending reflection carries.
+	local.ambient_auto_pending = false;
 	_lighting_set_ambient(ambient_lighting);
 }
 
@@ -390,6 +481,9 @@ static void _lighting_set_reflection(tex_t ibl_cubemap) {
 
 void lighting_set_reflection(tex_t ibl_cubemap) {
 	if (local.mode == lighting_mode_world) return;
+	// A manual reflection sets only the reflection; deriving ambient from it
+	// is lighting_set_environment's job.
+	local.ambient_auto_pending = false;
 	_lighting_set_reflection(ibl_cubemap);
 }
 

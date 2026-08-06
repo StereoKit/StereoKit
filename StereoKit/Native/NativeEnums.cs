@@ -757,6 +757,13 @@ namespace StereoKit
 		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
 		/// but varies per-runtime.</summary>
 		Scene,
+		/// <summary>For access to detailed geometric and visual data about the user's
+		/// space, such as depth textures or environment cubemap light estimates.
+		/// This is typically an interactive permission that the user will need to
+		/// explicitly approve.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
+		/// but varies per-runtime.</summary>
+		SceneFine,
 		/// <summary>This enum is for tracking the number of value in this enum.</summary>
 		Max,
 	}
@@ -1320,6 +1327,21 @@ namespace StereoKit
 		Ortho        = 1,
 	}
 
+	/// <summary>Controls whether a RenderList holds asset references for the items it
+	/// contains. Tracked lists are safe to keep around across frames at the cost
+	/// of an addref/releaseref pair per item.</summary>
+	public enum RenderListRefs {
+		/// <summary>The list calls addref on each item's mesh/material when added, and
+		/// releaseref when cleared. This keeps assets alive for as long as the
+		/// list holds them, and is the safe default.</summary>
+		Tracked      = 0,
+		/// <summary>The list does not addref or releaseref its items. The caller is
+		/// responsible for ensuring referenced assets remain valid until the
+		/// list is cleared. Useful for per-frame lists that are filled and
+		/// drained inside a single frame.</summary>
+		None         = 1,
+	}
+
 	/// <summary>This determines how scene lighting is sourced. In most cases you'll
 	/// want auto mode, which will use light estimation when available, and
 	/// manual mode when not.</summary>
@@ -1337,21 +1359,6 @@ namespace StereoKit
 		/// effect in this mode. Use can check Lighting.ModeAvailable to check
 		/// if this is supported before enabling it.</summary>
 		World,
-	}
-
-	/// <summary>Controls whether a RenderList holds asset references for the items it
-	/// contains. Tracked lists are safe to keep around across frames at the cost
-	/// of an addref/releaseref pair per item.</summary>
-	public enum RenderListRefs {
-		/// <summary>The list calls addref on each item's mesh/material when added, and
-		/// releaseref when cleared. This keeps assets alive for as long as the
-		/// list holds them, and is the safe default.</summary>
-		Tracked      = 0,
-		/// <summary>The list does not addref or releaseref its items. The caller is
-		/// responsible for ensuring referenced assets remain valid until the
-		/// list is cleared. Useful for per-frame lists that are filled and
-		/// drained inside a single frame.</summary>
-		None         = 1,
 	}
 
 	/// <summary>When used with a hierarchy modifying function that will push/pop items onto a

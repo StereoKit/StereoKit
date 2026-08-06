@@ -1010,6 +1010,14 @@ typedef enum permission_type_ {
 	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
 	  but varies per-runtime.*/
 	permission_type_scene,
+	/*For access to detailed geometric and visual data about the user's
+	  space, such as depth textures or environment cubemap light estimates.
+	  This is typically an interactive permission that the user will need to
+	  explicitly approve.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
+	  but varies per-runtime.*/
+	permission_type_scene_fine,
 	/*This enum is for tracking the number of value in this enum.*/
 	permission_type_max,
 } permission_type_;
@@ -1291,12 +1299,29 @@ SK_API void       gradient_destroy    (gradient_t gradient);
 
 ///////////////////////////////////////////
 
+/*RGB spherical harmonic coefficients up through the 2nd band, a compact
+  approximation of environment lighting.
+
+  Coefficient convention: band 0 [0]=constant; band 1 [1]=y, [2]=z, [3]=x;
+  band 2 [4]=xy, [5]=yz, [6]=3z^2-1, [7]=xz, [8]=x^2-y^2. All basis signs
+  are positive, so a light from above lands as a _positive_ [1], and the
+  linear band ([3], [1], [2]) points _toward_ the brightest region.
+
+  Watch out when importing coefficients from elsewhere: SH sign
+  conventions vary (Condon-Shortley phase), and many libraries (ARCore,
+  DirectXMath) flip the odd terms [1],[3],[5],[7] relative to this. If
+  imported lighting shows up rotated 180 degrees (up reads as down),
+  negate those four coefficients.*/
 typedef struct spherical_harmonics_t {
 	vec3     coefficients[9];
 } spherical_harmonics_t;
 
+/*A directional light source for building spherical_harmonics_t data, see
+  sh_create.*/
 typedef struct sh_light_t {
+	/*Direction _toward_ the light source.*/
 	vec3     dir_to;
+	/*Color of the light in linear space! Values here can exceed 1.*/
 	color128 color;
 } sh_light_t;
 
@@ -1644,6 +1669,7 @@ SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int3
 SK_API tex_t        tex_gen_particle        (int32_t width, int32_t height, float roundness sk_default(1), gradient_t gradient_linear sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
+SK_API tex_t        tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into sk_default(nullptr), int32_t max_resolution sk_default(64));
 SK_API tex_format_  tex_get_format          (tex_t texture);
 SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
@@ -2337,8 +2363,8 @@ SK_API matrix                render_get_cam_root   (void);
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
 SK_API void                  render_set_skytex     (tex_t sky_texture);
 SK_API tex_t                 render_get_skytex     (void);
-SK_API void                  render_enable_skytex  (bool32_t show_sky);
-SK_API bool32_t              render_enabled_skytex (void);
+SK_API void                  render_set_sky_visible(bool32_t visible);
+SK_API bool32_t              render_get_sky_visible(void);
 SK_API void                  render_set_skymaterial(material_t sky_material);
 SK_API material_t            render_get_skymaterial(void);
 // TODO: obsolete, use lighting_set_ambient
@@ -2432,6 +2458,7 @@ typedef enum lighting_mode_ {
 SK_API bool32_t              lighting_mode_available  (lighting_mode_ mode);
 SK_API bool32_t              lighting_set_mode        (lighting_mode_ mode);
 SK_API lighting_mode_        lighting_get_mode        (void);
+SK_API void                  lighting_set_environment (tex_t sky_cubemap, tex_t* out_reflection sk_default(nullptr));
 SK_API void                  lighting_set_ambient     (const sk_ref(spherical_harmonics_t) ambient_lighting);
 SK_API spherical_harmonics_t lighting_get_ambient     (void);
 SK_API void                  lighting_set_reflection  (tex_t ibl_cubemap);
@@ -4076,6 +4103,8 @@ SK_CONST char *default_id_shader_sky           = "default/shader_sky";
 SK_CONST char *default_id_shader_lines         = "default/shader_lines";
 SK_CONST char *default_id_shader_sh_compute    = "default/shader_sh_compute";
 SK_CONST char *default_id_shader_depth_prepass = "default/shader_depth_prepass";
+SK_CONST char *default_id_shader_cubemap_ggx   = "default/shader_cubemap_ggx";
+SK_CONST char *default_id_shader_cubemap_downsample = "default/shader_cubemap_downsample";
 SK_CONST char *default_id_sound_click          = "default/sound_click";
 SK_CONST char *default_id_sound_unclick        = "default/sound_unclick";
 SK_CONST char *default_id_sound_grab           = "default/sound_grab";
