@@ -375,6 +375,10 @@ namespace StereoKit
 		/// diffuse color but it's been superseded - prefer Etc2 or Astc
 		/// on newer hardware!</summary>
 		Etc1Rgb,
+		/// <summary>ETC1 sRGB RGB, no alpha, 4 bpp. The sRGB variant of Etc1Rgb
+		/// for color textures on older Android devices. Prefer Etc2 or
+		/// Astc on newer hardware!</summary>
+		Etc1RgbSrgb,
 		/// <summary>ETC2 sRGB color with full alpha, 8 bpp. The standard
 		/// compressed RGBA format on OpenGL ES 3.0+ mobile devices, and
 		/// mandatory in the spec - so it's widely available. A great
@@ -423,6 +427,19 @@ namespace StereoKit
 		/// <summary>ASTC 4x4 linear color with full alpha, 8 bpp. High-quality
 		/// compressed format for data textures on modern mobile GPUs.</summary>
 		Astc4x4Rgba,
+		/// <summary>ASTC 6x6 sRGB color with full alpha, ~3.6 bpp. A great
+		/// middle ground between the 4x4 and 8x8 block sizes, with good
+		/// quality at a compact size for sRGB color textures on modern
+		/// mobile GPUs.</summary>
+		Astc6x6RgbaSrgb,
+		/// <summary>ASTC 6x6 linear color with full alpha, ~3.6 bpp. A compact
+		/// compressed format for data textures on modern mobile GPUs.</summary>
+		Astc6x6Rgba,
+		/// <summary>ASTC 8x8 HDR color, 2 bpp. Sampling produces FP16 RGB, with
+		/// the HDR profile signalled by the encoded block contents
+		/// rather than the format itself. Requires hardware ASTC HDR
+		/// support, which software decoders typically lack.</summary>
+		Astc8x8RgbaHdr,
 		/// <summary>ATC RGB on Qualcomm Adreno GPUs, 4 bpp. Historical
 		/// Qualcomm-specific format - prefer Astc or Etc2 on newer
 		/// Adreno hardware.</summary>

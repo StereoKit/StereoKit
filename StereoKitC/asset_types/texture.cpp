@@ -141,6 +141,9 @@ skr_tex_sampler_t tex_get_skr_sampler(tex_t texture) {
 }
 
 // tex_format_ and skr_tex_fmt_ have matching enum values, so we can cast between them
+static_assert((int32_t)tex_format_r8      == (int32_t)skr_tex_fmt_r8,      "tex_format_ is out of sync with skr_tex_fmt_");
+static_assert((int32_t)tex_format_etc1_rgb== (int32_t)skr_tex_fmt_etc1_rgb,"tex_format_ is out of sync with skr_tex_fmt_");
+static_assert((int32_t)tex_format_yuv420p == (int32_t)skr_tex_fmt_yuv420p, "tex_format_ is out of sync with skr_tex_fmt_");
 
 ///////////////////////////////////////////
 // Texture loading stages                //

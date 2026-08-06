@@ -513,6 +513,7 @@ const char *render_fmt_name(tex_format_ format) {
 	case tex_format_bc7_rgba_srgb:    return "bc7_rgba_sRGB";
 	case tex_format_bc7_rgba:         return "bc7_rgba";
 	case tex_format_etc1_rgb:         return "etc1_rgb";
+	case tex_format_etc1_rgb_srgb:    return "etc1_rgb_sRGB";
 	case tex_format_etc2_rgba_srgb:   return "etc2_rgba_sRGB";
 	case tex_format_etc2_rgba:        return "etc2_rgba";
 	case tex_format_etc2_r11:         return "etc2_r11";
@@ -525,6 +526,9 @@ const char *render_fmt_name(tex_format_ format) {
 	case tex_format_pvrtc2_rgba:      return "pvrtc2_rgba";
 	case tex_format_astc4x4_rgba_srgb:return "astc4x4_rgba_sRGB";
 	case tex_format_astc4x4_rgba:     return "astc4x4_rgba";
+	case tex_format_astc6x6_rgba_srgb:return "astc6x6_rgba_sRGB";
+	case tex_format_astc6x6_rgba:     return "astc6x6_rgba";
+	case tex_format_astc8x8_rgba_hdr: return "astc8x8_rgba_hdr";
 	case tex_format_atc_rgb:          return "atc_rgb";
 	case tex_format_atc_rgba:         return "atc_rgba";
 	case tex_format_nv12:             return "nv12";
