@@ -70,17 +70,20 @@ float4 ps(psIn input, uint face : SV_ViewID) : SV_Target {
 	// smoothly, an HDR sun in one texel magnifies into square bilinear stars.
 	// A max, not a sum, so representable lobes still store their exact target.
 	const float band = 0.6; // min lobe std dev, in a mip's own texels
+	// The base level only carries the box downsample's own blur, std 1/sqrt(12)
+	// texels. Assuming 'band' there over-subtracts and under-blurs mip 1.
+	float band_src     = src_mip_level == 0 ? 0.289 : band;
 	float texel_src    = (PI * 0.5) / src_size.x;
 	float texel_dst    = (PI * 0.5) / dst_size.x;
 	float target_curr2 = max(s_rough_curr * s_rough_curr, (band * texel_dst) * (band * texel_dst));
-	float target_prev2 = max(s_rough_prev * s_rough_prev, (band * texel_src) * (band * texel_src));
+	float target_prev2 = max(s_rough_prev * s_rough_prev, (band_src * texel_src) * (band_src * texel_src));
 	float sigma        = sqrt(max(target_curr2 - target_prev2, 1e-8));
 
 	// Gaussian tap grid on the tangent plane, out to 4 sigma. It widens from
 	// 9x9 to keep taps within one source texel, or the lattice beats against
 	// the texel grid and prints source resolution into the result. At the
 	// 17x17 cap the extent shrinks instead, truncation degrades more gently.
-	float extent  = min(4.0 * sigma, 1.2); // cap keeps the tangent plane sane
+	float extent  = min(4.0 * sigma, 1.2); // cap keeps the lobe on the front hemisphere
 	int   half_n  = 4;
 	float spacing = extent / 4.0;
 	if (spacing > texel_src) {
@@ -108,10 +111,15 @@ float4 ps(psIn input, uint face : SV_ViewID) : SV_Target {
 		float2 o  = float2(x, y) * spacing;
 		float  r2 = dot(o, o);
 		if (r2 >= R2) continue;
-		float  w  = exp(r2 * gauss) * (1.0 - smoothstep(0.4 * R2, R2, r2));
-		float3 d  = normalize(n + tan(o.x) * tangent + tan(o.y) * bitang);
-		color    += src_tex.SampleLevel(src_sampler, d, 0).rgb * w;
-		total    += w;
+		// The exponential map lands taps at their exact lattice angle (radial
+		// kernel and window, no squaring along lattice diagonals), and sinc
+		// is also each cell's solid angle, weighting the gaussian for free.
+		float  r    = sqrt(r2);
+		float  sinc = r > 1e-4 ? sin(r) / r : 1.0;
+		float  w    = exp(r2 * gauss) * (1.0 - smoothstep(0.4 * R2, R2, r2)) * sinc;
+		float3 d    = n * cos(r) + (o.x * tangent + o.y * bitang) * sinc;
+		color      += src_tex.SampleLevel(src_sampler, d, 0).rgb * w;
+		total      += w;
 	} }
 
 	return float4(color / total, 1);

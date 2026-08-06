@@ -5,17 +5,8 @@
 
 ///////////////////////////////////////////
 
-float sk_pbr_mip_level(float ndotv) {
-	float2 dx    = ddx(ndotv * sk_cubemap_i.x);
-	float2 dy    = ddy(ndotv * sk_cubemap_i.y);
-	float  delta = max(dot(dx, dx), dot(dy, dy));
-	return 0.5 * log2(delta);
-}
-
-///////////////////////////////////////////
-
 min16float3 sk_pbr_fresnel_schlick_roughness(min16float ndotv, min16float3 F0, min16float roughness) {
-	// Sebastian approximates pow(1.0 - ndotv, 5.0) as exp2(-5.55473 * ndotv - 6.98316 * ndotv)
+	// Sebastian approximates pow(1.0 - ndotv, 5.0) as exp2((-5.55473 * ndotv - 6.98316) * ndotv)
 	// https://seblagarde.wordpress.com/2012/06/03/spherical-gaussien-approximation-for-blinn-phong-phong-and-fresnel/
 	return F0 + (max(1.0h - roughness, F0) - F0) * exp2((-5.55473h * ndotv - 6.98316h) * ndotv);
 }
@@ -51,17 +42,20 @@ min16float4 sk_pbr_shade(min16float4 albedo, min16float3 irradiance, min16float 
 	min16float  kernelRoughness = min(variance, 0.18h);
 
 	// Issue cubemap fetch from pre-AA roughness to shorten the dependent
-	// read chain — removes v_sqrt (~16 clk) from the critical path.
+	// read chain, removing v_sqrt (~16 clk) from the critical path.
 	// The mip is an approximation anyway (Lagarde 2014); Tokuyoshi's
 	// kernel only adds roughness at silhouette edges where the pre-filtered
 	// map / BRDF lobe mismatch is already largest.
 	// Lazarov, "Getting More Physical in Call of Duty: Black Ops II"
 	// (SIGGRAPH 2013)
 	float mip = (float)(rough * (1.7h - 0.7h * rough)) * sk_cubemap_i.z;
-	mip = max(mip, sk_pbr_mip_level(ndotv));
+	// Footprint clamp: variance already tracks the normal's angular step per
+	// pixel, and sk_cubemap_i.w packs the constants (texel density, reflection
+	// doubling). Catches glint aliasing on curvature that roughness misses.
+	mip = max(mip, 0.5 * log2(max((float)variance, 1e-12)) + sk_cubemap_i.w);
 	min16float3  prefilteredColor = (min16float3)sk_cubemap.SampleLevel(sk_cubemap_s, reflection, mip).rgb;
 
-	// Apply specular AA after cubemap is in flight — sqrt runs hidden
+	// Apply specular AA after the cubemap is in flight, so sqrt runs hidden
 	// under cubemap memory latency instead of extending the dep chain.
 	rough = sqrt(saturate(rough * rough + kernelRoughness));
 

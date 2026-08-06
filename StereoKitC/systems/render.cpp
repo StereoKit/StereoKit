@@ -876,11 +876,15 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 		local.global_buffer.fingertip[i] = { tip.x, tip.y, tip.z, 0 };
 	}
 
-	// sk_cubemap_i describes the reflection cubemap: dimensions for mip
-	// selection, last mip index for stereokit_pbr.hlsli's roughness curve.
+	// sk_cubemap_i describes the reflection cubemap: .xy dimensions, .z last
+	// mip index for stereokit_pbr.hlsli's roughness curve, .w the constant
+	// term of its footprint mip clamp. 1.8006 = 4*sqrt(2)/pi: reflections
+	// rotate at 2x the normal, faces span pi/2, variance halves the square.
 	tex_t reflection_tex = local.global_textures[render_reflection_register];
 	local.global_buffer.cubemap_i = reflection_tex != nullptr
-		? vec4{ (float)reflection_tex->width, (float)reflection_tex->height, reflection_tex->gpu_tex.mip_levels > 0 ? (float)(reflection_tex->gpu_tex.mip_levels - 1) : 0, 0 }
+		? vec4{ (float)reflection_tex->width, (float)reflection_tex->height,
+		        reflection_tex->gpu_tex.mip_levels > 0 ? (float)(reflection_tex->gpu_tex.mip_levels - 1) : 0,
+		        log2f(1.8006f * (float)reflection_tex->width) }
 		: vec4{};
 
 	// Upload shader globals
