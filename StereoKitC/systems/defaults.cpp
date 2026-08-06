@@ -181,6 +181,10 @@ bool defaults_init() {
 	// Cubemap
 	spherical_harmonics_t lighting = sk_default_lighting;
 	sh_brightness(lighting, 0.75f);
+	// A slight tweak to the SH to maintain the default skybox's colors after
+	// revisions to tex_gen_cubemap_sh.
+	for (int32_t i = 1; i < 4; i++) lighting.coefficients[i] *= 2.0f / 3.0f;
+	for (int32_t i = 4; i < 9; i++) lighting.coefficients[i] *= 0.25f;
 	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16, 0.3f);
 	tex_set_id(sk_default_cubemap, default_id_cubemap);
 

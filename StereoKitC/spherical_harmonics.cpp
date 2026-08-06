@@ -1,17 +1,9 @@
 #include "spherical_harmonics.h"
 #include "sk_math.h"
-#include "asset_types/texture_.h"
-#include "libraries/ferr_halffloat.h"
+
+#include <float.h>
 
 namespace sk {
-
-///////////////////////////////////////////
-
-vec3 to_color_128(uint8_t *color) { return *(vec3 *)color; }
-vec3 to_color_32 (uint8_t *color) { return vec3{color[0]/255.f,color[1]/255.f,color[2]/255.f}; }
-vec3 to_color_32_linear(uint8_t* color) { return vec3{ powf(color[0] / 255.f,2.2f),powf(color[1] / 255.f,2.2f),powf(color[2] / 255.f,2.2f) }; }
-vec3 to_color_64(uint8_t* color) { const uint16_t* c = (uint16_t*)color; vec4 r; fhf_f16_to_f32_x4(c, &r.x); return vec3{ r.x, r.y, r.z }; }
-vec3 to_color_11_11_10f(uint8_t* color) { vec3 r; fhf_r11g11b10f_to_f32_x3(*(uint32_t*)color, &r.x); return vec3{ r.x, r.y, r.z }; }
 
 ///////////////////////////////////////////
 
@@ -29,17 +21,50 @@ void sh_windowing(spherical_harmonics_t &harmonics, float window_width) {
 
 ///////////////////////////////////////////
 
+// Minimum of the irradiance reconstruction over 26 probe directions.
+static float _sh_min_lookup(const spherical_harmonics_t &harmonics) {
+	float lowest = FLT_MAX;
+	for (int32_t i = 0; i < 27; i++) {
+		int32_t x = i % 3 - 1, y = (i / 3) % 3 - 1, z = i / 9 - 1;
+		if (x == 0 && y == 0 && z == 0) continue;
+		vec3     dir = vec3_normalize(vec3{ (float)x, (float)y, (float)z });
+		color128 c   = sh_lookup(harmonics, dir);
+		lowest = fminf(lowest, fminf(c.r, fminf(c.g, c.b)));
+	}
+	return lowest;
+}
+
+// Dering adaptively: widen the window only until the irradiance
+// reconstruction stops going negative, so well-behaved environments keep
+// their full directionality. Mirrors sh_window_fit in the sh_compute shader.
+void sh_window_fit(spherical_harmonics_t &harmonics) {
+	if (_sh_min_lookup(harmonics) >= 0) return;
+	float lo = 0, hi = 4.0f;
+	for (int32_t i = 0; i < 10; i++) {
+		float mid = (lo + hi) * 0.5f;
+		spherical_harmonics_t test = harmonics;
+		sh_windowing(test, mid);
+		if (_sh_min_lookup(test) >= 0) hi = mid;
+		else                           lo = mid;
+	}
+	sh_windowing(harmonics, hi);
+}
+
+///////////////////////////////////////////
+
 spherical_harmonics_t sh_create(const sh_light_t* lights, int32_t light_count) {
 	spherical_harmonics_t result = {};
 	for (int32_t i = 0; i < light_count; i++) {
 		sh_add(result, vec3_normalize(lights[i].dir_to), { lights[i].color.r, lights[i].color.g, lights[i].color.b });
 	}
+	// Lights average rather than sum, so a scene's overall brightness stays
+	// stable as lights are added.
 	for (int32_t i = 0; i < 9; i++) {
 		result.coefficients[i] /= (float)light_count;
 	}
 
 	// Apply windowing to prevent overshooting
-	sh_windowing(result, .01f);
+	sh_window_fit(result);
 
 	return result;
 }
@@ -53,17 +78,18 @@ void sh_brightness(spherical_harmonics_t &harmonics, float scale) {
 
 ///////////////////////////////////////////
 
+// Projection normalization, calibrated so a uniform radiance-1 environment
+// reads exactly 1 from sh_lookup. DirectXMath's directional-light constant
+// pi/0.75 read 4.7% hot here. Must match fRet in
+// shader_builtin_sh_compute.hlsl.
+static const float SH_PROJECT_NORM = 4.0f;
+
 void sh_add(spherical_harmonics_t &to, vec3 light_dir, vec3 light_color) {
 	light_dir = { -light_dir.x, -light_dir.y, light_dir.z };
 
 	// From DirectXMath's XMSHEvalDirectionalLight. See:
 	// https://github.com/microsoft/DirectXMath/blob/master/SHMath/DirectXSH.cpp#L4476
-
-	// CosWtInt
-	const float fCW0 = 0.25f;
-	const float fCW1 = 0.5f;
-	const float fRet = MATH_PI / (fCW0 + fCW1);
-	light_color = light_color * fRet;
+	light_color = light_color * SH_PROJECT_NORM;
 
 	// The rest is a mix of XMSHEvalDirectionalLight, XMSHEvalDirection, and
 	// sh_eval_basis_2
@@ -83,66 +109,6 @@ void sh_add(spherical_harmonics_t &to, vec3 light_dir, vec3 light_color) {
 	to.coefficients[7] += light_color * p_2_1*c1;
 	to.coefficients[4] += light_color * 0.546274215296039590f*s2;
 	to.coefficients[8] += light_color * 0.546274215296039590f*c2;
-}
-
-///////////////////////////////////////////
-
-spherical_harmonics_t sh_calculate(void **env_map_data, tex_format_ format, int32_t face_size) {
-	// TODO: not used anymore, do we want to get rid of it?
-	spherical_harmonics_t result   = {};
-	size_t                col_size = 0;
-	vec3     (*convert)(uint8_t *) = nullptr;
-	switch (format) {
-	case tex_format_rgba128:       convert = to_color_128;       col_size = sizeof(float) * 4; break;
-	case tex_format_rgba64f:       convert = to_color_64;        col_size = sizeof(uint16_t) * 4; break;
-	case tex_format_rg11b10:       convert = to_color_11_11_10f; col_size = sizeof(uint32_t); break;
-	case tex_format_rgba32:        convert = to_color_32_linear; col_size = sizeof(color32); break;
-	case tex_format_rgba32_linear: convert = to_color_32;        col_size = sizeof(color32); break;
-	default: return {};
-	}
-
-	float half_px = 0.5f / face_size;
-	for (int32_t i = 0; i < 6; i++) {
-		uint8_t *data = (uint8_t*)env_map_data[i];
-		vec3 p1 = math_cubemap_corner(i * 4);
-		vec3 p2 = math_cubemap_corner(i * 4+1);
-		vec3 p3 = math_cubemap_corner(i * 4+2);
-		vec3 p4 = math_cubemap_corner(i * 4+3); 
-
-		for (int32_t y = 0; y < face_size; y++) {
-			float py = 1 - (y / (float)face_size + half_px);
-
-			// Top face is flipped on both axes
-			if (i == 2) {
-				py = 1 - py;
-			}
-			for (int32_t x = 0; x < face_size; x++) {
-				float px = x / (float)face_size + half_px;
-
-				// Top face is flipped on both axes
-				if (i == 2) {
-					px = 1 - px;
-				}
-
-				vec3 pl = vec3_lerp(p1, p4, py);
-				vec3 pr = vec3_lerp(p2, p3, py);
-				vec3 pt = vec3_lerp(pl, pr, px);
-				pt = vec3_normalize(pt);
-
-				vec3 color = convert(&data[(x + y * face_size) * col_size]);
-				sh_add(result, pt, color);
-			}
-		}
-	}
-
-	float count = face_size * face_size * 6.f;
-	for (int32_t i = 0; i < 9; i++)
-		result.coefficients[i] /= count;
-
-	// Apply windowing to prevent overshooting
-	sh_windowing(result, .01f);
-
-	return result;
 }
 
 ///////////////////////////////////////////
@@ -175,17 +141,39 @@ color128 sh_lookup(const spherical_harmonics_t &harmonics, vec3 normal) {
 
 ///////////////////////////////////////////
 
+// Evaluates the SH as radiance in a direction, no cosine kernel: this
+// reconstructs the environment itself, where sh_lookup lights a surface.
+color128 sh_lookup_radiance(const spherical_harmonics_t &harmonics, vec3 dir) {
+	vec3 result = {};
+
+	result += harmonics.coefficients[0] *  0.282095f;
+	result += harmonics.coefficients[1] * (0.488603f * dir.y);
+	result += harmonics.coefficients[2] * (0.488603f * dir.z);
+	result += harmonics.coefficients[3] * (0.488603f * dir.x);
+	result += harmonics.coefficients[4] * (1.092548f * dir.x * dir.y);
+	result += harmonics.coefficients[5] * (1.092548f * dir.y * dir.z);
+	result += harmonics.coefficients[6] * (0.315392f * (3.0f * dir.z * dir.z - 1.0f));
+	result += harmonics.coefficients[7] * (1.092548f * dir.x * dir.z);
+	result += harmonics.coefficients[8] * (0.546274f * (dir.x * dir.x - dir.y * dir.y));
+
+	// Undo the projection's directional-light normalization.
+	result = result * ((4.0f * MATH_PI) / SH_PROJECT_NORM);
+	return { result.x, result.y, result.z, 1 };
+}
+
+///////////////////////////////////////////
+
 vec3 sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics) {
 	// Reference from here:
 	// https://seblagarde.wordpress.com/2011/10/09/dive-in-sh-buffer-idea/
 	vec3 dir = {
-		harmonics.coefficients[3].x * 0.3f + harmonics.coefficients[3].y * 0.59f + harmonics.coefficients[3].z,
-		harmonics.coefficients[1].x * 0.3f + harmonics.coefficients[1].y * 0.59f + harmonics.coefficients[1].z,
-		harmonics.coefficients[2].x * 0.3f + harmonics.coefficients[2].y * 0.59f + harmonics.coefficients[2].z };
+		harmonics.coefficients[3].x * 0.3f + harmonics.coefficients[3].y * 0.59f + harmonics.coefficients[3].z * 0.11f,
+		harmonics.coefficients[1].x * 0.3f + harmonics.coefficients[1].y * 0.59f + harmonics.coefficients[1].z * 0.11f,
+		harmonics.coefficients[2].x * 0.3f + harmonics.coefficients[2].y * 0.59f + harmonics.coefficients[2].z * 0.11f };
 
-	// If no lighting data, default to light from above
+	// If no lighting data, default to light traveling down from above
 	if (vec3_magnitude_sq(dir) < 0.0001f)
-		return { 0, 1, 0 };
+		return { 0, -1, 0 };
 
 	return -vec3_normalize(dir);
 }
