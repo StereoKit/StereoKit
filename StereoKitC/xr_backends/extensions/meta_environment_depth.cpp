@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 /* The authors below grant copyright rights under the MIT license:
  * Copyright (c) 2026 Nick Klingensmith
+ * Copyright (c) 2026 Austin Hale
  */
 
 #include "meta_environment_depth.h"
@@ -185,6 +186,20 @@ bool xr_ext_meta_environment_depth_start(sensor_depth_caps_ flags) {
 		return false;
 	if (local.running)
 		return true;
+
+	// USE_SCENE must be granted before creating the depth provider/swapchain.
+	// Request it if it's not yet granted and return false; call start() again
+	// once the async grant resolves.
+	permission_state_ scene_perm = permission_state(permission_type_scene);
+	if (scene_perm != permission_state_granted) {
+		if (scene_perm == permission_state_capable) {
+			permission_type_ scene_permission = permission_type_scene;
+			permission_request(&scene_permission, 1);
+		}
+		else
+			log_warn("XR_META_environment_depth: USE_SCENE is not in the app manifest; depth cannot start.");
+		return false;
+	}
 
 	if (local.provider == XR_NULL_HANDLE) {
 		XrEnvironmentDepthProviderCreateInfoMETA provider_info = { XR_TYPE_ENVIRONMENT_DEPTH_PROVIDER_CREATE_INFO_META };
@@ -405,6 +420,9 @@ void xr_ext_meta_environment_depth_update_frame(XrTime display_time) {
 	frame.views[0].fov      = xr_to_fov (image_info.views[0].fov );
 	frame.views[1].pose     = xr_to_pose(image_info.views[1].pose);
 	frame.views[1].fov      = xr_to_fov (image_info.views[1].fov );
+	frame.depth_format      = sensor_depth_format_ndc_d16;
+	frame.view_count        = 2;
+	frame.available_images  = 1u << sensor_depth_image_smooth_depth;
 
 	local.latest_frame     = frame;
 	local.has_latest_frame = true;

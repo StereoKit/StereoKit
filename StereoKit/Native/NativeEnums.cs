@@ -757,6 +757,16 @@ namespace StereoKit
 		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
 		/// but varies per-runtime.</summary>
 		Scene,
+		/// <summary>For access to fine-grained geometry of the user's space, such as
+		/// environment depth textures. This is typically an interactive permission
+		/// that the user will need to explicitly approve.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
+		/// but varies per-runtime. On runtimes where coarse and fine are distinct
+		/// permissions (such as Android XR), granting fine does not grant coarse, so
+		/// request both if you need coarse scene data and fine depth. Where a runtime
+		/// backs both with a single underlying permission, requesting fine alone covers
+		/// coarse as well.</summary>
+		SceneFine,
 		/// <summary>This enum is for tracking the number of value in this enum.</summary>
 		Max,
 	}
@@ -2203,6 +2213,36 @@ namespace StereoKit
 		Hands        = 1 << 2,
 	}
 
+	/// <summary>Describes how the values in a sensor depth buffer should be
+	/// interpreted, so consumers can read them without guessing per
+	/// backend.</summary>
+	public enum SensorDepthFormat {
+		/// <summary>16-bit normalized device coordinate depth (D16_UNORM), un-projected
+		/// to meters using the frame's near_z/far_z.</summary>
+		NdcD16       = 0,
+		/// <summary>32-bit float depth in metric meters, read directly. A value of 0 is
+		/// an invalid/empty pixel and infinity is depth known to be far away.</summary>
+		MetersR32    = 1,
+	}
+
+	/// <summary>The kinds of depth images a backend may provide for a single frame. Not every
+	/// image is present each frame; a frame reports which it actually contains.
+	/// Confidence images are provided as CPU data only, while the primary depth image
+	/// is also available as a GPU texture.</summary>
+	public enum SensorDepthImage {
+		/// <summary>Smooth, temporally filtered depth. The default when a backend offers a
+		/// raw/smooth split, or the only image when it doesn't.</summary>
+		SmoothDepth  = 0,
+		/// <summary>Raw, unfiltered depth.</summary>
+		RawDepth     = 1,
+		/// <summary>Confidence for the smooth depth: a uint8 whose range and direction are
+		/// runtime-defined; for relative use only.</summary>
+		SmoothConfidence = 2,
+		/// <summary>Confidence for the raw depth: a uint8 whose range and direction are
+		/// runtime-defined; for relative use only.</summary>
+		RawConfidence = 3,
+	}
+
 	/// <summary>Capabilities for configuring the sensor depth system. These control
 	/// optional features that may or may not be supported on the current
 	/// platform. Check the capabilities for platform support.</summary>
@@ -2213,6 +2253,14 @@ namespace StereoKit
 		/// <summary>Enable hand removal filtering on depth data, removing hands from
 		/// the depth image.</summary>
 		HandRemoval  = 1 << 0,
+		/// <summary>Request the raw, unfiltered depth image, where the backend provides one. If
+		/// neither raw nor smooth is requested, the smooth depth is provided by default.</summary>
+		RawDepth     = 1 << 1,
+		/// <summary>Request the smooth depth image, so raw and smooth can be read from the
+		/// same frame where supported.</summary>
+		SmoothDepth  = 1 << 2,
+		/// <summary>Also request the confidence image(s) for the requested depth image(s).</summary>
+		Confidence   = 1 << 3,
 	}
 
 	/// <summary>This describes what technology is being used to power StereoKit's

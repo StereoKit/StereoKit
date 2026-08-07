@@ -110,7 +110,7 @@ static void depth_ensure_grid(uint32_t w, uint32_t h) {
 static void depth_init() {
 	depth_prepass_mat = material_create(sk_default_shader_depth_prepass);
 	material_set_id          (depth_prepass_mat, "default/material_depth_prepass");
-	material_set_depth_test  (depth_prepass_mat, depth_test_always);
+	material_set_depth_test  (depth_prepass_mat, depth_test_less_or_eq);
 	material_set_depth_write (depth_prepass_mat, true);
 	material_set_cull        (depth_prepass_mat, cull_none);
 	material_set_queue_offset(depth_prepass_mat, -200);
@@ -151,10 +151,25 @@ static void depth_step() {
 		(float)frame.width, (float)frame.height,
 		1.0f / (float)frame.width, 1.0f / (float)frame.height });
 
-	matrix depth_vp_l = depth_build_vp(&frame.views[0], frame.near_z, frame.far_z);
-	matrix depth_vp_r = depth_build_vp(&frame.views[1], frame.near_z, frame.far_z);
-	material_set_matrix(depth_prepass_mat, "depth_view_proj_inv_l", matrix_invert(depth_vp_l));
-	material_set_matrix(depth_prepass_mat, "depth_view_proj_inv_r", matrix_invert(depth_vp_r));
+	if (frame.depth_format == sensor_depth_format_meters_r32) {
+		// Metric depth: values are linear meters, so reconstruct each eye's
+		// view ray from its fov tangents + pose.
+		material_set_float(depth_prepass_mat, "depth_format", 1.0f);
+		for (int32_t i = 0; i < 2; i++) {
+			fov_info_t f = frame.views[i].fov;
+			vec4 tans = { tanf(f.left * deg2rad), tanf(f.right * deg2rad), tanf(f.top * deg2rad), tanf(f.bottom * deg2rad) };
+			material_set_vector4(depth_prepass_mat, i == 0 ? "depth_tans_l" : "depth_tans_r", tans);
+			material_set_matrix (depth_prepass_mat, i == 0 ? "depth_pose_l"  : "depth_pose_r",  pose_matrix(frame.views[i].pose));
+		}
+	} else {
+		// NDC depth: values are z-buffer encoded, so undo the projection with
+		// the inverse view-proj per eye.
+		material_set_float(depth_prepass_mat, "depth_format", 0.0f);
+		matrix depth_vp_l = depth_build_vp(&frame.views[0], frame.near_z, frame.far_z);
+		matrix depth_vp_r = depth_build_vp(&frame.views[1], frame.near_z, frame.far_z);
+		material_set_matrix(depth_prepass_mat, "depth_view_proj_inv_l", matrix_invert(depth_vp_l));
+		material_set_matrix(depth_prepass_mat, "depth_view_proj_inv_r", matrix_invert(depth_vp_r));
+	}
 
 	render_add_mesh(depth_grid_mesh, depth_prepass_mat, matrix_identity, {1,1,1,1}, render_layer_0);
 }

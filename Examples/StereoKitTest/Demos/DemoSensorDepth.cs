@@ -21,6 +21,13 @@ class DemoSensorDepth : ITest
 		Occlusion,
 	}
 
+	enum ColorMode
+	{
+		Eye,
+		Depth,
+		Confidence,
+	}
+
 	string title       = "Sensor Depth";
 	string description = "Sensor depth visualization. Switch between a point cloud view and automatic World.Occlusion depth-based occlusion.";
 
@@ -43,15 +50,21 @@ class DemoSensorDepth : ITest
 	float    nearClip     = 0.1f;
 	float    opacity      = 0.25f;
 	float    depthScale   = 1.0f;
-	bool     colorByDepth = false;
+	ColorMode colorMode   = ColorMode.Eye;
+	bool     useRawDepth  = false;
 	bool     handToggle   = true;
+	bool     wantRunning  = true;
 
+	SensorDepthCaps  caps;
 	bool             hasFrame;
 	SensorDepthFrame latestFrame;
 	uint             meshWidth;
 	uint             meshHeight;
 	int              meshStep;
 	Tex              depthTex;
+	Tex              confidenceTex;
+	byte[]           confLeft;
+	byte[]           confRight;
 
 	public void Initialize()
 	{
@@ -68,7 +81,7 @@ class DemoSensorDepth : ITest
 		modelPose = new Pose(0, 0, -0.6f, Quat.LookDir(0, 0, 1));
 
 		depthTex = null;
-		Permission.Request(PermissionType.Scene);
+		Permission.Request(PermissionType.SceneFine);
 	}
 
 	public void Shutdown()
@@ -82,20 +95,15 @@ class DemoSensorDepth : ITest
 
 	public void Step()
 	{
-		if (depthTex is null && Sensor.Depth.IsAvailable)
-		{
-			if (!Sensor.Depth.IsRunning)
-				Sensor.Depth.Start();
+		if (caps == SensorDepthCaps.None && Sensor.Depth.IsAvailable)
+			caps = Sensor.Depth.GetCapabilities();
 
-			if (Sensor.Depth.IsRunning)
-			{
-				depthTex = Sensor.Depth.Texture;
-				if (depthTex is not null)
-				{
-					pointCloudMatL[MatParamName.DiffuseTex] = depthTex;
-					pointCloudMatR[MatParamName.DiffuseTex] = depthTex;
-				}
-			}
+		if (wantRunning && Sensor.Depth.IsAvailable && !Sensor.Depth.IsRunning)
+		{
+			Sensor.Depth.Start();
+			// Restore the demo's Raw/Confidence/hand-removal selection.
+			if (demoMode == DemoMode.PointCloud)
+				ApplyDepthCaps();
 		}
 
 		if (demoMode == DemoMode.PointCloud)
@@ -105,6 +113,8 @@ class DemoSensorDepth : ITest
 				hasFrame    = true;
 				latestFrame = frame;
 				EnsurePointMesh(frame.width, frame.height, sampleStep);
+				UpdateDepthTexture(frame);
+				UpdateConfidenceTexture(frame);
 			}
 
 			DrawPointCloud();
@@ -117,17 +127,63 @@ class DemoSensorDepth : ITest
 		DrawControls();
 	}
 
+	void UpdateDepthTexture(SensorDepthFrame frame)
+	{
+		if (depthTex != null) return;
+		depthTex = Sensor.Depth.Texture;
+		if (depthTex == null) return;
+
+		pointCloudMatL[MatParamName.DiffuseTex] = depthTex;
+		pointCloudMatR[MatParamName.DiffuseTex] = depthTex;
+		// 0 = ndc; 1 = metric meters
+		float format = frame.depthFormat == SensorDepthFormat.MetersR32 ? 1.0f : 0.0f;
+		pointCloudMatL["depth_format"] = format;
+		pointCloudMatR["depth_format"] = format;
+	}
+
+	void UpdateConfidenceTexture(SensorDepthFrame frame)
+	{
+		if (colorMode != ColorMode.Confidence || !caps.HasFlag(SensorDepthCaps.Confidence))
+			return;
+
+		SensorDepthImage image = useRawDepth ? SensorDepthImage.RawConfidence : SensorDepthImage.SmoothConfidence;
+		if (!Sensor.Depth.TryGetLatestData(out SensorDepthFrame _, ref confLeft,  0, image)) return;
+		if (!Sensor.Depth.TryGetLatestData(out SensorDepthFrame _, ref confRight, 1, image)) return;
+
+		if (confidenceTex == null)
+			confidenceTex = new Tex(TexType.Image, TexFormat.R8) { SampleMode = TexSample.Point, AddressMode = TexAddress.Clamp };
+		confidenceTex.SetColors((int)frame.width, (int)frame.height, new byte[][] { confLeft, confRight }, 1);
+		pointCloudMatL["confidence"] = confidenceTex;
+		pointCloudMatR["confidence"] = confidenceTex;
+	}
+
+	void ApplyDepthCaps()
+	{
+		if (!Sensor.Depth.IsRunning)
+			return;
+
+		SensorDepthCaps c = useRawDepth && caps.HasFlag(SensorDepthCaps.RawDepth)
+			? SensorDepthCaps.RawDepth
+			: SensorDepthCaps.SmoothDepth;
+		if (!handToggle && caps.HasFlag(SensorDepthCaps.HandRemoval))
+			c |= SensorDepthCaps.HandRemoval;
+		if (colorMode == ColorMode.Confidence && caps.HasFlag(SensorDepthCaps.Confidence))
+			c |= SensorDepthCaps.Confidence;
+		Sensor.Depth.SetCapabilities(c);
+	}
+
 	void DrawPointCloud()
 	{
 		if (!hasFrame || pointMesh is null)
 			return;
 
-		if (eyeMode is EyeMode.Left or EyeMode.Both)
+		bool stereo = latestFrame.viewCount >= 2;
+		if (!stereo || (eyeMode is EyeMode.Left or EyeMode.Both))
 		{
 			SetPointCloudEyeParams(pointCloudMatL, latestFrame.views[0], 0, new Color(0.40f, 0.85f, 1.0f, 1));
 			pointMesh.Draw(pointCloudMatL, Matrix.Identity);
 		}
-		if (eyeMode is EyeMode.Right or EyeMode.Both)
+		if (stereo && (eyeMode is EyeMode.Right or EyeMode.Both))
 		{
 			SetPointCloudEyeParams(pointCloudMatR, latestFrame.views[1], 1, new Color(1.0f, 0.75f, 0.35f, 1));
 			pointMesh.Draw(pointCloudMatR, Matrix.Identity);
@@ -152,7 +208,9 @@ class DemoSensorDepth : ITest
 		mat["near_clip"]      = nearClip;
 		mat["eye_layer"]      = (float)eyeLayer;
 		mat["eye_pose"]       = eye.pose.ToMatrix();
-		mat["color_by_depth"] = colorByDepth ? 1.0f : 0.0f;
+		mat["color_mode"]     = (float)(int)colorMode;
+		// Meta (ndc) and Android (meters) depth textures have opposite row order.
+		mat["flip_v"]         = latestFrame.depthFormat == SensorDepthFormat.MetersR32 ? 1.0f : 0.0f;
 
 		float leftTan   = MathF.Tan(eye.fov.left   * Units.deg2rad);
 		float rightTan  = MathF.Tan(eye.fov.right  * Units.deg2rad);
@@ -172,7 +230,7 @@ class DemoSensorDepth : ITest
 		int samplesX   = Math.Max(1, (int)Math.Ceiling(width / (float)step));
 		int samplesY   = Math.Max(1, (int)Math.Ceiling(height / (float)step));
 		int pointCount = samplesX * samplesY;
-		Vertex[] verts = new Vertex[pointCount * 4];
+		var verts      = new Vertex[pointCount * 4];
 		uint[] inds    = new uint[pointCount * 6];
 
 		int p = 0;
@@ -237,7 +295,13 @@ class DemoSensorDepth : ITest
 		demoMode = newMode;
 
 		if (newMode == DemoMode.Occlusion)
+		{
+			// Occlusion needs live depth; un-pause so returning to the point cloud resumes live.
+			wantRunning     = true;
 			World.Occlusion = OcclusionCaps.Depth | (handToggle ? OcclusionCaps.Hands : OcclusionCaps.None);
+		}
+		else
+			ApplyDepthCaps();
 	}
 
 	void DrawControls()
@@ -246,22 +310,33 @@ class DemoSensorDepth : ITest
 
 		UI.Label($"Available: {Sensor.Depth.IsAvailable} | Running: {Sensor.Depth.IsRunning}");
 		if (hasFrame)
-			UI.Label($"Size: {latestFrame.width}x{latestFrame.height}  Near/Far: {latestFrame.nearZ:0.##}/{latestFrame.farZ:0.##}");
+		{
+			string range = latestFrame.depthFormat == SensorDepthFormat.MetersR32
+				? "Metric (m)"
+				: $"Near/Far: {latestFrame.nearZ:0.##}/{latestFrame.farZ:0.##}";
+			UI.Label($"Size: {latestFrame.width}x{latestFrame.height}  {range}");
+		}
 
 		// Mode selector
 		UI.HSeparator();
 		if (UI.Radio("Point Cloud", demoMode == DemoMode.PointCloud)) SwitchToMode(DemoMode.PointCloud);
-		UI.SameLine();
-		if (UI.Radio("Occlusion", demoMode == DemoMode.Occlusion)) SwitchToMode(DemoMode.Occlusion);
+		if (World.OcclusionCapabilities.HasFlag(OcclusionCaps.Depth))
+		{
+			UI.SameLine();
+			if (UI.Radio("Occlusion", demoMode == DemoMode.Occlusion)) SwitchToMode(DemoMode.Occlusion);
+		}
 
 		UI.HSeparator();
 		if (demoMode == DemoMode.PointCloud)
 		{
-			if (UI.Radio("Left Eye", eyeMode == EyeMode.Left)) eyeMode = EyeMode.Left;
-			UI.SameLine();
-			if (UI.Radio("Right Eye", eyeMode == EyeMode.Right)) eyeMode = EyeMode.Right;
-			UI.SameLine();
-			if (UI.Radio("Both Eyes", eyeMode == EyeMode.Both)) eyeMode = EyeMode.Both;
+			if (hasFrame && latestFrame.viewCount >= 2)
+			{
+				if (UI.Radio("Left Eye", eyeMode == EyeMode.Left)) eyeMode = EyeMode.Left;
+				UI.SameLine();
+				if (UI.Radio("Right Eye", eyeMode == EyeMode.Right)) eyeMode = EyeMode.Right;
+				UI.SameLine();
+				if (UI.Radio("Both Eyes", eyeMode == EyeMode.Both)) eyeMode = EyeMode.Both;
+			}
 
 			float step = sampleStep;
 			SliderRow("Point Size",   "pointsize",  ref pointSize, 0.001f, 0.03f, 0,    "{0:0.000}");
@@ -276,31 +351,61 @@ class DemoSensorDepth : ITest
 					EnsurePointMesh(latestFrame.width, latestFrame.height, sampleStep);
 			}
 
+			// Raw vs smooth depth - shown only where the backend exposes both
+			if (caps.HasFlag(SensorDepthCaps.RawDepth))
+			{
+				UI.HSeparator();
+				UI.Label("Depth Source");
+				if (UI.Radio("Smooth", !useRawDepth)) { useRawDepth = false; ApplyDepthCaps(); }
+				UI.SameLine();
+				if (UI.Radio("Raw", useRawDepth)) { useRawDepth = true; ApplyDepthCaps(); }
+			}
+
 			UI.HSeparator();
-			if (UI.Toggle("Enable Hands", ref handToggle))
-				Sensor.Depth.SetCapabilities(handToggle ? SensorDepthCaps.None : SensorDepthCaps.HandRemoval);
+			UI.Label("Color By");
+			if (UI.Radio("Eye", colorMode == ColorMode.Eye)) { colorMode = ColorMode.Eye; ApplyDepthCaps(); }
 			UI.SameLine();
-			UI.Toggle("Color by Depth", ref colorByDepth);
+			if (UI.Radio("Depth", colorMode == ColorMode.Depth)) { colorMode = ColorMode.Depth; ApplyDepthCaps(); }
+			if (caps.HasFlag(SensorDepthCaps.Confidence))
+			{
+				UI.SameLine();
+				if (UI.Radio("Confidence", colorMode == ColorMode.Confidence)) { colorMode = ColorMode.Confidence; ApplyDepthCaps(); }
+			}
+
+			// Hand removal - shown only where the backend supports it
+			if (caps.HasFlag(SensorDepthCaps.HandRemoval))
+			{
+				UI.HSeparator();
+				if (UI.Toggle("Show Hands", ref handToggle))
+					ApplyDepthCaps();
+			}
 
 			UI.HSeparator();
 			if (!Sensor.Depth.IsRunning)
 			{
 				if (UI.Button("Start Depth Capture"))
-					Sensor.Depth.Start();
+					wantRunning = true;
 			}
 			else
 			{
 				if (UI.Button("Stop Depth Capture"))
+				{
+					wantRunning = false;
 					Sensor.Depth.Stop();
+					depthTex = null;
+				}
 			}
 		}
 		else // Occlusion
 		{
 			SliderRow("Model Scale", "modelscale", ref modelScale, 0.05f, 1.0f, 0, "{0:0.00}");
 
-			UI.HSeparator();
-			if (UI.Toggle("Hand Occlusion", ref handToggle))
-				World.Occlusion = OcclusionCaps.Depth | (handToggle ? OcclusionCaps.Hands : OcclusionCaps.None);
+			if (World.OcclusionCapabilities.HasFlag(OcclusionCaps.Hands))
+			{
+				UI.HSeparator();
+				if (UI.Toggle("Hand Occlusion", ref handToggle))
+					World.Occlusion = OcclusionCaps.Depth | (handToggle ? OcclusionCaps.Hands : OcclusionCaps.None);
+			}
 		}
 
 		UI.WindowEnd();

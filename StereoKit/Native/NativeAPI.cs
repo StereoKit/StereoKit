@@ -935,7 +935,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_running();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SensorDepthCaps sensor_depth_get_capabilities();
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_start(SensorDepthCaps flags);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_start(SensorDepthCaps flags, SensorDepthResolution resolution);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sensor_depth_stop();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_set_capabilities(SensorDepthCaps flags);
@@ -943,7 +943,8 @@ namespace StereoKit
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_try_get_latest_frame(out SensorDepthFrame out_frame);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_try_get_latest_data(out SensorDepthFrame out_frame, IntPtr out_data, out UIntPtr out_data_size, int view_index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sensor_depth_try_get_latest_data(out SensorDepthFrame out_frame, IntPtr out_data, out UIntPtr out_data_size, int view_index, SensorDepthImage image);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sensor_depth_get_resolutions(out IntPtr out_arr_resolutions, out int out_count);
 
 		///////////////////////////////////////////
 
