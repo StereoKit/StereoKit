@@ -631,13 +631,13 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Projection   render_get_projection();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Matrix       render_get_cam_root();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_cam_root(in Matrix cam_root);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_skytex(IntPtr sky_texture);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_skytex();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_sky_visible([MarshalAs(UnmanagedType.Bool)] bool visible);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_skybox_tex(IntPtr skybox_texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_skybox_tex();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_skybox_visible([MarshalAs(UnmanagedType.Bool)] bool visible);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         render_get_sky_visible();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_skymaterial(IntPtr sky_material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_skymaterial();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         render_get_skybox_visible();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_skybox_material(IntPtr skybox_material);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_skybox_material();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_skylight(in SphericalHarmonics light_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics render_get_skylight();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_filter(RenderLayer layer_filter);

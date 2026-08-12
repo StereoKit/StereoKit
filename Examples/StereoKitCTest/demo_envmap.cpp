@@ -18,7 +18,7 @@ model_t               model                = {};
 
 void demo_envmap_init() {
 	envmap_oldlight      = lighting_get_ambient();
-	envmap_oldtex        = render_get_skytex();
+	envmap_oldtex        = render_get_skybox_tex();
 	envmap_oldreflection = lighting_get_reflection();
 
 	envmap_tex = tex_create_cubemap_file("old_depot.hdr");
@@ -38,7 +38,7 @@ void demo_envmap_update() {
 ///////////////////////////////////////////
 
 void demo_envmap_shutdown() {
-	render_set_skytex      (envmap_oldtex);
+	render_set_skybox_tex  (envmap_oldtex);
 	lighting_set_reflection(envmap_oldreflection);
 	lighting_set_ambient   (envmap_oldlight);
 

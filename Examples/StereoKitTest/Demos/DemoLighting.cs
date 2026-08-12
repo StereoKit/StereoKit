@@ -27,6 +27,7 @@ class DemoLighting : ITest
 
 	static List<Light> lights      = new List<Light>();
 	static string      cubemapFile = "";
+	static float       lightSpot   = 0.3f;
 
 	Pose       windowPose    = (Demo.contentPose * Matrix.T(-0.2f, 0, 0)).Pose;
 	Pose       previewPose   = (Demo.contentPose * Matrix.T(0.2f, -0.1f, 0)).Pose;
@@ -47,8 +48,6 @@ class DemoLighting : ITest
 	public void Step()
 	{
 		UI.WindowBegin("Lighting Source", ref windowPose);
-		UI.Label("Mode");
-		UI.SameLine();
 		if (UI.Radio("World", mode == LightMode.World)) mode = LightMode.World;
 		UI.SameLine();
 		if (UI.Radio("Lights", mode == LightMode.Lights)) mode = LightMode.Lights;
@@ -77,11 +76,17 @@ class DemoLighting : ITest
 				UpdateLights();
 			}
 
+			UI.SameLine();
 			if (UI.Button("Remove") && lights.Count > 1)
 			{
 				lights.RemoveAt(lights.Count - 1);
 				UpdateLights();
 			}
+
+			UI.Label("Spot Size");
+			UI.SameLine();
+			if (UI.HSlider("SpotSize", ref lightSpot, 0, 1))
+				UpdateLights();
 		}
 
 		if (mode == LightMode.Image)
@@ -96,11 +101,13 @@ class DemoLighting : ITest
 		if (UI.Button("Print Lighting Code"))
 		{
 			Vec3[] c = Lighting.Ambient.ToArray();
-			string shStr = "new SphericalHarmonics(new Vec3[]{";
+			string shStr = "SphericalHarmonics lighting = new SphericalHarmonics(new Vec3[]{";
 			for (int i = 0; i < c.Length; i++)
 				shStr += $"new Vec3({c[i].x:F2}f, {c[i].y:F2}f, {c[i].z:F2}f),";
 			shStr += "});";
 			Log.Info(shStr);
+			Log.Info($"Lighting.SetEnvironment(Tex.GenCubemap(lighting, 16, lightSpotSizePct: {lightSpot:F2}f));");
+			Log.Info("Lighting.Ambient = lighting;");
 		}
 
 		UI.WindowEnd();
@@ -113,9 +120,10 @@ class DemoLighting : ITest
 		Hierarchy.Push(Matrix.T(lightToolPose.position));
 		lightMesh.Draw(lightProbeMat, Matrix.S(0.04f));
 
-		// A line pointing at the brightest part of the ambient lighting
-		Vec3  lightDir   = Lighting.Ambient.DominantLightDirection;
-		Color lightColor = Lighting.Ambient.Sample(-lightDir);
+		// A line pointing at the brightest part of the ambient lighting. The
+		// sampled color is HDR, so saturate it before it crushes to Color32.
+		Vec3    lightDir   = Lighting.Ambient.DominantLightDirection;
+		Color32 lightColor = Lighting.Ambient.Sample(-lightDir).ToColor32Sat();
 		Lines.Add(-lightDir * 0.02f, -lightDir * 0.06f, lightColor, lightColor, 0.005f);
 		DrawSH(Lighting.Ambient, 0.02f, 0.06f);
 		if (mode == LightMode.Lights)
@@ -201,7 +209,7 @@ class DemoLighting : ITest
 
 		// The exact SH is already known here, so it overrides the ambient the
 		// environment would derive. Overrides come after SetEnvironment.
-		Lighting.SetEnvironment(Tex.GenCubemap(lighting));
+		Lighting.SetEnvironment(Tex.GenCubemap(lighting, 16, lightSpot));
 		Lighting.Ambient = lighting;
 	}
 

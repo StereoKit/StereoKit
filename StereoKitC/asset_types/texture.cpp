@@ -2112,6 +2112,12 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 		return nullptr;
 	}
 
+	// The image is drawn in the radiance domain, which rings much harder than
+	// the irradiance domain the SH was deringed for, so window a copy for the
+	// image alone. The texture's lighting data stays the exact input.
+	spherical_harmonics_t radiance = lookup;
+	sh_window_fit_radiance(radiance);
+
 	// Calculate information used to create the light spot, which sits toward
 	// the light source, opposite the travel direction sh_dominant_dir gives.
 	vec3     light_dir = sh_dominant_dir(lookup);
@@ -2163,7 +2169,7 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 				float    dist     = fmaxf(fmaxf(abs_diff.x, abs_diff.y), abs_diff.z);
 				color128 color    = dist < light_spot_size_pct
 					? light_col
-					: sh_lookup_radiance(lookup, vec3_normalize(pt));
+					: sh_lookup_radiance(radiance, vec3_normalize(pt));
 
 				data[i][x + ysize] = fhf_f32_to_r11g11ba10f(&color.r);
 			}
@@ -2217,10 +2223,17 @@ static bool32_t tex_reflection_generate(asset_task_t*, asset_header_t* asset, vo
 	if (!skr_tex_is_valid(&dest->gpu_tex) || dest->gpu_tex.mip_levels <= 1) {
 		dest->type = (tex_type_)(dest->type | tex_type_mips | tex_type_rendertarget);
 
+		// Storage usage lets the convolution run as compute dispatches instead
+		// of one render pass per mip. Formats that can't do storage still work
+		// through the shader's pixel stage fallback.
+		skr_tex_flags_ flags = tex_type_to_skr_flags(dest->type);
+		if (skr_tex_fmt_is_supported((skr_tex_fmt_)dest->format, (skr_tex_flags_)(flags | skr_tex_flags_compute), 1))
+			flags = (skr_tex_flags_)(flags | skr_tex_flags_compute);
+
 		skr_tex_t new_tex;
 		skr_err_ err = skr_tex_create(
 			(skr_tex_fmt_)dest->format,
-			tex_type_to_skr_flags(dest->type),
+			flags,
 			tex_get_skr_sampler(dest),
 			{ dest->width, dest->height, 1 },
 			1,  // multisample
@@ -2348,6 +2361,12 @@ tex_t tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into, int32_t max_r
 	task.sort          = asset_sort(asset_priority_default, 0);
 	task.depends_on    = &source_cubemap->header;
 	task.depends_state = asset_state_loaded;
+
+	// A source uploaded on this thread can still sit in the thread's open
+	// command batch, and the task may submit its convolution from another
+	// thread before that batch lands. Submit now so queue order is right.
+	if (skr_cmd_is_active()) skr_cmd_flush();
+
 	assets_add_task(task);
 
 	if (into != nullptr) tex_addref(into);

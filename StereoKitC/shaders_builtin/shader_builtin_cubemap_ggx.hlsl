@@ -1,10 +1,12 @@
 //--name = sk/cubemap_ggx
 // Specular prefilter for IBL: builds the roughness mip chain that
 // stereokit_pbr.hlsli samples via Lazarov's roughness -> mip curve.
-// Runs through sk_renderer's skr_tex_generate_mips render path: each
-// destination mip convolves the previous one, 'src_tex' is a single-mip view
-// of that previous mip (nothing else is readable), the parameters below
-// arrive per destination mip, and SV_ViewID selects the cubemap face.
+// Runs through sk_renderer's skr_tex_generate_mips: each destination mip
+// convolves the previous one, 'src_tex' is a single-mip view of that previous
+// mip (nothing else is readable), and the parameters below arrive per
+// destination mip. The compute stage writes mips in place when the texture
+// has storage usage; the pixel stage is the render-pass fallback, with
+// SV_ViewID selecting the cubemap face.
 //
 // The convolution is a deterministic spherical-gaussian quadrature, not
 // stochastic GGX importance sampling. Taps stay within one source texel, so
@@ -23,6 +25,8 @@ uint  _pad[2];
 
 TextureCube<float4> src_tex     : register(t1);
 SamplerState        src_sampler : register(s1);
+// Compute path's output; the pixel path writes through its render target.
+RWTexture2DArray<float4> dst_tex : register(u2);
 
 struct psIn {
 	float4 pos : SV_POSITION;
@@ -51,8 +55,8 @@ psIn vs(uint id : SV_VertexID) {
 	return output;
 }
 
-float4 ps(psIn input, uint face : SV_ViewID) : SV_Target {
-	float3 n = uv_to_direction(input.uv, face);
+float4 convolve(float2 uv, uint face) {
+	float3 n = uv_to_direction(uv, face);
 
 	// Invert stereokit_pbr.hlsli's roughness -> mip curve (mip_norm =
 	// r * (1.7 - 0.7*r)), so each mip stores the roughness it's sampled at.
@@ -123,4 +127,17 @@ float4 ps(psIn input, uint face : SV_ViewID) : SV_Target {
 	} }
 
 	return float4(color / total, 1);
+}
+
+float4 ps(psIn input, uint face : SV_ViewID) : SV_Target {
+	return convolve(input.uv, face);
+}
+
+// sk_renderer's compute mipgen path dispatches this in 8x8 groups per mip,
+// with the cubemap face in the dispatch z.
+[numthreads(8, 8, 1)]
+void cs(uint3 id : SV_DispatchThreadID) {
+	if (id.x >= dst_size.x || id.y >= dst_size.y) return;
+	float2 uv = (float2(id.xy) + 0.5) / float2(dst_size);
+	dst_tex[id] = convolve(uv, id.z);
 }

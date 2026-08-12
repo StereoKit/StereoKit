@@ -59,7 +59,7 @@ namespace StereoKit.Framework
 		{
 			var light = Lighting.Ambient;
 			light.Brightness(0.02f);
-			Renderer.SkyTex = Tex.GenCubemap(light);
+			Renderer.SkyboxTex = Tex.GenCubemap(light);
 		}
 
 		public static void ApplyMeshesOnly()

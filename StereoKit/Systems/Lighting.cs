@@ -25,7 +25,7 @@ public static class Lighting
     /// those `Tex.FromCubemap` provides, are perfect here, and need no
     /// mip chain.
     ///
-    /// This is a convenience over assigning `Renderer.SkyTex`,
+    /// This is a convenience over assigning `Renderer.SkyboxTex`,
     /// `Lighting.Reflection`, and `Lighting.Ambient` individually, and
     /// anything you assign to those afterwards overrides that piece. In
     /// world lighting mode this call is ignored, since lighting comes

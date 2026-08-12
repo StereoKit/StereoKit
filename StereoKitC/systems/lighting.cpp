@@ -93,7 +93,7 @@ static void check_pending_skytex() {
 
 		// Custom sky materials need a 'source' cubemap parameter for this.
 		if (local.sky_mat != nullptr && !material_set_texture(local.sky_mat, "source", local.sky_tex))
-			log_warn("Sky material has no 'source' texture parameter, skytex was not applied.");
+			log_warn("Skybox material has no 'source' texture parameter, the skybox texture was not applied.");
 	}
 }
 
@@ -150,14 +150,14 @@ bool lighting_init() {
 	material_set_queue_offset(local.sky_mat_default, 100);
 	material_set_depth_write (local.sky_mat_default, false);
 	material_set_depth_test  (local.sky_mat_default, depth_test_less_or_eq);
-	render_set_skymaterial(local.sky_mat_default);
+	render_set_skybox_material(local.sky_mat_default);
 	shader_release(shader_sky);
 
 	// Create a default skybox texture
 	tex_t sky_cubemap = tex_find(default_id_cubemap);
 
-	render_set_skytex     (sky_cubemap);
-	render_set_sky_visible(true);
+	render_set_skybox_tex    (sky_cubemap);
+	render_set_skybox_visible(true);
 
 	// The default cubemap is a mip 0 skybox, and reflections need a mip chain.
 	tex_t default_reflection = tex_gen_cubemap_reflection(sky_cubemap, nullptr, SK_LIGHTING_REFLECTION_SIZE);
@@ -266,12 +266,12 @@ void lighting_shutdown() {
 
 ///////////////////////////////////////////
 
-void render_set_skytex(tex_t sky_texture) {
-	if (sky_texture == nullptr) return;
+void render_set_skybox_tex(tex_t skybox_texture) {
+	if (skybox_texture == nullptr) return;
 
-	tex_addref(sky_texture);
+	tex_addref(skybox_texture);
 	if (local.sky_pending_tex != nullptr) tex_release(local.sky_pending_tex);
-	local.sky_pending_tex = sky_texture;
+	local.sky_pending_tex = skybox_texture;
 
 
 	// This is also checked every step, but if the texture is already valid, we
@@ -281,7 +281,7 @@ void render_set_skytex(tex_t sky_texture) {
 
 ///////////////////////////////////////////
 
-tex_t render_get_skytex() {
+tex_t render_get_skybox_tex() {
 	if (local.sky_pending_tex != nullptr) {
 		tex_addref(local.sky_pending_tex);
 		return local.sky_pending_tex;
@@ -293,26 +293,26 @@ tex_t render_get_skytex() {
 
 ///////////////////////////////////////////
 
-void render_set_skymaterial(material_t sky_material) {
+void render_set_skybox_material(material_t skybox_material) {
 	// Don't allow null, fall back to the default sky material on null.
-	if (sky_material == nullptr) {
-		sky_material = local.sky_mat_default;
+	if (skybox_material == nullptr) {
+		skybox_material = local.sky_mat_default;
 	}
 
 	// Safe swap the material reference
-	material_addref(sky_material);
+	material_addref(skybox_material);
 	if (local.sky_mat != nullptr) material_release(local.sky_mat);
-	local.sky_mat = sky_material;
+	local.sky_mat = skybox_material;
 
 	// Apply the current sky texture, so texture and material can be set in
 	// either order.
 	if (local.sky_tex != nullptr && !material_set_texture(local.sky_mat, "source", local.sky_tex))
-		log_warn("Sky material has no 'source' texture parameter, skytex was not applied.");
+		log_warn("Skybox material has no 'source' texture parameter, the skybox texture was not applied.");
 }
 
 ///////////////////////////////////////////
 
-material_t render_get_skymaterial(void) {
+material_t render_get_skybox_material(void) {
 	material_addref(local.sky_mat);
 	return local.sky_mat;
 }
@@ -331,13 +331,13 @@ spherical_harmonics_t render_get_skylight() {
 
 ///////////////////////////////////////////
 
-void render_set_sky_visible(bool32_t visible) {
+void render_set_skybox_visible(bool32_t visible) {
 	local.sky_show = visible;
 }
 
 ///////////////////////////////////////////
 
-bool32_t render_get_sky_visible() {
+bool32_t render_get_skybox_visible() {
 	return local.sky_show;
 }
 
@@ -429,7 +429,7 @@ void lighting_set_environment(tex_t sky_cubemap, tex_t* out_reflection) {
 		return;
 	}
 
-	render_set_skytex(sky_cubemap);
+	render_set_skybox_tex(sky_cubemap);
 
 	tex_t reflection = tex_gen_cubemap_reflection(sky_cubemap);
 	if (reflection == nullptr) return;

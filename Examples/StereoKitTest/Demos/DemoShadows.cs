@@ -58,7 +58,7 @@ class DemoShadows : ITest
 		model = GenerateModel(floorMat, shadowMat);
 
 		oldLighting   = Lighting.Ambient;
-		oldTex        = Renderer.SkyTex;
+		oldTex        = Renderer.SkyboxTex;
 		oldReflection = Lighting.Reflection;
 
 		// The environment provides visuals and lighting; the shadow direction
@@ -71,7 +71,7 @@ class DemoShadows : ITest
 
 	public void Shutdown()
 	{
-		Renderer.SkyTex     = oldTex;
+		Renderer.SkyboxTex  = oldTex;
 		Lighting.Reflection = oldReflection;
 		Lighting.Ambient    = oldLighting;
 		Renderer.SetGlobalBuffer (13, null);

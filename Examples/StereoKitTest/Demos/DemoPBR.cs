@@ -24,7 +24,7 @@ class DemoPBR : ITest
 
 	public void Initialize()
 	{
-		oldSkyTex     = Renderer.SkyTex;
+		oldSkyTex     = Renderer.SkyboxTex;
 		oldSkyLight   = Lighting.Ambient;
 		oldReflection = Lighting.Reflection;
 		sphereMesh    = Mesh.GenerateSphere(1, 7);
@@ -65,7 +65,7 @@ class DemoPBR : ITest
 
 	public void Shutdown()
 	{
-		Renderer.SkyTex     = oldSkyTex;
+		Renderer.SkyboxTex  = oldSkyTex;
 		Lighting.Reflection = oldReflection;
 		Lighting.Ambient    = oldSkyLight;
 	}

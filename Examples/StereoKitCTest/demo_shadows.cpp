@@ -94,11 +94,11 @@ void demo_shadows_init() {
 
 	// Save old lighting
 	old_lighting = render_get_skylight();
-	old_tex      = render_get_skytex();
+	old_tex      = render_get_skybox_tex();
 
 	// Load environment map and update lighting when loaded
 	tex_t env_tex = tex_create_cubemap_file("old_depot.hdr");
-	render_set_skytex(env_tex);
+	render_set_skybox_tex(env_tex);
 	tex_on_load      (env_tex, [](tex_t t, void*) {
 		spherical_harmonics_t lighting = tex_get_cubemap_lighting(t);
 		render_set_skylight(lighting);
@@ -178,7 +178,7 @@ void demo_shadows_update() {
 void demo_shadows_shutdown() {
 	// Restore old lighting
 	render_set_skylight(old_lighting);
-	render_set_skytex  (old_tex);
+	render_set_skybox_tex(old_tex);
 
 	// Unbind global resources
 	render_global_buffer (shadow_buffer_slot, nullptr);

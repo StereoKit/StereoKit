@@ -21,33 +21,45 @@ void sh_windowing(spherical_harmonics_t &harmonics, float window_width) {
 
 ///////////////////////////////////////////
 
-// Minimum of the irradiance reconstruction over 26 probe directions.
-static float _sh_min_lookup(const spherical_harmonics_t &harmonics) {
+// Minimum of the given reconstruction over 26 probe directions.
+static float _sh_min_lookup(const spherical_harmonics_t &harmonics, color128 (*lookup)(const spherical_harmonics_t &, vec3)) {
 	float lowest = FLT_MAX;
 	for (int32_t i = 0; i < 27; i++) {
 		int32_t x = i % 3 - 1, y = (i / 3) % 3 - 1, z = i / 9 - 1;
 		if (x == 0 && y == 0 && z == 0) continue;
 		vec3     dir = vec3_normalize(vec3{ (float)x, (float)y, (float)z });
-		color128 c   = sh_lookup(harmonics, dir);
+		color128 c   = lookup(harmonics, dir);
 		lowest = fminf(lowest, fminf(c.r, fminf(c.g, c.b)));
 	}
 	return lowest;
 }
 
-// Dering adaptively: widen the window only until the irradiance
-// reconstruction stops going negative, so well-behaved environments keep
-// their full directionality. Mirrors sh_window_fit in the sh_compute shader.
-void sh_window_fit(spherical_harmonics_t &harmonics) {
-	if (_sh_min_lookup(harmonics) >= 0) return;
+// Dering adaptively: widen the window only until the reconstruction stops
+// going negative, so well-behaved environments keep their directionality.
+static void _sh_window_fit(spherical_harmonics_t &harmonics, color128 (*lookup)(const spherical_harmonics_t &, vec3)) {
+	if (_sh_min_lookup(harmonics, lookup) >= 0) return;
 	float lo = 0, hi = 4.0f;
 	for (int32_t i = 0; i < 10; i++) {
 		float mid = (lo + hi) * 0.5f;
 		spherical_harmonics_t test = harmonics;
 		sh_windowing(test, mid);
-		if (_sh_min_lookup(test) >= 0) hi = mid;
-		else                           lo = mid;
+		if (_sh_min_lookup(test, lookup) >= 0) hi = mid;
+		else                                   lo = mid;
 	}
 	sh_windowing(harmonics, hi);
+}
+
+// Irradiance-domain fit, for SH sampled through the cosine kernel. Mirrors
+// sh_window_fit in the sh_compute shader.
+void sh_window_fit(spherical_harmonics_t &harmonics) {
+	_sh_window_fit(harmonics, sh_lookup);
+}
+
+// Radiance-domain fit, for SH reconstructed as an image. Band 2 carries 4x
+// the weight it does under the cosine kernel, so an irradiance fit is not
+// enough to keep a near-delta light's reconstruction non-negative.
+void sh_window_fit_radiance(spherical_harmonics_t &harmonics) {
+	_sh_window_fit(harmonics, sh_lookup_radiance);
 }
 
 ///////////////////////////////////////////

@@ -955,7 +955,7 @@ namespace StereoKit
 
 		/// <summary>Generates a cubemap texture from a gradient and a
 		/// direction! These are entirely suitable for skyboxes, which you
-		/// can set via Renderer.SkyTex.</summary>
+		/// can set via Renderer.SkyboxTex.</summary>
 		/// <param name="gradient">A color gradient the generator will sample
 		/// from! This looks at the 0-1 range of the gradient.</param>
 		/// <param name="gradientDirection">This vector points to where the
@@ -974,7 +974,7 @@ namespace StereoKit
 
 		/// <summary>Generates a cubemap texture from a gradient and a
 		/// direction! These are entirely suitable for skyboxes, which you
-		/// can set via `Renderer.SkyTex`.</summary>
+		/// can set via `Renderer.SkyboxTex`.</summary>
 		/// <param name="gradient">A color gradient the generator will sample
 		/// from! This looks at the 0-1 range of the gradient.</param>
 		/// <param name="lightingInfo">An out value that represents the
@@ -996,7 +996,7 @@ namespace StereoKit
 
 		/// <summary>Creates a cubemap from SphericalHarmonics lookups! These
 		/// are entirely suitable for skyboxes, which you can set via
-		/// `Renderer.SkyTex`.</summary>
+		/// `Renderer.SkyboxTex`.</summary>
 		/// <param name="lighting">Lighting information stored in a
 		/// SphericalHarmonics.</param>
 		/// <param name="resolution">The square size in pixels of each cubemap
