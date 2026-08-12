@@ -52,8 +52,9 @@
 using namespace sk;
 
 struct platform_state_t {
-	app_mode_ mode;
-	bool32_t  force_fallback_keyboard;
+	app_mode_     mode;
+	bool32_t      force_fallback_keyboard;
+	ska_window_t* window; // Null outside the windowed backends
 };
 static platform_state_t* local = {};
 
@@ -311,6 +312,44 @@ void platform_set_window_xam(void *window) {
 
 ///////////////////////////////////////////
 
+void platform_set_active_window(ska_window_t *window) {
+	local->window = window;
+}
+
+///////////////////////////////////////////
+
+// window_t is a borrowed ska_window_t*, and sk_app's functions tolerate null,
+// so a null handle from window_get_main flows through as a no-op.
+
+window_t window_get_main() {
+	return (window_t)local->window;
+}
+
+///////////////////////////////////////////
+
+// Only ever a request. X11 asks the window manager, web waits for a user
+// gesture, and Windows/macOS don't implement it yet, so window_get_fullscreen
+// reports what actually happened.
+void window_request_fullscreen(window_t window, bool32_t fullscreen) {
+	ska_window_set_fullscreen((ska_window_t*)window, fullscreen);
+}
+
+///////////////////////////////////////////
+
+bool32_t window_get_fullscreen(const window_t window) {
+	return window != nullptr && ska_window_get_fullscreen((ska_window_t*)window);
+}
+
+///////////////////////////////////////////
+
+void window_get_size(const window_t window, int32_t* out_width_px, int32_t* out_height_px) {
+	// sk_app skips the outputs on a null window, so zero them first.
+	*out_width_px  = 0;
+	*out_height_px = 0;
+	ska_window_get_drawable_size((ska_window_t*)window, out_width_px, out_height_px);
+}
+
+///////////////////////////////////////////
 
 bool32_t platform_keyboard_get_force_fallback() {
 	return local->force_fallback_keyboard;

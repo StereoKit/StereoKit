@@ -57,8 +57,17 @@ Here's the pre-reqs you'll need first!
 ```shell
 # here's the commands for installing Linux build pre-reqs:
 sudo apt-get update
-sudo apt-get install cmake ninja-build clang llvm lld libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libfontconfig-dev
+sudo apt-get install cmake ninja-build clang llvm lld pkg-config \
+                     libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libxi-dev libfontconfig-dev \
+                     libwayland-dev libxkbcommon-dev libdecor-0-dev
 ```
+
+The last three are what sk_app's Wayland backend needs, and they're new as of
+that backend. sk_app dlopens libwayland and libxkbcommon at runtime, so these
+three are header-only build requirements and one binary runs on both X11 and
+Wayland. They're detected via pkg-config, and a missing one quietly builds an
+X11/XWayland-only binary rather than failing, so watch the `Wayland backend:`
+line in the cmake configure output if you expect native Wayland.
 
 To build with cmake:
 ```shell

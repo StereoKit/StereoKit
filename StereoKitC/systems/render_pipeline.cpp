@@ -1,7 +1,9 @@
 #include "render_pipeline.h"
 #include "render.h"
 #include "lighting.h"
+#include "defaults.h"
 #include "../asset_types/texture.h"
+#include "../asset_types/material.h"
 #include "../libraries/profiler.h"
 
 #include <sk_renderer.h>
@@ -28,6 +30,9 @@ struct pipeline_surface_t {
 	matrix*                     proj_matrices;
 	bool32_t                    enabled;
 	skr_tex_t*                  resolve_target;
+	tex_t                       present_tex;    // Stands in for resolve_target when sizes differ
+	material_t                  present_mat;    // Stretches present_tex over resolve_target
+	bool32_t                    present_active; // Is present_tex in use this frame?
 };
 
 struct render_pipeline_state_t {
@@ -55,8 +60,10 @@ void render_pipeline_draw() {
 		pipeline_surface_t* s = &local.surfaces[i];
 		if (s->enabled == false) continue;
 
+		skr_tex_t* resolve_dest = s->present_active ? &s->present_tex->gpu_tex : s->resolve_target;
+
 		// Drawing direct also means there's nothing left to resolve.
-		skr_tex_t* color_tex = s->tex ? &s->tex->gpu_tex : s->resolve_target;
+		skr_tex_t* color_tex = s->tex ? &s->tex->gpu_tex : resolve_dest;
 		if (color_tex == nullptr) continue;
 
 		int32_t width  = (int32_t)fmaxf(1, (float)s->width  * s->viewport_scale);
@@ -79,7 +86,7 @@ void render_pipeline_draw() {
 		skr_pass_t pass = {};
 		pass.color            = color_tex;
 		pass.depth            = depth_tex;
-		pass.resolve          = s->tex ? s->resolve_target : nullptr;
+		pass.resolve          = s->tex ? resolve_dest : nullptr;
 		pass.clear            = clear_flags;
 		pass.clear_color      = clear_color;
 		pass.clear_depth      = 1.0f;
@@ -90,6 +97,20 @@ void render_pipeline_draw() {
 		render_pass_add_draw(&pass);
 		render_pass_add_global_post_process(&pass);
 		skr_pass_submit(&pass);
+
+		// Only the viewport corner of present_tex was drawn, and it stretches
+		// to fill the swapchain image.
+		if (s->present_active && s->resolve_target) {
+			// uv_clamp pins far-edge samples to the last drawn texel's center,
+			// so linear filtering can't read the undrawn region past the
+			// viewport. At full size it matches the sampler's own edge clamp,
+			// so it needs no special case.
+			skr_vec3i_t dst = skr_tex_get_size(s->resolve_target);
+			material_set_vector2(s->present_mat, "uv_scale", vec2{ (float)width /  s->width, (float)height /  s->height });
+			material_set_vector2(s->present_mat, "uv_clamp", vec2{ (width-0.5f) / s->width, (height-0.5f) / s->height });
+			material_check_dirty(s->present_mat);
+			skr_renderer_blit(&s->present_mat->gpu_mat, s->resolve_target, skr_recti_t{ 0, 0, dst.x, dst.y });
+		}
 	}
 
 	render_list_clear  (list);
@@ -142,8 +163,10 @@ void render_pipeline_surface_destroy(pipeline_surface_id surface_id) {
 	surface->enabled = false;
 	sk_free(surface->view_matrices);
 	sk_free(surface->proj_matrices);
-	tex_release(surface->tex);
-	tex_release(surface->depth_tex);
+	tex_release     (surface->tex);
+	tex_release     (surface->depth_tex);
+	tex_release     (surface->present_tex);
+	material_release(surface->present_mat);
 	*surface = {};
 }
 
@@ -221,18 +244,53 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 
 ///////////////////////////////////////////
 
-skr_acquire_ render_pipeline_surface_acquire_swapchain(pipeline_surface_id surface_id, skr_surface_t* skr_surface) {
+// Direct rendering into the swapchain image only works when the surface fills
+// it exactly. Anything else needs an intermediate for the present blit. A
+// surface that never needs one never allocates it, and one that does keeps it
+// warm, since these settings tend to get swept back and forth across the
+// boundary.
+static void render_pipeline_surface_update_present(pipeline_surface_id surface_id, skr_tex_t* swapchain_tex) {
+	pipeline_surface_t* surface = &local.surfaces[surface_id];
+
+	skr_vec3i_t size = skr_tex_get_size(swapchain_tex);
+	surface->present_active = size.x != surface->width || size.y != surface->height || surface->viewport_scale < 1;
+	if (surface->present_active == false) return;
+
+	if (surface->present_mat == nullptr)
+		surface->present_mat = material_create(sk_default_shader_blit);
+
+	bool fresh = surface->present_tex == nullptr;
+	if (fresh) {
+		char name[64];
+		surface->present_tex = tex_create(tex_type_image_nomips | tex_type_rendertarget, surface->color);
+		snprintf(name, sizeof(name), "sk/render/pipeline_present_%d", surface_id);
+		tex_set_id     (surface->present_tex, name);
+		tex_set_sample (surface->present_tex, tex_sample_linear);
+		tex_set_address(surface->present_tex, tex_address_clamp);
+	}
+	// A resize swaps the GPU texture out from under the binding, but that
+	// changes the tex's meta hash, so material_check_dirty rebinds it.
+	if (surface->present_tex->width != surface->width || surface->present_tex->height != surface->height)
+		tex_set_color_arr(surface->present_tex, surface->width, surface->height, nullptr, surface->array_count, 1, nullptr);
+	if (fresh)
+		material_set_texture(surface->present_mat, "source", surface->present_tex);
+}
+
+///////////////////////////////////////////
+
+skr_acquire_ render_pipeline_surface_acquire_swapchain(pipeline_surface_id surface_id, skr_surface_t* skr_surface, skr_vec2i_t size) {
 	profiler_zone();
 	pipeline_surface_t* surface = &local.surfaces[surface_id];
 
 	// Acquire the next swapchain image
 	skr_tex_t*   target         = nullptr;
-	skr_acquire_ acquire_result = skr_surface_next_tex(skr_surface, &target);
+	skr_acquire_ acquire_result = skr_surface_next_tex(skr_surface, size, &target);
 
 	if (acquire_result == skr_acquire_success && target) {
 		// Set the swapchain image as the MSAA resolve target
 		// The render pass will automatically resolve to this during end_pass
 		surface->resolve_target = target;
+		render_pipeline_surface_update_present(surface_id, target);
 	} else {
 		surface->resolve_target = nullptr;
 	}

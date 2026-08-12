@@ -840,6 +840,7 @@ typedef struct sk_settings_t {
 	int32_t        flatscreen_pos_y;
 	int32_t        flatscreen_width;
 	int32_t        flatscreen_height;
+	bool32_t       fullscreen;
 	bool32_t       disable_desktop_input_window;
 	bool32_t       disable_unfocused_sleep;
 	float          render_scaling;
@@ -921,6 +922,15 @@ SK_API const char   *sk_version_name       (void);
 SK_API uint64_t      sk_version_id         (void);
 SK_API app_focus_    sk_app_focus          (void);
 SK_API quit_reason_  sk_get_quit_reason    (void);
+
+///////////////////////////////////////////
+
+SK_DeclarePrivateType(window_t);
+
+SK_API window_t      window_get_main          (void);
+SK_API bool32_t      window_get_fullscreen    (const window_t window);
+SK_API void          window_request_fullscreen(window_t window, bool32_t fullscreen);
+SK_API void          window_get_size          (const window_t window, int32_t* out_width_px, int32_t* out_height_px);
 
 ///////////////////////////////////////////
 
@@ -3115,11 +3125,10 @@ typedef struct mouse_t {
 	/*Position of the mouse relative to the window it's in! This is the number
 	of pixels from the top left corner of the screen.*/
 	vec2          pos;
-	/*How much has the mouse moved during this frame? Measured in pixels. This
-	is all motion since the last frame, which is not always the same as the
-	difference between this frame's position and the last frame's! In relative
-	mouse mode, the position doesn't move at all, and this is the only place
-	mouse motion shows up.*/
+	/*How much has the mouse moved during this frame? This is normally just the
+	change in `pos`, measured in pixels. In relative mouse mode `pos` is frozen
+	and this becomes the only source of motion, in the mouse's raw device units
+	rather than pixels.*/
 	vec2          pos_change;
 	/*What's the current scroll value for the mouse's scroll wheel?*/
 	float         scroll;

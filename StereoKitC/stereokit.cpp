@@ -400,7 +400,7 @@ app_focus_ sk_app_focus() { return local.focus; }
 
 ///////////////////////////////////////////
 
-quit_reason_ sk_get_quit_reason() { 
+quit_reason_ sk_get_quit_reason() {
 	return local.quit_reason;
 }
 

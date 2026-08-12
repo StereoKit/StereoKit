@@ -58,7 +58,8 @@ struct input_state_t {
 	mouse_t               mouse_data;
 	mouse_mode_           mouse_mode;        // What the app asked for
 	mouse_mode_           mouse_mode_active; // What the cursor is actually doing
-	vec2                  mouse_lock_pos;    // Relative mode warps back here each frame
+	bool                  mouse_captured;    // Relative mode asked for, and granted
+	vec2                  mouse_lock_pos;    // The stationary position relative mode reports
 	ska_window_t*         mouse_window;
 	controller_t          controllers[2];
 	bool                  controller_hand[2];
@@ -137,8 +138,12 @@ bool input_init() {
 ///////////////////////////////////////////
 
 void input_shutdown() {
-	if (local.mouse_mode_active != mouse_mode_normal)
+	if (local.mouse_mode_active != mouse_mode_normal) {
+		// Capture is a pointer grab, not just a hidden cursor, so it outlives
+		// the window if nobody releases it.
+		ska_mouse_set_relative_mode(false);
 		ska_cursor_show(true);
+	}
 
 	ft_mutex_destroy(&local.mtx_poses);
 	ft_mutex_destroy(&local.mtx_floats);
@@ -492,11 +497,23 @@ pose_t input_controller_detached(handed_ hand) {
 
 ///////////////////////////////////////////
 
+// sk_app reports the mouse in screen coordinates while StereoKit works in render
+// pixels, and on a scaled display those differ by the drawable ratio.
+static float input_mouse_pixel_scale() {
+	if (local.mouse_window == nullptr) return 1.0f;
+
+	int32_t content_w = 0, content_h = 0, drawable_w = 0, drawable_h = 0;
+	ska_window_get_content_size (local.mouse_window, &content_w, &content_h);
+	ska_window_get_drawable_size(local.mouse_window, &drawable_w, &drawable_h);
+	return content_w > 0 ? (float)drawable_w / (float)content_w : 1.0f;
+}
+
 void input_mouse_update() {
 	// Get mouse position from sk_app
 	int32_t  mouse_x = 0, mouse_y = 0;
 	uint32_t button_state = ska_mouse_get_state(&mouse_x, &mouse_y);
-	vec2     mouse_pos    = { (float)mouse_x, (float)mouse_y };
+	float    pixel_scale  = input_mouse_pixel_scale();
+	vec2     mouse_pos    = { mouse_x * pixel_scale, mouse_y * pixel_scale };
 
 	// Mouse is available if we have focus (button_state is non-zero or we have position data)
 	local.mouse_data.available = sk_app_focus() == app_focus_active;
@@ -514,6 +531,14 @@ void input_mouse_update() {
 		? local.mouse_mode
 		: mouse_mode_normal;
 	if (mode != local.mouse_mode_active) {
+		// Relative mode hides the cursor and delivers unaccelerated deltas with
+		// the pointer pinned. Warping back by hand cannot work on Wayland, which
+		// has no pointer warp at all.
+		// Not every platform can capture the pointer; where it can't, position
+		// deltas stand in for the motion capture would have reported.
+		bool want_relative      = mode == mouse_mode_relative;
+		bool captured           = ska_mouse_set_relative_mode(want_relative);
+		local.mouse_captured    = want_relative && captured;
 		ska_cursor_show(mode == mouse_mode_normal);
 		local.mouse_lock_pos    = mouse_pos;
 		local.mouse_mode_active = mode;
@@ -521,14 +546,16 @@ void input_mouse_update() {
 
 	// Mouse position and on-screen
 	if (local.mouse_data.available) {
-		if (local.mouse_mode_active == mouse_mode_relative) {
-			// The cursor is parked at mouse_lock_pos, so anything away from it is
-			// this frame's motion. Warping back means we never run out of screen,
-			// and the app sees a stationary pos.
-			local.mouse_data.pos_change = mouse_pos - local.mouse_lock_pos;
+		if (local.mouse_captured) {
+			// The pointer does not move in relative mode, so accumulated motion
+			// is the only source, and the app sees a stationary pos.
+			int32_t rel_x = 0, rel_y = 0;
+			ska_mouse_get_delta(&rel_x, &rel_y);
+			// Deltas are device units, not pixels, so they deliberately do not get
+			// the display scale: the same hand movement should turn the view the
+			// same amount on any monitor.
+			local.mouse_data.pos_change = { (float)rel_x, (float)rel_y };
 			local.mouse_data.pos        = local.mouse_lock_pos;
-			if (mouse_pos.x != local.mouse_lock_pos.x || mouse_pos.y != local.mouse_lock_pos.y)
-				ska_mouse_warp(local.mouse_window, (int32_t)local.mouse_lock_pos.x, (int32_t)local.mouse_lock_pos.y);
 		} else {
 			local.mouse_data.pos_change = mouse_pos - local.mouse_data.pos;
 			local.mouse_data.pos        = mouse_pos;
@@ -539,9 +566,11 @@ void input_mouse_update() {
 ///////////////////////////////////////////
 
 void input_mouse_set_window(ska_window_t* window) {
-	// Restore now, while the window that hid the cursor is still around.
+	// Restore now, while the window that captured the mouse is still around.
 	if (window == nullptr && local.mouse_mode_active != mouse_mode_normal) {
+		ska_mouse_set_relative_mode(false);
 		ska_cursor_show(true);
+		local.mouse_captured    = false;
 		local.mouse_mode_active = mouse_mode_normal;
 	}
 	local.mouse_window = window;

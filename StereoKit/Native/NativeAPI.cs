@@ -38,6 +38,14 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       window_get_main();
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         window_get_fullscreen(IntPtr window);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         window_request_fullscreen(IntPtr window, [MarshalAs(UnmanagedType.Bool)] bool fullscreen);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         window_get_size(IntPtr window, out int out_width_px, out int out_height_px);
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DisplayType  device_display_get_type();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DisplayBlend device_display_get_blend();
 		[return: MarshalAs(UnmanagedType.Bool)]

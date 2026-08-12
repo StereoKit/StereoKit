@@ -71,6 +71,14 @@ namespace StereoKit
 		/// <summary>If using Runtime.Flatscreen, the pixel size of the
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
+		/// <summary>In the Simulator and Window app modes, ask for the
+		/// desktop window to start out fullscreen! Like
+		/// `AppWindow.RequestFullscreen`, this is only ever a request: window
+		/// managers can refuse it, and browsers wait for a user gesture, so
+		/// check `AppWindow.Main.Fullscreen` for the window's real state.
+		/// Default is false.</summary>
+		public  bool fullscreen { get { return _fullscreen > 0; } set { _fullscreen = value ? 1 : 0; } }
+		private int _fullscreen;
 		/// <summary>By default, StereoKit will open a desktop window for
 		/// keyboard input due to lack of XR-native keyboard APIs on many
 		/// platforms. If you don't want this, you can disable it with

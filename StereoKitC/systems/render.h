@@ -36,6 +36,7 @@ vec3          render_unproject_pt         (vec3 normalized_screen_pt);
 void          render_update_projection    ();
 const char   *render_fmt_name             (tex_format_ format);
 tex_format_   render_preferred_depth_fmt  ();
+void          render_scaled_size          (int32_t width, int32_t height, float max_scale, int32_t* out_width, int32_t* out_height);
 void          render_set_sim_origin       (pose_t pose);
 void          render_set_sim_head         (pose_t pose);
 void          render_draw_queue           (render_list_t list, const matrix* views, const matrix* projections, int32_t eye_offset, int32_t view_count, render_layer_ filter, int32_t material_variant, int32_t surface_width, int32_t surface_height);

@@ -101,13 +101,18 @@ namespace StereoKit
 			get => NativeAPI.render_get_filter();
 		}
 
-		/// <summary>OpenXR has a recommended default for the main render
-		/// surface, this variable allows you to set SK's surface to a multiple
-		/// of the recommended size. Note that the final resolution may also be
-		/// clamped or quantized. Only works in XR mode. If known in advance,
-		/// set this via SKSettings in initialization. This is a _very_ costly
-		/// change to make. Consider if ViewportScaling will work for you
-		/// instead, and prefer that.</summary>
+		/// <summary>This sets the size of the surface StereoKit renders to, as
+		/// a multiple of the display's own resolution. In XR that's a multiple
+		/// of OpenXR's recommended size, and in a window it's a multiple of the
+		/// window's size, where the result is stretched back over the window at
+		/// present. Note that the final resolution may also be clamped or
+		/// quantized. Values above 1 have no effect in the Simulator and Window
+		/// app modes, since a window is already at the display's real
+		/// resolution. This property still reports what you set, so an app
+		/// that also runs in XR keeps its setting. If known in advance, set
+		/// this via SKSettings in initialization. This is a _very_ costly
+		/// change to make, since it reallocates the render surface. Consider if
+		/// ViewportScaling will work for you instead, and prefer that.</summary>
 		public static float Scaling {
 			get => NativeAPI.render_get_scaling();
 			set => NativeAPI.render_set_scaling(value);
@@ -116,7 +121,11 @@ namespace StereoKit
 		/// <summary>This allows you to trivially scale down the area of the
 		/// swapchain that StereoKit renders to! This can be used to boost
 		/// performance in situations where full resolution is not needed, or
-		/// to reduce GPU time. This value is locked to the 0-1 range.</summary>
+		/// to reduce GPU time. Unlike Scaling, this doesn't resize the render
+		/// surface, so it's cheap enough to change every frame. In the
+		/// Simulator and Window app modes, the first drop below 1 does
+		/// allocate a surface to present through, but it's kept around after
+		/// that. This value is locked to the 0-1 range.</summary>
 		public static float ViewportScaling {
 			get => NativeAPI.render_get_viewport_scaling();
 			set => NativeAPI.render_set_viewport_scaling(value);

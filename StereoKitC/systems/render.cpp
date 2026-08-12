@@ -653,6 +653,29 @@ float render_get_scaling() {
 
 ///////////////////////////////////////////
 
+// Applies the render scaling setting to a surface size. The setting itself
+// stays untouched, so a capped caller doesn't affect XR runs of the same app.
+void render_scaled_size(int32_t width, int32_t height, float max_scale, int32_t* out_width, int32_t* out_height) {
+	float scale = fminf(max_scale, render_get_scaling());
+
+	// An unscaled surface renders straight into the swapchain image, or
+	// resolves into it, and both of those need the sizes to match exactly.
+	if (scale == 1) {
+		*out_width  = width;
+		*out_height = height;
+		return;
+	}
+
+	// Scaled surfaces resolve into an intermediate of their own size instead,
+	// so they're free to round. Even dimensions keep MSAA resolves happy.
+	int32_t w = (int32_t)(width  * scale) & ~1;
+	int32_t h = (int32_t)(height * scale) & ~1;
+	*out_width  = w < 2 ? 2 : w;
+	*out_height = h < 2 ? 2 : h;
+}
+
+///////////////////////////////////////////
+
 void render_set_viewport_scaling(float viewport_rect_scale) {
 	local.viewport_scale = fmaxf(0,fminf(1,viewport_rect_scale));
 }
