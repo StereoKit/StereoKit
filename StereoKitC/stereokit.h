@@ -4090,6 +4090,7 @@ SK_CONST char *default_id_material_pbr_clip    = "default/material_pbr_clip";
 SK_CONST char *default_id_material_unlit       = "default/material_unlit";
 SK_CONST char *default_id_material_unlit_clip  = "default/material_unlit_clip";
 SK_CONST char *default_id_material_equirect    = "default/equirect_convert";
+SK_CONST char *default_id_material_cubemap_downsample = "default/cubemap_downsample";
 SK_CONST char *default_id_material_font        = "default/material_font";
 SK_CONST char *default_id_material_hand        = "default/material_hand";
 SK_CONST char *default_id_material_ui          = "default/material_ui";

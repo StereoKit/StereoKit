@@ -37,6 +37,7 @@ extern shader_t     sk_default_shader_cubemap_ggx;
 extern shader_t     sk_default_shader_cubemap_downsample;
 extern material_t   sk_default_material;
 extern material_t   sk_default_material_equirect;
+extern material_t   sk_default_material_cubemap_downsample;
 extern material_t   sk_default_material_font;
 extern material_t   sk_default_material_ui;
 extern material_t   sk_default_material_ui_aura;

@@ -55,6 +55,7 @@ material_t   sk_default_material_pbr_clip;
 material_t   sk_default_material_unlit;
 material_t   sk_default_material_unlit_clip;
 material_t   sk_default_material_equirect;
+material_t   sk_default_material_cubemap_downsample;
 material_t   sk_default_material_font;
 material_t   sk_default_material_ui;
 material_t   sk_default_material_ui_box;
@@ -304,6 +305,7 @@ bool defaults_init() {
 	sk_default_material_unlit       = material_create(sk_default_shader_unlit);
 	sk_default_material_unlit_clip  = material_create(sk_default_shader_unlit_clip);
 	sk_default_material_equirect    = material_create(sk_default_shader_equirect);
+	sk_default_material_cubemap_downsample = material_create(sk_default_shader_cubemap_downsample);
 	sk_default_material_font        = material_create(sk_default_shader_font);
 	sk_default_material_ui          = material_create(sk_default_shader_ui);
 	sk_default_material_ui_box      = material_create(sk_default_shader_ui_box);
@@ -331,6 +333,14 @@ bool defaults_init() {
 	material_set_id(sk_default_material_unlit,       default_id_material_unlit);
 	material_set_id(sk_default_material_unlit_clip,  default_id_material_unlit_clip);
 	material_set_id(sk_default_material_equirect,    default_id_material_equirect);
+	material_set_id(sk_default_material_cubemap_downsample, default_id_material_cubemap_downsample);
+
+	// The equirect and downsample conversions run through skr_renderer_blit
+	// with no depth attached.
+	material_set_depth_test (sk_default_material_equirect, depth_test_always);
+	material_set_depth_write(sk_default_material_equirect, false);
+	material_set_depth_test (sk_default_material_cubemap_downsample, depth_test_always);
+	material_set_depth_write(sk_default_material_cubemap_downsample, false);
 	material_set_id(sk_default_material_font,        default_id_material_font);
 	material_set_id(sk_default_material_ui,          default_id_material_ui);
 	material_set_id(sk_default_material_ui_box,      default_id_material_ui_box);
@@ -445,6 +455,7 @@ void defaults_shutdown() {
 	material_release(sk_default_material_unlit);
 	material_release(sk_default_material_unlit_clip);
 	material_release(sk_default_material_equirect);
+	material_release(sk_default_material_cubemap_downsample);
 	material_release(sk_default_material_font);
 	material_release(sk_default_material_ui);
 	material_release(sk_default_material_ui_box);

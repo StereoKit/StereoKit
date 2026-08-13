@@ -17,6 +17,7 @@
 #include "../spherical_harmonics.h"
 #include "../systems/defaults.h"
 #include "shader.h"
+#include "material.h"
 #include "texture.h"
 #include "texture_.h"
 #include "texture_compression.h"
@@ -759,8 +760,6 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		tex_set_meta(tex, tex->width, tex->height, 1, tex->format);
 		tex_update_label(tex);
 
-		shader_t convert_shader = shader_find(default_id_shader_equirect);
-
 		// Make the texture for our source equirect data
 		skr_tex_sampler_t equirect_sampler = {};
 		equirect_sampler.sample  = skr_tex_sample_linear;
@@ -772,23 +771,20 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		skr_tex_t equirect;
 		skr_tex_create((skr_tex_fmt_)tex->format, skr_tex_flags_readable, equirect_sampler, {data->color_width, data->color_height, 1}, 1, 0, &tex_data, &equirect);
 
-		// Make the material for converting equirect to cubemap
-		skr_material_info_t mat_info = {};
-		mat_info.shader     = &convert_shader->gpu_shader;
-		mat_info.write_mask = skr_write_rgba;
-		mat_info.depth_test = skr_compare_always;
-		skr_material_t convert_mat;
-		skr_material_create(mat_info, &convert_mat);
-		skr_material_set_tex(&convert_mat, "source", &equirect);
+		// Make the material for converting equirect to cubemap. Copying the
+		// default material keeps this task's source private, while its
+		// pipeline stays compiled with the default. The source is a raw
+		// staging texture with no asset wrapper, so it binds at the skr level.
+		material_t convert_mat = material_copy(sk_default_material_equirect);
+		skr_material_set_tex(&convert_mat->gpu_mat, "source", &equirect);
 
 		// Convert the equirect into the cubemap's only mip level
 		skr_vec3i_t blit_size = skr_tex_get_size(&tex->gpu_tex);
 		skr_recti_t bounds    = { 0, 0, blit_size.x, blit_size.y };
-		skr_renderer_blit    (&convert_mat, &tex->gpu_tex, bounds);
+		skr_renderer_blit    (&convert_mat->gpu_mat, &tex->gpu_tex, bounds);
 
-		skr_material_destroy(&convert_mat);
+		material_release(convert_mat);
 		skr_tex_destroy(&equirect);
-		shader_release(convert_shader);
 
 		// Lighting data comes from tex_gen_cubemap_reflection, not from here.
 		skr_cmd_end();
@@ -2255,23 +2251,17 @@ static bool32_t tex_reflection_generate(asset_task_t*, asset_header_t* asset, vo
 	skr_cmd_begin();
 
 	// Fill the destination's base level from the source, box filtered in
-	// one pass.
+	// one pass. Copying the default material keeps this task's parameters
+	// private, while its pipeline stays compiled with the default.
 	{
-		skr_material_info_t mat_info = {};
-		mat_info.shader     = &sk_default_shader_cubemap_downsample->gpu_shader;
-		mat_info.write_mask = skr_write_rgba;
-		mat_info.depth_test = skr_compare_always;
-		skr_material_t downsample_mat;
-		skr_material_create(mat_info, &downsample_mat);
-
-		float size_ratio = (float)source->width / (float)dest->width;
-		skr_material_set_tex  (&downsample_mat, "source", &source->gpu_tex);
-		skr_material_set_param(&downsample_mat, "size_ratio", sksc_shader_var_float, 1, &size_ratio);
+		material_t downsample_mat = material_copy(sk_default_material_cubemap_downsample);
+		material_set_texture(downsample_mat, "source", source);
+		material_set_float  (downsample_mat, "size_ratio", (float)source->width / (float)dest->width);
 
 		skr_recti_t bounds = { 0, 0, dest->width, dest->height };
-		skr_renderer_blit(&downsample_mat, &dest->gpu_tex, bounds);
+		skr_renderer_blit(&downsample_mat->gpu_mat, &dest->gpu_tex, bounds);
 
-		skr_material_destroy(&downsample_mat);
+		material_release(downsample_mat);
 	}
 
 	// Convolve the mip chain: each mip holds GGX-prefiltered radiance

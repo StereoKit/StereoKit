@@ -99,7 +99,6 @@ typedef struct xr_light_estimation_state_t {
 	bool                                cubemap_available;
 	bool                                cubemap_refused; // runtime rejected cubemaps
 	bool                                cubemap_started;
-	bool                                cubemap_updated;
 	uint32_t                            cubemap_resolution;
 	XrCubemapLightingColorFormatANDROID cubemap_format;
 	sk::tex_format_                     cubemap_tex_format;
@@ -272,8 +271,11 @@ void xr_ext_android_light_estimation_step_begin(void*) {
 	info.space = xr_app_space;
 	info.time  = xr_time;
 
+	// The cubemap is deliberately NOT chained into this per-frame poll:
+	// servicing a cubemap request costs the runtime real GPU time
+	// (reprojection + readback) every call, whether or not the estimate
+	// changed. xr_ext_light_estimation_fetch_reflection pulls it on demand.
 	XrSphericalHarmonicsANDROID  sh       = {(XrStructureType)XR_TYPE_SPHERICAL_HARMONICS_ANDROID};
-	XrCubemapLightingDataANDROID cubemap  = {(XrStructureType)XR_TYPE_CUBEMAP_LIGHTING_DATA_ANDROID};
 	XrLightEstimateANDROID       estimate = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATE_ANDROID};
 	estimate.next = &sh;
 	// KIND_TOTAL bakes the main light into the SH, which is what StereoKit
@@ -281,20 +283,6 @@ void xr_ext_android_light_estimation_step_begin(void*) {
 	// Android docs describe TOTAL/AMBIENT backwards (as of 2026-07); device
 	// captures confirm TOTAL's DC term carries the full environment's energy.
 	sh.kind = XR_SPHERICAL_HARMONICS_KIND_TOTAL_ANDROID;
-	if (local.cubemap_started) {
-		sh.next = &cubemap;
-
-		uint32_t face_bytes = local.cubemap_face_bytes;
-		// Buffers stay in the runtime's GL convention, converted on upload
-		// in xr_ext_light_estimation_update_reflection.
-		cubemap.imageBufferSize   = face_bytes;
-		cubemap.imageBufferRight  = local.cubemap_buffer + 0 * face_bytes;
-		cubemap.imageBufferLeft   = local.cubemap_buffer + 1 * face_bytes;
-		cubemap.imageBufferTop    = local.cubemap_buffer + 2 * face_bytes;
-		cubemap.imageBufferBottom = local.cubemap_buffer + 3 * face_bytes;
-		cubemap.imageBufferFront  = local.cubemap_buffer + 4 * face_bytes;
-		cubemap.imageBufferBack   = local.cubemap_buffer + 5 * face_bytes;
-	}
 	XrResult result = xrGetLightEstimateANDROID(local.estimator, &info, &estimate);
 	if (XR_FAILED(result)) {
 		log_warnf("%s: [%s]", "xrGetLightEstimateANDROID", openxr_string(result));
@@ -315,17 +303,6 @@ void xr_ext_android_light_estimation_step_begin(void*) {
 			local.sh_data.coefficients[5] = -local.sh_data.coefficients[5];
 			local.sh_data.coefficients[7] = -local.sh_data.coefficients[7];
 			local.sh_updated = true;
-		}
-		if (local.cubemap_started && cubemap.state == XR_LIGHT_ESTIMATE_STATE_VALID_ANDROID) {
-			local.cubemap_updated = true;
-
-			// reproject is enabled, so rotation should be identity. If a
-			// runtime returns one anyway, reflections will be angled.
-			static bool warned_rotation = false;
-			if (!warned_rotation && fabsf(cubemap.rotation.w) < 0.999f) {
-				warned_rotation = true;
-				log_warn("Light estimation cubemap arrived with a non-identity rotation, reflections may be rotated.");
-			}
 		}
 	}
 }
@@ -432,9 +409,41 @@ bool xr_ext_light_estimation_reflection_info(tex_format_* out_format, int32_t* o
 
 ///////////////////////////////////////////
 
-bool xr_ext_light_estimation_update_reflection(tex_t ref_cubemap) {
-	if (!local.cubemap_updated || ref_cubemap == nullptr) return false;
-	local.cubemap_updated = false;
+bool xr_ext_light_estimation_fetch_reflection(tex_t ref_cubemap) {
+	if (!local.cubemap_started || ref_cubemap == nullptr) return false;
+
+	// A dedicated estimate call for the cubemap data, made only when the
+	// caller has already decided the reflection needs a rebuild.
+	uint32_t face_bytes = local.cubemap_face_bytes;
+	XrCubemapLightingDataANDROID cubemap = {(XrStructureType)XR_TYPE_CUBEMAP_LIGHTING_DATA_ANDROID};
+	// Buffers stay in the runtime's GL convention, converted below.
+	cubemap.imageBufferSize   = face_bytes;
+	cubemap.imageBufferRight  = local.cubemap_buffer + 0 * face_bytes;
+	cubemap.imageBufferLeft   = local.cubemap_buffer + 1 * face_bytes;
+	cubemap.imageBufferTop    = local.cubemap_buffer + 2 * face_bytes;
+	cubemap.imageBufferBottom = local.cubemap_buffer + 3 * face_bytes;
+	cubemap.imageBufferFront  = local.cubemap_buffer + 4 * face_bytes;
+	cubemap.imageBufferBack   = local.cubemap_buffer + 5 * face_bytes;
+
+	XrLightEstimateGetInfoANDROID info = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATE_GET_INFO_ANDROID};
+	info.space = xr_app_space;
+	info.time  = xr_time;
+	XrLightEstimateANDROID estimate = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATE_ANDROID};
+	estimate.next = &cubemap;
+	XrResult result = xrGetLightEstimateANDROID(local.estimator, &info, &estimate);
+	if (XR_FAILED(result)) {
+		log_warnf("%s: [%s]", "xrGetLightEstimateANDROID", openxr_string(result));
+		return false;
+	}
+	if (cubemap.state != XR_LIGHT_ESTIMATE_STATE_VALID_ANDROID) return false;
+
+	// reproject is enabled, so rotation should be identity. If a runtime
+	// returns one anyway, reflections will be angled.
+	static bool warned_rotation = false;
+	if (!warned_rotation && fabsf(cubemap.rotation.w) < 0.999f) {
+		warned_rotation = true;
+		log_warn("Light estimation cubemap arrived with a non-identity rotation, reflections may be rotated.");
+	}
 
 	int32_t res     = (int32_t)local.cubemap_resolution;
 	int32_t face_px = res * res;

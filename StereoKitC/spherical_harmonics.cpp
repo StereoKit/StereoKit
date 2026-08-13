@@ -83,6 +83,22 @@ spherical_harmonics_t sh_create(const sh_light_t* lights, int32_t light_count) {
 
 ///////////////////////////////////////////
 
+// Relative magnitude of the lighting change between two SH sets: summed
+// luminance of the coefficient deltas, normalized by 'from's average
+// brightness. ~0.01 is imperceptible, ~0.1 is a clearly visible shift.
+float sh_delta(const spherical_harmonics_t &to, const spherical_harmonics_t &from) {
+	float delta = 0;
+	for (int32_t i = 0; i < 9; i++) {
+		vec3 d = to.coefficients[i] - from.coefficients[i];
+		delta += fabsf(d.x) * 0.2126f + fabsf(d.y) * 0.7152f + fabsf(d.z) * 0.0722f;
+	}
+	vec3  dc   = from.coefficients[0];
+	float norm = dc.x * 0.2126f + dc.y * 0.7152f + dc.z * 0.0722f;
+	return delta / fmaxf(fabsf(norm), 0.001f);
+}
+
+///////////////////////////////////////////
+
 void sh_brightness(spherical_harmonics_t &harmonics, float scale) {
 	for (int32_t i = 0; i < 9; i++)
 		harmonics.coefficients[i] *= scale;

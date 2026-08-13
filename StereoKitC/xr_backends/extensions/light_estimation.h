@@ -24,8 +24,10 @@ bool xr_ext_light_estimation_cubemap_available(void);
 // Format and face resolution that started cubemap estimates arrive in, so the
 // caller can create a matching cubemap for the update below.
 bool xr_ext_light_estimation_reflection_info  (tex_format_* out_format, int32_t* out_face_size);
-// Uploads the most recent cubemap estimate into ref_cubemap, sized by
-// xr_ext_light_estimation_reflection_info. False when there's nothing new.
-bool xr_ext_light_estimation_update_reflection(tex_t ref_cubemap);
+// Requests a fresh cubemap estimate from the runtime and uploads it into
+// ref_cubemap, sized by xr_ext_light_estimation_reflection_info. This is the
+// expensive part of an estimate for the runtime to service, so call it only
+// when the lighting has changed enough to warrant a reflection rebuild.
+bool xr_ext_light_estimation_fetch_reflection (tex_t ref_cubemap);
 
 }

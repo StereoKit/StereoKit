@@ -38,6 +38,8 @@ struct lighting_state_t {
 	bool                    ambient_auto_pending; // reflection SH -> ambient
 	tex_t                   world_env;           // raw environment estimate
 	tex_t                   world_reflection;    // the estimate, convolved
+	spherical_harmonics_t   world_reflected_sh;  // SH at the last reflection rebuild
+	bool                    world_reflected;     // world_reflection has been built
 
 	bool                    pending_scene_permission;
 };
@@ -195,35 +197,46 @@ void lighting_step() {
 
 	if (local.mode == lighting_mode_world) {
 		spherical_harmonics_t sh;
-		bool sh_updated = xr_ext_light_estimation_update_sh(&sh);
-		if (sh_updated)
+		// Ambient is cheap to apply, so it tracks every estimate. Rebuilding
+		// the reflection is not (a runtime cubemap render + readback, then a
+		// full convolution), so it only rebuilds when the lighting has moved
+		// meaningfully since the last rebuild. Comparing against the last
+		// *rebuilt* SH rather than the previous frame's lets slow drift
+		// accumulate until it crosses the threshold instead of never firing.
+		if (xr_ext_light_estimation_update_sh(&sh)) {
 			_lighting_set_ambient(sh);
 
-		// Reflections come from the cubemap estimate when the device has one,
-		// otherwise they're approximated from the SH. Either way it convolves
-		// into a persistent texture, created on the first update.
-		tex_t       env        = nullptr;
-		tex_format_ env_format = tex_format_none;
-		int32_t     env_size   = 0;
-		if (xr_ext_light_estimation_reflection_info(&env_format, &env_size)) {
-			if (local.world_env == nullptr)
-				local.world_env = tex_create((tex_type_)(tex_type_image_nomips | tex_type_cubemap | tex_type_dynamic), env_format);
-			if (xr_ext_light_estimation_update_reflection(local.world_env)) {
-				env = local.world_env;
-				tex_addref(env);
-			}
-		} else if (sh_updated) {
-			env = tex_gen_cubemap_sh(local.ambient_src, SK_LIGHTING_REFLECTION_SIZE / 2, 0.2f, 2.0f);
-		}
+			if (!local.world_reflected || sh_delta(sh, local.world_reflected_sh) > 0.05f) {
+				// Reflections come from the cubemap estimate when the device
+				// has one, otherwise they're approximated from the SH. Either
+				// way it convolves into a persistent texture, created on the
+				// first update.
+				tex_t       env        = nullptr;
+				tex_format_ env_format = tex_format_none;
+				int32_t     env_size   = 0;
+				if (xr_ext_light_estimation_reflection_info(&env_format, &env_size)) {
+					if (local.world_env == nullptr)
+						local.world_env = tex_create((tex_type_)(tex_type_image_nomips | tex_type_cubemap | tex_type_dynamic), env_format);
+					if (xr_ext_light_estimation_fetch_reflection(local.world_env)) {
+						env = local.world_env;
+						tex_addref(env);
+					}
+				} else {
+					env = tex_gen_cubemap_sh(local.ambient_src, SK_LIGHTING_REFLECTION_SIZE / 2, 0.2f, 2.0f);
+				}
 
-		if (env != nullptr) {
-			tex_t refl = tex_gen_cubemap_reflection(env, local.world_reflection, SK_LIGHTING_REFLECTION_SIZE);
-			if (refl != nullptr) {
-				if (local.world_reflection == nullptr) local.world_reflection = refl;
-				else                                   tex_release(refl);
-				_lighting_set_reflection(local.world_reflection);
+				if (env != nullptr) {
+					tex_t refl = tex_gen_cubemap_reflection(env, local.world_reflection, SK_LIGHTING_REFLECTION_SIZE);
+					if (refl != nullptr) {
+						if (local.world_reflection == nullptr) local.world_reflection = refl;
+						else                                   tex_release(refl);
+						_lighting_set_reflection(local.world_reflection);
+						local.world_reflected    = true;
+						local.world_reflected_sh = sh;
+					}
+					tex_release(env);
+				}
 			}
-			tex_release(env);
 		}
 	}
 
@@ -403,12 +416,15 @@ bool32_t lighting_set_mode(lighting_mode_ mode) {
 
 	local.mode = mode;
 
-	// Start light estimation if we're entering world mode
+	// Start light estimation if we're entering world mode. Force a
+	// reflection rebuild on entry: manual mode may have replaced the bound
+	// reflection since the last world session.
 	if (mode == lighting_mode_world) {
 		if (!xr_ext_light_estimation_start()) {
 			local.mode = lighting_mode_manual;
 			return false;
 		}
+		local.world_reflected = false;
 	}
 
 	return true;
