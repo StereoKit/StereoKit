@@ -60,7 +60,7 @@ array_t<asset_job_t *>         assets_blocking_jobs = {};
 int32_t                        assets_blocking_count   = 0; // atomic mirror of the job count
 int32_t                        assets_blocking_waiters = 0; // atomic, threads inside the wait
 ft_condition_t                 assets_blocking_available = {};
-ft_mutex_t                     assets_load_event_lock = {};
+ft_mutex_t                     assets_load_event_lock = {}; // guards both lists below; C# finalizers remove callbacks off-thread
 array_t<asset_load_callback_t> assets_load_callbacks = {};
 array_t<asset_header_t *>      assets_load_events = {};
 
@@ -79,9 +79,28 @@ int32_t                assets_wake_gen       = 0; // atomic, bumped by every wak
 uint64_t               assets_backstop_time  = 0;
 array_t<asset_task_t*> asset_active_tasks    = {};
 
+// Acquire masks, a bit per affinity. Workers never run main-affinity actions,
+// and the budgeted main-thread step only starts heavy ones on a fresh budget.
+enum {
+	asset_mask_any   = 1 << asset_affinity_any,
+	asset_mask_heavy = 1 << asset_affinity_heavy,
+	asset_mask_main  = 1 << asset_affinity_main,
+	asset_mask_worker   = asset_mask_any | asset_mask_heavy,
+	asset_mask_all      = asset_mask_any | asset_mask_heavy | asset_mask_main,
+	asset_mask_no_heavy = asset_mask_any | asset_mask_main,
+};
+
+typedef enum asset_step_ {
+	asset_step_none = 0, // nothing runnable for this mask
+	asset_step_ran,
+	asset_step_parked,   // an action began a wait
+} asset_step_;
+
+array_t<asset_task_t*> asset_parked_tasks    = {}; // waiting on assets_task_signal
+
 int32_t         asset_thread                    (void *);
 void            assets_wake_workers             ();
-bool            asset_step_task                 ();
+asset_step_     asset_step_task                 (int32_t affinity_mask);
 void            asset_step_blocking_job         ();
 int32_t         assets_calculate_current_priority();
 asset_header_t* assets_allocate_no_add          (asset_type_ type, const char** out_type_str);
@@ -337,44 +356,48 @@ void assets_safeswap_ref(asset_header_t **asset_link, asset_header_t *asset) {
 ///////////////////////////////////////////
 
 void assets_on_load(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context) {
+	ft_mutex_lock(assets_load_event_lock);
 	assets_load_callbacks.add({
 		asset,
 		on_load,
 		context
 	});
+	// If it was loaded previously, we want to call this right away, unless a
+	// queued event is about to. Asset threads push events concurrently, so the
+	// check stays under the lock; the call itself must not.
+	bool call_now = asset->state >= asset_state_loaded &&
+	                assets_load_events.index_of(asset) == -1;
+	ft_mutex_unlock(assets_load_event_lock);
 
-	// If it was loaded previously, we want to call this right away
-	if (asset->state >= asset_state_loaded) {
-		// If it's already queued as an event, calling now would double it up.
-		// Asset threads push events concurrently, so check under the lock.
-		ft_mutex_lock(assets_load_event_lock);
-		bool queued = assets_load_events.index_of(asset) != -1;
-		ft_mutex_unlock(assets_load_event_lock);
-		if (!queued)
-			on_load(asset, context);
-	}
+	if (call_now)
+		on_load(asset, context);
 }
 
 ///////////////////////////////////////////
 
-void assets_on_load_remove(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context)) {
+void assets_on_load_remove(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context) {
+	ft_mutex_lock(assets_load_event_lock);
 	for (int32_t i = 0; i < assets_load_callbacks.count; i++) {
-		if ( assets_load_callbacks[i].asset   == asset &&
-			(assets_load_callbacks[i].on_load == on_load || on_load == nullptr)) {
+		if (assets_load_callbacks[i].asset   == asset   &&
+			assets_load_callbacks[i].on_load == on_load &&
+			assets_load_callbacks[i].context == context) {
 			assets_load_callbacks.remove(i);
-			return;
+			break;
 		}
 	}
+	ft_mutex_unlock(assets_load_event_lock);
 }
 
 ///////////////////////////////////////////
 
 void assets_on_load_remove_all(asset_header_t *asset) {
+	ft_mutex_lock(assets_load_event_lock);
 	for (int32_t i = assets_load_callbacks.count - 1; i >= 0; i--) {
 		if (assets_load_callbacks[i].asset == asset) {
 			assets_load_callbacks.remove(i);
 		}
 	}
+	ft_mutex_unlock(assets_load_event_lock);
 }
 
 ///////////////////////////////////////////
@@ -471,15 +494,47 @@ bool assets_init() {
 
 ///////////////////////////////////////////
 
-array_t<asset_load_callback_t> assets_load_call_list = {};
+// Only meaningful on single-threaded builds, where assets_step is the only
+// place tasks step.
+static bool assets_step_did_work = false;
+// Blocking pumps pass their own unbounded budget instead.
+static const double assets_step_budget_ms = 4;
+
+static void assets_step_tasks(double budget_ms) {
+	if (asset_threads.count > 0) {
+		// Workers cover everything else; the main thread only services
+		// actions that must run here, and those stay cheap by contract.
+		if (ft_id_equal(ft_id_current(), sk_main_thread())) {
+			while (asset_step_task(asset_mask_main) != asset_step_none) { }
+		}
+		return;
+	}
+
+	// Without workers the main thread is the loader, so it runs as much of the
+	// queue as fits the budget instead of one action per frame. Heavy work is
+	// deliberately capped at one acquisition per frame: a single slice can be
+	// near budget-sized, and an unsliced action can overrun it entirely.
+	uint64_t start    = stm_now();
+	bool     advanced = false;
+	bool     first    = true;
+	while (true) {
+		asset_step_ stepped = asset_step_task(first ? asset_mask_all : asset_mask_no_heavy);
+		first = false;
+		if (stepped == asset_step_ran) advanced = true;
+		if (stepped == asset_step_none    ) break;
+		if (stm_ms(stm_since(start)) >= budget_ms) break;
+	}
+	assets_step_did_work = advanced;
+}
+
 void assets_step() {
 	profiler_zone();
 
-	// If we have no asset threads for some reason (like WASM), then we'll need
-	// to make sure assets still get loaded here!
-	if (asset_threads.count <= 0) {
-		asset_step_task();
-	}
+	// Before tasks step, so a signal that lands here runs this same frame.
+	if (ft_id_equal(ft_id_current(), sk_main_thread()))
+		tex_step_deferred();
+
+	assets_step_tasks(assets_step_budget_ms);
 
 	// Wake-up backstop for dependency state that advances outside the task
 	// system. Paced, blocking loads spin this far faster than frame rate.
@@ -499,23 +554,22 @@ void assets_step() {
 	assets_multithread_destroy.clear();
 	ft_mutex_unlock(assets_multithread_destroy_lock);
 
-	// Update any on_load event callbacks
+	// Update any on_load event callbacks. They run from a local copy so a
+	// callback can add or remove others, and because blocking loads step this
+	// from more than one thread.
+	array_t<asset_load_callback_t> call_list = {};
 	ft_mutex_lock(assets_load_event_lock);
 	for (int32_t i = 0; i < assets_load_events.count; i++) {
 		for (int32_t c = 0; c < assets_load_callbacks.count; c++) {
 			asset_load_callback_t *callback = &assets_load_callbacks[c];
-			if (assets_load_events[i] == callback->asset) {
-				// If the callback removes itself when it's called, this loop
-				// becomes problematic. So we're storing the items we need to
-				// call, and calling them outside this loop.
-				assets_load_call_list.add(*callback);
-			}
+			if (assets_load_events[i] == callback->asset)
+				call_list.add(*callback);
 		}
 	}
 	assets_load_events.clear();
 	ft_mutex_unlock(assets_load_event_lock);
-	assets_load_call_list.each([](const asset_load_callback_t &c) { c.on_load(c.asset, c.context); });
-	assets_load_call_list.clear();
+	call_list.each([](const asset_load_callback_t &c) { c.on_load(c.asset, c.context); });
+	call_list.free();
 
 #if defined(SK_DEBUG_MEM)
 	if (input_key(key_p) & button_state_just_active) {
@@ -532,9 +586,26 @@ void assets_shutdown() {
 	// is still running — the old per-thread sequential loop could miss
 	// queued work from threads that exited while waiting on another.
 	asset_thread_enabled = false;
+
+	// Parked tasks wait on signals that are never coming now; route them
+	// through the failure path like an unresolved dependency gate. Their
+	// external completions see a stale wait_id and no-op.
+	ft_mutex_lock(asset_thread_task_mtx);
+	for (int32_t i = 0; i < asset_parked_tasks.count; i++) {
+		asset_task_t *task = asset_parked_tasks[i];
+		task->wait_id    = 0;
+		task->dep_failed = true;
+		asset_thread_tasks.insert(0, task);
+	}
+	asset_parked_tasks.clear();
+	asset_tasks_priority = assets_calculate_current_priority();
+	ft_mutex_unlock(asset_thread_task_mtx);
+
 	assets_wake_workers();
+	// Threadless builds drain the queue right here, so the loop also runs
+	// until it empties; the parked tasks above land in it too.
 	bool any_running = true;
-	while (any_running) {
+	while (any_running || asset_thread_tasks.count > 0) {
 		assets_step();
 		ft_yield();
 
@@ -559,6 +630,10 @@ void assets_shutdown() {
 	while (atomic_load_i32(&assets_blocking_waiters) > 0)
 		ft_yield();
 
+	// Deferred readbacks hold asset references, so they resolve before the
+	// remaining-asset teardown below.
+	tex_shutdown_deferred();
+
 #if defined(SK_DEBUG_MEM)
 	assets_shutdown_check();
 #endif
@@ -576,6 +651,7 @@ void assets_shutdown() {
 	ft_mutex_destroy(&asset_thread_task_mtx);
 	asset_thread_tasks.free();
 	asset_active_tasks.free();
+	asset_parked_tasks.free();
 
 	assets_multithread_destroy.free();
 	assets_blocking_jobs      .free();
@@ -587,7 +663,6 @@ void assets_shutdown() {
 	ft_condition_destroy(&asset_tasks_available);
 	ft_condition_destroy(&assets_blocking_available);
 
-	assets_load_call_list.free();
 	assets_load_callbacks.free();
 	assets_load_events   .free();
 	assets               .free();
@@ -757,6 +832,12 @@ int32_t assets_calculate_current_priority() {
 		if (result > asset_active_tasks[i]->priority)
 			result = asset_active_tasks[i]->priority;
 	}
+	// Parked tasks still count as in-flight, so priority-blocking callers
+	// keep waiting for the signal they're parked on.
+	for (int32_t i = 0; i < asset_parked_tasks.count; i++) {
+		if (result > asset_parked_tasks[i]->priority)
+			result = asset_parked_tasks[i]->priority;
+	}
 	if (asset_thread_tasks.count > 0 && result > asset_thread_tasks[0]->priority) {
 		result = asset_thread_tasks[0]->priority;
 	}
@@ -783,7 +864,7 @@ asset_dep_ asset_task_dep_check(const asset_task_t *task) {
 
 ///////////////////////////////////////////
 
-asset_task_t* assets_acquire_task() {
+asset_task_t* assets_acquire_task(int32_t affinity_mask) {
 	// Pop out the task we want to work on
 	ft_mutex_lock(asset_thread_task_mtx);
 	if (asset_thread_tasks.count <= 0) { ft_mutex_unlock(asset_thread_task_mtx); return nullptr; }
@@ -795,8 +876,13 @@ asset_task_t* assets_acquire_task() {
 		asset_task_t* task = asset_thread_tasks[i];
 		asset_dep_    dep  = asset_task_dep_check(task);
 		if (dep == asset_dep_blocked) continue;
+		// A failing task skips the affinity check, its failure path must be
+		// able to run anywhere or shutdown could strand it in the queue.
+		if (dep == asset_dep_ready && !task->dep_failed &&
+		    (affinity_mask & (1 << task->actions[task->action_curr].affinity)) == 0) continue;
 
-		task->dep_failed = dep == asset_dep_failed;
+		task->dep_failed     = task->dep_failed || dep == asset_dep_failed;
+		task->running_thread = ft_id_current();
 		result = task;
 		asset_thread_tasks.remove(i);
 		asset_active_tasks.add(result);
@@ -821,16 +907,152 @@ void assets_return_task(asset_task_t *task) {
 
 ///////////////////////////////////////////
 
+static int32_t assets_wait_id_next = 0; // atomic
+
+uint64_t assets_task_wait_prepare(asset_task_t *task) {
+	// Unlocked writes are safe because this runs on the action's own thread,
+	// and the contract keeps every signal on that same thread until parked.
+	task->wait_id  = (uint64_t)atomic_increment(&assets_wait_id_next);
+	task->signal_beat_park = false;
+	return task->wait_id;
+}
+
+///////////////////////////////////////////
+
+// The task leaves the queue entirely until its signal, so waits cost nothing
+// per frame. False when shutdown refuses the park; the caller fails the task
+// instead, since its signal is never coming.
+static bool assets_park_task(asset_task_t *task) {
+	ft_mutex_lock(asset_thread_task_mtx);
+	if (asset_thread_enabled == false) {
+		ft_mutex_unlock(asset_thread_task_mtx);
+		return false;
+	}
+
+	asset_active_tasks.remove(asset_active_tasks.index_of(task));
+	bool requeue = task->signal_beat_park;
+	if (requeue) {
+		// The signal beat the park, skip it and go straight back to work
+		task->signal_beat_park = false;
+		task->wait_id  = 0;
+		int32_t idx = asset_thread_tasks.binary_search(assets_task_sort, task->sort);
+		if (idx < 0) idx = ~idx;
+		asset_thread_tasks.insert(idx, task);
+	} else {
+		asset_parked_tasks.add(task);
+	}
+	asset_tasks_priority = assets_calculate_current_priority();
+	ft_mutex_unlock(asset_thread_task_mtx);
+
+	if (requeue) assets_wake_workers();
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool32_t assets_task_signal(uint64_t wait_id, void (*deliver)(asset_task_t *task, void *load_data, void *context), void *context) {
+	if (wait_id == 0) return false;
+
+	ft_mutex_lock(asset_thread_task_mtx);
+	// Parked is the expected home: deliver, then re-queue by sort.
+	for (int32_t i = 0; i < asset_parked_tasks.count; i++) {
+		asset_task_t *task = asset_parked_tasks[i];
+		if (task->wait_id != wait_id) continue;
+
+		// Contract check, see the header. Deliver anyway, dropping the result
+		// would strand the task on top of the race being reported.
+		if (!ft_id_equal(ft_id_current(), sk_main_thread()))
+			log_err("assets_task_signal: a parked task may only be signaled from the main thread");
+
+		asset_parked_tasks.remove(i);
+		task->wait_id = 0;
+		if (deliver != nullptr) deliver(task, task->load_data, context);
+		int32_t idx = asset_thread_tasks.binary_search(assets_task_sort, task->sort);
+		if (idx < 0) idx = ~idx;
+		asset_thread_tasks.insert(idx, task);
+		asset_tasks_priority = assets_calculate_current_priority();
+		ft_mutex_unlock(asset_thread_task_mtx);
+		assets_wake_workers();
+		return true;
+	}
+	// Not parked yet: the signal came from the initiating action's own stack,
+	// or beat the park's arrival. Flag the task to skip the park; delivery is
+	// safe by the contract in the header.
+	for (int32_t i = 0; i < asset_active_tasks.count; i++) {
+		asset_task_t *task = asset_active_tasks[i];
+		if (task->wait_id != wait_id) continue;
+
+		// Contract check, as above: any other thread races the running action
+		if (!ft_id_equal(ft_id_current(), task->running_thread))
+			log_err("assets_task_signal: an active task may only be signaled from its own action");
+
+		task->signal_beat_park = true;
+		if (deliver != nullptr) deliver(task, task->load_data, context);
+		ft_mutex_unlock(asset_thread_task_mtx);
+		return true;
+	}
+	// Otherwise stale: the task already completed, or failed at shutdown.
+	ft_mutex_unlock(asset_thread_task_mtx);
+	return false;
+}
+
+///////////////////////////////////////////
+
+// A completion can outlive its task, so it carries the wait id, and the
+// stale-id check in assets_task_signal is what guards the read struct's
+// lifetime: deliver only runs while the task, and so its load_data, is alive.
+// When the task is already gone, the bytes have no home and are dropped.
+struct asset_read_ctx_t {
+	uint64_t           wait_id;
+	asset_file_read_t *read;
+};
+
+static void assets_task_read_arrived(bool32_t success, void *data, size_t size, void *context) {
+	asset_read_ctx_t ctx = *(asset_read_ctx_t*)context;
+	sk_free(context);
+
+	struct payload_t { asset_file_read_t* read; bool32_t success; void* data; size_t size; };
+	payload_t payload = { ctx.read, success, data, size };
+	bool32_t delivered = assets_task_signal(ctx.wait_id, [](asset_task_t*, void*, void* payload_ptr) {
+		payload_t* p   = (payload_t*)payload_ptr;
+		p->read->state = p->success ? asset_read_arrived : asset_read_failed;
+		p->read->data  = p->data;
+		p->read->size  = p->size;
+	}, &payload);
+	if (!delivered) sk_free(data);
+}
+
+asset_read_ assets_task_read_file(asset_task_t *task, const char *filename, asset_file_read_t *read) {
+	if (!read->pending) {
+		read->pending = true;
+		read->state   = asset_read_in_flight;
+		asset_read_ctx_t* ctx = sk_malloc_t(asset_read_ctx_t, 1);
+		ctx->wait_id = assets_task_wait_prepare(task);
+		ctx->read    = read;
+		platform_read_file_async(filename, assets_task_read_arrived, ctx);
+	}
+	if (read->state != asset_read_in_flight)
+		read->pending = false;
+	return read->state;
+}
+
+///////////////////////////////////////////
+
+void assets_notify_loaded(asset_header_t *asset) {
+	ft_mutex_lock(assets_load_event_lock);
+	assets_load_events.add(asset);
+	ft_mutex_unlock(assets_load_event_lock);
+}
+
+///////////////////////////////////////////
+
 void assets_complete_task(asset_task_t* task) {
 	// Skip putting it back if it's complete :)
 
 	// Notify on_load, skipping assets removed by a load issue. Queued before
 	// the task count drops, so a blocking caller can't miss the event.
-	if (task->asset->state >= asset_state_loaded) {
-		ft_mutex_lock(assets_load_event_lock);
-		assets_load_events.add(task->asset);
-		ft_mutex_unlock(assets_load_event_lock);
-	}
+	if (task->asset->state >= asset_state_loaded)
+		assets_notify_loaded(task->asset);
 
 	ft_mutex_lock(asset_thread_task_mtx);
 	asset_active_tasks.remove(asset_active_tasks.index_of(task));
@@ -851,27 +1073,33 @@ void assets_complete_task(asset_task_t* task) {
 
 ///////////////////////////////////////////
 
-bool asset_step_task() {
-	asset_task_t* task = assets_acquire_task();
-	if (task == nullptr) return false;
+asset_step_ asset_step_task(int32_t affinity_mask) {
+	asset_task_t* task = assets_acquire_task(affinity_mask);
+	if (task == nullptr) return asset_step_none;
 
 	profiler_zone();
 
 	// An errored dependency skips the action and takes the failure path.
 	// on_failure owns the resulting state: a refresh may want to stay loaded.
-	bool result = task->dep_failed
-		? false
-		: task->actions[task->action_curr](task, task->asset, task->load_data) != 0;
+	asset_action_result_ result = task->dep_failed
+		? asset_action_fail
+		: task->actions[task->action_curr].fn(task, task->asset, task->load_data);
 
-	if (result == false) {
-		// On failure, send an error message, and move to the end
-		// of the action list.
+	if (result == asset_action_wait) {
+		if (assets_park_task(task))
+			return asset_step_parked;
+		// Shutdown refused the park, its signal is never coming
+		result = asset_action_fail;
+	}
+
+	switch (result) {
+	case asset_action_fail:
 		if (task->on_failure != nullptr) task->on_failure(task->asset, task->load_data);
 		task->action_curr = task->action_count;
-	}
-	else {
-		// On success, move to the next action in the task!
-		task->action_curr += 1;
+		break;
+	case asset_action_done:     task->action_curr += 1; break;
+	case asset_action_continue: break; // same action again, a cooperative slice
+	default: break;
 	}
 
 	// Put it back in when we're done!
@@ -880,7 +1108,7 @@ bool asset_step_task() {
 	} else {
 		assets_complete_task(task);
 	}
-	return true;
+	return asset_step_ran;
 }
 
 ///////////////////////////////////////////
@@ -931,7 +1159,7 @@ int32_t asset_thread(void *thread_inst_obj) {
 	while (asset_thread_enabled || asset_thread_tasks.count>0 || atomic_load_i32(&assets_blocking_count)>0) {
 		int32_t wake_gen = atomic_load_i32(&assets_wake_gen);
 		asset_step_blocking_job();
-		bool worked = asset_step_task();
+		bool worked = asset_step_task(asset_mask_worker) != asset_step_none;
 
 		// A gated task can sit queued for frames, so wait on "nothing was
 		// runnable". The generation re-check makes a lost wake impossible.
@@ -951,6 +1179,17 @@ int32_t asset_thread(void *thread_inst_obj) {
 
 ///////////////////////////////////////////
 
+bool assets_on_asset_thread() {
+	ft_id_t curr_id = ft_id_current();
+	for (int32_t i = 0; i < asset_threads.count; i++) {
+		if (ft_id_equal(curr_id, asset_threads[i].id))
+			return true;
+	}
+	return false;
+}
+
+///////////////////////////////////////////
+
 void assets_block_until(asset_t asset, asset_state_ state) {
 	asset_header_t *header = (asset_header_t *)asset;
 	// If we're past the required state already, drop out. asset_state_none and
@@ -961,19 +1200,25 @@ void assets_block_until(asset_t asset, asset_state_ state) {
 
 	profiler_zone();
 
-	ft_id_t curr_id = ft_id_current();
-	for (int32_t i = 0; i < asset_threads.count; i++)
-	{
-		if (ft_id_equal(curr_id, asset_threads[i].id)) {
-			log_err("assets_block_ should not be called on the assets thread!");
-			return;
-		}
+	if (assets_on_asset_thread()) {
+		log_err("assets_block_ should not be called on the assets thread!");
+		return;
 	}
 
 	while (header->state < state && header->state >= 0) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
 		assets_step();
+
+#if defined(SK_OS_WEB)
+		// In a browser, parked work (a fetch, a GPU readback) only resolves
+		// after this stack unwinds, so once that's all that remains, spinning
+		// here can never finish. Bail loudly instead of hanging the tab.
+		if (assets_step_did_work == false && header->state < state && header->state >= 0) {
+			log_errf("Can't block for asset '%s' on the web, it's waiting on work that needs the frame to end. Load asynchronously instead.", header->id_text ? header->id_text : "[unnamed]");
+			return;
+		}
+#endif
 	}
 }
 
@@ -982,13 +1227,9 @@ void assets_block_until(asset_t asset, asset_state_ state) {
 void assets_block_for_priority(int32_t priority) {
 	profiler_zone();
 
-	ft_id_t curr_id = ft_id_current();
-	for (int32_t i = 0; i < asset_threads.count; i++)
-	{
-		if (ft_id_equal(curr_id, asset_threads[i].id)) {
-			log_err("assets_block_ should not be called on the assets thread!");
-			return;
-		}
+	if (assets_on_asset_thread()) {
+		log_err("assets_block_ should not be called on the assets thread!");
+		return;
 	}
 
 	// This handles if the user passes in INT_MAX
@@ -998,6 +1239,15 @@ void assets_block_for_priority(int32_t priority) {
 		// we're waiting on it.
 		assets_step();
 		curr_priority = assets_current_task_priority();
+
+#if defined(SK_OS_WEB)
+		// See assets_block_until: parked work can't finish inside one frame
+		// in a browser, so a pass that steps nothing never will.
+		if (assets_step_did_work == false && curr_priority <= priority && curr_priority != INT_MAX) {
+			log_err("Can't block for assets on the web, they're waiting on work that needs the frame to end. Load asynchronously instead.");
+			return;
+		}
+#endif
 	}
 
 	// The last task queues its on_load event after the final step above, so

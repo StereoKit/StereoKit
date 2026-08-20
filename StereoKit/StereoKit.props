@@ -2,7 +2,14 @@
 <Project>
 	<PropertyGroup>
 		<SKAssetFolder           Condition="'$(SKAssetFolder)'           == ''">Assets</SKAssetFolder>
+		<!--A web app fetches its assets by manifest into a wasm filesystem it
+		    builds itself, so the destination is a fixed root rather than a
+		    mirror of wherever the sources live.-->
+		<SKAssetDestination      Condition="'$(SKAssetDestination)'      == '' and '$(UsingMicrosoftNETSdkWebAssembly)'=='true'">Assets</SKAssetDestination>
 		<SKAssetDestination      Condition="'$(SKAssetDestination)'      == ''">$(SKAssetFolder)</SKAssetDestination>
+		<!--The page fetches the manifest by name too, so an override here needs
+		    a matching options.manifest in the skRun call, see web/stereokit.js.-->
+		<SKWebManifest           Condition="'$(SKWebManifest)'           == ''">sk_assets.txt</SKWebManifest>
 		<SKOpenXRLoader          Condition="'$(SKOpenXRLoader)'          == ''">Standard</SKOpenXRLoader>
 		<SKShowDebugVars         Condition="'$(SKShowDebugVars)'         == ''">false</SKShowDebugVars>
 		<SKAutoFindShaders       Condition="'$(SKAutoFindShaders)'       == ''">True</SKAutoFindShaders>
@@ -23,6 +30,8 @@
 			<SKBuildPlatform                                                                                       >Desktop</SKBuildPlatform>
 			<SKBuildPlatform Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">Android</SKBuildPlatform>
 			<SKBuildPlatform Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='windows'">CoreWindows</SKBuildPlatform>
+			<!--A browser-wasm project carries no target platform in its TFM.-->
+			<SKBuildPlatform Condition="'$(UsingMicrosoftNETSdkWebAssembly)'=='true'"                              >Web</SKBuildPlatform>
 			<SKBuildNET Condition="'$(TargetFrameworkIdentifier)'=='.NETCoreApp'">Core</SKBuildNET>
 
 			<SKCopyAssets Condition="'$(SKCopyAssets)' == '' and $(SKAssetFolder.StartsWith('..'))">true</SKCopyAssets>

@@ -58,22 +58,19 @@ namespace StereoKit
 		public Tex FallbackOverride { set { NativeAPI.tex_set_fallback(_inst, value._inst); } }
 
 		/// <summary>This event gets called</summary>
-		public event Action<Tex> OnLoaded {
+		public unsafe event Action<Tex> OnLoaded {
 			add {
 				if (_callbacks == null) _callbacks = new List<Assets.CallbackData>();
-
-				AssetOnLoadCallback callback = (a, _) => { NativeAPI.tex_addref(a); value(new Tex(a)); };
-				_callbacks.Add(new Assets.CallbackData { action = value, callback = callback });
-
-				NativeAPI.tex_on_load(_inst, callback, IntPtr.Zero);
+				IntPtr id = Assets.OnLoad.Add(a => { NativeAPI.tex_addref(a); value(new Tex(a)); });
+				_callbacks.Add(new Assets.CallbackData { action = value, id = id });
+				NativeAPI.tex_on_load(_inst, &Assets.OnLoad.Native, id);
 			}
 			remove {
 				if (_callbacks == null) throw new NullReferenceException();
-
 				int i = _callbacks.FindIndex(d => (Action<Tex>)d.action == value);
-				if (i<0) throw new KeyNotFoundException();
-
-				NativeAPI.tex_on_load_remove(_inst, _callbacks[i].callback);
+				if (i < 0) throw new KeyNotFoundException();
+				NativeAPI.tex_on_load_remove(_inst, &Assets.OnLoad.Native, _callbacks[i].id);
+				Assets.OnLoad.Remove(_callbacks[i].id);
 				_callbacks.RemoveAt(i);
 			}
 		}
@@ -151,17 +148,17 @@ namespace StereoKit
 				Log.Err("Received an empty texture!");
 		}
 		/// <summary>Release reference to the StereoKit asset.</summary>
-		~Tex()
+		unsafe ~Tex()
 		{
 			if (_inst != IntPtr.Zero)
 			{
 				if (_callbacks != null)
 				{
-					foreach (var c in _callbacks)
+					foreach (var cb in _callbacks)
 					{
-						NativeAPI.tex_on_load_remove(_inst, c.callback);
+						NativeAPI.tex_on_load_remove(_inst, &Assets.OnLoad.Native, cb.id);
+						Assets.OnLoad.Remove(cb.id);
 					}
-					_callbacks = null;
 				}
 				NativeAPI.assets_releaseref_threadsafe(_inst);
 			}

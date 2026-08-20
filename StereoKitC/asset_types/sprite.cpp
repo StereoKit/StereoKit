@@ -73,9 +73,9 @@ material_t sprite_create_material(int index_id) {
 
 // Single sprites have nothing to finalize but state; atlas placement will
 // happen here later, since packing needs the image's dimensions.
-static bool32_t sprite_finalize(asset_task_t*, asset_header_t* asset, void*) {
+static asset_action_result_ sprite_finalize(asset_task_t*, asset_header_t* asset, void*) {
 	asset->state = asset_state_loaded;
-	return true;
+	return asset_action_done;
 }
 
 // A sprite can't fail: a failed image resolves to the error fallback
@@ -158,11 +158,11 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 
 	// The sprite finalizes through a task gated on the image, so creation
 	// never stalls on the image's metadata parse.
-	static const asset_load_action_t actions[] = { sprite_finalize };
+	static const asset_action_t actions[] = { { sprite_finalize } };
 	asset_task_t task  = {};
 	task.asset         = &result->header;
 	task.on_failure    = sprite_finalize_failed;
-	task.actions       = (asset_load_action_t*)actions;
+	task.actions       = (asset_action_t*)actions;
 	task.action_count  = _countof(actions);
 	task.priority      = asset_priority_default;
 	task.sort          = asset_sort(asset_priority_default, 0);
@@ -202,19 +202,25 @@ void sprite_release(sprite_t sprite) {
 
 ///////////////////////////////////////////
 
+// Placeholder dimensions until the image's metadata arrives, corrected by the
+// next draw. Blocking here would stall the frame on a still-streaming file.
+
 float sprite_get_aspect(sprite_t sprite) {
+	if (tex_asset_state(sprite->texture) < asset_state_loaded_meta) return 1;
 	return tex_get_width(sprite->texture) / (float)tex_get_height(sprite->texture);
 }
 
 ///////////////////////////////////////////
 
 int32_t sprite_get_width(sprite_t sprite) {
+	if (tex_asset_state(sprite->texture) < asset_state_loaded_meta) return 0;
 	return tex_get_width(sprite->texture);
 }
 
 ///////////////////////////////////////////
 
 int32_t sprite_get_height(sprite_t sprite) {
+	if (tex_asset_state(sprite->texture) < asset_state_loaded_meta) return 0;
 	return tex_get_height(sprite->texture);
 }
 

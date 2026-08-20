@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -180,6 +181,7 @@ namespace StereoKit
 
 			private static event Action _onPreCreateSession;
 			private static bool         _onPreCreateSessionRegistered = false;
+			[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
 			private static void _OnPreCreateSession(IntPtr context)
 			{
 				_onPreCreateSession();
@@ -191,12 +193,12 @@ namespace StereoKit
 			/// immediately before the OpenXR session is created, but after
 			/// OpenXR has been initialized! This is only helpful when filled
 			/// out _before_ calling `SK.Initialize`.</summary>
-			public static event Action OnPreCreateSession {
+			public static unsafe event Action OnPreCreateSession {
 				add {
 					if (_onPreCreateSessionRegistered == false)
 					{
 						_onPreCreateSessionRegistered = true;
-						NativeAPI.backend_openxr_add_callback_pre_session_create(_OnPreCreateSession, IntPtr.Zero);
+						NativeAPI.backend_openxr_add_callback_pre_session_create(&_OnPreCreateSession, IntPtr.Zero);
 					}
 					_onPreCreateSession += value;
 				}
@@ -212,35 +214,44 @@ namespace StereoKit
 				_onPreCreateSessionRegistered = false;
 			}
 
-			private struct XRPollEventCallbackData
+			// Removal matches on the function pointer and every subscriber shares
+			// one, so native holds a single registration and this fans it out.
+			private static List<Action<IntPtr>> _xrPollEventCallbacks;
+
+			[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+			private static void _OnPollEvent(IntPtr context, IntPtr xrEventDataBuffer)
 			{
-				public Action<IntPtr>      action;
-				public XRPollEventCallback callback;
+				// Snapshot, a subscriber may unsubscribe from its own callback.
+				// The null check covers the last subscriber leaving mid-batch,
+				// where a throw here would escape into native and crash.
+				Action<IntPtr>[] snapshot = _xrPollEventCallbacks?.ToArray();
+				if (snapshot == null) return;
+				for (int i = 0; i < snapshot.Length; i++)
+					snapshot[i](xrEventDataBuffer);
 			}
 
-			private static List<XRPollEventCallbackData> _xrPollEventCallbacks;
-
 			/// <summary>This event gets published each time xrPollEvent results in XR_SUCCESS.</summary>
-			public static event Action<IntPtr> OnPollEvent
+			public static unsafe event Action<IntPtr> OnPollEvent
 			{
 				add
 				{
-					if (_xrPollEventCallbacks == null) _xrPollEventCallbacks = new List<XRPollEventCallbackData>();
-
-					XRPollEventCallback callback = (_, XrEventDataBuffer) => { value(XrEventDataBuffer); };
-					_xrPollEventCallbacks.Add(new XRPollEventCallbackData { action = value, callback = callback });
-
-					NativeAPI.backend_openxr_add_callback_poll_event(callback, IntPtr.Zero);
+					if (_xrPollEventCallbacks == null)
+					{
+						_xrPollEventCallbacks = new List<Action<IntPtr>>();
+						NativeAPI.backend_openxr_add_callback_poll_event(&_OnPollEvent, IntPtr.Zero);
+					}
+					_xrPollEventCallbacks.Add(value);
 				}
 				remove
 				{
 					if (_xrPollEventCallbacks == null) throw new NullReferenceException();
+					if (_xrPollEventCallbacks.Remove(value) == false) throw new KeyNotFoundException();
 
-					int i = _xrPollEventCallbacks.FindIndex(d => d.action == value);
-					if (i < 0) throw new KeyNotFoundException();
-
-					NativeAPI.backend_openxr_remove_callback_poll_event(_xrPollEventCallbacks[i].callback);
-					_xrPollEventCallbacks.RemoveAt(i);
+					if (_xrPollEventCallbacks.Count == 0)
+					{
+						NativeAPI.backend_openxr_remove_callback_poll_event(&_OnPollEvent);
+						_xrPollEventCallbacks = null;
+					}
 				}
 			}
 		}

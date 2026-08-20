@@ -266,9 +266,62 @@ jobs:
 
   ###########################################
 
+  # The archives this packs only link against apps built with the same .NET
+  # wasm workload emscripten, so the .NET version here is the one StereoKit
+  # supports on the web.
+  build-web:
+    runs-on: ubuntu-22.04
+    env:
+      CPM_SOURCE_CACHE: .deps_cache
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+    - uses: lukka/get-cmake@v4.3.3
+
+    - name: Get Cache
+      uses: actions/cache@v4
+      with:
+        key: DependencyCache
+        path: |
+          .deps_cache
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 11.0.x
+        dotnet-quality: preview
+
+    - name: Install wasm-tools Workload
+      run: dotnet workload install wasm-tools
+
+    - name: Install Prerequisites
+      run: |
+        sudo apt-get update
+        sudo apt-get install clang llvm lld ninja-build pkg-config
+
+    - name: Set Version
+      shell: pwsh
+      run: ./tools/Set-Version.ps1 -major ${{inputs.major}} -minor ${{inputs.minor}} -patch ${{inputs.patch}} -pre ${{inputs.pre}} -preName ${{inputs.preName}}
+
+    - name: Build Native Web
+      run: |
+        source tools/web/dotnet_emsdk_env.sh
+        cmake --preset Web_Release_Fast
+        cmake --build --preset Web_Release_Fast
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries-web
+        path: bin/distribute/
+
+  ###########################################
+
   build-package:
     runs-on: ubuntu-latest
-    needs: [build-windows, build-linux, build-macos]
+    needs: [build-windows, build-linux, build-macos, build-web]
 
     steps:
     - uses: actions/checkout@v4

@@ -4,6 +4,15 @@
 		<TargetFramework>net8.0</TargetFramework> <!--Update the PDB URL in StereoKit.targets if changing-->
 		<ImplicitUsings>disable</ImplicitUsings>
 		<PlatformTarget>AnyCPU</PlatformTarget>
+		<!-- Native callbacks are passed as function pointers, not delegates. -->
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<!-- Declares the assembly safe to trim and AOT compile, and turns on
+		     the analyzers that keep reflection and interop honest about it.
+		     Consumers who publish trimmed get a smaller StereoKit instead of
+		     a whole one, and AOT publishes get no compatibility warning.
+		     Verified by running the full test suite against a trimmed
+		     publish, and again as a desktop NativeAOT binary. -->
+		<IsAotCompatible>true</IsAotCompatible>
 		<OutputPath>../bin/</OutputPath>
 		<DocumentationFile>../bin/StereoKit.xml</DocumentationFile>
 
@@ -64,6 +73,14 @@
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so"     PackagePath="runtimes/linux-arm64/native/" Condition="Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so')"/>
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so.dbg" PackagePath="runtimes/linux-arm64/native/" Condition="Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so.dbg')"/>
 
+		<!-- Web static archive, with the emdawnwebgpu pieces baked beside it -->
+		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Web/wasm32/Release/StereoKitC.a"      PackagePath="runtimes/browser-wasm/native/"              Condition="Exists('../bin/distribute/bin/Web/wasm32/Release/StereoKitC.a')"/>
+		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/Web/wasm32/Release/emdawnwebgpu/*.js" PackagePath="runtimes/browser-wasm/native/emdawnwebgpu/" Condition="Exists('../bin/distribute/bin/Web/wasm32/Release/StereoKitC.a')"/>
+
+		<!-- The page script a web app's main.js imports, and the branding the
+		     default pages reference. -->
+		<Content Pack="true" Visible="false" Include="web/*.*" PackagePath="web/" />
+
 		<!-- macOS Libraries -->
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/MacOS/arm64/Release/libStereoKitC.dylib" PackagePath="runtimes/osx-arm64/native/" Condition="Exists('../bin/distribute/bin/MacOS/arm64/Release/libStereoKitC.dylib')"/>
 		<Content Pack="true" Visible="false" Include="../bin/distribute/bin/MacOS/arm64/Release/libMoltenVK.dylib"   PackagePath="runtimes/osx-arm64/native/" Condition="Exists('../bin/distribute/bin/MacOS/arm64/Release/libMoltenVK.dylib')"/>
@@ -82,6 +99,7 @@
 		<Content Pack="true" Include="StereoKit.props"   PackagePath="build/" />
 		<Content Pack="true" Include="SKAssets.targets"  PackagePath="build/" />
 		<Content Pack="true" Include="SKShaders.targets" PackagePath="build/" />
+		<Content Pack="true" Include="SKWeb.targets"     PackagePath="build/" />
 		<Content Pack="true" Include="SKShader.xml"      PackagePath="build/" />
 	</ItemGroup>
 
@@ -103,5 +121,6 @@
 		<Warning Condition="!Exists('../bin/distribute/bin/Linux/x64/Release/libStereoKitC.so')"         Text="[SK NuGet] Missing Linux x64 binaries." />
 		<Warning Condition="!Exists('../bin/distribute/bin/Linux/arm64/Release/libStereoKitC.so')"       Text="[SK NuGet] Missing Linux ARM64 binaries." />
 		<Warning Condition="!Exists('../bin/distribute/bin/MacOS/arm64/Release/libStereoKitC.dylib')"    Text="[SK NuGet] Missing macOS ARM64 binaries." />
+		<Warning Condition="!Exists('../bin/distribute/bin/Web/wasm32/Release/StereoKitC.a')"             Text="[SK NuGet] Missing Web browser-wasm binaries." />
 	</Target>
 </Project>

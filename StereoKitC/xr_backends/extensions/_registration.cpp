@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+#include "../../platforms/platform.h"
+#if defined(SK_XR_OPENXR)
+
 #include "../openxr.h"
 #include "../../asset_types/anchor.h"
 #include "../../systems/sensor.h"
@@ -93,3 +96,5 @@ bool ext_registration() {
 ///////////////////////////////////////////
 
 } // namespace sk
+
+#endif

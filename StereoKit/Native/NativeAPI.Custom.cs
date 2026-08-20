@@ -54,10 +54,6 @@ namespace StereoKit
 		public static extern SoundInst sound_play(IntPtr sound, Vec3 at, in sound_play_t opt_settings);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern void audio_set_listener(in Pose opt_pose);
-		// sound_generate's C callback is the batch form (float*, frame_start,
-		// frame_count) - the generator can't infer that delegate type.
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern IntPtr sound_generate([MarshalAs(UnmanagedType.FunctionPtr)] AudioGeneratorBatch audio_generator, float duration, SoundChannels channels);
 		// sound_create_mem takes a raw byte blob; the generator types void*
 		// arrays as IntPtr[], so the byte[] form is hand-bound here.
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
@@ -110,10 +106,6 @@ namespace StereoKit
 		public static extern void tex_set_mem(IntPtr texture, [In] byte[] data, UIntPtr data_size, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, [MarshalAs(UnmanagedType.Bool)] bool blocking, int priority);
 
 
-		// tex_add_zbuffer with byte array
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_add_zbuffer(IntPtr texture, TexFormat format, [In] byte[] data);
-
 		// tex_set_color_arr variants - out_sh_lighting_info is opt/nullable
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern void tex_set_color_arr(IntPtr texture, int width, int height, IntPtr array_data, int array_count, int multisample, IntPtr out_sh_lighting_info);
@@ -144,22 +136,6 @@ namespace StereoKit
 		// sound_read_samples with IntPtr (for native buffers)
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern ulong sound_read_samples(IntPtr sound, IntPtr out_arr_samples, ulong sample_count);
-
-		// bounds_ray_contains with Matrix pointer (for transform chains)
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern bool bounds_ray_contains(Bounds bounds, Ray ray, IntPtr transform);
-
-
-		// Log callback overloads using LogCallbackData (internal delegate with context)
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void log_subscribe([MarshalAs(UnmanagedType.FunctionPtr)] LogCallbackData log_callback, IntPtr context);
-
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void log_unsubscribe([MarshalAs(UnmanagedType.FunctionPtr)] LogCallbackData log_callback, IntPtr context);
-
-		// File picker overload using PickerCallback (same sig as PickerCallbackSz)
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void platform_file_picker_sz(PickerMode mode, IntPtr callback_data, [MarshalAs(UnmanagedType.FunctionPtr)] PickerCallback picker_callback_sz, [In] FileFilter[] in_arr_filters, int filter_count);
 
 
 		// UI text functions with ref Vec2 scroll, opt/nullable

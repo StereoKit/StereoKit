@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
@@ -71,18 +72,19 @@ namespace StereoKit
 
 		/// <summary>This event fires when the Mesh has finished loading
 		/// and has data ready for rendering.</summary>
-		public event Action<Mesh> OnLoaded {
+		public unsafe event Action<Mesh> OnLoaded {
 			add {
 				if (_callbacks == null) _callbacks = new List<Assets.CallbackData>();
-				AssetOnLoadCallback callback = (a, _) => { NativeAPI.mesh_addref(a); value(new Mesh(a)); };
-				_callbacks.Add(new Assets.CallbackData { action = value, callback = callback });
-				NativeAPI.mesh_on_load(_inst, callback, IntPtr.Zero);
+				IntPtr id = Assets.OnLoad.Add(a => { NativeAPI.mesh_addref(a); value(new Mesh(a)); });
+				_callbacks.Add(new Assets.CallbackData { action = value, id = id });
+				NativeAPI.mesh_on_load(_inst, &Assets.OnLoad.Native, id);
 			}
 			remove {
 				if (_callbacks == null) throw new NullReferenceException();
 				int i = _callbacks.FindIndex(d => (Action<Mesh>)d.action == value);
 				if (i < 0) throw new KeyNotFoundException();
-				NativeAPI.mesh_on_load_remove(_inst, _callbacks[i].callback);
+				NativeAPI.mesh_on_load_remove(_inst, &Assets.OnLoad.Native, _callbacks[i].id);
+				Assets.OnLoad.Remove(_callbacks[i].id);
 				_callbacks.RemoveAt(i);
 			}
 		}
@@ -115,13 +117,15 @@ namespace StereoKit
 				Log.Err("Received an empty mesh!");
 		}
 		/// <summary>Release reference to the StereoKit asset.</summary>
-		~Mesh()
+		unsafe ~Mesh()
 		{
 			if (_callbacks != null)
 			{
 				foreach (var cb in _callbacks)
-					NativeAPI.mesh_on_load_remove(_inst, cb.callback);
-				_callbacks = null;
+				{
+					NativeAPI.mesh_on_load_remove(_inst, &Assets.OnLoad.Native, cb.id);
+					Assets.OnLoad.Remove(cb.id);
+				}
 			}
 			if (_inst != IntPtr.Zero)
 				NativeAPI.assets_releaseref_threadsafe(_inst);
@@ -188,7 +192,7 @@ namespace StereoKit
 		/// <param name="calculateBounds">If true, this will also update the
 		/// Mesh's bounds based on the vertices provided. This requires the
 		/// format to contain a float3 position component.</param>
-		public void SetData<T>(T[] vertices, uint[] indices, bool calculateBounds = true) where T : unmanaged
+		public void SetData<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>(T[] vertices, uint[] indices, bool calculateBounds = true) where T : unmanaged
 			=> SetData(vertices, indices, calculateBounds ? MeshData.CalcBounds : MeshData.None, 0);
 
 		/// <summary>Assigns vertices with a custom vertex format along with
@@ -206,7 +210,7 @@ namespace StereoKit
 		/// MeshData for options.</param>
 		/// <param name="priority">Loading priority for async upload. Lower
 		/// values load sooner.</param>
-		public void SetData<T>(T[] vertices, uint[] indices, MeshData flags, int priority = 0) where T : unmanaged
+		public void SetData<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>(T[] vertices, uint[] indices, MeshData flags, int priority = 0) where T : unmanaged
 		{
 			VertComponent[] format = VertLayout<T>.Components;
 			if (vertices == null)
@@ -246,21 +250,19 @@ namespace StereoKit
 		/// KeepData is false, then the Mesh is _not_ storing verts on the CPU,
 		/// and this information will _not_ be available.
 		///
-		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// This allocates a new array and copies the data into it on each
+		/// call, so cache the result rather than calling it per-frame.
 		/// </summary>
 		/// <returns>An array of vertices representing the Mesh, or null if
 		/// KeepData is false.</returns>
-		public Vertex[] GetVerts()
+		public unsafe Vertex[] GetVerts()
 		{
 			NativeAPI.mesh_get_verts(_inst, out IntPtr ptr, out int size, Memory.Reference);
 			if (ptr == IntPtr.Zero)
 				return null;
 
-			int szStruct = Marshal.SizeOf(typeof(Vertex));
 			Vertex[] result = new Vertex[size];
-			// AHHHHHH
-			for (uint i = 0; i < size; i++)
-				result[i] = Marshal.PtrToStructure<Vertex>(new IntPtr(ptr.ToInt64() + (szStruct * i)));
+			new ReadOnlySpan<Vertex>((void*)ptr, size).CopyTo(result);
 			return result;
 		}
 
@@ -279,7 +281,7 @@ namespace StereoKit
 		/// <param name="calculateBounds">If true, this will also update the
 		/// Mesh's bounds based on the vertices provided. This requires the
 		/// format to contain a float3 position component.</param>
-		public void SetVerts<T>(T[] vertices, bool calculateBounds = true) where T : unmanaged
+		public void SetVerts<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>(T[] vertices, bool calculateBounds = true) where T : unmanaged
 		{
 			VertComponent[] format = VertLayout<T>.Components;
 			GCHandle        pin    = GCHandle.Alloc(vertices, GCHandleType.Pinned);
@@ -292,11 +294,12 @@ namespace StereoKit
 		/// match the format the Mesh was created with, and KeepData must be
 		/// true for vertex data to be available.
 		///
-		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// This allocates a new array and copies the data into it on each
+		/// call, so cache the result rather than calling it per-frame.
 		/// </summary>
 		/// <returns>An array of vertices representing the Mesh, or null if
 		/// KeepData is false.</returns>
-		public T[] GetVerts<T>() where T : unmanaged
+		public unsafe T[] GetVerts<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T>() where T : unmanaged
 		{
 			NativeAPI.mesh_get_verts_fmt(_inst, out IntPtr fmtPtr, out int fmtCount, out IntPtr dataPtr, out int count, Memory.Reference);
 			if (dataPtr == IntPtr.Zero)
@@ -305,23 +308,16 @@ namespace StereoKit
 			VertComponent[] expected = VertLayout<T>.Components;
 			if (fmtCount != expected.Length)
 				throw new InvalidOperationException($"This Mesh's vertex format has {fmtCount} components, but {typeof(T).Name} describes {expected.Length}!");
-			int szComp = Marshal.SizeOf(typeof(VertComponent));
+			ReadOnlySpan<VertComponent> format = new ReadOnlySpan<VertComponent>((void*)fmtPtr, fmtCount);
 			for (int i = 0; i < fmtCount; i++)
 			{
-				VertComponent comp = Marshal.PtrToStructure<VertComponent>(new IntPtr(fmtPtr.ToInt64() + (szComp * i)));
-				if (comp.Format   != expected[i].Format   || comp.Count        != expected[i].Count ||
-					comp.Semantic != expected[i].Semantic || comp.SemanticSlot != expected[i].SemanticSlot)
+				if (format[i].Format   != expected[i].Format   || format[i].Count        != expected[i].Count ||
+					format[i].Semantic != expected[i].Semantic || format[i].SemanticSlot != expected[i].SemanticSlot)
 					throw new InvalidOperationException($"This Mesh's vertex format doesn't match component {i} of {typeof(T).Name}!");
 			}
 
-			// Bulk copy the raw bytes across via a pinned destination array.
-			T[]      result = new T[count];
-			int      bytes  = count * Marshal.SizeOf<T>();
-			byte[]   buffer = new byte[bytes];
-			Marshal.Copy(dataPtr, buffer, 0, bytes);
-			GCHandle pin    = GCHandle.Alloc(result, GCHandleType.Pinned);
-			try     { Marshal.Copy(buffer, 0, pin.AddrOfPinnedObject(), bytes); }
-			finally { pin.Free(); }
+			T[] result = new T[count];
+			new ReadOnlySpan<T>((void*)dataPtr, count).CopyTo(result);
 			return result;
 		}
 
@@ -342,21 +338,19 @@ namespace StereoKit
 		/// KeepData is false, then the Mesh is _not_ storing indices on the
 		/// CPU, and this information will _not_ be available.
 		/// 
-		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// This allocates a new array and copies the data into it on each
+		/// call, so cache the result rather than calling it per-frame.
 		/// </summary>
 		/// <returns>An array of indices representing the Mesh, or null if
 		/// KeepData is false.</returns>
-		public uint[] GetInds()
+		public unsafe uint[] GetInds()
 		{
 			NativeAPI.mesh_get_inds(_inst, out IntPtr ptr, out int size, Memory.Reference);
 			if (ptr == IntPtr.Zero)
 				return null;
 
-			int szStruct = Marshal.SizeOf(typeof(uint));
 			uint[] result = new uint[size];
-			// AHHHHHH
-			for (uint i = 0; i < size; i++)
-				result[i] = Marshal.PtrToStructure<uint>(new IntPtr(ptr.ToInt64() + (szStruct * i)));
+			new ReadOnlySpan<uint>((void*)ptr, size).CopyTo(result);
 			return result;
 		}
 

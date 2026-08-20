@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace StereoKit.Framework
@@ -39,13 +40,13 @@ namespace StereoKit.Framework
 		}
 
 		// Add steppers via the threadsafe action queue
-		public T Add<T>() where T : IStepper
+		public T Add<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>() where T : IStepper
 		{
 			T inst = Activator.CreateInstance<T>();
 			_actions.Enqueue(new StepperAction(inst, ActionType.Add));
 			return inst;
 		}
-		public object Add(Type type)
+		public object Add([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type type)
 		{
 			IStepper inst = Activator.CreateInstance(type) as IStepper;
 			if (inst == null) return null;

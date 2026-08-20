@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -62,7 +63,7 @@ namespace StereoKit
 		static Action<string>       _filePickerOnSelect;
 		static Action               _filePickerOnCancel;
 		static Action<bool, string> _filePickerOnComplete;
-		static PickerCallback       _filePickerCallback;
+		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
 		private static void FilePickerCallback(IntPtr data, int confirmed, IntPtr file, int fileLength)
 		{
 			string filename = NativeHelper.FromUtf8(file, fileLength);
@@ -97,13 +98,12 @@ namespace StereoKit
 		/// <param name="filters">A list of file extensions that the picker
 		/// should filter for. This is in the format of ".glb" and is case
 		/// insensitive.</param>
-		public static void FilePicker(PickerMode mode, Action<string> onSelectFile, Action onCancel, params string[] filters)
+		public static unsafe void FilePicker(PickerMode mode, Action<string> onSelectFile, Action onCancel, params string[] filters)
 		{
-			_filePickerCallback   = FilePickerCallback;
 			_filePickerOnSelect   = onSelectFile;
 			_filePickerOnCancel   = onCancel;
 			_filePickerOnComplete = null;
-			NativeAPI.platform_file_picker_sz(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
+			NativeAPI.platform_file_picker_sz(mode, IntPtr.Zero, &FilePickerCallback, FileFilter.List(filters), filters.Length);
 		}
 		/// <summary>Starts a file picker window! This will create a native
 		/// file picker window if one is available in the current setup, and
@@ -126,13 +126,12 @@ namespace StereoKit
 		/// <param name="filters">A list of file extensions that the picker
 		/// should filter for. This is in the format of ".glb" and is case
 		/// insensitive.</param>
-		public static void FilePicker(PickerMode mode, Action<bool, string> onComplete, params string[] filters)
+		public static unsafe void FilePicker(PickerMode mode, Action<bool, string> onComplete, params string[] filters)
 		{
-			_filePickerCallback = FilePickerCallback;
 			_filePickerOnSelect = null;
 			_filePickerOnCancel = null;
 			_filePickerOnComplete = onComplete;
-			NativeAPI.platform_file_picker_sz(mode, IntPtr.Zero, _filePickerCallback, FileFilter.List(filters), filters.Length);
+			NativeAPI.platform_file_picker_sz(mode, IntPtr.Zero, &FilePickerCallback, FileFilter.List(filters), filters.Length);
 		}
 		/// <summary>If the picker is visible, this will close it and 
 		/// immediately trigger a cancel event for the active picker.</summary>

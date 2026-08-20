@@ -6,7 +6,8 @@ param(
     [string]$saveKey = '',
     [switch]$noLinux = $false,
     [switch]$noWin32 = $false,
-    [switch]$noAndroid = $false
+    [switch]$noAndroid = $false,
+    [switch]$noWeb = $false
 )
 
 function Get-LineNumber { return $MyInvocation.ScriptLineNumber }
@@ -19,6 +20,7 @@ $isLinuxHost = $IsLinux -or ($PSVersionTable.Platform -eq 'Unix')
 $buildWindows    = -not $noWin32 -and -not $noBuild
 $buildLinux      = -not $noLinux -and -not $noBuild
 $buildAndroid    = -not $noAndroid -and -not $noBuild
+$buildWeb        = -not $noWeb -and -not $noBuild
 
 $clean = $true -and -not $noBuild
 
@@ -146,6 +148,32 @@ if ($buildAndroid) {
 
     Build-Preset -preset Android_x64_Release -presetName 'Android x64'
     Build-Preset -preset Android_Arm64_Release -presetName 'Android arm64-v8a'
+}
+
+#### Build Web ###########################
+
+if ($buildWeb) {
+    Write-Host @"
+ __      __   _
+ \ \    / /__| |__
+  \ \/\/ / -_) '_ \
+   \_/\_/\___|_.__/
+
+"@ -ForegroundColor White
+
+    # The archives have to come from the emscripten inside the .NET wasm
+    # workload, which the env script finds; bash carries both steps under it.
+    if ($isLinuxHost) {
+        & bash -c "source tools/web/dotnet_emsdk_env.sh && cmake --preset Web_Release_Fast && cmake --build --preset Web_Release_Fast"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host '--- Web build failed! Stopping build! ---' -ForegroundColor red
+            Pop-Location
+            exit
+        }
+        Write-Host "--- Finished building: Web ---" -ForegroundColor green
+    } else {
+        Write-Host 'Web archives need bash for the .NET emscripten env script, skipping on this host.' -ForegroundColor yellow
+    }
 }
 
 #### Run tests ########################

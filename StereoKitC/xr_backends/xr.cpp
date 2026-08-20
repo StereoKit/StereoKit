@@ -12,9 +12,12 @@ namespace sk {
 ///////////////////////////////////////////
 
 bool xr_init() {
-	bool result = true;
 #if defined(SK_XR_OPENXR)
-	result = openxr_init();
+	bool result = openxr_init();
+#else
+	// No XR backend is compiled in, so this mode can't start at all. Failing
+	// here is what lets the caller fall back to a flatscreen mode.
+	bool result = false;
 #endif
 	if (result) {
 		interactor_modes_set_default(default_interactors_all);

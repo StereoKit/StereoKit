@@ -33,7 +33,6 @@ public static class BindCSharp {
 
 		// Generate P/Invoke bindings
 		var fnText       = new StringBuilder();
-		var delegates    = new Dictionary<string, string>();
 		var moduleGroups = GroupFunctionsByModule(data.Functions);
 
 		foreach (var (moduleName, functions) in moduleGroups) {
@@ -41,7 +40,7 @@ public static class BindCSharp {
 			fnText.AppendLine("\t\t///////////////////////////////////////////");
 			fnText.AppendLine();
 			foreach (var fn in functions) {
-				BuildFunction(fnText, fn, delegates, "\t\t");
+				BuildFunction(fnText, fn, "\t\t");
 			}
 		}
 
@@ -52,16 +51,7 @@ public static class BindCSharp {
 		fnFileText.AppendLine();
 		fnFileText.AppendLine("namespace StereoKit");
 		fnFileText.AppendLine("{");
-
-		// Write delegate definitions at namespace level (public, for use by wrapper code)
-		foreach (var d in delegates.Values) {
-			if (!string.IsNullOrEmpty(d)) {
-				fnFileText.AppendLine($"\t[UnmanagedFunctionPointer(CallingConvention.Cdecl)] {d}");
-			}
-		}
-		if (delegates.Count > 0) fnFileText.AppendLine();
-
-		fnFileText.AppendLine("\tinternal static partial class NativeAPI");
+		fnFileText.AppendLine("\tinternal static unsafe partial class NativeAPI");
 		fnFileText.AppendLine("\t{");
 		fnFileText.AppendLine("\t\tconst string            dll  = \"StereoKitC\";");
 		fnFileText.AppendLine("\t\tconst CharSet           cSet = CharSet.Ansi;");
@@ -333,12 +323,12 @@ public static class BindCSharp {
 	// Function Generation
 	// ─────────────────────────────────────────────────────────────
 
-	static void BuildFunction(StringBuilder sb, SKFunction fn, Dictionary<string, string> delegates, string indent) {
+	static void BuildFunction(StringBuilder sb, SKFunction fn, string indent) {
 		// Skip functions marked with @noimpl in overrides (hand-written in
 		// NativeAPI.Custom.cs)
 		if (_overrides.ShouldSkipImpl(fn.Name)) return;
 
-		var returnType = MapType(fn.ReturnType, "", delegates, isReturn: true);
+		var returnType = MapType(fn.ReturnType, "", isReturn: true);
 		bool returnsBool = fn.ReturnType.Name == "bool32_t";
 
 		// Build return type MarshalAs if needed
@@ -354,7 +344,7 @@ public static class BindCSharp {
 		SKStringType textType = SKStringType.None;
 
 		foreach (var p in fn.Parameters) {
-			var (typeStr, paramTextType) = BuildParameter(p, delegates);
+			var (typeStr, paramTextType) = BuildParameter(p);
 			if (paramTextType != SKStringType.None) textType = paramTextType;
 
 			// Escape reserved C# keywords
@@ -376,15 +366,14 @@ public static class BindCSharp {
 		sb.AppendLine($"{indent}[DllImport(dll{charSet}, CallingConvention = call)] public static extern {returnTypeStr,-12} {fn.Name}({paramsStr});");
 	}
 
-	static (string typeStr, SKStringType textType) BuildParameter(SKParameter p, Dictionary<string, string> delegates) {
+	static (string typeStr, SKStringType textType) BuildParameter(SKParameter p) {
 		var type = p.Type;
 		var textType = p.StringType;
 		var passType = p.PassType;
 
 		// Handle function pointers
 		if (type.FunctionPtr != null) {
-			string delegateName = BuildDelegate(type.FunctionPtr, p.Name, delegates);
-			return ($"[MarshalAs(UnmanagedType.FunctionPtr)] {delegateName}", SKStringType.None);
+			return (BuildFunctionPointer(type.FunctionPtr), SKStringType.None);
 		}
 
 		// Handle bool32_t - use bool with MarshalAs, including ref/out/in prefix
@@ -399,7 +388,7 @@ public static class BindCSharp {
 			return ($"[MarshalAs(UnmanagedType.Bool)] {boolPrefix}bool", SKStringType.None);
 		}
 
-		string typeName = MapType(type, p.Name, delegates, isReturn: false);
+		string typeName = MapType(type, p.Name, isReturn: false);
 
 		// Handle char* and char** strings (UTF-8)
 		// char* (single pointer) -> string with LPUTF8Str marshalling
@@ -503,33 +492,27 @@ public static class BindCSharp {
 		return ($"{prefix}{typeName}", textType);
 	}
 
-	static string BuildDelegate(SKFunction fn, string varName, Dictionary<string, string> delegates) {
-		// Check for simple Action delegate
-		bool isVoidReturn = fn.ReturnType.IsVoid;
-		if (isVoidReturn && fn.Parameters.Count == 0) {
-			return "Action";
-		}
+	/// <summary>
+	/// Emits a callback parameter as an unmanaged function pointer rather than a
+	/// delegate. Marshalling a delegate costs ~35ns per call where a pointer is
+	/// free, and wasm cannot marshal one at all. Every parameter has to be
+	/// blittable for [UnmanagedCallersOnly] to accept the other end, so pointers
+	/// collapse to IntPtr and bool32_t stays an int; the callback unpacks them.
+	/// </summary>
+	static string BuildFunctionPointer(SKFunction fn) {
+		var parts = new List<string>();
+		foreach (var p in fn.Parameters)
+			parts.Add(MapBlittableType(p.Type));
+		parts.Add(fn.ReturnType.IsVoid ? "void" : MapBlittableType(fn.ReturnType));
 
-		string delegateName = SnakeToPascal(varName);
+		return $"delegate* unmanaged[Cdecl]<{string.Join(", ", parts)}>";
+	}
 
-		// Check if this delegate should be skipped (hand-written elsewhere)
-		if (_overrides.ShouldSkipImpl(delegateName)) {
-			// Don't generate definition, but return the name for use in DllImport
-			return delegateName;
-		}
+	static string MapBlittableType(SKType type) {
+		if (type.PointerLevel > 0)   return "IntPtr";
+		if (type.Name == "bool32_t") return "int";
 
-		// Build delegate definition
-		string returnStr = isVoidReturn ? "void" : MapType(fn.ReturnType, "", delegates, isReturn: true);
-		var paramParts = new List<string>();
-		foreach (var p in fn.Parameters) {
-			var (typeStr, _) = BuildParameter(p, delegates);
-			paramParts.Add($"{typeStr} {p.Name}");
-		}
-
-		string definition = $"internal delegate {returnStr} {delegateName}({string.Join(", ", paramParts)});";
-		delegates[delegateName] = definition;
-
-		return delegateName;
+		return MapType(type, "", isReturn: false);
 	}
 
 	// ─────────────────────────────────────────────────────────────
@@ -556,7 +539,7 @@ public static class BindCSharp {
 		};
 	}
 
-	static string MapType(SKType type, string varName, Dictionary<string, string> delegates, bool isReturn) {
+	static string MapType(SKType type, string varName, bool isReturn) {
 		string baseName = type.Name;
 
 		// Check for override first

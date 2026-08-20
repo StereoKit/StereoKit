@@ -271,12 +271,19 @@ void render_shutdown() {
 	local.post_process.free();
 
 	// Drain in-flight readbacks so their GPU resources aren't leaked at
-	// shutdown - blocks on each future, unlike the per-frame poll path.
+	// shutdown - blocks on each future, unlike the per-frame poll path. On the
+	// web blocking is impossible, so unfinished readbacks are abandoned
+	// without their callback; WebGPU keeps in-flight resources alive itself.
 	for (int32_t i = 0; i < local.pending_readbacks.count; i++) {
 		render_pending_readback_t* pending = &local.pending_readbacks[i];
+#if defined(SK_OS_WEB)
+		bool finished = skr_future_check(&pending->readback.future);
+#else
 		skr_future_wait(&pending->readback.future);
-
-		pending->callback(pending->readback.data, pending->format, pending->width, pending->height, pending->context);
+		bool finished = true;
+#endif
+		if (finished)
+			pending->callback(pending->readback.data, pending->format, pending->width, pending->height, pending->context);
 
 		skr_tex_readback_destroy(&pending->readback);
 		tex_release(pending->resolve_tex);

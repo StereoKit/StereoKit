@@ -18670,11 +18670,20 @@ static void ma_device__on_notification_rerouted(ma_device* pDevice)
 #endif
 
 #if defined(MA_EMSCRIPTEN)
+/* SK: upstream forgets the extern "C" its webaudio helpers get, so in a C++
+build this mangles and the JS call to Module._ma_device__on_notification_unlocked
+can never resolve. */
+#ifdef __cplusplus
+extern "C" {
+#endif
 EMSCRIPTEN_KEEPALIVE
 void ma_device__on_notification_unlocked(ma_device* pDevice)
 {
     ma_device__on_notification(ma_device_notification_init(pDevice, ma_device_notification_type_unlocked));
 }
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 

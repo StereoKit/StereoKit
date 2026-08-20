@@ -57,6 +57,9 @@ struct sk_state_t {
 	float    timev_stepf_us;
 	uint64_t timev_raw;
 	uint64_t frame;
+#if defined(SK_OS_WEB)
+	uint64_t step_exit_time;
+#endif
 
 	uint64_t  app_init_time;
 	system_t *app_system;
@@ -67,6 +70,8 @@ struct sk_state_t {
 	void  *run_data_step_data;
 	void (*run_data_app_shutdown)(void *);
 	void  *run_data_shutdown_data;
+	void (*run_app_step)    (void); // sk_run's dataless callbacks, adapted into the slots above
+	void (*run_app_shutdown)(void);
 };
 static sk_state_t local;
 
@@ -77,6 +82,7 @@ namespace sk {
 ///////////////////////////////////////////
 
 void     sk_step_timer();
+void     sk_cpu_wait_commit();
 void     sk_first_step();
 void     sk_step_begin();
 bool32_t sk_step_end  ();
@@ -199,7 +205,44 @@ void sk_shutdown_unsafe(void) {
 
 ///////////////////////////////////////////
 
+// The ring delays a charged wait to match the frame sk_renderer is reporting
+// on, which differs per backend.
+static uint64_t sk_cpu_wait_ring[SKR_MAX_FRAMES_IN_FLIGHT];
+static uint64_t sk_cpu_wait_accum;
+static uint32_t sk_cpu_wait_frame;
+
+void sk_cpu_wait_add(uint64_t wait_ticks) {
+	sk_cpu_wait_accum += wait_ticks;
+}
+
+// Ticks with sk_renderer's frame counter, which is what keeps the two aligned.
+void sk_cpu_wait_commit() {
+	sk_cpu_wait_ring[sk_cpu_wait_frame % SKR_MAX_FRAMES_IN_FLIGHT] = sk_cpu_wait_accum;
+	sk_cpu_wait_accum = 0;
+	sk_cpu_wait_frame++;
+}
+
+static uint64_t sk_cpu_wait_us() {
+#if defined(SKR_WEBGPU)
+	// Reports the frame that just closed, so read the slot just committed
+	uint32_t slot = (sk_cpu_wait_frame + SKR_MAX_FRAMES_IN_FLIGHT - 1) % SKR_MAX_FRAMES_IN_FLIGHT;
+#else
+	// Matches sk_renderer's own read of (flight_idx + 1) % N
+	uint32_t slot = (sk_cpu_wait_frame + 1) % SKR_MAX_FRAMES_IN_FLIGHT;
+#endif
+	return (uint64_t)stm_us(sk_cpu_wait_ring[slot]);
+}
+
+///////////////////////////////////////////
+
 bool32_t sk_step(void (*app_step)(void)) {
+#if defined(SK_OS_WEB)
+	// The browser paces frames between our calls, inside the render frame that
+	// sk_step_end is about to close.
+	if (local.has_stepped)
+		sk_cpu_wait_add(stm_since(local.step_exit_time));
+#endif
+
 	if (local.has_stepped == false) {
 		sk_first_step();
 	} else {
@@ -213,6 +256,9 @@ bool32_t sk_step(void (*app_step)(void)) {
 		app_step();
 	}
 
+#if defined(SK_OS_WEB)
+	local.step_exit_time = stm_now();
+#endif
 	return true;
 }
 
@@ -242,10 +288,13 @@ bool32_t sk_step_end() {
 
 	systems_step_partial(system_run_from, local.app_system_idx+1);
 
+	// The render frame closed just above, so roll the wait ring forward with it.
+	sk_cpu_wait_commit();
+
 	if (device_display_get_type() == display_type_flatscreen && local.focus != app_focus_active && local.settings.standby_mode != standby_mode_none)
 		ska_time_sleep(100);
 	local.in_step = false;
-	
+
 	profiler_plot("sk_renderer CPU (us)", (int64_t)time_perf_cpu_us());
 	profiler_plot("sk_renderer GPU (us)", (int64_t)time_perf_gpu_us());
 	profiler_frame_mark();
@@ -254,16 +303,29 @@ bool32_t sk_step_end() {
 
 ///////////////////////////////////////////
 
-void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
-	local.disallow_user_shutdown = true;
+// One frame of the run loop, for ska_run. Shutdown happens here because on web
+// ska_run never returns, so there is no "after".
+static bool sk_run_frame(void*) {
+	if (sk_step([]() { if (local.run_data_app_step) local.run_data_app_step(local.run_data_step_data); }))
+		return true;
 
-	while (sk_step(app_update));
-
-	if (app_shutdown != nullptr)
-		app_shutdown();
+	if (local.run_data_app_shutdown)
+		local.run_data_app_shutdown(local.run_data_shutdown_data);
 
 	local.disallow_user_shutdown = false;
 	sk_shutdown();
+	return false;
+}
+
+///////////////////////////////////////////
+
+void sk_run(void (*app_update)(void), void (*app_shutdown)(void)) {
+	local.run_app_step     = app_update;
+	local.run_app_shutdown = app_shutdown;
+
+	sk_run_data(
+		[](void*) { if (local.run_app_step    ) local.run_app_step    (); }, nullptr,
+		[](void*) { if (local.run_app_shutdown) local.run_app_shutdown(); }, nullptr);
 }
 
 ///////////////////////////////////////////
@@ -276,14 +338,9 @@ void sk_run_data(void (*app_step)(void* step_data), void* step_data, void (*app_
 
 	local.disallow_user_shutdown = true;
 
-	while (sk_step(
-		[]() { if (local.run_data_app_step    ) local.run_data_app_step    (local.run_data_step_data    ); }));
-
-	if (local.run_data_app_shutdown)
-		local.run_data_app_shutdown(local.run_data_shutdown_data);
-
-	local.disallow_user_shutdown = false;
-	sk_shutdown();
+	// Native: returns once sk_run_frame returns false. Web: never returns, the
+	// browser drives frames and the stack unwinds here instead.
+	ska_run(sk_run_frame, nullptr);
 }
 
 ///////////////////////////////////////////
@@ -362,7 +419,9 @@ void sk_set_window_xam(void* window) {
 
 const char *sk_version_name() {
 	return SK_VERSION " "
-#if defined(SK_OS_ANDROID)
+#if defined(SK_OS_WEB)
+		"Web"
+#elif defined(SK_OS_ANDROID)
 		"Android"
 #elif defined(SK_OS_MACOS)
 		"macOS"
@@ -376,7 +435,11 @@ const char *sk_version_name() {
 		
 		" "
 		
-#if defined(__x86_64__) || defined(_M_X64)
+#if defined(__wasm32__)
+		"wasm32"
+#elif defined(__wasm64__)
+		"wasm64"
+#elif defined(__x86_64__) || defined(_M_X64)
 		"x64"
 #elif defined(__aarch64__) || defined(_M_ARM64)
 		"ARM64"
@@ -486,15 +549,10 @@ double time_step             (){ return local.timev_step;      };
 void   time_scale(double scale) { local.timev_scale = scale; }
 uint64_t time_frame() { return local.frame; }
 uint64_t time_perf_cpu_us() {
-	uint64_t cpu_us = skr_renderer_get_cpu_time_us();
-#if defined(SK_XR_OPENXR)
-	// OpenXR's xrWaitFrame/xrAcquire/WaitSwapchainImage block inside
-	// sk_renderer's CPU frame window. Subtract that dead time so callers see
-	// just the CPU work. Slot is zero-init, so warm-up frames subtract 0.
-	uint64_t dead_us = openxr_cpu_dead_time_us();
-	cpu_us = cpu_us > dead_us ? cpu_us - dead_us : 0;
-#endif
-	return cpu_us;
+	// sk_renderer already excludes the waits it owns, this takes the rest
+	uint64_t cpu_us  = skr_renderer_get_cpu_time_us();
+	uint64_t wait_us = sk_cpu_wait_us();
+	return cpu_us > wait_us ? cpu_us - wait_us : 0;
 }
 uint64_t time_perf_gpu_us() { return skr_renderer_get_gpu_time_us(); }
 

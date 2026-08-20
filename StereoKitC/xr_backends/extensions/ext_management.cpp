@@ -4,6 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
+#include "../../platforms/platform.h"
+#if defined(SK_XR_OPENXR)
+
 #include "../openxr.h"
 
 #include "ext_management.h"
@@ -445,3 +448,5 @@ void backend_openxr_remove_callback_poll_event(void (*on_poll_event)(void* conte
 }
 
 } // namespace sk
+
+#endif

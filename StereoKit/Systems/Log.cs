@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace StereoKit
@@ -53,7 +54,13 @@ namespace StereoKit
 		}
 		#endregion
 
-		static Dictionary<LogCallback, LogCallbackData> callbacks = new Dictionary<LogCallback, LogCallbackData>();
+		// A function pointer can't carry a managed target, so native gets one
+		// subscription and the fan-out happens here. Logs come from the asset
+		// threads too, so the list is swapped rather than edited in place;
+		// writers take the lock, the callback stays lock-free on its snapshot.
+		static          LogCallback[] callbacks  = new LogCallback[0];
+		static readonly object        writeLock  = new object();
+		static bool                   subscribed;
 
 		/// <summary>What's the lowest level of severity logs to display on
 		/// the console? Default is LogLevel.Info.</summary>
@@ -104,19 +111,43 @@ namespace StereoKit
 		/// here.</summary>
 		/// <param name="onLog">The function to call when a log event occurs.
 		/// </param>
-		public static void Subscribe(LogCallback onLog)
+		public static unsafe void Subscribe(LogCallback onLog)
 		{
-			callbacks.Add(onLog, (IntPtr context, LogLevel level, string text) => onLog(level, text)); // This prevents the callback from getting GCed
-			NativeAPI.log_subscribe(callbacks[onLog], IntPtr.Zero);
+			lock (writeLock)
+			{
+				List<LogCallback> next = new List<LogCallback>(callbacks) { onLog };
+				callbacks = next.ToArray();
+				if (subscribed) return;
+
+				NativeAPI.log_subscribe(&OnLogNative, IntPtr.Zero);
+				subscribed = true;
+			}
+		}
+
+		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+		static void OnLogNative(IntPtr context, LogLevel level, IntPtr text)
+		{
+			LogCallback[] snapshot = callbacks;
+			string        message  = Marshal.PtrToStringUTF8(text);
+			for (int i = 0; i < snapshot.Length; i++)
+				snapshot[i](level, message);
 		}
 
 		/// <summary>If you subscribed to the log callback, you can
 		/// unsubscribe that callback here!</summary>
 		/// <param name="onLog">The subscribed callback to remove.</param>
-		public static void Unsubscribe(LogCallback onLog)
+		public static unsafe void Unsubscribe(LogCallback onLog)
 		{
-			NativeAPI.log_unsubscribe(callbacks[onLog], IntPtr.Zero);
-			callbacks.Remove(onLog);
+			lock (writeLock)
+			{
+				List<LogCallback> next = new List<LogCallback>(callbacks);
+				if (next.Remove(onLog) == false) throw new KeyNotFoundException();
+				callbacks = next.ToArray();
+				if (callbacks.Length > 0) return;
+
+				NativeAPI.log_unsubscribe(&OnLogNative, IntPtr.Zero);
+				subscribed = false;
+			}
 		}
 	}
 }

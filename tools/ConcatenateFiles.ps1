@@ -22,7 +22,7 @@
     An array of file names or paths to exclude from the combination. Provide relative paths (relative to SourceFolder) or absolute paths.
 
 .EXAMPLE
-    .\CombineCppHFiles.ps1 -SourceFolder "C:\Projects\MyApp" -OutputFile "C:\Projects\Combined.cpp" -ExcludeDirs @("Tests", "ThirdParty") -ExcludeFiles @("main.cpp", "utils.h")
+    .\ConcatenateFiles.ps1 -SourceFolder "C:\Projects\MyApp" -OutputFile "C:\Projects\Combined.cpp" -ExcludeDirs @("Tests", "ThirdParty") -ExcludeFiles @("main.cpp", "utils.h")
 
 .NOTES
     - Ensure you have the necessary permissions to read the source files and write to the output location.

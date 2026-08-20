@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -7,10 +9,47 @@ namespace StereoKit
 	/// you!</summary>
 	public static class Assets
 	{
+		/// <summary>One entry per OnLoaded subscription, kept on the wrapper
+		/// so its finalizer can unsubscribe what it added.</summary>
 		internal struct CallbackData
 		{
-			public object              action;
-			public AssetOnLoadCallback callback;
+			public object action;
+			public IntPtr id;
+		}
+
+		/// <summary>Every subscription shares one native function pointer, so
+		/// the id riding native's context argument is what routes a call to
+		/// its callback. An id rather than a GCHandle: a load event that was
+		/// dispatched just as a subscriber left may still fire once, and a
+		/// stale id is a harmless miss.</summary>
+		internal static class OnLoad
+		{
+			// Finalizers remove subscriptions from the GC thread
+			static readonly Dictionary<long, Action<IntPtr>> _subs = new Dictionary<long, Action<IntPtr>>();
+			static long _nextId;
+
+			[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+			internal static void Native(IntPtr asset, IntPtr context)
+			{
+				Action<IntPtr> invoke;
+				lock (_subs) { if (_subs.TryGetValue(context.ToInt64(), out invoke) == false) return; }
+				invoke(asset);
+			}
+
+			internal static IntPtr Add(Action<IntPtr> invoke)
+			{
+				lock (_subs)
+				{
+					long id = ++_nextId;
+					_subs.Add(id, invoke);
+					return new IntPtr(id);
+				}
+			}
+
+			internal static void Remove(IntPtr id)
+			{
+				lock (_subs) { _subs.Remove(id.ToInt64()); }
+			}
 		}
 
 		/// <summary>This is the index of the current asset loading task. Note

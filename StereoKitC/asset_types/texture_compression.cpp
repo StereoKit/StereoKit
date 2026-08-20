@@ -5,6 +5,7 @@
 #include <sk_ktx2.h>
 
 #include <inttypes.h>
+#include <string.h>
 
 // The subset we call from libraries/zstddeclib.c. Its copy of zstd.h is baked
 // into the amalgamation, so there's no header to include.
@@ -189,6 +190,85 @@ bool ktx2_decode(void* data, size_t data_size, tex_type_* ref_image_type, tex_fo
 	// dynamic or rendertarget on it. Assigning here would drop those.
 	if (info.face_count > 1) *ref_image_type |= tex_type_cubemap;
 	return true;
+}
+
+///////////////////////////////////////////
+
+bool ktx2_sniff(const void* data, size_t data_size) {
+	static const uint8_t magic[12] = { 0xAB, 'K', 'T', 'X', ' ', '2', '0', 0xBB, '\r', '\n', 0x1A, '\n' };
+	return data_size >= sizeof(magic) && memcmp(data, magic, sizeof(magic)) == 0;
+}
+
+///////////////////////////////////////////
+
+struct ktx2_slice_t {
+	ktx2_reader_t reader;
+	ktx2_plan_t   plan;      // points at this struct's own reader
+	void*         scratch;
+	uint8_t*      out;       // the caller's output buffer, not owned here
+	tex_format_   format;
+	skr_vec3i_t   base_size;
+	int32_t       images;
+	int32_t       level_curr;
+	size_t        level_offset; // where level_curr starts in `out`
+};
+
+ktx2_slice_t* ktx2_decode_begin(void* data, size_t data_size, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data) {
+	ktx2_slice_t* slice = sk_malloc_zero_t(ktx2_slice_t, 1);
+	if (!ktx2_prepare(data, data_size, &slice->reader, &slice->plan)) {
+		sk_free(slice);
+		return nullptr;
+	}
+
+	ktx2_info_t info = ktx2_get_info(&slice->reader);
+	slice->images    = ktx2_image_count(&info);
+	slice->format    = texture_compression_format(slice->plan.format);
+	slice->base_size = { info.width, info.height, 1 };
+
+	// See ktx2_decode: a disagreement means one side is wrong about the format
+	uint64_t image_size = 0;
+	for (int32_t mip = 0; mip < slice->plan.mip_count; mip++)
+		image_size += skr_tex_calc_mip_size((skr_tex_fmt_)slice->format, slice->base_size, mip);
+	if (image_size * slice->images != slice->plan.data_bytes) {
+		log_errf("KTX2 size disagreement for %s: sk_ktx2 says %" PRIu64 " bytes, sk_renderer says %" PRIu64, ktx2_fmt_str(slice->plan.format), (uint64_t)slice->plan.data_bytes, image_size * slice->images);
+		sk_free(slice);
+		return nullptr;
+	}
+
+	slice->out     = (uint8_t*)sk_malloc(slice->plan.data_bytes);
+	slice->scratch = slice->plan.scratch_bytes > 0 ? sk_malloc(slice->plan.scratch_bytes) : nullptr;
+
+	*out_data        = slice->out;
+	*out_format      = slice->format;
+	*out_width       = info.width;
+	*out_height      = info.height;
+	*out_mip_count   = slice->plan.mip_count;
+	*out_array_count = slice->images;
+	if (info.face_count > 1) *ref_image_type |= tex_type_cubemap;
+	return slice;
+}
+
+bool ktx2_decode_step(ktx2_slice_t* slice, int32_t* out_level, bool* out_done) {
+	int32_t level = slice->level_curr;
+	size_t  bytes = (size_t)slice->images * skr_tex_calc_mip_size((skr_tex_fmt_)slice->format, slice->base_size, level);
+
+	ktx2_result_ result = ktx2_transcode_level(&slice->plan, level, slice->out + slice->level_offset, bytes, slice->scratch);
+	if (result != ktx2_result_success) {
+		log_warnf("KTX2 transcode failed: %s", ktx2_result_str(result));
+		return false;
+	}
+
+	slice->level_curr   += 1;
+	slice->level_offset += bytes;
+	*out_level = level;
+	*out_done  = slice->level_curr >= slice->plan.mip_count;
+	return true;
+}
+
+void ktx2_decode_end(ktx2_slice_t* slice) {
+	if (slice == nullptr) return;
+	sk_free(slice->scratch);
+	sk_free(slice);
 }
 
 }

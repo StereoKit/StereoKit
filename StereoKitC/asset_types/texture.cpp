@@ -6,8 +6,10 @@
 #include "../stereokit.h"
 #include "../_stereokit.h"
 #include "../platforms/platform.h"
+#include "../libraries/array.h"
 #include "../libraries/qoi.h"
 #include "../libraries/stref.h"
+#include "../platforms/web.h"
 #include "../libraries/ferr_halffloat.h"
 #include "../libraries/profiler.h"
 #include "../sk_math.h"
@@ -55,7 +57,8 @@ bool   tex_load_image_info(void* data, size_t data_size, bool32_t srgb_data, tex
 void   tex_update_label   (tex_t texture);
 size_t tex_format_pitch   (tex_format_ format, int32_t width);
 void  _tex_set_options    (skr_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level);
-void   tex_compute_sh     (tex_t texture, bool end_cmd);
+void   tex_compute_sh     (tex_t texture, bool owns_cmd_scope);
+static bool tex_compute_sh_or_defer(tex_t texture, bool owns_cmd_scope);
 void   tex_set_color_flat_mips(tex_t texture, int32_t width, int32_t height, void* flat_data, int32_t array_count, int32_t mip_count);
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
@@ -163,6 +166,14 @@ skr_tex_sampler_t tex_get_skr_sampler(tex_t texture) {
 // Texture loading stages                //
 ///////////////////////////////////////////
 
+// Zero-init is in_flight, which is also how a task that hasn't asked for
+// anything yet reads.
+typedef enum tex_request_ {
+	tex_request_in_flight = 0,
+	tex_request_arrived,
+	tex_request_failed,
+} tex_request_;
+
 struct tex_load_t {
 	bool32_t    is_srgb;
 	char      **file_names;
@@ -170,6 +181,17 @@ struct tex_load_t {
 
 	void      **file_data;
 	size_t     *file_sizes;
+	int32_t           file_read_curr;
+	asset_file_read_t file_read;      // the in-flight read of file_read_curr
+
+	int32_t       parse_file_curr;
+	int32_t       parse_array_count;
+	ktx2_slice_t *ktx2_slice;          // a level-paced transcode of parse_file_curr
+	bool32_t      web_decode_pending;  // the browser is decoding parse_file_curr
+	tex_request_  web_decode_state;
+	void         *web_decode_data;     // owned here until parse consumes it
+	int32_t       web_decode_width;
+	int32_t       web_decode_height;
 
 	void      **color_data;  // One entry per file, see tex_load_image_data
 	int32_t     color_width;
@@ -193,19 +215,42 @@ void tex_load_free(asset_header_t *, void *job_data) {
 	sk_free(data->file_sizes);
 	sk_free(data->file_data);
 	sk_free(data->color_data);
+	sk_free(data->file_read.data);
+	sk_free(data->web_decode_data);
+	ktx2_decode_end(data->ktx2_slice);
 	sk_free(data);
 }
 
 ///////////////////////////////////////////
 
-bool32_t tex_load_arr_files_shared(asset_task_t* task, asset_header_t* asset, void* job_data) {
+asset_action_result_ tex_load_arr_files_shared(asset_task_t* task, asset_header_t* asset, void* job_data) {
 	profiler_zone();
 
 	tex_load_t* data = (tex_load_t*)job_data;
 	tex_t       tex  = (tex_t)asset;
 
-	data->file_data  = sk_malloc_t(void *, data->file_count);
-	data->file_sizes = sk_malloc_t(size_t, data->file_count);
+	if (data->file_data == nullptr) {
+		data->file_data  = sk_malloc_zero_t(void *, data->file_count);
+		data->file_sizes = sk_malloc_zero_t(size_t, data->file_count);
+	}
+
+	// Request files one at a time. Off the web the result lands before the
+	// request returns; on the web a miss streams in and the task parks, and
+	// the arrival re-runs this action, which resumes right here.
+	while (data->file_read_curr < data->file_count) {
+		asset_read_ read = assets_task_read_file(task, data->file_names[data->file_read_curr], &data->file_read);
+		if (read == asset_read_in_flight)
+			return asset_action_wait;
+		if (read == asset_read_failed) {
+			log_warnf(tex_msg_load_failed, data->file_names[data->file_read_curr]);
+			tex->header.state = asset_state_error_not_found;
+			return asset_action_fail;
+		}
+		data->file_data [data->file_read_curr] = data->file_read.data;
+		data->file_sizes[data->file_read_curr] = data->file_read.size;
+		data->file_read       = {};
+		data->file_read_curr += 1;
+	}
 
 	int32_t     final_width       = 0;
 	int32_t     final_height      = 0;
@@ -213,16 +258,7 @@ bool32_t tex_load_arr_files_shared(asset_task_t* task, asset_header_t* asset, vo
 	int32_t     final_mip_count   = 0;
 	tex_format_ final_format      = tex_format_none;
 
-	// Load all files
 	for (int32_t i = 0; i < data->file_count; i++) {
-		// Read from file
-		bool32_t loaded = platform_read_file(data->file_names[i], &data->file_data[i], &data->file_sizes[i]);
-		if (!loaded) {
-			log_warnf(tex_msg_load_failed, data->file_names[i]);
-			tex->header.state = asset_state_error_not_found;
-			return false;
-		}
-
 		// Grab the image metadata
 		int32_t     curr_width       = 0;
 		int32_t     curr_height      = 0;
@@ -232,7 +268,7 @@ bool32_t tex_load_arr_files_shared(asset_task_t* task, asset_header_t* asset, vo
 		if (!tex_load_image_info(data->file_data[i], data->file_sizes[i], data->is_srgb, &tex->type, &curr_format, &curr_width, &curr_height, &curr_array_count, &curr_mip_count)) {
 			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
-			return false;
+			return asset_action_fail;
 		}
 
 		// For multiple images, they should all be the same size/format/layout.
@@ -243,7 +279,7 @@ bool32_t tex_load_arr_files_shared(asset_task_t* task, asset_header_t* asset, vo
 			(final_mip_count   != 0          && final_mip_count   != curr_mip_count  ) ) {
 			log_warnf(tex_msg_mismatched_images, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
-			return false;
+			return asset_action_fail;
 		}
 		// If the user has specified multiple image files, those files cannot
 		// be array textures themselves. Or rather, they could, but we haven't
@@ -251,7 +287,7 @@ bool32_t tex_load_arr_files_shared(asset_task_t* task, asset_header_t* asset, vo
 		if (data->file_count > 1 && curr_array_count > 1) {
 			log_warnf(tex_msg_nested_arrays, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
-			return false;
+			return asset_action_fail;
 		}
 		final_width       = curr_width;
 		final_height      = curr_height;
@@ -264,27 +300,42 @@ bool32_t tex_load_arr_files_shared(asset_task_t* task, asset_header_t* asset, vo
 	data->color_array_count = final_array_count * data->file_count;
 	data->color_mip_count   = final_mip_count;
 	data->color_format      = final_format;
-	return true;
+	return asset_action_done;
 }
 
 ///////////////////////////////////////////
 
-bool32_t tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job_data) {
-	bool32_t result = tex_load_arr_files_shared(task, asset, job_data);
-
-	if (!result)
-		return false;
+asset_action_result_ tex_load_arr_files(asset_task_t *task, asset_header_t *asset, void *job_data) {
+	asset_action_result_ read = tex_load_arr_files_shared(task, asset, job_data);
+	if (read != asset_action_done)
+		return read;
 
 	tex_load_t* data = (tex_load_t*)job_data;
 	tex_t       tex  = (tex_t)asset;
 
 	tex_set_meta(tex, data->color_width, data->color_height, 1, data->color_format);
-	return true;
+	return asset_action_done;
 }
 
 ///////////////////////////////////////////
 
-bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_data) {
+#if defined(SK_OS_WEB)
+// Big browser-decodable images skip the wasm decoder, which would stall the
+// frame for their whole decode; small ones aren't worth the round-trip, and
+// keeping alpha-critical UI icons on wasm dodges canvas premultiply rounding.
+static bool tex_web_decodable(const void* bytes, size_t size) {
+	if (size < 128 * 1024) return false;
+	const uint8_t* b = (const uint8_t*)bytes;
+	bool png = size > 8 && b[0] == 0x89 && b[1] == 'P'  && b[2] == 'N'  && b[3] == 'G';
+	bool jpg = size > 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF;
+	return png || jpg;
+}
+#endif
+
+// The largest mips dominate transcode cost, the rest finish in one slice.
+static const int32_t tex_ktx2_solo_mips = 2;
+
+asset_action_result_ tex_load_arr_parse(asset_task_t *task, asset_header_t *asset, void *job_data) {
 	profiler_zone();
 
 	tex_load_t *data = (tex_load_t *)job_data;
@@ -292,22 +343,91 @@ bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_dat
 
 	// One allocation per file, zeroed so tex_load_free has nothing to free for
 	// the entries a failed parse never reached.
-	data->color_data = sk_malloc_zero_t(void*, data->file_count);
+	if (data->color_data == nullptr)
+		data->color_data = sk_malloc_zero_t(void*, data->file_count);
 
-	// Parse all files
-	int32_t array_index = 0;
-	for (int32_t i = 0; i < data->file_count; i++) {
+	// The cursors persist, so a parked browser decode resumes where it left.
+	for (; data->parse_file_curr < data->file_count; data->parse_file_curr++) {
+		int32_t     i           = data->parse_file_curr;
 		int32_t     width       = 0;
 		int32_t     height      = 0;
 		int32_t     array_count = 0;
 		int32_t     mip_count   = 0;
 		tex_format_ format      = tex_format_none;
+
+		if (data->ktx2_slice != nullptr || ktx2_sniff(data->file_data[i], data->file_sizes[i])) {
+			if (data->ktx2_slice == nullptr) {
+				data->ktx2_slice = ktx2_decode_begin(data->file_data[i], data->file_sizes[i], &tex->type, &format, &width, &height, &array_count, &mip_count, &data->color_data[i]);
+				if (data->ktx2_slice == nullptr) {
+					log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
+					tex->header.state = asset_state_error_unsupported;
+					goto end;
+				}
+				// Validate against the meta pass up front, so a mismatch never
+				// spends a single level of transcode.
+				if (tex->format           != format ||
+					data->color_width     != width  ||
+					data->color_height    != height ||
+					data->color_mip_count != mip_count) {
+					log_warnf(tex_msg_inconsistent_parse, data->file_names[i]);
+					tex->header.state = asset_state_error;
+					goto end;
+				}
+				data->parse_array_count += array_count;
+			}
+			int32_t level = 0;
+			bool    done  = false;
+			do {
+				if (!ktx2_decode_step(data->ktx2_slice, &level, &done)) {
+					log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
+					tex->header.state = asset_state_error_unsupported;
+					goto end;
+				}
+			} while (!done && level >= tex_ktx2_solo_mips);
+			if (!done)
+				return asset_action_continue;
+			ktx2_decode_end(data->ktx2_slice);
+			data->ktx2_slice = nullptr;
+			continue; // the meta checks below already ran at begin
+		}
+
+#if defined(SK_OS_WEB)
+		if (tex_web_decodable(data->file_data[i], data->file_sizes[i])) {
+			if (!data->web_decode_pending) {
+				data->web_decode_pending = true;
+				data->web_decode_state   = tex_request_in_flight;
+				web_image_decode_begin(assets_task_wait_prepare(task), data->file_data[i], data->file_sizes[i]);
+				return asset_action_wait;
+			}
+			// Only the decode's own signal re-runs this, so in_flight here
+			// means some other signal source woke the task; consuming now
+			// would read a null result, and re-parking could never wake.
+			if (data->web_decode_state == tex_request_in_flight) {
+				log_err("tex_load_arr_parse: woken while the browser decode is still in flight");
+				tex->header.state = asset_state_error;
+				goto end;
+			}
+			data->web_decode_pending = false;
+			if (data->web_decode_state == tex_request_failed) {
+				log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
+				tex->header.state = asset_state_error_unsupported;
+				goto end;
+			}
+			data->color_data[i]    = data->web_decode_data;
+			data->web_decode_data  = nullptr;
+			width       = data->web_decode_width;
+			height      = data->web_decode_height;
+			array_count = 1;
+			mip_count   = 1;
+			format      = tex->format; // png/jpg only ever decode to what the meta pass said
+		} else
+#endif
 		if (!tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &tex->type, &format, &width, &height, &array_count, &mip_count, &data->color_data[i])) {
 			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
 			goto end;
 		}
-		array_index += array_count;
+		data->parse_array_count += array_count;
 
 		// Make sure the data in this image matches what we extracted in
 		// earlier phases of texture creation. If it doesn't, then something
@@ -322,7 +442,7 @@ bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_dat
 		}
 	}
 
-	if (data->color_array_count != array_index) {
+	if (data->color_array_count != data->parse_array_count) {
 		log_warnf(tex_msg_inconsistent_parse, data->file_names[0]);
 		tex->header.state = asset_state_error;
 		goto end;
@@ -336,16 +456,16 @@ end:
 
 	if (tex->header.state >= asset_state_none) {
 		tex->header.state = asset_state_loaded_meta;
-		return true;
+		return asset_action_done;
 	} else {
 		tex_set_fallback(tex, _tex_get_error_fallback(tex));
-		return false;
+		return asset_action_fail;
 	}
 }
 
 ///////////////////////////////////////////
 
-bool32_t tex_load_arr_upload(asset_task_t *, asset_header_t *asset, void *job_data) {
+asset_action_result_ tex_load_arr_upload(asset_task_t *, asset_header_t *asset, void *job_data) {
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
@@ -354,7 +474,7 @@ bool32_t tex_load_arr_upload(asset_task_t *, asset_header_t *asset, void *job_da
 	if (data->file_count == 1) tex_set_color_flat_mips(tex, tex->width, tex->height, data->color_data[0], data->color_array_count, data->color_mip_count);
 	else                       tex_set_color_arr_mips (tex, tex->width, tex->height, data->color_data,    data->color_array_count, data->color_mip_count);
 
-	return true;
+	return asset_action_done;
 }
 
 ///////////////////////////////////////////
@@ -486,13 +606,13 @@ bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_t
 // Texture creation functions            //
 ///////////////////////////////////////////
 
-asset_task_t tex_make_loading_task(tex_t texture, void *load_data, const asset_load_action_t *actions, int32_t action_count, int32_t priority, int32_t complexity) {
+asset_task_t tex_make_loading_task(tex_t texture, void *load_data, const asset_action_t *actions, int32_t action_count, int32_t priority, int32_t complexity) {
 	asset_task_t task = {};
 	task.asset        = (asset_header_t*)texture;
 	task.free_data    = tex_load_free;
 	task.on_failure   = tex_load_on_failure;
 	task.load_data    = load_data;
-	task.actions      = (asset_load_action_t *)actions;
+	task.actions      = (asset_action_t *)actions;
 	task.action_count = action_count;
 	task.priority     = priority;
 	task.sort         = asset_sort(priority, complexity);
@@ -516,10 +636,10 @@ tex_t tex_create_file_type(const char *file, tex_type_ type, bool32_t srgb_data,
 	load_data->file_names    = sk_malloc_t(char *, 1);
 	load_data->file_names[0] = string_copy(file);
 
-	static const asset_load_action_t actions[] = {
-		tex_load_arr_files,
-		tex_load_arr_parse,
-		tex_load_arr_upload,
+	static const asset_action_t actions[] = {
+		{ tex_load_arr_files  },
+		{ tex_load_arr_parse, asset_affinity_heavy },
+		{ tex_load_arr_upload },
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, asset_complexity_bytes(platform_file_size(file))) );
 
@@ -558,9 +678,9 @@ tex_t tex_create_mem_type(tex_type_ type, void *data, size_t data_size, bool32_t
 	}
 	tex_set_meta(result, load_data->color_width, load_data->color_height, 1, format);
 
-	static const asset_load_action_t actions[] = {
-		tex_load_arr_parse,
-		tex_load_arr_upload,
+	static const asset_action_t actions[] = {
+		{ tex_load_arr_parse, asset_affinity_heavy },
+		{ tex_load_arr_upload },
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, asset_complexity_bytes(data_size)) );
 
@@ -661,10 +781,10 @@ tex_t _tex_create_file_arr(tex_type_ type, const char **files, int32_t file_coun
 		total_size              += platform_file_size(files[i]);
 	}
 
-	static const asset_load_action_t actions[] = {
-		tex_load_arr_files,
-		tex_load_arr_parse,
-		tex_load_arr_upload,
+	static const asset_action_t actions[] = {
+		{ tex_load_arr_files  },
+		{ tex_load_arr_parse, asset_affinity_heavy },
+		{ tex_load_arr_upload },
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, asset_complexity_bytes(total_size)) );
 
@@ -701,9 +821,10 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 
 	///////////////////////////////////////////
 
-	bool32_t (*load)(asset_task_t*, asset_header_t*, void*) = [](asset_task_t* task, asset_header_t* asset, void* job_data) {
-		if (!tex_load_arr_files_shared(task, asset, job_data))
-			return (bool32_t)false;
+	asset_load_action_t load = [](asset_task_t* task, asset_header_t* asset, void* job_data) {
+		asset_action_result_ read = tex_load_arr_files_shared(task, asset, job_data);
+		if (read != asset_action_done)
+			return read;
 
 		tex_load_t* data = (tex_load_t*)job_data;
 		tex_t       tex = (tex_t)asset;
@@ -721,16 +842,16 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		} else {
 			log_warnf(tex_msg_invalid_cubemap, data->file_names[0]);
 			tex->header.state = asset_state_error_unsupported;
-			return (bool32_t)false;
+			return asset_action_fail;
 		}
 
 		tex_set_meta(tex, size_w, size_h, 1, data->color_format);
-		return (bool32_t)true;
+		return asset_action_done;
 	};
 
 	///////////////////////////////////////////
 
-	bool32_t(*upload)(asset_task_t*, asset_header_t*, void*) = [](asset_task_t* task, asset_header_t * asset, void* job_data) {
+	asset_load_action_t upload = [](asset_task_t* task, asset_header_t * asset, void* job_data) {
 		profiler_zone();
 
 		tex_load_t *data = (tex_load_t *)job_data;
@@ -763,7 +884,7 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 			skr_cmd_end();
 			log_err("Failed to create cubemap texture for equirect conversion");
 			tex->header.state = asset_state_error;
-			return (bool32_t)false;
+			return asset_action_fail;
 		}
 		tex_set_meta(tex, tex->width, tex->height, 1, tex->format);
 		tex_update_label(tex);
@@ -800,22 +921,24 @@ tex_t tex_create_cubemap_file(const char *cubemap_file, bool32_t srgb_data, int3
 		skr_tex_destroy(&equirect);
 		shader_release(convert_shader);
 
-		// Compute spherical harmonics on GPU using the cubemap we just
-		// created. skr_cmd_begin was already called above, end_cmd=true
-		// closes the command scope and submits everything together.
-		tex_compute_sh(tex, true);
+		// This scope's skr_cmd_begin is above, so closing it here submits the
+		// convert and the SH compute together. A deferred readback advances the
+		// asset to loaded from its own completion.
+		const bool owns_cmd_scope = true;
+		if (tex_compute_sh_or_defer(tex, owns_cmd_scope))
+			return asset_action_done;
 
 		tex_set_fallback(tex, nullptr);
 		tex->header.state = asset_state_loaded;
-		return (bool32_t)true;
+		return asset_action_done;
 	};
 
 	///////////////////////////////////////////
 
-	static const asset_load_action_t actions[] = {
-		load,
-		tex_load_arr_parse,
-		upload,
+	static const asset_action_t actions[] = {
+		{ load },
+		{ tex_load_arr_parse, asset_affinity_heavy },
+		{ upload },
 	};
 	assets_add_task( tex_make_loading_task(result, load_data, actions, _countof(actions), priority, asset_complexity_bytes(platform_file_size(cubemap_file))) );
 
@@ -944,6 +1067,17 @@ tex_t tex_get_zbuffer(tex_t texture) {
 
 ///////////////////////////////////////////
 
+// Also used as an identity value for hashing, so it must be stable
+static void* tex_native_handle(const skr_tex_t* gpu_tex) {
+#if defined(SKR_WEBGPU)
+	return (void*)gpu_tex->texture;
+#else
+	return (void*)gpu_tex->image;
+#endif
+}
+
+///////////////////////////////////////////
+
 void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample, bool32_t owned) {
 	// Always destroy old GPU resources when valid - skr_tex_destroy handles
 	// is_external internally to decide whether to destroy the VkImage.
@@ -956,6 +1090,12 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 	texture->format = tex_get_tex_format(native_fmt);
 
 	if (native_surface != nullptr) {
+#if defined(SKR_WEBGPU)
+		// Needs skr_tex_create_external_wgpu, which the pinned sk_renderer
+		// doesn't carry yet. Only the XR backends reach this.
+		(void)surface_count; (void)multisample;
+		log_err("tex_set_surface is not implemented on the WebGPU backend");
+#else
 		skr_tex_external_info_t info = {};
 		info.image         = (VkImage)native_surface;
 		info.format        = skr_tex_fmt_from_native((uint32_t)native_fmt);
@@ -967,6 +1107,7 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 		info.owns_image    = owned;
 
 		skr_tex_create_external_vk(info, &texture->gpu_tex);
+#endif
 	} else {
 		texture->gpu_tex = {};
 	}
@@ -986,13 +1127,14 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 
 void* tex_get_surface(tex_t texture) {
 	assets_block_until(&texture->header, asset_state_loaded);
-	return (void*)texture->gpu_tex.image;
+	return tex_native_handle(&texture->gpu_tex);
 }
 
 ///////////////////////////////////////////
 
 tex_t tex_create_from_hardware_buffer(void *hardware_buffer, bool32_t owns_buffer) {
-#if defined(SK_OS_ANDROID)
+// AHardwareBuffer import is a Vulkan external-memory path, see skr_capability_external_ahb
+#if defined(SK_OS_ANDROID) && !defined(SKR_WEBGPU)
 	if (hardware_buffer == nullptr) return nullptr;
 	if (!skr_is_capable(skr_capability_external_ahb)) {
 		log_warn("tex_create_from_hardware_buffer: AHardwareBuffer import is not supported on this device!");
@@ -1095,8 +1237,6 @@ void tex_release(tex_t texture) {
 ///////////////////////////////////////////
 
 void tex_destroy(tex_t tex) {
-	assets_on_load_remove(&tex->header, nullptr);
-
 	sk_free(tex->light_info);
 	// Always destroy GPU resources when valid - skr_tex_destroy checks is_external
 	// internally to decide whether to destroy the VkImage (external images like
@@ -1124,17 +1264,36 @@ void tex_on_load(tex_t texture, void (*on_load)(tex_t texture, void *context), v
 
 ///////////////////////////////////////////
 
-void tex_on_load_remove(tex_t texture, void (*on_load)(tex_t texture, void *context)) {
-	assets_on_load_remove(&texture->header, (void(*)(asset_header_t*,void*))on_load);
+void tex_on_load_remove(tex_t texture, void (*on_load)(tex_t texture, void *context), void *context) {
+	assets_on_load_remove(&texture->header, (void(*)(asset_header_t*,void*))on_load, context);
 }
 
 ///////////////////////////////////////////
 
-// Dispatches the SH compute shader and waits for results. If end_cmd
-// is true, the active command buffer is ended via skr_cmd_end (use when
-// the caller owns the command scope). Otherwise skr_cmd_flush is used,
-// which is safe inside a nested command scope but leaves the scope open.
-void tex_compute_sh(tex_t texture, bool end_cmd) {
+// A dispatched SH compute waiting on its GPU future. Deferred ones ride an
+// asset task; the poll below turns future completion into the task's signal.
+struct tex_sh_pending_t {
+	skr_buffer_t          buffer;
+	skr_compute_t         compute;
+	skr_buffer_readback_t readback;
+};
+
+// Main thread only: entries are added by main-affinity actions and polled
+// from assets_step, so the list needs no lock. An entry's readback can be
+// destroyed while it still sits here (a task failed at shutdown); that's
+// fine, futures are generation-checked handles into the submission ring, so
+// they poll safely after the readback is gone.
+struct tex_sh_poll_t {
+	uint64_t     wait_id;
+	skr_future_t future;
+};
+static array_t<tex_sh_poll_t> tex_sh_poll_list = {};
+
+///////////////////////////////////////////
+
+// Without the scope, this flushes instead of ending: safe nested, but it
+// leaves the scope open.
+static void tex_compute_sh_dispatch(tex_t texture, bool owns_cmd_scope, tex_sh_pending_t *out_pending) {
 	profiler_zone();
 
 	skr_vec3i_t base_size = { texture->width, texture->height, 1 };
@@ -1142,30 +1301,154 @@ void tex_compute_sh(tex_t texture, bool end_cmd) {
 	int32_t     mip_level = maxi(0, mip_count - 6);
 	skr_vec3i_t mip_size  = skr_tex_calc_mip_dimensions(base_size, mip_level);
 
-	skr_buffer_t sh_buffer = {};
-	skr_buffer_create(nullptr, 1, sizeof(spherical_harmonics_t), skr_buffer_type_storage, (skr_use_)(skr_use_dynamic | skr_use_compute_write), &sh_buffer);
+	*out_pending = {};
+	skr_buffer_create(nullptr, 1, sizeof(spherical_harmonics_t), skr_buffer_type_storage, (skr_use_)(skr_use_dynamic | skr_use_compute_write), &out_pending->buffer);
 
-	skr_compute_t      sh_compute = {};
-	skr_compute_info_t sh_info    = {};
-	skr_compute_create(&sk_default_shader_sh_compute->gpu_shader, sh_info, &sh_compute);
+	skr_compute_info_t sh_info = {};
+	skr_compute_create(&sk_default_shader_sh_compute->gpu_shader, sh_info, &out_pending->compute);
 
 	uint32_t params[4] = { (uint32_t)mip_size.x, (uint32_t)mip_level, 0, 0 };
-	skr_compute_set_params(&sh_compute, params, sizeof(params));
-	skr_compute_set_tex   (&sh_compute, "source", &texture->gpu_tex);
-	skr_compute_set_buffer(&sh_compute, "sh_output", &sh_buffer);
-	skr_compute_execute   (&sh_compute, 1, 1, 1);
+	skr_compute_set_params(&out_pending->compute, params, sizeof(params));
+	skr_compute_set_tex   (&out_pending->compute, "source", &texture->gpu_tex);
+	skr_compute_set_buffer(&out_pending->compute, "sh_output", &out_pending->buffer);
+	skr_compute_execute   (&out_pending->compute, 1, 1, 1);
 
-	skr_future_t future = end_cmd
-		? skr_cmd_end()
-		: skr_cmd_flush();
-	skr_future_wait(&future);
+	// Submit the compute, then chain a pollable readback behind it in queue
+	// order. Its future is the one that says the SH data is CPU-visible.
+	if (owns_cmd_scope) skr_cmd_end  ();
+	else         skr_cmd_flush();
+	skr_buffer_readback(&out_pending->buffer, &out_pending->readback);
+}
 
+///////////////////////////////////////////
+
+// The readback future must be complete before this runs.
+static void tex_compute_sh_finish(tex_t texture, tex_sh_pending_t *pending) {
 	sk_free(texture->light_info);
-	texture->light_info = sk_malloc_t(spherical_harmonics_t, 1);
-	skr_buffer_get(&sh_buffer, texture->light_info->coefficients, sizeof(spherical_harmonics_t));
+	texture->light_info = sk_malloc_zero_t(spherical_harmonics_t, 1);
+	if (pending->readback.data != nullptr)
+		memcpy(texture->light_info->coefficients, pending->readback.data, sizeof(spherical_harmonics_t));
 
-	skr_compute_destroy(&sh_compute);
-	skr_buffer_destroy (&sh_buffer);
+	skr_buffer_readback_destroy(&pending->readback);
+	skr_compute_destroy(&pending->compute);
+	skr_buffer_destroy (&pending->buffer);
+	*pending = {};
+	texture->sh_pending = false;
+}
+
+///////////////////////////////////////////
+
+void tex_compute_sh(tex_t texture, bool owns_cmd_scope) {
+	tex_sh_pending_t pending;
+	tex_compute_sh_dispatch(texture, owns_cmd_scope, &pending);
+	skr_future_wait     (&pending.readback.future);
+	tex_compute_sh_finish(texture, &pending);
+}
+
+///////////////////////////////////////////
+
+// The back half of a deferred SH compute, on its own asset task. The first
+// run finds the readback in flight and parks on it; the poll in
+// tex_step_deferred is what signals the task back awake.
+static asset_action_result_ tex_sh_resolve(asset_task_t* task, asset_header_t* asset, void* data) {
+	tex_sh_pending_t* pending = (tex_sh_pending_t*)data;
+	tex_t             tex     = (tex_t)asset;
+
+	if (!skr_future_check(&pending->readback.future)) {
+		tex_sh_poll_list.add({ assets_task_wait_prepare(task), pending->readback.future });
+		return asset_action_wait;
+	}
+
+	tex_compute_sh_finish(tex, pending);
+	// The texture stayed on its fallback while lighting cooked, so loading
+	// finishes here rather than at upload. Errors stamped meanwhile stick.
+	if (tex->header.state >= 0 && tex->header.state < asset_state_loaded) {
+		tex_set_fallback(tex, nullptr);
+		tex->header.state = asset_state_loaded;
+	}
+	return asset_action_done;
+}
+
+// Only an unresolved task reaches this, a normal finish leaves nothing valid
+// here. Destroying a readback mid-flight is safe, it waits on native and
+// abandons on web.
+static void tex_sh_task_free(asset_header_t* asset, void* data) {
+	tex_sh_pending_t* pending = (tex_sh_pending_t*)data;
+	if (skr_buffer_is_valid(&pending->buffer)) {
+		skr_buffer_readback_destroy(&pending->readback);
+		skr_compute_destroy(&pending->compute);
+		skr_buffer_destroy (&pending->buffer);
+		((tex_t)asset)->sh_pending = false;
+	}
+	sk_free(pending);
+}
+
+///////////////////////////////////////////
+
+// Computes SH now where blocking is cheap and legal (worker threads), and
+// defers it otherwise: a browser can never block on the GPU, and the main
+// thread shouldn't. When deferred, the resolve task advances the asset to
+// loaded once the readback lands, and the caller must not.
+static bool tex_compute_sh_or_defer(tex_t texture, bool owns_cmd_scope) {
+#if !defined(SK_OS_WEB)
+	if (assets_on_asset_thread()) {
+		tex_compute_sh(texture, owns_cmd_scope);
+		return false;
+	}
+#endif
+	tex_sh_pending_t* pending = sk_malloc_zero_t(tex_sh_pending_t, 1);
+	tex_compute_sh_dispatch(texture, owns_cmd_scope, pending);
+	texture->sh_pending = true;
+
+	static const asset_action_t actions[] = { { tex_sh_resolve, asset_affinity_main } };
+	asset_task_t task = {};
+	task.asset        = &texture->header;
+	task.load_data    = pending;
+	task.free_data    = tex_sh_task_free;
+	task.actions      = (asset_action_t*)actions;
+	task.action_count = _countof(actions);
+	task.priority     = asset_priority_default;
+	task.sort         = asset_sort(asset_priority_default, 0);
+	assets_add_task(task);
+	return true;
+}
+
+///////////////////////////////////////////
+
+void tex_step_deferred() {
+	for (int32_t i = tex_sh_poll_list.count - 1; i >= 0; i--) {
+		if (!skr_future_check(&tex_sh_poll_list[i].future)) continue;
+		assets_task_signal(tex_sh_poll_list[i].wait_id);
+		tex_sh_poll_list.remove(i);
+	}
+
+#if defined(SK_OS_WEB)
+	// Finished browser decodes hand their pixels to the parked parse task
+	uint64_t id;
+	void*    rgba;
+	int32_t  width, height;
+	while (web_image_decode_poll(&id, &rgba, &width, &height)) {
+		struct decode_result_t { void* rgba; int32_t width, height; };
+		decode_result_t result = { rgba, width, height };
+		bool32_t delivered = assets_task_signal(id, [](asset_task_t*, void* load_data, void* ctx) {
+			tex_load_t*      load   = (tex_load_t*)load_data;
+			decode_result_t* result = (decode_result_t*)ctx;
+			load->web_decode_state  = result->rgba != nullptr ? tex_request_arrived : tex_request_failed;
+			load->web_decode_data   = result->rgba;
+			load->web_decode_width  = result->width;
+			load->web_decode_height = result->height;
+		}, &result);
+		if (!delivered) sk_free(rgba);
+	}
+#endif
+}
+
+///////////////////////////////////////////
+
+void tex_shutdown_deferred() {
+	// Entries only reference futures; the GPU objects belong to their tasks,
+	// which the task shutdown drain cleans through tex_sh_task_free.
+	tex_sh_poll_list.free();
 }
 
 ///////////////////////////////////////////
@@ -1217,12 +1500,14 @@ void _tex_set_color_flat(tex_t texture, int32_t width, int32_t height, void* fla
 		if (is_array) flags = (skr_tex_flags_)(flags | skr_tex_flags_array);
 		skr_vec3i_t size = { width, height, is_array ? array_count : 1 };
 
-		// Determine mip count for creation. If the caller asked for mips but only
-		// supplied the base level, pass 0 to request a full auto-generated chain
-		// (filled in below by skr_tex_generate_mips). If the caller supplied
-		// multiple mips, cap the GPU texture at that count so we don't leave
-		// uninitialized levels above what was uploaded.
-		int32_t create_mip_count = ((texture->type & tex_type_mips) && mip_count <= 1) ? 0 : mip_count;
+		// A zero mip count requests a full auto-generated chain, filled in below
+		// by skr_tex_generate_mips. Any other count caps the texture at what was
+		// uploaded, so it never samples uninitialized levels.
+		uint32_t block_w, block_h;
+		skr_tex_fmt_block_info((skr_tex_fmt_)texture->format, &block_w, &block_h, nullptr);
+		bool can_generate_mips = block_w == 1 && block_h == 1; // block-compressed formats can't
+		bool wants_full_chain  = (texture->type & tex_type_mips) && mip_count <= 1 && can_generate_mips;
+		int32_t create_mip_count = wants_full_chain ? 0 : mip_count;
 
 		// Create new texture into a temporary first
 		skr_tex_t new_tex;
@@ -1273,19 +1558,36 @@ void _tex_set_color_flat(tex_t texture, int32_t width, int32_t height, void* fla
 	}
 
 	if (skr_tex_is_valid(&texture->gpu_tex)) {
-		if ((texture->type & tex_type_cubemap) && texture->light_info == nullptr) {
-			bool was_active = skr_cmd_is_active();
+		bool sh_deferred = texture->sh_pending != 0;
+		if ((texture->type & tex_type_cubemap) && texture->light_info == nullptr && !sh_deferred) {
+			bool was_active     = skr_cmd_is_active();
+			bool owns_cmd_scope = !was_active;
 			skr_cmd_begin();
-			tex_compute_sh(texture, !was_active);
+			if (sh_lighting_info != nullptr) {
+				// The caller wants the lighting synchronously, so this can't
+				// defer. On the web that's impossible, warn there instead.
+#if defined(SK_OS_WEB)
+				log_warn("Synchronous cubemap lighting is not available in a browser, use Tex.CubemapLighting after the texture loads.");
+				sh_deferred = tex_compute_sh_or_defer(texture, owns_cmd_scope);
+#else
+				tex_compute_sh(texture, owns_cmd_scope);
+#endif
+			} else {
+				sh_deferred = tex_compute_sh_or_defer(texture, owns_cmd_scope);
+			}
 			if (was_active)
 				skr_cmd_end();
 		}
 
+		// Read straight rather than through tex_get_cubemap_lighting, which
+		// blocks on the loaded state this function is mid-way to setting.
 		if (sh_lighting_info != nullptr)
-			*sh_lighting_info = tex_get_cubemap_lighting(texture);
+			*sh_lighting_info = texture->light_info ? *texture->light_info : spherical_harmonics_t{};
 
-		tex_set_fallback(texture, nullptr);
-		texture->header.state = asset_state_loaded;
+		if (!sh_deferred) {
+			tex_set_fallback(texture, nullptr);
+			texture->header.state = asset_state_loaded;
+		}
 	} else {
 		tex_set_fallback(texture, _tex_get_error_fallback(texture));
 		texture->header.state = asset_state_error;
@@ -1402,14 +1704,20 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 	}
 	tex_set_meta(texture, load_data->color_width, load_data->color_height, 1, format);
 
-	static const asset_load_action_t actions[] = {
-		tex_load_arr_parse,
-		tex_load_arr_upload,
+	static const asset_action_t actions[] = {
+		{ tex_load_arr_parse, asset_affinity_heavy },
+		{ tex_load_arr_upload },
 	};
 	asset_task_t task = tex_make_loading_task(texture, load_data, actions, _countof(actions), priority, asset_complexity_bytes(data_size));
 	if (blocking) {
 		for (int32_t i = 0; i < 2; i++) {
-			if (!actions[i](&task, &texture->header, load_data))
+			// A slicing action just runs its slices back to back here. Waits
+			// can't happen off the web, and this path is native-only sync API.
+			asset_action_result_ result;
+			do {
+				result = actions[i].fn(&task, &texture->header, load_data);
+			} while (result == asset_action_continue);
+			if (result != asset_action_done)
 				break;
 		}
 		tex_load_free(&texture->header, load_data);
@@ -1758,7 +2066,7 @@ id_hash_t tex_meta_hash(tex_t texture) {
 	id_hash_t result = hash_int     (texture->width);
 	result           = hash_int_with(texture->height, result);
 	result           = hash_int_with(texture->depth,  result);
-	uint64_t image   = (uint64_t)texture->gpu_tex.image;
+	uint64_t image   = (uint64_t)tex_native_handle(&texture->gpu_tex);
 	result           = hash_int_with((int32_t)(image & 0xFFFFFFFF), result);
 	result           = hash_int_with((int32_t)(image >> 32),        result);
 	// May want to consider texture format or some other items as well, but
@@ -1797,6 +2105,14 @@ void tex_get_data(tex_t texture, void* out_data, size_t out_data_size, int32_t m
 		log_warn("Cannot retrieve invalid mip-level!");
 		return;
 	}
+
+#if defined(SK_OS_WEB)
+	// This readback must block on the GPU, which a browser can never do. Fail
+	// loudly rather than hand back garbage.
+	log_err("tex_get_data is not supported in a browser: it has to block on GPU work. Track the data CPU-side instead.");
+	memset(out_data, 0, out_data_size);
+	return;
+#endif
 
 	assets_block_until(&texture->header, asset_state_loaded);
 

@@ -148,6 +148,8 @@ class TestVertexFormat : ITest
 			"f 1 2 3\n" +
 			"f 1 3 4\n";
 		Model model = Model.FromMemory("flat_quad.obj", System.Text.Encoding.UTF8.GetBytes(obj));
+		// Count blocks for the async load, the indexer doesn't
+		if (model.Visuals.Count != 1) return false;
 		Vertex[] verts = model.Visuals[0].Mesh.GetVerts();
 		if (verts == null || verts.Length == 0) return false;
 

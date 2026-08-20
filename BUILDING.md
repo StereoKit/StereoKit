@@ -78,7 +78,7 @@ cmake --preset Linux_x64_Release
 cmake --build --preset Linux_x64_Release
 
 # Run the native test app
-./bin/intermediate/cmake/Linux_x64_Release/StereoKitCTest
+./bin/intermediate/Linux_x64_Release/StereoKitCTest
 
 # To run the C# test app, you will need the .NET SDK installed
 dotnet run --configuration Release --project Examples/StereoKitTest/StereoKitTest.csproj

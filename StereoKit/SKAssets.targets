@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+	<!--Assets have to be defined while the SDK is still collecting them, or the
+	    endpoints and compression stages never see them.-->
+	<PropertyGroup Condition="'$(UsingMicrosoftNETSdkWebAssembly)'=='true'">
+		<ResolveCoreStaticWebAssetsDependsOn>$(ResolveCoreStaticWebAssetsDependsOn);StereoKit_ContentWeb</ResolveCoreStaticWebAssetsDependsOn>
+	</PropertyGroup>
+
 	<!--Gather a list of items from the Asset folder, we do this as a Target,
 	    otherwise VS may add 'Remove' items when users add items to their
 		Assets folder.-->
@@ -12,7 +18,7 @@
 		</ItemGroup>
 	</Target>
 
-	<Target Name="StereoKit_ContentCopy" AfterTargets="StereoKit_ContentFind;StereoKit_ShaderCopy" BeforeTargets="AssignTargetPaths">
+	<Target Name="StereoKit_ContentCopy" AfterTargets="StereoKit_ContentFind;StereoKit_ShaderCopy" BeforeTargets="AssignTargetPaths" Condition="'$(SKBuildPlatform)'!='Web'">
 		<ItemGroup Condition="'$(SKBuildPlatform)'!='Android'">
 			<Content Include="%(SKContent.Identity)">
 				<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -23,6 +29,76 @@
 			<AndroidAsset Include="%(SKContent.Identity)">
 				<Link>%(SKContent.RecursiveDir)%(SKContent.Filename)%(SKContent.Extension)</Link>
 			</AndroidAsset>
+		</ItemGroup>
+	</Target>
+
+	<!--Assets are served on the web, not just copied. A Content item only
+	    becomes a static web asset if it sits under wwwroot, since that is the
+	    ContentRoot the SDK hands its own DefineStaticWebAssets call. Registering
+	    them here with a ContentRoot of their own serves them where they already
+	    are, with no second copy of the asset folder.
+
+	    An asset's URL is whatever RelativePathPattern captures, resolved against
+	    ContentRoot, so both roots are the folder *above* the one being served
+	    and the capture carries the SKAssetDestination segment. That does mean
+	    the asset folder's own name is the one served.-->
+	<Target Name="StereoKit_ContentWeb" DependsOnTargets="StereoKit_Properties;StereoKit_ShaderBuild" Condition="'$(UsingMicrosoftNETSdkWebAssembly)'=='true'">
+		<PropertyGroup>
+			<SKWebAssetDir>$([MSBuild]::NormalizeDirectory('$(SKAssetFolder)'))</SKWebAssetDir>
+			<SKWebAssetRoot>$([MSBuild]::NormalizeDirectory('$(SKAssetFolder)', '..'))</SKWebAssetRoot>
+			<!--Shaders compile into SKShaderOutputFolder, which sits one level
+			    under the intermediate folder for exactly this reason.-->
+			<SKWebGenRoot>$([MSBuild]::NormalizeDirectory('$(IntermediateOutputPath)'))</SKWebGenRoot>
+			<SKWebGenDir>$(SKWebGenRoot)$(SKAssetDestination)/</SKWebGenDir>
+			<SKWebManifestFile>$(SKWebGenDir)$(SKWebManifest)</SKWebManifestFile>
+		</PropertyGroup>
+
+		<ItemGroup>
+			<SKWebAsset    Include="$(SKWebAssetDir)**/*" Exclude="$(SKWebAssetDir)**/*.sks" />
+			<SKWebGenAsset Include="$(SKWebGenDir)**/*" Exclude="$(SKWebManifestFile)" />
+		</ItemGroup>
+
+		<!--A browser can't list a directory and the wasm filesystem starts empty,
+		    so the page is told what to fetch.-->
+		<WriteLinesToFile File="$(SKWebManifestFile)"
+		                  Lines="@(SKWebAsset->'%(RecursiveDir)%(Filename)%(Extension)');@(SKWebGenAsset->'%(RecursiveDir)%(Filename)%(Extension)')"
+		                  Overwrite="true" WriteOnlyWhenDifferent="true" />
+		<ItemGroup>
+			<SKWebGenAsset Include="$(SKWebManifestFile)" />
+		</ItemGroup>
+
+		<DefineStaticWebAssets CandidateAssets="@(SKWebAsset)" SourceId="$(PackageId)" SourceType="Discovered" ContentRoot="$(SKWebAssetRoot)" BasePath="$(StaticWebAssetBasePath)" RelativePathPattern="$(SKWebAssetRoot)**" FingerprintCandidates="$(StaticWebAssetsFingerprintContent)" FingerprintPatterns="@(StaticWebAssetFingerprintPattern)">
+			<Output TaskParameter="Assets" ItemName="StaticWebAsset" />
+			<Output TaskParameter="Assets" ItemName="SKWebStaticAsset" />
+		</DefineStaticWebAssets>
+		<DefineStaticWebAssets CandidateAssets="@(SKWebGenAsset)" SourceId="$(PackageId)" SourceType="Discovered" ContentRoot="$(SKWebGenRoot)" BasePath="$(StaticWebAssetBasePath)" RelativePathPattern="$(SKWebGenRoot)**" FingerprintCandidates="$(StaticWebAssetsFingerprintContent)" FingerprintPatterns="@(StaticWebAssetFingerprintPattern)">
+			<Output TaskParameter="Assets" ItemName="StaticWebAsset" />
+			<Output TaskParameter="Assets" ItemName="SKWebStaticAsset" />
+		</DefineStaticWebAssets>
+
+		<DefineStaticWebAssetEndpoints CandidateAssets="@(SKWebStaticAsset)" ContentTypeMappings="@(StaticWebAssetContentTypeMapping)" AdditionalEndpointDefinitions="@(StaticWebAssetAdditionalEndpointDefinition)">
+			<Output TaskParameter="Endpoints" ItemName="StaticWebAssetEndpoint" />
+		</DefineStaticWebAssetEndpoints>
+	</Target>
+
+	<!--The page that hosts the app, plus stereokit.js, which the page imports.
+	    These are a handful of KB and have to sit at the wwwroot root for the
+	    import to resolve, so unlike the assets they are copied in. A shell kept
+	    outside wwwroot, next to the other per-platform files say, is named by
+	    SKWebShellFolder.-->
+	<Target Name="StereoKit_ShellWeb" AfterTargets="StereoKit_Properties" BeforeTargets="AssignTargetPaths" Condition="'$(SKBuildPlatform)'=='Web'">
+		<ItemGroup>
+			<SKWebShell Include="$(SKWebSdkRoot)**/*" />
+			<SKWebShell Include="$(SKWebShellFolder)/**/*" Condition="'$(SKWebShellFolder)'!=''" />
+		</ItemGroup>
+		<Copy SourceFiles="@(SKWebShell)"
+		      DestinationFiles="@(SKWebShell->'wwwroot/%(RecursiveDir)%(Filename)%(Extension)')"
+		      SkipUnchangedFiles="true" />
+
+		<!--On any build after the first, the copies already sit in wwwroot and
+		    the SDK's default glob has them, so only fresh ones are added.-->
+		<ItemGroup>
+			<Content Include="@(SKWebShell->'wwwroot/%(RecursiveDir)%(Filename)%(Extension)')" Exclude="@(Content)" />
 		</ItemGroup>
 	</Target>
 </Project>

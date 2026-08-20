@@ -1,5 +1,6 @@
 ﻿using StereoKit.Framework;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Collections.Concurrent;
@@ -9,7 +10,7 @@ namespace StereoKit
 {
 	/// <summary>This class contains functions for running the StereoKit 
 	/// library!</summary>
-	public static class SK
+	public static partial class SK
 	{
 		private static Steppers                _steppers         = new Steppers();
 		private static ConcurrentQueue<Action> _mainThreadInvoke = new ConcurrentQueue<Action>();
@@ -104,7 +105,10 @@ namespace StereoKit
 				{
 					Type         jniEnv     = Type.GetType("Java.Interop.JniEnvironment, Java.Interop");
 					PropertyInfo runtime    = jniEnv?.GetProperty("Runtime", BindingFlags.Static | BindingFlags.Public);
-					PropertyInfo invocation = runtime?.PropertyType.GetProperty("InvocationPointer", BindingFlags.Instance | BindingFlags.Public);
+					// Resolved by literal name, the trimmer can't see through
+					// PropertyInfo.PropertyType (IL2075).
+					Type         jniRuntime = Type.GetType("Java.Interop.JniRuntime, Java.Interop");
+					PropertyInfo invocation = jniRuntime?.GetProperty("InvocationPointer", BindingFlags.Instance | BindingFlags.Public);
 					object       rtInstance = runtime?.GetValue(null);
 					if (rtInstance != null && invocation != null)
 						settings.androidJavaVm = (IntPtr)invocation.GetValue(rtInstance);
@@ -212,7 +216,7 @@ namespace StereoKit
 		/// setup, but before render.</param>
 		/// <returns>If an exit message is received from the platform, or
 		/// `SK.Quit()` is called, this function will return false.</returns>
-		public static bool Step(Action onStep = null)
+		public static unsafe bool Step(Action onStep = null)
 		{
 			if (NativeAPI.sk_step(null) == false) return false;
 
@@ -244,9 +248,53 @@ namespace StereoKit
 		/// StereoKit shuts down.</param>
 		public static void Run(Action onStep = null, Action onShutdown = null)
 		{
+			// A blocking loop would never return to the browser, which would
+			// then never paint or deliver input. Frames come one at a time
+			// instead, so this starts the loop and returns.
+			if (OperatingSystem.IsBrowser())
+			{
+				_runOnStep     = onStep;
+				_runOnShutdown = onShutdown;
+				_browserFrame ??= BrowserFrame;
+				RequestFrame(_browserFrame);
+				return;
+			}
+
 			while (Step(onStep)) { }
 
 			if (onShutdown != null) onShutdown();
+			Shutdown();
+		}
+
+		static Action _runOnStep;
+		static Action _runOnShutdown;
+
+		// One delegate for the whole run, so the browser keeps calling back into
+		// the same wrapper. Stepping straight from the animation callback keeps
+		// the frame inside the window it gave us; an await lands after it shuts.
+		static Action _browserFrame;
+
+		[System.Runtime.InteropServices.JavaScript.JSImport("globalThis.requestAnimationFrame")]
+		static partial void RequestFrame([System.Runtime.InteropServices.JavaScript.JSMarshalAs<System.Runtime.InteropServices.JavaScript.JSType.Function>] Action callback);
+
+		[System.Runtime.Versioning.SupportedOSPlatform("browser")]
+		static void BrowserFrame()
+		{
+			bool running;
+			try { running = Step(_runOnStep); }
+			catch (Exception e)
+			{
+				// Nothing above this on the stack but the browser, so an escaped
+				// exception would vanish with the loop it killed. Quit instead,
+				// and the next frame takes the normal shutdown path below.
+				Log.Err($"Frame loop stopped: {e}");
+				Quit(QuitReason.Error);
+				running = true;
+			}
+			if (running) { RequestFrame(_browserFrame); return; }
+
+			try                 { _runOnShutdown?.Invoke(); }
+			catch (Exception e) { Log.Err($"OnShutdown: {e}"); }
 			Shutdown();
 		}
 
@@ -275,7 +323,7 @@ namespace StereoKit
 		/// constructor with zero parameters.</param>
 		/// <returns>Just for convenience, this returns the instance that was
 		/// just added.</returns>
-		public static object AddStepper(Type type) => _steppers.Add(type);
+		public static object AddStepper([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type type) => _steppers.Add(type);
 		/// <summary>This instantiates and registers an instance of the
 		/// `IStepper` type provided as the generic parameter. SK will hold
 		/// onto it, Initialize it, Step it every frame, and call Shutdown when
@@ -287,7 +335,7 @@ namespace StereoKit
 		/// <typeparam name="T">An IStepper type.</typeparam>
 		/// <returns>Just for convenience, this returns the instance that was
 		/// just added.</returns>
-		public static T AddStepper<T>() where T:IStepper => _steppers.Add<T>();
+		public static T AddStepper<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>() where T:IStepper => _steppers.Add<T>();
 		/// <summary>This removes a specific IStepper from SK's IStepper list.
 		/// This will call the IStepper's Shutdown method before returning.
 		/// </summary>
@@ -333,7 +381,7 @@ namespace StereoKit
 		/// constructor.</typeparam>
 		/// <returns>The first `IStepper` in the list that is assignable to the
 		/// provided generic type, or a new object of type T.</returns>
-		public static T GetOrCreateStepper<T>() where T : IStepper
+		public static T GetOrCreateStepper<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>() where T : IStepper
 		{
 			T result = _steppers.Get<T>();
 			if (result == null) result = _steppers.Add<T>();
@@ -349,7 +397,7 @@ namespace StereoKit
 		/// constructor.</param>
 		/// <returns>The first `IStepper` in the list that is assignable to the
 		/// provided generic type, or a new object of the given type.</returns>
-		public static object GetOrCreateStepper(Type type)
+		public static object GetOrCreateStepper([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type type)
 		{
 			object result = _steppers.Get(type);
 			if (result == null) result = _steppers.Add(type);

@@ -31,12 +31,32 @@ option(SK_LOCAL_SK_APP                 "Build using a local version of sk_app, i
 option(SK_PROFILE                      "Build with Tracy profiler enabled." OFF)
 option(SK_STRIP_DEBUG_SYMBOLS          "Strip debug symbols from the shared library. Disable on Android to keep symbols embedded for native debugging." ON)
 option(SK_USE_SVSL                     "Compile shaders with skshaderc's SVSL backend instead of the glslang HLSL pipeline." OFF)
+option(SK_USE_WEBGPU                   "Render through sk_renderer's WebGPU backend instead of Vulkan. Native builds link Dawn." OFF)
 option(FORCE_COLORED_OUTPUT            "Always produce ANSI-colored output (GNU/Clang only)." OFF)
+
+# sk_renderer forces SKR_USE_WEBGPU on for Emscripten regardless, so keep our
+# switch in step with it. A wasm module is linked whole, so shared libs go too.
+if (EMSCRIPTEN)
+  set(SK_USE_WEBGPU        ON  CACHE BOOL "The only backend available on web" FORCE)
+  set(SK_BUILD_SHARED_LIBS OFF CACHE BOOL "wasm links statically"             FORCE)
+endif()
+
+# WGSL has no emitter other than SVSL, and OpenXR imports swapchain images as
+# Vulkan textures. platform.h reaches the same conclusion from SKR_WEBGPU.
+if (SK_USE_WEBGPU)
+  set(SKR_USE_WEBGPU   ON CACHE BOOL "Selected by SK_USE_WEBGPU" FORCE)
+  set(SK_USE_SVSL      ON CACHE BOOL "WGSL is emitted by SVSL alone" FORCE)
+  set(SK_ENABLE_OPENXR OFF)
+else()
+  set(SK_ENABLE_OPENXR ON)
+endif()
 
 # Distribute copies feed C# builds and NuGet packing, only meaningful when
 # working in the StereoKit repo itself. Consumers pulling StereoKit in via
-# CMake keep their checkout untouched.
-if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+# CMake keep their checkout untouched. Native WebGPU defaults off too, since
+# its artifacts would replace the Vulkan ones consumers expect; web has a
+# folder of its own, so it distributes like any other platform.
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND NOT (SK_USE_WEBGPU AND NOT EMSCRIPTEN))
   set(SK_DISTRIBUTE_DEFAULT ON)
 else()
   set(SK_DISTRIBUTE_DEFAULT OFF)
@@ -102,17 +122,33 @@ if(SK_USE_SVSL)
   set(SK_SHADER_SVSL "-svsl")
 endif()
 
+# A shader container carries one language, so the target follows the backend.
+# Vulkan builds take skshaderc's default (SPIR-V).
+set(SK_SHADER_TARGET "")
+if(SK_USE_WEBGPU)
+  set(SK_SHADER_TARGET "-t w")
+endif()
+
 ###########################################
 ## Platform Specific Settings            ##
 ###########################################
 
-# Desktop Unix platforms (Linux/macOS) link pthreads explicitly
-if (UNIX AND NOT ANDROID)
+# Desktop Unix platforms (Linux/macOS) link pthreads explicitly. Emscripten
+# reports UNIX too, but its threading is opt-in and unused here.
+if (UNIX AND NOT ANDROID AND NOT EMSCRIPTEN)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
 endif()
 
-if (ANDROID)
+# Emscripten has to come before the UNIX branch, which it would otherwise match
+# and pick up an X11 dependency from.
+if (EMSCRIPTEN)
+  # Nothing to link, the browser supplies windowing, input, and fonts.
+
+  # DirectXMath only has SSE and NEON paths, and #errors out otherwise.
+  add_compile_definitions(_XM_NO_INTRINSICS_)
+
+elseif (ANDROID)
   set(ANDROID_LIBS
     android)
   # Align to 16kb as per Android recommendations
@@ -168,6 +204,42 @@ if (NOT MSVC)
 endif()
 
 ###########################################
+## Web app helper                        ##
+###########################################
+
+# Cached so the function below resolves them from any directory scope, not just
+# this one.
+set(SK_WEB_PRE_JS "${CMAKE_CURRENT_SOURCE_DIR}/tools/web/sk_pre.js"   CACHE INTERNAL "StereoKit's WebGPU pre-init JS")
+set(SK_WEB_SHELL  "${CMAKE_CURRENT_SOURCE_DIR}/tools/web/sk_shell.html" CACHE INTERNAL "StereoKit's default emscripten page")
+
+# Link-time setup every StereoKit app needs on the web. A no-op elsewhere, so
+# callers needn't guard.
+#
+#   sk_target_web_options(MyApp)                  # StereoKit's default page
+#   sk_target_web_options(MyApp path/to/my.html)  # your own
+function(sk_target_web_options target)
+  if (NOT EMSCRIPTEN)
+    return()
+  endif()
+  set(shell_file "${SK_WEB_SHELL}")
+  if (ARGV1)
+    set(shell_file "${ARGV1}")
+  endif()
+  target_link_options(${target} PRIVATE
+    "SHELL:--pre-js ${SK_WEB_PRE_JS}"
+    "SHELL:--shell-file ${shell_file}"
+    # StereoKit stack-allocates transform and vertex staging that dwarfs the
+    # 64KB default, and asset loading needs the heap to grow.
+    -sSTACK_SIZE=2MB
+    -sALLOW_MEMORY_GROWTH=1
+    # miniaudio's KEEPALIVE markings don't reach the Module bindings from a
+    # static archive. Listing any function replaces the default set, hence _main.
+    -sEXPORTED_RUNTIME_METHODS=HEAPF32
+    -sEXPORTED_FUNCTIONS=_main,_ma_device__on_notification_unlocked,_ma_device_process_pcm_frames_capture__webaudio,_ma_device_process_pcm_frames_playback__webaudio)
+  set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS "${SK_WEB_PRE_JS}" "${shell_file}")
+endfunction()
+
+###########################################
 ## Dependencies                          ##
 ###########################################
 
@@ -180,7 +252,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include("cmake/CPM.cmake")
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
-if (SK_BUILD_OPENXR_LOADER)
+if (SK_ENABLE_OPENXR AND SK_BUILD_OPENXR_LOADER)
   CPMAddPackage(
     NAME openxr_loader
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
@@ -251,7 +323,7 @@ if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.8.13
+    GIT_TAG v2026.8.18
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to
@@ -478,6 +550,10 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/platforms/platform.h
   StereoKitC/platforms/_platform.h
   StereoKitC/platforms/platform.cpp
+  StereoKitC/platforms/gpu_surface.h
+  StereoKitC/platforms/gpu_surface.cpp
+  StereoKitC/platforms/web.h
+  StereoKitC/platforms/web.cpp
   StereoKitC/platforms/platform_common_win.cpp
   StereoKitC/platforms/win32.h
   StereoKitC/platforms/win32.cpp )
@@ -506,7 +582,9 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/xr_backends/anchor_stage.h
   StereoKitC/xr_backends/anchor_stage.cpp )
 
-# OpenXR extensions
+# OpenXR extensions. Unlike the backends above, these carry no SK_XR_OPENXR
+# guard of their own, so a no-OpenXR build leaves them out entirely.
+if (SK_ENABLE_OPENXR)
 target_sources(StereoKitC PRIVATE
   StereoKitC/xr_backends/extensions/composition_depth.h
   StereoKitC/xr_backends/extensions/composition_depth.cpp
@@ -560,6 +638,7 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/xr_backends/extensions/msft_observer.cpp
   StereoKitC/xr_backends/extensions/msft_scene_understanding.h
   StereoKitC/xr_backends/extensions/msft_scene_understanding.cpp )
+endif()
 
 # Tools
 target_sources(StereoKitC PRIVATE
@@ -613,7 +692,7 @@ set_target_properties(StereoKitC PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRE
 
 skshaderc_compile_headers(StereoKitC
   ${CMAKE_BINARY_DIR}/shaders/
-  "-e -O3 -f -z ${SK_SHADER_SVSL} ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+  "-e -O3 -f -z ${SK_SHADER_SVSL} ${SK_SHADER_TARGET} ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
   StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_default.hlsl
   StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
@@ -687,6 +766,44 @@ if (SK_PROFILE)
   target_link_libraries( StereoKitC PRIVATE TracyClient )
 endif()
 
+# The C# web build links one self-contained archive rather than chasing the
+# dependency list, and its file name is what satisfies DllImport("StereoKitC").
+# llvm-ar's L modifier flattens the member archives in.
+#
+# The emdawnwebgpu port bakes in too: a NuGet consumer's .NET emscripten cache
+# is frozen, so --use-port can't build it at their link. Its support lib joins
+# the archive here, and its JS half is copied beside it for --js-library.
+if (EMSCRIPTEN)
+  find_program(SK_EMBUILDER embuilder HINTS "${EMSCRIPTEN_ROOT_PATH}" REQUIRED)
+  execute_process(COMMAND "${SK_EMBUILDER}" build "emdawnwebgpu:opt_level=2" RESULT_VARIABLE SK_EMBUILDER_RESULT)
+  if (NOT SK_EMBUILDER_RESULT EQUAL 0)
+    message(FATAL_ERROR "embuilder could not build the emdawnwebgpu port")
+  endif()
+  execute_process(COMMAND "${EMSCRIPTEN_ROOT_PATH}/em-config" CACHE OUTPUT_VARIABLE SK_EM_CACHE_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+  file(GLOB SK_WEBGPU_PORT_LIB "${SK_EM_CACHE_DIR}/sysroot/lib/wasm32-emscripten/libemdawnwebgpu-*-O2.a")
+  list(GET SK_WEBGPU_PORT_LIB 0 SK_WEBGPU_PORT_LIB)
+  if (NOT SK_WEBGPU_PORT_LIB)
+    message(FATAL_ERROR "No emdawnwebgpu library under ${SK_EM_CACHE_DIR}")
+  endif()
+
+  # In dependency order; library_webgpu.js reads the generated tables
+  set(SK_WEBGPU_PORT_JS_SRC "${SK_EM_CACHE_DIR}/ports/emdawnwebgpu/emdawnwebgpu_pkg/webgpu/src")
+  file(COPY
+    "${SK_WEBGPU_PORT_JS_SRC}/library_webgpu_enum_tables.js"
+    "${SK_WEBGPU_PORT_JS_SRC}/library_webgpu_generated_struct_info.js"
+    "${SK_WEBGPU_PORT_JS_SRC}/library_webgpu_generated_sig_info.js"
+    "${SK_WEBGPU_PORT_JS_SRC}/library_webgpu.js"
+    DESTINATION "${CMAKE_BINARY_DIR}/emdawnwebgpu")
+
+  add_custom_command(TARGET StereoKitC POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -f "${CMAKE_BINARY_DIR}/StereoKitC.a"
+    COMMAND ${CMAKE_AR} qcsL "${CMAKE_BINARY_DIR}/StereoKitC.a"
+      "$<TARGET_FILE:StereoKitC>" "$<TARGET_FILE:sk_renderer>" "$<TARGET_FILE:sk_ktx2>"
+      "$<TARGET_FILE:sk_app>" "$<TARGET_FILE:meshoptimizer>" "$<TARGET_FILE:zstd_decompress>"
+      "${SK_WEBGPU_PORT_LIB}"
+    VERBATIM)
+endif()
+
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   if (MINGW)
@@ -706,7 +823,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   set(SK_RELEASE_LINK    /DEBUG /INCREMENTAL:NO /OPT:REF /OPT:LBR /OPT:ICF=2 /LTCG ) # See: https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170
 endif()
 
-if (SK_BUILD_OPENXR_LOADER)
+if (TARGET openxr_loader)
   target_compile_options(openxr_loader PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
   target_link_options   (openxr_loader PRIVATE ${SK_LINKER_FLAGS} "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
 endif()
@@ -741,6 +858,8 @@ endif()
 
 if (WIN32)
   set(SK_BIN_OS "Win32")
+elseif(EMSCRIPTEN)
+  set(SK_BIN_OS "Web")
 elseif(ANDROID)
   set(SK_BIN_OS "Android")
 elseif(APPLE)
@@ -785,6 +904,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   elseif (SK_ARCH STREQUAL "aarch64")
     set(SK_ARCH "arm64")
   endif()
+elseif(EMSCRIPTEN)
+  set(SK_ARCH "wasm32")
 else()
   set(SK_ARCH "Unknown")
 endif()
@@ -794,16 +915,29 @@ string(TOLOWER "${SK_ARCH}" SK_ARCH_LOWER)
 set(SK_DISTRIBUTE_FOLDER "bin/distribute")
 
 if(SK_DISTRIBUTE)
+  # Web ships the merged archive from above rather than the bare target
+  if (EMSCRIPTEN)
+    set(SK_DIST_BIN  "${CMAKE_BINARY_DIR}/StereoKitC.a")
+    set(SK_DIST_NAME "StereoKitC.a")
+  else()
+    set(SK_DIST_BIN  "$<TARGET_FILE:StereoKitC>")
+    set(SK_DIST_NAME "$<TARGET_FILE_NAME:StereoKitC>")
+  endif()
   add_custom_command(TARGET StereoKitC POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:StereoKitC>" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/$<TARGET_FILE_NAME:StereoKitC>"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SK_DIST_BIN}" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/${SK_DIST_NAME}"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit.h" "${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC/stereokit_ui.h" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/include/" )
+  if (EMSCRIPTEN)
+    add_custom_command(TARGET StereoKitC POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/emdawnwebgpu" "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/emdawnwebgpu" )
+  endif()
 
   # Copy the shader compiler out of the build folder. tools/ is what local C#
   # builds run, bin/tools/ is what the NuGet package packs. Targets that can't
   # run a compiler of their own (Android, web) build no skshaderc to copy.
-  if(TARGET skshaderc)
+  # A WebGPU build's skshaderc has no glslang, so it must not replace one that does.
+  if(TARGET skshaderc AND NOT SK_USE_WEBGPU)
     set(SK_TOOL_PLATFORM "${SK_BIN_OS_LOWER}_${SK_ARCH_LOWER}")
     add_custom_command(TARGET StereoKitC POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/tools/skshaderc/${SK_TOOL_PLATFORM}"
@@ -919,7 +1053,7 @@ if (SK_BUILD_TESTS)
 
   skshaderc_compile_headers( StereoKitCTest
     ${CMAKE_BINARY_DIR}/shaders/
-    "-e -O3 -f ${SK_SHADER_SVSL} ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+    "-e -O3 -f ${SK_SHADER_SVSL} ${SK_SHADER_TARGET} ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
     Examples/StereoKitCTest/Shaders/skt_light_only.hlsl
     Examples/StereoKitCTest/Shaders/skt_shadow.hlsl
@@ -932,6 +1066,7 @@ if (SK_BUILD_TESTS)
   # Add source assets and compiled shaders to the app
   target_skapp_assets(StereoKitCTest ${CMAKE_CURRENT_BINARY_DIR}/shaders)
   target_skapp_assets(StereoKitCTest ${CMAKE_CURRENT_SOURCE_DIR}/Examples/Assets)
+  sk_target_web_options(StereoKitCTest)
 
   #target_link_options   (StereoKitCTest PRIVATE ${SK_LINKER_FLAGS})
 endif()
@@ -973,6 +1108,7 @@ if (SK_BUILD_TESTS AND NOT ANDROID)
 
   # MacOS needs MoltenVK beside the binary for the offscreen device to init.
   skr_copy_moltenvk(SKTests)
+  sk_target_web_options(SKTests)
 endif()
 
 ###########################################

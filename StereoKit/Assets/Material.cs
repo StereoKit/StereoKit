@@ -560,7 +560,7 @@ namespace StereoKit
 			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))
 				throw new NotSupportedException("Material.SetData's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying! Explicit would work too.");
 
-			int    size   = Marshal.SizeOf(typeof(T));
+			int    size   = Marshal.SizeOf<T>();
 			IntPtr memory = Marshal.AllocHGlobal(size);
 			Marshal.StructureToPtr(serializableData, memory, false);
 

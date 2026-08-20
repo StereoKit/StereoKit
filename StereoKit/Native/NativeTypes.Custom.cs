@@ -446,15 +446,6 @@ namespace StereoKit
 	/// <param name="text">The text contents of the log event.</param>
 	public delegate void LogCallback(LogLevel level, string text);
 
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void LogCallbackData(IntPtr context, LogLevel level, string text);
-
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void XRPreSessionCreateCallback(IntPtr context);
-
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void XRPollEventCallback(IntPtr context, IntPtr XrEventDataBuffer);
-
 	/// <summary>A callback for receiving the pixel data of a screenshot, instead
 	/// of saving it directly to a file.</summary>
 	/// <param name="data">The pointer to the pixel data, laid out according to
@@ -468,43 +459,12 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void ScreenshotCallback(IntPtr data, TexFormat format, int width, int height);
 
-	// Internal callback delegate for render_screenshot_capture/viewpoint
-	// Takes IntPtr for the pixel buffer since it's a pointer to array data
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void RenderOnScreenshotCallback(IntPtr data, TexFormat format, int width, int height, IntPtr context);
-
-	// Callback for platform_file_picker - uses IntPtr for confirmed and filename
-	// because the wrapper handles manual string conversion from pointer+length
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void PickerCallback(IntPtr callback_data, int confirmed, IntPtr filename, int filename_length);
-
-	// Alias for PickerCallback (same signature, used interchangeably)
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void PickerCallbackSz(IntPtr callback_data, int confirmed, IntPtr filename_ptr, int filename_length);
-
-	/// <summary>This is the callback signature for SK.Run's step function. It
-	/// receives context data that was passed to SK.Run.</summary>
-	/// <param name="stepData">Context data passed to SK.Run.</param>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void AppStep(IntPtr stepData);
-
-	/// <summary>This is the callback signature for SK.Run's shutdown function.
-	/// It receives context data that was passed to SK.Run.</summary>
-	/// <param name="shutdownData">Context data passed to SK.Run.</param>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void AppShutdown(IntPtr shutdownData);
-
-	/// <summary>A callback for when an asset finishes loading.</summary>
-	/// <param name="asset">The asset that finished loading.</param>
-	/// <param name="context">User-provided context data.</param>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
-
 	/// <summary>A callback for generating audio samples procedurally, one
-	/// sample at a time. Convenient, but crosses the interop boundary per
-	/// sample - for long generations, prefer the buffer overload of
-	/// Sound.Generate.</summary>
-	/// <param name="sampleTime">The time of the sample being generated.</param>
+	/// sample at a time. This is the convenient way to write a waveform, and
+	/// it's mono. For channel formats, or to carry state across a buffer,
+	/// use AudioBufferGenerator.</summary>
+	/// <param name="sampleTime">The time of the sample being generated, in
+	/// seconds from the start of the sound.</param>
 	/// <returns>The audio sample value, typically in the range of -1 to 1.</returns>
 	public delegate float AudioGenerator(float sampleTime);
 
@@ -519,18 +479,6 @@ namespace StereoKit
 	/// <param name="frameStart">Index of the buffer's first frame within
 	/// the overall sound, at 48,000 frames per second.</param>
 	public delegate void AudioBufferGenerator(float[] samples, ulong frameStart);
-
-	/// <summary>The raw native callback shape backing both public generator
-	/// delegates, where samples land directly in StereoKit's own buffer.
-	/// This is a low-level interop type - prefer AudioBufferGenerator or
-	/// AudioGenerator with Sound.Generate.</summary>
-	/// <param name="outSamples">Native pointer to the buffer to fill with
-	/// interleaved float samples, frames x channels floats.</param>
-	/// <param name="frameStart">Index of the buffer's first frame, at 48,000
-	/// frames per second.</param>
-	/// <param name="frameCount">Number of frames to fill.</param>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void AudioGeneratorBatch(IntPtr outSamples, ulong frameStart, ulong frameCount);
 
 	/// <summary>Extra parameters for playing a sound with sound_play,
 	/// this is the raw native layout - the public API is SoundPlay.</summary>
@@ -591,13 +539,6 @@ namespace StereoKit
 		/// meters.</summary>
 		public float shapeRadius;
 	}
-
-	/// <summary>A callback for when input events occur.</summary>
-	/// <param name="source">The source of the input event.</param>
-	/// <param name="inputEvent">The state of the input event.</param>
-	/// <param name="pointer">Information about the pointer that triggered the event.</param>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void InputEventCallback(InputSource source, BtnState inputEvent, in Pointer pointer);
 
 	/// <summary>Id of a simulated hand pose, for use with
 	/// `Input.HandSimPoseRemove`</summary>

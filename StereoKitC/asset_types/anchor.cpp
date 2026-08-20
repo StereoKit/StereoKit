@@ -20,6 +20,8 @@ bool32_t          anch_initialized  = false;
 
 ///////////////////////////////////////////
 
+// Only the OpenXR extension registry calls this
+#if defined(SK_XR_OPENXR)
 void anchors_register() {
 	xr_system_t system = {};
 	system.evt_initialize = { [](void*) { return anchors_init() ? xr_system_succeed : xr_system_fail; } };
@@ -28,6 +30,7 @@ void anchors_register() {
 	system.evt_step_end   = { anchors_step_end   };
 	ext_management_sys_register(system);
 }
+#endif
 
 ///////////////////////////////////////////
 
@@ -37,12 +40,9 @@ bool anchors_init() {
 		return false;
 	}
 
-	if (xr_ext_msft_spatial_anchors_available())
-		anch_sys = anchor_system_openxr_msft;
-	else if (backend_xr_get_type() == backend_xr_type_simulator)
-		anch_sys = anchor_system_stage;
-	else
-		anch_sys = anchor_system_none;
+	if      (xr_ext_msft_spatial_anchors_available())            anch_sys = anchor_system_openxr_msft;
+	else if (backend_xr_get_type() == backend_xr_type_simulator) anch_sys = anchor_system_stage;
+	else                                                         anch_sys = anchor_system_none;
 
 	bool32_t result = false;
 	switch (anch_sys) {

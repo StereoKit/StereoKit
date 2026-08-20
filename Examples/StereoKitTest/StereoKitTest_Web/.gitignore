@@ -1,0 +1,5 @@
+# The build copies these in from StereoKit/web, see StereoKit_ShellWeb in
+# StereoKit/SKAssets.targets.
+wwwroot/stereokit.js
+wwwroot/stereokit-logo.svg
+wwwroot/stereokit-wide.svg

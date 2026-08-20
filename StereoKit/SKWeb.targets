@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<!-- Hooks a browser-wasm app up to StereoKit's native archive. A wasm
+	     module links whole, so there's no shared library to load at runtime;
+	     .NET's own emscripten relinks StereoKit into dotnet.native.wasm. That
+	     also means the final link is the .NET SDK's rather than CMake's, so
+	     sk_target_web_options' stack and memory flags are repeated here. Its
+	     export flags are not: .NET's link already exports the runtime methods
+	     miniaudio's JS reads (HEAPF32 and friends), and EMSCRIPTEN_KEEPALIVE
+	     survives it, both visible in the emcc-link.rsp it generates.
+
+	     The importer says where the archive lives: SKWebNativeDir for the
+	     NuGet package is the package's own runtimes folder, and for repo
+	     builds it's the CMake output. Everything here is inert off the web. -->
+
+	<PropertyGroup Condition="'$(UsingMicrosoftNETSdkWebAssembly)'=='true'">
+		<!-- Relink dotnet.native.wasm with our archive. -->
+		<WasmBuildNative>true</WasmBuildNative>
+
+		<!-- WebGPU reads WGSL, which only the SVSL backend emits. -->
+		<SKUseSVSL Condition="'$(SKUseSVSL)'==''">true</SKUseSVSL>
+		<SKShaderTarget Condition="'$(SKShaderTarget)'==''">w</SKShaderTarget>
+
+		<!-- Without this the app runs on Mono's interpreter, which is where
+		     most of a debug build's frame time goes. Costs build time and
+		     download size. -->
+		<RunAOTCompilation Condition="'$(RunAOTCompilation)'=='' and '$(Configuration)'=='Release'">true</RunAOTCompilation>
+	</PropertyGroup>
+
+	<!-- CMake merges StereoKit and its dependencies into this one archive,
+	     whose file name is also what satisfies DllImport("StereoKitC"). -->
+	<ItemGroup Condition="'$(UsingMicrosoftNETSdkWebAssembly)'=='true'">
+		<NativeFileReference Include="$(SKWebNativeDir)StereoKitC.a" />
+	</ItemGroup>
+
+	<PropertyGroup Condition="'$(UsingMicrosoftNETSdkWebAssembly)'=='true'">
+		<!-- No JSPI and no Asyncify: nothing in StereoKit blocks on the GPU any
+		     more, readbacks poll across frames. Mono's interpreter does not
+		     survive a suspendable stack, see docs/PLAN_csharp_web.md.
+
+		     The emdawnwebgpu JS libraries come pre-baked beside the archive
+		     (order matters, library_webgpu.js reads the others) because
+		     .NET's emscripten cache is frozen, and that stops the use-port
+		     mechanism from building the port at link. Its compiled half is
+		     inside the archive already, see CMakeLists.txt. -->
+		<EmccExtraLDFlags>
+			--js-library "$(SKWebNativeDir)emdawnwebgpu/library_webgpu_enum_tables.js"
+			--js-library "$(SKWebNativeDir)emdawnwebgpu/library_webgpu_generated_struct_info.js"
+			--js-library "$(SKWebNativeDir)emdawnwebgpu/library_webgpu_generated_sig_info.js"
+			--js-library "$(SKWebNativeDir)emdawnwebgpu/library_webgpu.js"
+			-sSTACK_SIZE=2MB
+			-sALLOW_MEMORY_GROWTH=1
+			$(SKWebExtraLDFlags)
+			$(EmccExtraLDFlags)
+		</EmccExtraLDFlags>
+	</PropertyGroup>
+
+	<!-- Asset file names carry a content hash, and publish leaves the old ones
+	     behind, so the folder grows by a whole build every time. Scoped to the
+	     project's own bin so an explicit -o elsewhere is never deleted. -->
+	<Target Name="SKWebCleanPublishDir" BeforeTargets="PrepareForPublish"
+	        Condition="'$(UsingMicrosoftNETSdkWebAssembly)'=='true' and '$(PublishDir)'!='' and Exists('$(PublishDir)') and $([System.IO.Path]::GetFullPath('$(PublishDir)').StartsWith($([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/bin'))))">
+		<RemoveDir Directories="$(PublishDir)" />
+	</Target>
+</Project>

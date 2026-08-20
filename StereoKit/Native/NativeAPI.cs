@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
-	internal static partial class NativeAPI
+	internal static unsafe partial class NativeAPI
 	{
 		const string            dll  = "StereoKitC";
 		const CharSet           cSet = CharSet.Ansi;
@@ -23,9 +23,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sk_shutdown_unsafe();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sk_quit(QuitReason quitReason);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sk_step([MarshalAs(UnmanagedType.FunctionPtr)] Action app_step);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sk_run([MarshalAs(UnmanagedType.FunctionPtr)] Action app_step, [MarshalAs(UnmanagedType.FunctionPtr)] Action app_shutdown);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sk_run_data([MarshalAs(UnmanagedType.FunctionPtr)] AppStep app_step, IntPtr step_data, [MarshalAs(UnmanagedType.FunctionPtr)] AppShutdown app_shutdown, IntPtr shutdown_data);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sk_step(delegate* unmanaged[Cdecl]<void> app_step);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sk_run(delegate* unmanaged[Cdecl]<void> app_step, delegate* unmanaged[Cdecl]<void> app_shutdown);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         sk_run_data(delegate* unmanaged[Cdecl]<IntPtr, void> app_step, IntPtr step_data, delegate* unmanaged[Cdecl]<IntPtr, void> app_shutdown, IntPtr shutdown_data);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         sk_is_stepping();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern DisplayMode  sk_active_display_mode();
@@ -226,8 +226,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_addref(IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_release(IntPtr mesh);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AssetState   mesh_asset_state(IntPtr mesh);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_on_load(IntPtr mesh, [MarshalAs(UnmanagedType.FunctionPtr)] AssetOnLoadCallback asset_on_load_callback, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_on_load_remove(IntPtr mesh, [MarshalAs(UnmanagedType.FunctionPtr)] AssetOnLoadCallback asset_on_load_callback);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_on_load(IntPtr mesh, delegate* unmanaged[Cdecl]<IntPtr, IntPtr, void> asset_on_load_callback, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_on_load_remove(IntPtr mesh, delegate* unmanaged[Cdecl]<IntPtr, IntPtr, void> asset_on_load_callback, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_draw(IntPtr mesh, IntPtr material, Matrix transform, Color color_linear, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         mesh_set_keep_data(IntPtr mesh, [MarshalAs(UnmanagedType.Bool)] bool keep_data);
 		[return: MarshalAs(UnmanagedType.Bool)]
@@ -289,8 +289,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_addref(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_release(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AssetState   tex_asset_state(IntPtr texture);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_on_load(IntPtr texture, [MarshalAs(UnmanagedType.FunctionPtr)] AssetOnLoadCallback asset_on_load_callback, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_on_load_remove(IntPtr texture, [MarshalAs(UnmanagedType.FunctionPtr)] AssetOnLoadCallback asset_on_load_callback);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_on_load(IntPtr texture, delegate* unmanaged[Cdecl]<IntPtr, IntPtr, void> asset_on_load_callback, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_on_load_remove(IntPtr texture, delegate* unmanaged[Cdecl]<IntPtr, IntPtr, void> asset_on_load_callback, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_colors(IntPtr texture, int width, int height, IntPtr data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_color_arr(IntPtr texture, int width, int height, IntPtr array_data, int array_count, int multisample, out SphericalHarmonics out_sh_lighting_info);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_color_arr_mips(IntPtr texture, int width, int height, IntPtr array_data, int array_count, int mip_count, int multisample, out SphericalHarmonics out_sh_lighting_info);
@@ -526,8 +526,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_addref(IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_release(IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AssetState   model_asset_state(IntPtr model);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_on_load(IntPtr model, [MarshalAs(UnmanagedType.FunctionPtr)] AssetOnLoadCallback asset_on_load_callback, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_on_load_remove(IntPtr model, [MarshalAs(UnmanagedType.FunctionPtr)] AssetOnLoadCallback asset_on_load_callback);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_on_load(IntPtr model, delegate* unmanaged[Cdecl]<IntPtr, IntPtr, void> asset_on_load_callback, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_on_load_remove(IntPtr model, delegate* unmanaged[Cdecl]<IntPtr, IntPtr, void> asset_on_load_callback, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_draw(IntPtr model, Matrix transform, Color color_linear, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_draw_mat(IntPtr model, IntPtr material_override, Matrix transform, Color color_linear, RenderLayer layer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_recalculate_bounds(IntPtr model);
@@ -662,8 +662,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_blit(IntPtr to_rendertarget, IntPtr material);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_post_process([In] IntPtr[] in_arr_materials, int material_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_screenshot([MarshalAs(UnmanagedType.LPUTF8Str)] string file_utf8, int file_quality_100, Pose viewpoint, int width, int height, float field_of_view_degrees);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_screenshot_capture([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Pose viewpoint, int width, int height, float field_of_view_degrees, TexFormat tex_format, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_screenshot_viewpoint([MarshalAs(UnmanagedType.FunctionPtr)] RenderOnScreenshotCallback render_on_screenshot_callback, Matrix camera, Matrix projection, int width, int height, RenderLayer layer_filter, RenderClear clear, Rect viewport, TexFormat tex_format, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_screenshot_capture(delegate* unmanaged[Cdecl]<IntPtr, TexFormat, int, int, IntPtr, void> render_on_screenshot_callback, Pose viewpoint, int width, int height, float field_of_view_degrees, TexFormat tex_format, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_screenshot_viewpoint(delegate* unmanaged[Cdecl]<IntPtr, TexFormat, int, int, IntPtr, void> render_on_screenshot_callback, Matrix camera, Matrix projection, int width, int height, RenderLayer layer_filter, RenderClear clear, Rect viewport, TexFormat tex_format, IntPtr context);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_primary_list();
 
 		///////////////////////////////////////////
@@ -769,8 +769,8 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         platform_file_picker(PickerMode mode, IntPtr callback_data, [MarshalAs(UnmanagedType.FunctionPtr)] PickerCallback picker_callback, in FileFilter filters, int filter_count);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         platform_file_picker_sz(PickerMode mode, IntPtr callback_data, [MarshalAs(UnmanagedType.FunctionPtr)] PickerCallbackSz picker_callback_sz, [In] FileFilter[] in_arr_filters, int filter_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         platform_file_picker(PickerMode mode, IntPtr callback_data, delegate* unmanaged[Cdecl]<IntPtr, int, IntPtr, void> picker_callback, in FileFilter filters, int filter_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         platform_file_picker_sz(PickerMode mode, IntPtr callback_data, delegate* unmanaged[Cdecl]<IntPtr, int, IntPtr, int, void> picker_callback_sz, [In] FileFilter[] in_arr_filters, int filter_count);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         platform_file_picker_close();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         platform_file_picker_visible();
@@ -869,8 +869,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_hand_sim_pose_clear();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          input_pointer_count(InputSource filter);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pointer      input_pointer(int index, InputSource filter);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_subscribe(InputSource source, BtnState input_event, [MarshalAs(UnmanagedType.FunctionPtr)] InputEventCallback input_event_callback);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_unsubscribe(InputSource source, BtnState input_event, [MarshalAs(UnmanagedType.FunctionPtr)] InputEventCallback input_event_callback);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_subscribe(InputSource source, BtnState input_event, delegate* unmanaged[Cdecl]<InputSource, BtnState, IntPtr, void> input_event_callback);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_unsubscribe(InputSource source, BtnState input_event, delegate* unmanaged[Cdecl]<InputSource, BtnState, IntPtr, void> input_event_callback);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_fire_event(InputSource source, BtnState input_event, in Pointer pointer);
 
 		///////////////////////////////////////////
@@ -990,9 +990,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         backend_openxr_composition_layer(IntPtr XrCompositionLayerBaseHeader, int data_size, int sort_order);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         backend_openxr_end_frame_chain(IntPtr XrBaseHeader, int data_size);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         backend_openxr_set_hand_joint_scale(float joint_scale_factor);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         backend_openxr_add_callback_pre_session_create([MarshalAs(UnmanagedType.FunctionPtr)] XRPreSessionCreateCallback xr_pre_session_create_callback, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         backend_openxr_add_callback_poll_event([MarshalAs(UnmanagedType.FunctionPtr)] XRPollEventCallback xr_poll_event_callback, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         backend_openxr_remove_callback_poll_event([MarshalAs(UnmanagedType.FunctionPtr)] XRPollEventCallback xr_poll_event_callback);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         backend_openxr_add_callback_pre_session_create(delegate* unmanaged[Cdecl]<IntPtr, void> xr_pre_session_create_callback, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         backend_openxr_add_callback_poll_event(delegate* unmanaged[Cdecl]<IntPtr, IntPtr, void> xr_poll_event_callback, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         backend_openxr_remove_callback_poll_event(delegate* unmanaged[Cdecl]<IntPtr, IntPtr, void> xr_poll_event_callback);
 
 		///////////////////////////////////////////
 
@@ -1014,8 +1014,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         log_write(LogLevel level, [MarshalAs(UnmanagedType.LPUTF8Str)] string text);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         log_set_filter(LogLevel level);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         log_set_colors(LogColors colors);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         log_subscribe([MarshalAs(UnmanagedType.FunctionPtr)] LogCallback log_callback, IntPtr context);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         log_unsubscribe([MarshalAs(UnmanagedType.FunctionPtr)] LogCallback log_callback, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         log_subscribe(delegate* unmanaged[Cdecl]<IntPtr, LogLevel, IntPtr, void> log_callback, IntPtr context);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         log_unsubscribe(delegate* unmanaged[Cdecl]<IntPtr, LogLevel, IntPtr, void> log_callback, IntPtr context);
 
 		///////////////////////////////////////////
 

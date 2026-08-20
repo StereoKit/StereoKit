@@ -22,10 +22,9 @@ bool32_t             sensor_depth_initialized = false;
 bool sensor_depth_init() {
 	if (sensor_depth_initialized) return false;
 
-	if (xr_ext_meta_environment_depth_available())
-		sensor_depth_sys = sensor_depth_system_openxr_meta;
-	else
-		sensor_depth_sys = sensor_depth_system_none;
+	sensor_depth_sys = xr_ext_meta_environment_depth_available()
+		? sensor_depth_system_openxr_meta
+		: sensor_depth_system_none;
 
 	sensor_depth_initialized = true;
 
@@ -48,12 +47,15 @@ void sensor_depth_shutdown(void*) {
 
 ///////////////////////////////////////////
 
+// Only the OpenXR extension registry calls this
+#if defined(SK_XR_OPENXR)
 void sensor_depth_register() {
 	xr_system_t system = {};
 	system.evt_initialize = { [](void*) { return sensor_depth_init() ? xr_system_succeed : xr_system_fail; } };
 	system.evt_shutdown   = { sensor_depth_shutdown };
 	ext_management_sys_register(system);
 }
+#endif
 
 ///////////////////////////////////////////
 

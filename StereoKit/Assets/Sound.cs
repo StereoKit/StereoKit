@@ -313,10 +313,14 @@ namespace StereoKit
 			return inst == IntPtr.Zero ? null : new Sound(inst);
 		}
 
-		/// <summary>This function will generate a sound from a function you
-		/// provide! The function is called once for each sample in the
-		/// duration. As an example, it may be called 48,000 times for each
-		/// second of duration.</summary>
+		/// <summary>This function will generate a mono sound from a function
+		/// you provide! The generator runs once per sample, 48,000 times for
+		/// each second of duration, and the finished buffer is handed to
+		/// StereoKit in one piece.
+		///
+		/// This is the shortest way to write a waveform. Reach for the buffer
+		/// overload when you want a channel format other than mono, or when
+		/// a sample depends on the ones before it.</summary>
 		/// <param name="generator">This function takes a time value as an
 		/// argument, which will range from 0-duration, and should return a
 		/// value from -1 - +1 representing the audio wave at that point in
@@ -327,22 +331,18 @@ namespace StereoKit
 		/// went wrong.</returns>
 		public static Sound Generate(AudioGenerator generator, float duration)
 		{
-			// One native call total: the batch callback fills the whole
-			// buffer by looping the per-sample generator in C#.
-			AudioGeneratorBatch batch = (samples, start, count) => {
-				float[] buffer = new float[count];
-				for (ulong i = 0; i < count; i++)
-					buffer[i] = generator((start + i) / 48000f);
-				Marshal.Copy(buffer, 0, samples, (int)count);
-			};
-			IntPtr inst = NativeAPI.sound_generate(batch, duration, SoundChannels.Mono);
-			GC.KeepAlive(batch);
-			return inst == IntPtr.Zero ? null : new Sound(inst);
+			// double math matches native sound_generate's frame rounding
+			float[] samples = new float[(int)((double)duration * 48000)];
+			for (int i = 0; i < samples.Length; i++)
+				samples[i] = generator(i / 48000f);
+
+			return FromSamples(samples, SoundChannels.Mono);
 		}
 
 		/// <summary>This function generates a sound by asking your function
-		/// to fill whole buffers of samples! This is far faster than the
-		/// per-sample overload, one interop call instead of one per sample.
+		/// to fill the whole buffer at once! Your loop replaces the
+		/// per-sample overload's, so a sample can depend on the ones around
+		/// it, and this is the overload that generates channel formats.
 		///
 		/// With a channel format, the buffer holds frames-x-channels
 		/// interleaved samples: stereo alternates left/right, and
@@ -363,14 +363,10 @@ namespace StereoKit
 		{
 			int channelCount = channels == SoundChannels.Ambisonic1 ? 4
 			                 : channels == SoundChannels.Stereo     ? 2 : 1;
-			AudioGeneratorBatch batch = (samples, start, count) => {
-				float[] buffer = new float[count * (ulong)channelCount];
-				generator(buffer, start);
-				Marshal.Copy(buffer, 0, samples, buffer.Length);
-			};
-			IntPtr inst = NativeAPI.sound_generate(batch, duration, channels);
-			GC.KeepAlive(batch);
-			return inst == IntPtr.Zero ? null : new Sound(inst);
+			float[] samples = new float[(int)((double)duration * 48000) * channelCount];
+			generator(samples, 0);
+
+			return FromSamples(samples, channels);
 		}
 
 		/// <inheritdoc cref="Default.SoundClick" />

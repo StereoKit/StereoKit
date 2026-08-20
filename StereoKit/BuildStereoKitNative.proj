@@ -8,6 +8,24 @@
 		<Exec WorkingDirectory="$(SKSDKFolder)" Command="cmake --build --preset $(SKSDKPreset)" />
 	</Target>
 
+	<!-- emscripten refuses to mix objects across versions, so the archives the
+	     C# web build links have to come from the copy inside .NET's wasm
+	     workload rather than a standalone emsdk. The env script is what finds
+	     it, so cmake runs underneath that.
+
+	     A failure is downgraded rather than swallowed: a host without bash
+	     falls through to SKSDKWebCheckArchives' instructions, and a host with
+	     older archives gets the stale warning below instead of silently
+	     linking them. -->
+	<Target Name="StereoKit_BuildNativeWeb">
+		<Message Condition="!Exists('$(SKSDKCacheFile)')" Importance="high" Text="[StereoKit SDK] Configuring StereoKitC for web"/>
+		<Exec WorkingDirectory="$(SKSDKFolder)" Command="bash -c &quot;source tools/web/dotnet_emsdk_env.sh &amp;&amp; { [ -f '$(SKSDKCacheFile)' ] || cmake --preset $(SKSDKPreset); } &amp;&amp; cmake --build --preset $(SKSDKPreset)&quot;" IgnoreExitCode="true">
+			<Output TaskParameter="ExitCode" PropertyName="SKSDKWebBuildExit" />
+		</Exec>
+		<Warning Condition="'$(SKSDKWebBuildExit)'!='0' and Exists('$(SKSDKWebArchive)')"
+		         Text="[StereoKit SDK] The native web build failed, see the output above. Linking the previous archives at $(SKSDKWebArchive), which may be stale!" />
+	</Target>
+
 	<Target Name="StereoKit_CleanNative" Condition="Exists('$(SKSDKIntermediateDir)')">
 		<Message Importance="high" Text="[StereoKit SDK] Removing $(SKSDKIntermediateDir)"/>
 		<Exec Command="cmake -E rm -rf &quot;$(SKSDKIntermediateDir)&quot;" />

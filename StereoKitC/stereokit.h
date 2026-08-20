@@ -1478,7 +1478,7 @@ SK_API void         mesh_addref          (mesh_t mesh);
 SK_API void         mesh_release         (mesh_t mesh);
 SK_API asset_state_ mesh_asset_state     (const mesh_t mesh);
 SK_API void         mesh_on_load         (mesh_t mesh, void (*asset_on_load_callback)(mesh_t mesh, void *context), void *context);
-SK_API void         mesh_on_load_remove  (mesh_t mesh, void (*asset_on_load_callback)(mesh_t mesh, void *context));
+SK_API void         mesh_on_load_remove  (mesh_t mesh, void (*asset_on_load_callback)(mesh_t mesh, void *context), void *context);
 SK_API void         mesh_draw            (mesh_t mesh, material_t material, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void         mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
 SK_API bool32_t     mesh_get_keep_data   (mesh_t mesh);
@@ -1656,7 +1656,7 @@ SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
 SK_API asset_state_ tex_asset_state         (const tex_t texture);
 SK_API void         tex_on_load             (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
-SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context));
+SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
 SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
@@ -2174,7 +2174,7 @@ SK_API void          model_addref                  (model_t model);
 SK_API void          model_release                 (model_t model);
 SK_API asset_state_  model_asset_state             (const model_t model);
 SK_API void          model_on_load                 (model_t model, void (*asset_on_load_callback)(model_t model, void *context), void *context);
-SK_API void          model_on_load_remove          (model_t model, void (*asset_on_load_callback)(model_t model, void *context));
+SK_API void          model_on_load_remove          (model_t model, void (*asset_on_load_callback)(model_t model, void *context), void *context);
 SK_API void          model_draw                    (model_t model,                               matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_draw_mat                (model_t model, material_t material_override, matrix transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void          model_recalculate_bounds      (model_t model);
@@ -3839,8 +3839,11 @@ typedef enum backend_graphics_ {
 	  Obsolete: StereoKit is now Vulkan-only; the WebGL backend is no longer supported.*/
 	backend_graphics_webgl,
 	/*Vulkan is used for rendering, this works basically on every platform, and
-	  is the only backend StereoKit currently supports!*/
+	  is StereoKit's default backend!*/
 	backend_graphics_vulkan,
+	/*WebGPU is used for rendering, via Dawn on native platforms and the
+	  browser's own implementation on the web.*/
+	backend_graphics_webgpu,
 } backend_graphics_;
 
 /*Identifies a Vulkan queue family that StereoKit's Vulkan backend interacts

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "StereoKitTest_Web": {
+      "commandName": "Project",
+      "applicationUrl": "http://127.0.0.1:5282"
+    }
+  }
+}

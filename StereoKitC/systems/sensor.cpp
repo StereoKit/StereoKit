@@ -233,11 +233,14 @@ static void sensor_shutdown(void*) {
 
 ///////////////////////////////////////////
 
+// Only the OpenXR extension registry calls this
+#if defined(SK_XR_OPENXR)
 void sensor_register() {
 	xr_system_t system = {};
 	system.evt_shutdown = { sensor_shutdown };
 	ext_management_sys_register(system);
 }
+#endif
 
 ///////////////////////////////////////////
 

@@ -246,6 +246,11 @@ void log_write(log_ level, const char *text) {
 		log_replace_colors(text, replace_buffer, log_tags, nullptr, _countof(log_tags), 0);
 		plain_text = replace_buffer;
 	}
+#if defined(SK_OS_WEB)
+	// The browser console renders no ANSI, so it takes the plain text. printf
+	// reaches Module.print, which the page routes to the console.
+	printf("[SK %s] %s\n", tag, plain_text);
+#endif
 	for (int32_t i = 0; i < log_listeners.count; i++) {
 		log_listeners[i].callback(log_listeners[i].context, level, plain_text);
 	}

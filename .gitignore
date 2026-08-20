@@ -357,3 +357,6 @@ build_*/
 
 .vscode/*
 !.vscode/tasks.json
+
+# MSBuild SDK resolver leaves these beside a csproj
+*.SdkResolver.*.Backup.tmp

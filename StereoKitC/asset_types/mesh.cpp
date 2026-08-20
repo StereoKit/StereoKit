@@ -277,7 +277,7 @@ struct mesh_load_t {
 	bool32_t calc_bounds;
 };
 
-static bool32_t mesh_load_process(asset_task_t*, asset_header_t* asset, void *data) {
+static asset_action_result_ mesh_load_process(asset_task_t*, asset_header_t* asset, void *data) {
 	mesh_t       mesh = (mesh_t)asset;
 	mesh_load_t* load = (mesh_load_t*)data;
 
@@ -287,10 +287,10 @@ static bool32_t mesh_load_process(asset_task_t*, asset_header_t* asset, void *da
 	}
 
 	mesh->header.state = asset_state_loaded_meta;
-	return true;
+	return asset_action_done;
 }
 
-static bool32_t mesh_load_upload(asset_task_t*, asset_header_t* asset, void *data) {
+static asset_action_result_ mesh_load_upload(asset_task_t*, asset_header_t* asset, void *data) {
 	mesh_t       mesh = (mesh_t)asset;
 	mesh_load_t* load = (mesh_load_t*)data;
 
@@ -319,7 +319,7 @@ static bool32_t mesh_load_upload(asset_task_t*, asset_header_t* asset, void *dat
 		load->inds  = nullptr;
 	}
 
-	return true;
+	return asset_action_done;
 }
 
 static void mesh_load_free(asset_header_t*, void *data) {
@@ -388,15 +388,15 @@ static void _mesh_set_data(mesh_t mesh, int32_t format_id, const void* vertices,
 			memcpy(load_data->inds, indices, sizeof(vind_t) * index_count);
 		}
 
-		static const asset_load_action_t actions[] = {
-			mesh_load_process,
-			mesh_load_upload,
+		static const asset_action_t actions[] = {
+			{ mesh_load_process, asset_affinity_heavy },
+			{ mesh_load_upload },
 		};
 
 		asset_task_t task = {};
 		task.asset        = &mesh->header;
 		task.load_data    = load_data;
-		task.actions      = (asset_load_action_t *)actions;
+		task.actions      = (asset_action_t *)actions;
 		task.action_count = _countof(actions);
 		task.free_data    = mesh_load_free;
 		task.on_failure   = mesh_load_on_failure;
@@ -851,8 +851,8 @@ void mesh_on_load(mesh_t mesh, void (*on_load)(mesh_t mesh, void *context), void
 
 ///////////////////////////////////////////
 
-void mesh_on_load_remove(mesh_t mesh, void (*on_load)(mesh_t mesh, void *context)) {
-	assets_on_load_remove(&mesh->header, (void(*)(asset_header_t*,void*))on_load);
+void mesh_on_load_remove(mesh_t mesh, void (*on_load)(mesh_t mesh, void *context), void *context) {
+	assets_on_load_remove(&mesh->header, (void(*)(asset_header_t*,void*))on_load, context);
 }
 
 ///////////////////////////////////////////

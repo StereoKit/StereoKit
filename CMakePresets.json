@@ -15,6 +15,14 @@
       }
     },
     {
+      "name":        "WebGPU",
+      "description": "Render with sk_renderer's WebGPU backend instead of Vulkan. Implies SVSL shaders, and drops the OpenXR backend",
+      "hidden":      true,
+      "cacheVariables": {
+        "SK_USE_WEBGPU": "ON"
+      }
+    },
+    {
       "name":        "Fast",
       "description": "Disable tests for faster builds",
       "hidden":      true,
@@ -238,6 +246,12 @@
       "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Debug_Fast"
     },
     {
+      "name":        "Linux_x64_Debug_WebGPU",
+      "description": "Debug build for Linux x64 on the WebGPU backend, via Dawn",
+      "inherits":    ["Linux_x64_Debug", "WebGPU"],
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Debug_WebGPU"
+    },
+    {
       "name":        "Linux_Arm64",
       "description": "Cross-compile for Linux Arm64",
       "hidden":      true,
@@ -402,15 +416,36 @@
       "binaryDir":   "${sourceDir}/bin/intermediate/Android_x64_Debug_Fast"
     },
     {
-      "name":        "Web_Release",
-      "description": "Build for Web",
-      "inherits":    "BuildType_Release",
-      "binaryDir":   "${sourceDir}/bin/intermediate/cmake/Web_Release",
+      "name":        "Web_Base",
+      "description": "The .NET wasm workload's emscripten, the one toolchain every web build shares so archives always match the C# link. Source tools/web/dotnet_emsdk_env.sh first",
+      "hidden":      true,
       "generator":   "Ninja",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE":          "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+        "CMAKE_TOOLCHAIN_FILE":          "$env{DOTNET_EMSDK}/emscripten/cmake/Modules/Platform/Emscripten.cmake",
         "CMAKE_CROSSCOMPILING_EMULATOR": "$env{EMSDK_NODE}"
       }
+    },
+    {
+      "name":        "Web_Release",
+      "description": "Release build for Web, C++ test apps included",
+      "inherits":    ["Web_Base", "BuildType_Release"],
+      "binaryDir":   "${sourceDir}/bin/intermediate/Web_Release"
+    },
+    {
+      "name":        "Web_Debug",
+      "description": "Debug build for Web, C++ test apps included",
+      "inherits":    ["Web_Base", "BuildType_Debug"],
+      "binaryDir":   "${sourceDir}/bin/intermediate/Web_Debug"
+    },
+    {
+      "name":        "Web_Release_Fast",
+      "inherits":    ["Web_Release", "Fast"],
+      "binaryDir":   "${sourceDir}/bin/intermediate/Web_Release_Fast"
+    },
+    {
+      "name":        "Web_Debug_Fast",
+      "inherits":    ["Web_Debug", "Fast"],
+      "binaryDir":   "${sourceDir}/bin/intermediate/Web_Debug_Fast"
     }
   ],
   "buildPresets": [
@@ -457,6 +492,7 @@
       { "name":"Android_x64_Debug_Fast",     "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"Android_x64_Debug_Fast" },
       { "name":"Linux_x64_Debug",            "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"Linux_x64_Debug" },
       { "name":"Linux_x64_Debug_Fast",       "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"Linux_x64_Debug_Fast" },
+      { "name":"Linux_x64_Debug_WebGPU",     "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"Linux_x64_Debug_WebGPU" },
       { "name":"Linux_x64_Release",          "inherits":"Default_Base","configuration":"Release", "configurePreset":"Linux_x64_Release" },
       { "name":"Linux_x64_Release_Fast",     "inherits":"Default_Base","configuration":"Release", "configurePreset":"Linux_x64_Release_Fast" },
       { "name":"Linux_Arm64_Debug",          "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"Linux_Arm64_Debug" },
@@ -467,6 +503,9 @@
       { "name":"MacOS_Arm64_Debug_Fast",     "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"MacOS_Arm64_Debug_Fast" },
       { "name":"MacOS_Arm64_Release",        "inherits":"Default_Base","configuration":"Release", "configurePreset":"MacOS_Arm64_Release" },
       { "name":"MacOS_Arm64_Release_Fast",   "inherits":"Default_Base","configuration":"Release", "configurePreset":"MacOS_Arm64_Release_Fast" },
-      { "name":"Web_Release",                                          "configuration":"Release", "configurePreset":"Web_Release", "jobs":16 }
+      { "name":"Web_Release",                                          "configuration":"Release", "configurePreset":"Web_Release", "jobs":16 },
+      { "name":"Web_Debug",                                            "configuration":"Debug",   "configurePreset":"Web_Debug",   "jobs":16 },
+      { "name":"Web_Release_Fast",                                     "configuration":"Release", "configurePreset":"Web_Release_Fast", "jobs":16 },
+      { "name":"Web_Debug_Fast",                                       "configuration":"Debug",   "configurePreset":"Web_Debug_Fast",   "jobs":16 }
   ]
 }

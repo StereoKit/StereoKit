@@ -67,6 +67,7 @@ backend_graphics_opengl_wgl OpenGL_WGL
 backend_graphics_opengles_egl OpenGLES_EGL
 backend_graphics_webgl WebGL
 backend_graphics_vulkan Vulkan
+backend_graphics_webgpu WebGPU
 
 device_tracking_3dof DoF3
 device_tracking_6dof DoF6
@@ -136,8 +137,9 @@ audio_env_t AudioEnvironment
 # render_to/render_list_draw_now take render_settings_t by typed ref there,
 # rather than the generator's IntPtr.
 @noimpl render_to render_list_draw_now
-# sound_generate's callback is the batch delegate, and sound_create_mem takes
-# a raw byte blob - neither is inferable from the void*/fnptr signature.
+# Sound.Generate fills a buffer in C# and calls sound_create_samples, so nothing
+# binds sound_generate. sound_create_mem takes a raw byte blob, which the
+# generator types as IntPtr[]; the byte[] form is hand-bound instead.
 @noimpl sound_generate sound_create_mem
 @noimpl spherical_harmonics_t hand_t controller_t file_filter_t
 # Request takes arrays of strings/features, hand-marshaled in NativeAPI.Custom.cs
@@ -145,22 +147,3 @@ audio_env_t AudioEnvironment
 
 # Enums with hand-written struct implementations
 @noimpl text_align_
-
-# Delegate naming overrides (to match existing wrapper code naming conventions)
-xr_poll_event_callback XRPollEventCallback
-xr_pre_session_create_callback XRPreSessionCreateCallback
-picker_callback PickerCallback
-
-# Delegates with hand-written public API versions that have DIFFERENT signatures
-# (e.g., no context param for user convenience). Skip these, keep hand-written.
-@noimpl LogCallback ScreenshotCallback
-
-# Delegates that need different parameter types than generator produces
-# (e.g., Color32* should be IntPtr, bool32_t should be int for some callbacks)
-@noimpl RenderOnScreenshotCallback PickerCallback PickerCallbackSz
-
-# Delegates that are defined in NativeTypes.cs with hand-written wrappers
-@noimpl XRPollEventCallback XRPreSessionCreateCallback
-
-# Public API delegates that need XML documentation (hand-written in NativeTypes.cs)
-@noimpl AppStep AppShutdown AssetOnLoadCallback AudioGenerator InputEventCallback

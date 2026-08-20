@@ -19,7 +19,7 @@
 		android:debuggable="@ANDROID_DEBUGGABLE@">
 
 		<!-- Oculus -->
-		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|quest3|questpro"/>
+		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|quest3|quest3s|questpro"/>
 		<meta-data android:name="com.oculus.handtracking.version" android:value="V2.0"/>
 		<meta-data android:name="com.oculus.ossplash.background" android:value="passthrough-contextual"/>
 		<uses-native-library android:name="libopenxr_forwardloader.oculus.so" android:required="false"/>
@@ -55,7 +55,6 @@
 	
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.RECORD_AUDIO" />
-	<uses-permission android:name="android.permission.CAPTURE_AUDIO_OUTPUT" />
 	<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
 	<!-- Generic OpenXR items -->

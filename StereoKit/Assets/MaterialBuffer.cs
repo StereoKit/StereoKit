@@ -63,7 +63,7 @@ namespace StereoKit
 			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))
 				throw new NotSupportedException("MaterialBuffer's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying! Explicit would work too.");
 
-			int size     = Marshal.SizeOf(typeof(T));
+			int size     = Marshal.SizeOf<T>();
 			_localMemory = Marshal.AllocHGlobal(size);
 			_inst        = NativeAPI.material_buffer_create(size);
 			if (_inst == IntPtr.Zero)
@@ -80,7 +80,7 @@ namespace StereoKit
 			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))
 				throw new NotSupportedException("MaterialBuffer's data type must have a '[StructLayout(LayoutKind.Sequential)]' attribute for proper copying! Explicit would work too.");
 
-			int size     = Marshal.SizeOf(typeof(T));
+			int size     = Marshal.SizeOf<T>();
 			_localMemory = Marshal.AllocHGlobal(size);
 			_inst        = NativeAPI.material_buffer_create(size);
 		}

@@ -51,28 +51,28 @@ static asset_header_t* ast_header(tex_t tex) { return (asset_header_t*)tex; }
 
 ///////////////////////////////////////////
 
-static bool32_t ast_action_load(asset_task_t*, asset_header_t* asset, void* data) {
+static asset_action_result_ ast_action_load(asset_task_t*, asset_header_t* asset, void* data) {
 	ast_ctx_t* ctx = (ast_ctx_t*)data;
 	if (ctx->dep != nullptr)
 		atomic_store_i32(&ctx->dep_state_at_run, ctx->dep->state);
 	asset->state = asset_state_loaded;
 	atomic_increment(&ctx->ran);
-	return true;
+	return asset_action_done;
 }
 
-static bool32_t ast_action_load_slow(asset_task_t* task, asset_header_t* asset, void* data) {
+static asset_action_result_ ast_action_load_slow(asset_task_t* task, asset_header_t* asset, void* data) {
 	ast_sleep_ms(100);
 	return ast_action_load(task, asset, data);
 }
 
-static bool32_t ast_action_meta(asset_task_t*, asset_header_t* asset, void*) {
+static asset_action_result_ ast_action_meta(asset_task_t*, asset_header_t* asset, void*) {
 	asset->state = asset_state_loaded_meta;
-	return true;
+	return asset_action_done;
 }
 
 // Parks the dependency's task mid-load so a test can assert its dependents
 // ran at loaded_meta. Times out rather than hanging the suite on a bug.
-static bool32_t ast_action_hold(asset_task_t* task, asset_header_t* asset, void* data) {
+static asset_action_result_ ast_action_hold(asset_task_t* task, asset_header_t* asset, void* data) {
 	ast_ctx_t* ctx    = (ast_ctx_t*)data;
 	int32_t    waited = 0;
 	while (atomic_load_i32_acq(&ctx->hold) == 0 && waited < 5000) {
@@ -84,8 +84,8 @@ static bool32_t ast_action_hold(asset_task_t* task, asset_header_t* asset, void*
 	return ast_action_load(task, asset, data);
 }
 
-static bool32_t ast_action_fail(asset_task_t*, asset_header_t*, void*) {
-	return false;
+static asset_action_result_ ast_action_fail(asset_task_t*, asset_header_t*, void*) {
+	return asset_action_fail;
 }
 
 static void ast_on_failure(asset_header_t* asset, void* data) {
@@ -95,12 +95,12 @@ static void ast_on_failure(asset_header_t* asset, void* data) {
 
 ///////////////////////////////////////////
 
-static void ast_add_task(tex_t asset, ast_ctx_t* ctx, const asset_load_action_t* actions, int32_t action_count, tex_t depends_on, asset_state_ depends_state) {
+static void ast_add_task(tex_t asset, ast_ctx_t* ctx, const asset_action_t* actions, int32_t action_count, tex_t depends_on, asset_state_ depends_state) {
 	asset_task_t task  = {};
 	task.asset         = ast_header(asset);
 	task.load_data     = ctx;
 	task.on_failure    = ast_on_failure;
-	task.actions       = (asset_load_action_t*)actions;
+	task.actions       = (asset_action_t*)actions;
 	task.action_count  = action_count;
 	task.priority      = 10;
 	task.sort          = asset_sort(10, 0);
@@ -130,7 +130,7 @@ static void ast_test_dep_satisfied() {
 	tex_t dependent = tex_create(tex_type_image, tex_format_rgba32);
 	ast_header(dep)->state = asset_state_loaded;
 
-	static const asset_load_action_t actions[] = { ast_action_load };
+	static const asset_action_t actions[] = { { ast_action_load } };
 	ast_ctx_t ctx = {};
 	ctx.dep = ast_header(dep);
 	ast_add_task(dependent, &ctx, actions, 1, dep, asset_state_loaded);
@@ -151,8 +151,8 @@ static void ast_test_dep_completes_later() {
 	ast_header(dep)->state = asset_state_loading;
 
 	// The dependent is queued first, and must wait on the slow dependency.
-	static const asset_load_action_t dependent_actions[] = { ast_action_load };
-	static const asset_load_action_t dep_actions[]       = { ast_action_load_slow };
+	static const asset_action_t dependent_actions[] = { { ast_action_load } };
+	static const asset_action_t dep_actions[]       = { { ast_action_load_slow } };
 	ast_ctx_t dependent_ctx = {};
 	ast_ctx_t dep_ctx       = {};
 	dependent_ctx.dep = ast_header(dep);
@@ -173,8 +173,8 @@ static void ast_test_dep_errors() {
 	tex_t dependent = tex_create(tex_type_image, tex_format_rgba32);
 	ast_header(dep)->state = asset_state_loading;
 
-	static const asset_load_action_t dependent_actions[] = { ast_action_load };
-	static const asset_load_action_t dep_actions[]       = { ast_action_fail };
+	static const asset_action_t dependent_actions[] = { { ast_action_load } };
+	static const asset_action_t dep_actions[]       = { { ast_action_fail } };
 	ast_ctx_t dependent_ctx = {};
 	ast_ctx_t dep_ctx       = {};
 	dependent_ctx.dep = ast_header(dep);
@@ -198,8 +198,8 @@ static void ast_test_dep_meta() {
 
 	// The dependency parks after publishing meta, so the dependent can only
 	// pass this test by running in that window.
-	static const asset_load_action_t dependent_actions[] = { ast_action_load };
-	static const asset_load_action_t dep_actions[]       = { ast_action_meta, ast_action_hold };
+	static const asset_action_t dependent_actions[] = { { ast_action_load } };
+	static const asset_action_t dep_actions[] = { { ast_action_meta }, { ast_action_hold } };
 	ast_ctx_t dependent_ctx = {};
 	ast_ctx_t dep_ctx       = {};
 	dependent_ctx.dep = ast_header(dep);
@@ -230,8 +230,8 @@ static void ast_test_many_dependents() {
 
 	// Half gate on meta, half on loaded; the dependency publishes meta then
 	// dawdles to loaded. Worker scheduling supplies the completion order.
-	static const asset_load_action_t dependent_actions[] = { ast_action_load };
-	static const asset_load_action_t dep_actions[]       = { ast_action_meta, ast_action_load_slow };
+	static const asset_action_t dependent_actions[] = { { ast_action_load } };
+	static const asset_action_t dep_actions[] = { { ast_action_meta }, { ast_action_load_slow } };
 	tex_t     dependents[count];
 	ast_ctx_t ctxs      [count] = {};
 	for (int32_t i = 0; i < count; i++) {
@@ -266,7 +266,7 @@ static void ast_test_dep_never_loading() {
 	tex_t dep       = tex_create(tex_type_image, tex_format_rgba32);
 	tex_t dependent = tex_create(tex_type_image, tex_format_rgba32);
 
-	static const asset_load_action_t actions[] = { ast_action_load };
+	static const asset_action_t actions[] = { { ast_action_load } };
 	ast_ctx_t ctx = {};
 	ctx.dep = ast_header(dep);
 	ast_add_task(dependent, &ctx, actions, 1, dep, asset_state_loaded);
@@ -292,7 +292,7 @@ static void ast_test_self_dependency() {
 
 	// The guard logs an error, drops the dependency, and runs the task
 	// ungated, so the log_err below this is expected output.
-	static const asset_load_action_t actions[] = { ast_action_load };
+	static const asset_action_t actions[] = { { ast_action_load } };
 	ast_ctx_t ctx = {};
 	ast_add_task(tex, &ctx, actions, 1, tex, asset_state_loaded);
 
@@ -358,6 +358,128 @@ static void ast_test_blocking_job_foreign_thread() {
 
 ///////////////////////////////////////////
 
+// A cooperative slice reports continue until its work runs out, and the
+// scheduler re-runs it without advancing the action index.
+static asset_action_result_ ast_action_sliced(asset_task_t*, asset_header_t* asset, void* data) {
+	ast_ctx_t* ctx = (ast_ctx_t*)data;
+	if (atomic_increment(&ctx->ran) < 3)
+		return asset_action_continue;
+	asset->state = asset_state_loaded;
+	return asset_action_done;
+}
+
+static void ast_test_sliced_action() {
+	tex_t tex = tex_create(tex_type_image, tex_format_rgba32);
+
+	static const asset_action_t actions[] = { { ast_action_sliced } };
+	ast_ctx_t ctx = {};
+	ast_add_task(tex, &ctx, actions, 1, nullptr, asset_state_none);
+
+	AST_CHECK(ast_wait(&ctx.ran, 3, 3000),                  "sliced action runs until its work is done");
+	AST_CHECK(ast_header(tex)->state == asset_state_loaded, "sliced action completed the asset");
+
+	tex_release(tex);
+}
+
+///////////////////////////////////////////
+
+// First run parks on a wait and publishes its id through ctx->hold; the
+// signal re-runs the same action, which completes.
+static asset_action_result_ ast_action_parks(asset_task_t* task, asset_header_t* asset, void* data) {
+	ast_ctx_t* ctx = (ast_ctx_t*)data;
+	if (atomic_increment(&ctx->ran) == 1) {
+		atomic_store_i32_rel(&ctx->hold, (int32_t)assets_task_wait_prepare(task));
+		return asset_action_wait;
+	}
+	asset->state = asset_state_loaded;
+	return asset_action_done;
+}
+
+static void ast_test_wait_signal() {
+	tex_t tex = tex_create(tex_type_image, tex_format_rgba32);
+
+	static const asset_action_t actions[] = { { ast_action_parks } };
+	ast_ctx_t ctx = {};
+	ast_add_task(tex, &ctx, actions, 1, nullptr, asset_state_none);
+
+	AST_CHECK(ast_wait(&ctx.ran, 1, 3000), "waiting action ran once");
+
+	// A parked task must not re-run on its own; pump a while to prove it
+	for (int32_t i = 0; i < 50; i++) { sk_step(nullptr); ast_sleep_ms(1); }
+	AST_CHECK(atomic_load_i32_acq(&ctx.ran) == 1, "parked task stays parked without a signal");
+
+	uint64_t wait_id = (uint64_t)atomic_load_i32_acq(&ctx.hold);
+	assets_task_signal(wait_id);
+	AST_CHECK(ast_wait(&ctx.ran, 2, 3000),                  "signal re-runs the parked action");
+	AST_CHECK(ast_header(tex)->state == asset_state_loaded, "signaled task completed the asset");
+
+	// Stale ids are expected after completion, and must no-op
+	assets_task_signal(wait_id);
+
+	tex_release(tex);
+}
+
+///////////////////////////////////////////
+
+// dep_state_at_run doubles as "stayed off the workers" here, which with
+// workers running is what main affinity has to guarantee.
+static asset_action_result_ ast_action_on_main(asset_task_t*, asset_header_t* asset, void* data) {
+	ast_ctx_t* ctx = (ast_ctx_t*)data;
+	atomic_store_i32(&ctx->dep_state_at_run, assets_on_asset_thread() ? 0 : 1);
+	asset->state = asset_state_loaded;
+	atomic_increment(&ctx->ran);
+	return asset_action_done;
+}
+
+static void ast_test_main_affinity() {
+	tex_t tex = tex_create(tex_type_image, tex_format_rgba32);
+
+	static const asset_action_t actions[] = { { ast_action_on_main, asset_affinity_main } };
+	ast_ctx_t ctx = {};
+	ctx.dep_state_at_run = -1;
+	ast_add_task(tex, &ctx, actions, 1, nullptr, asset_state_none);
+
+	AST_CHECK(ast_wait(&ctx.ran, 1, 3000),                     "main-affinity action ran");
+	AST_CHECK(atomic_load_i32_acq(&ctx.dep_state_at_run) == 1, "main-affinity action stayed off the workers");
+
+	tex_release(tex);
+}
+
+///////////////////////////////////////////
+
+// Cubemap lighting defers its GPU readback on the main thread: the set call
+// returns before the texture is loaded, completion lands from the frame loop,
+// and on_load fires then.
+static int32_t ast_sh_loaded;
+static void ast_sh_on_load(tex_t, void*) { atomic_increment(&ast_sh_loaded); }
+
+static void ast_test_deferred_sh() {
+	tex_t cubemap = tex_create((tex_type_)(tex_type_image | tex_type_cubemap), tex_format_rgba32);
+
+	const int32_t size = 8;
+	color32 face[size * size];
+	for (int32_t i = 0; i < size * size; i++)
+		face[i] = color32{ 255, 0, 0, 255 };
+	void* faces[6] = { face, face, face, face, face, face };
+
+	atomic_store_i32(&ast_sh_loaded, 0);
+	tex_on_load(cubemap, ast_sh_on_load, nullptr);
+	tex_set_color_arr(cubemap, size, size, faces, 6, 1, nullptr);
+
+	AST_CHECK(ast_header(cubemap)->state == asset_state_loaded_meta, "main thread SH defers instead of blocking");
+	AST_CHECK(ast_wait(&ast_sh_loaded, 1, 3000),                     "deferred SH completes from the frame loop");
+	AST_CHECK(ast_header(cubemap)->state == asset_state_loaded,      "deferred SH left the texture loaded");
+
+	spherical_harmonics_t lighting = tex_get_cubemap_lighting(cubemap);
+	color128 sample = sh_lookup(lighting, vec3{ 0, 1, 0 });
+	AST_CHECK(sample.r > 0.5f && sample.g < 0.1f && sample.b < 0.1f, "deferred SH lighting matches the cubemap");
+
+	tex_on_load_remove(cubemap, ast_sh_on_load, nullptr);
+	tex_release(cubemap);
+}
+
+///////////////////////////////////////////
+
 int asset_tests_run() {
 	sk_settings_t settings = {};
 	settings.app_name      = "StereoKitC Asset Tests";
@@ -376,6 +498,10 @@ int asset_tests_run() {
 	ast_test_dep_never_loading ();
 	ast_test_self_dependency   ();
 	ast_test_blocking_job_foreign_thread();
+	ast_test_sliced_action     ();
+	ast_test_wait_signal       ();
+	ast_test_main_affinity     ();
+	ast_test_deferred_sh       ();
 
 	// Shutdown with a never-resolving dependency must not hang the drain,
 	// and the dependent takes its failure path. ctx must outlive sk_shutdown.
@@ -383,17 +509,28 @@ int asset_tests_run() {
 	tex_t dependent = tex_create(tex_type_image, tex_format_rgba32);
 	ast_header(dep)->state = asset_state_loading;
 
-	static const asset_load_action_t dependent_actions[] = { ast_action_load };
+	static const asset_action_t dependent_actions[] = { { ast_action_load } };
 	ast_ctx_t ctx = {};
 	ctx.dep = ast_header(dep);
 	ast_add_task(dependent, &ctx, dependent_actions, 1, dep, asset_state_loaded);
 	tex_release(dep);
 	tex_release(dependent);
 
+	// A task parked on a wait drains the same way: its signal is never coming,
+	// so shutdown routes it through on_failure rather than hanging on it.
+	tex_t parked = tex_create(tex_type_image, tex_format_rgba32);
+	static const asset_action_t parked_actions[] = { { ast_action_parks } };
+	ast_ctx_t parked_ctx = {};
+	ast_add_task(parked, &parked_ctx, parked_actions, 1, nullptr, asset_state_none);
+	AST_CHECK(ast_wait(&parked_ctx.ran, 1, 3000), "parked-at-shutdown task reached its park");
+	tex_release(parked);
+
 	sk_shutdown();
 
 	AST_CHECK(atomic_load_i32_acq(&ctx.failed) == 1, "shutdown routes unresolved gate through on_failure");
 	AST_CHECK(atomic_load_i32_acq(&ctx.ran)    == 0, "unresolved gate never runs the action");
+	AST_CHECK(atomic_load_i32_acq(&parked_ctx.failed) == 1, "shutdown routes a parked wait through on_failure");
+	AST_CHECK(atomic_load_i32_acq(&parked_ctx.ran)    == 1, "a parked wait never re-runs its action at shutdown");
 
 	if (ast_failures == 0) log_info("[asset_test] all tests passed!");
 	else                   log_errf("[asset_test] %d checks failed!", ast_failures);

@@ -1,0 +1,175 @@
+<!doctype html>
+<!--
+  Default emscripten shell for StereoKit web apps, applied by
+  sk_target_web_options in CMakeLists.txt. Pass your own path to that function
+  to replace it.
+
+  Emscripten substitutes {{{ SCRIPT }}} with the generated .js loader at link
+  time. sk_app binds the canvas with id "canvas" and, for resizable windows,
+  sizes it to fill the viewport, so everything else here is a fixed overlay
+  that can't disturb canvas layout.
+
+  Two details this page is load-bearing for:
+    * oncontextmenu is suppressed, because right-drag is mouse-look in the
+      simulator and the browser menu would eat it.
+    * tabindex makes the canvas focusable, so it receives key events.
+
+  (Don't start any line in this file with '#': the shell preprocessor reads
+  that as a directive. Indent CSS id selectors if you need them.)
+
+  Embedding elsewhere:
+    * Easiest: <iframe src="YourApp.html"> - fully self-contained.
+    * Native:  copy the .js/.wasm/.data next to your page, add a
+      <canvas id="canvas"> plus var Module = { canvas: ... }, and include the
+      .js with a <script> tag. Style the canvas however you like, sk_app
+      tracks its CSS size.
+-->
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>StereoKit</title>
+	<style>
+		:root {
+			--sk-bg:     #14161a;
+			--sk-text:   #e8eaed;
+			--sk-dim:    #9aa0a6;
+			--sk-accent: #45a8ff;
+		}
+		html, body { margin: 0; height: 100%; background: var(--sk-bg); overflow: hidden; }
+		canvas {
+			display: block;
+			outline: none;
+			-webkit-tap-highlight-color: transparent;
+		}
+
+		.sk-header {
+			position: fixed;
+			top: 0; left: 0; right: 0;
+			z-index: 10;
+			display: flex;
+			align-items: baseline;
+			gap: 0.6em;
+			padding: 10px 16px;
+			pointer-events: none; /* clicks fall through to the canvas */
+			font: 600 15px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+			color: var(--sk-text);
+			background: linear-gradient(to bottom, #14161ae6, #14161a00);
+			user-select: none;
+		}
+		.sk-header .name   { color: var(--sk-accent); }
+		.sk-header .detail { color: var(--sk-dim); font-weight: 400; font-size: 12px; }
+
+		/* Controls hint, faded out on the first interaction */
+		.sk-hint {
+			position: fixed;
+			bottom: 14px; left: 0; right: 0;
+			z-index: 10;
+			text-align: center;
+			pointer-events: none;
+			user-select: none;
+			color: var(--sk-dim);
+			font: 400 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+			transition: opacity 0.4s ease;
+		}
+		.sk-hint.hidden { opacity: 0; }
+		.sk-hint kbd {
+			background: #1c2026;
+			border: 1px solid #2b3037;
+			border-radius: 4px;
+			padding: 1px 5px;
+			font-family: inherit;
+			color: var(--sk-text);
+		}
+
+		.sk-overlay {
+			position: fixed;
+			inset: 0;
+			z-index: 20;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 12px;
+			background: var(--sk-bg);
+			color: var(--sk-dim);
+			font: 400 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+			transition: opacity 0.25s ease;
+		}
+		.sk-overlay.hidden { opacity: 0; pointer-events: none; }
+		.sk-overlay .spinner {
+			width: 28px; height: 28px;
+			border: 3px solid #2b3037;
+			border-top-color: var(--sk-accent);
+			border-radius: 50%;
+			animation: sk-spin 0.9s linear infinite;
+		}
+		.sk-overlay.error .spinner { display: none; }
+		.sk-overlay.error          { color: var(--sk-text); }
+		.sk-overlay a              { color: var(--sk-accent); }
+		@keyframes sk-spin { to { transform: rotate(360deg); } }
+	</style>
+</head>
+<body>
+	<div class="sk-header">
+		<span class="name">StereoKit</span>
+		<span class="detail">WebGPU</span>
+	</div>
+
+	<div class="sk-hint" id="sk-hint">
+		<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move &nbsp;·&nbsp; right-drag to look
+	</div>
+
+	<div class="sk-overlay" id="sk-overlay">
+		<div class="spinner"></div>
+		<div id="sk-status">Loading…</div>
+	</div>
+
+	<canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+
+	<script>
+		var Module = {
+			canvas: document.getElementById('canvas'),
+			// ?args=-scene,Environment%20Map becomes argv, so a test run can
+			// drive the app from its URL
+			arguments: new URLSearchParams(location.search).get('args')?.split(',') ?? [],
+			setStatus: function (text) {
+				var el = document.getElementById('sk-status');
+				if (el && text) el.textContent = text;
+			},
+			onRuntimeInitialized: function () {
+				var overlay = document.getElementById('sk-overlay');
+				if (overlay) overlay.classList.add('hidden');
+				// Keyboard input needs the canvas focused, and the browser
+				// won't do it for us
+				var canvas = document.getElementById('canvas');
+				if (canvas) canvas.focus();
+			},
+		};
+
+		// The hint has done its job once you've actually done the thing
+		(function () {
+			var hint = document.getElementById('sk-hint');
+			var drop = function () {
+				if (hint) hint.classList.add('hidden');
+				window.removeEventListener('keydown',   drop);
+				window.removeEventListener('mousedown', drop);
+			};
+			window.addEventListener('keydown',   drop);
+			window.addEventListener('mousedown', drop);
+			setTimeout(drop, 12000);
+		})();
+
+		// Fail visibly on browsers without WebGPU. The wasm side reports it
+		// too, but a plain message beats a spinner that never stops.
+		if (!navigator.gpu) {
+			var overlay = document.getElementById('sk-overlay');
+			var status  = document.getElementById('sk-status');
+			overlay.classList.add('error');
+			status.innerHTML = 'This page needs <a href="https://caniuse.com/webgpu">WebGPU</a>, ' +
+				'which this browser does not have enabled.';
+		}
+	</script>
+	{{{ SCRIPT }}}
+</body>
+</html>

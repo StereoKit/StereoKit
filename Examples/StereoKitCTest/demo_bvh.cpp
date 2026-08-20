@@ -208,6 +208,7 @@ void demo_bvh_update() {
 ///////////////////////////////////////////
 
 void demo_bvh_shutdown() {
-	// Release everything
+	// demo_bvh_load_model releases this too, so a stale handle double-releases
 	model_release(model_to_intersect);
+	model_to_intersect = nullptr;
 }

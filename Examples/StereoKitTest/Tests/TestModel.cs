@@ -268,6 +268,15 @@ class TestModel : ITest
 
 	bool TestGltfOnLoadedCallback() => gltfOnLoadedFired;
 
+	// Subscribing to an asset that already loaded fires right away, and that
+	// holds for the second subscriber as much as the first.
+	bool TestOnLoadedAfterLoad()
+	{
+		bool fired = false;
+		asyncGltf.OnLoaded += m => fired = true;
+		return fired;
+	}
+
 	bool TestAnimModelLoaded()
 	{
 		return animOnLoadedFired
@@ -378,6 +387,7 @@ class TestModel : ITest
 			Tests.Test(TestStlLoaded);
 			Tests.Test(TestObjLoaded);
 			Tests.Test(TestGltfOnLoadedCallback);
+			Tests.Test(TestOnLoadedAfterLoad);
 			Tests.Test(TestAnimModelLoaded);
 			Tests.Test(TestAnimPlayAfterLoad);
 			Tests.Test(TestAnimProperties);

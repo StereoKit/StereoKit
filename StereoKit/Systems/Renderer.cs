@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -9,22 +11,21 @@ namespace StereoKit
 	/// Even better, it's entirely a static class, so you can call it from anywhere :)</summary>
 	public static class Renderer
 	{
-		/// <summary>A queue is used to prevent premature garbage collection
-		/// of the user-defined callbacks.</summary>
-		private static Queue<RenderOnScreenshotCallback> _renderCaptureCallbacks;
+		// A capture reports back exactly once, so the user's callback rides
+		// along in the context argument as a handle that the report frees. A
+		// shot still unrendered at shutdown is dropped without a report, and
+		// leaks its handle with it.
+		private static IntPtr PinScreenshotCallback(ScreenshotCallback onScreenshot)
+			=> GCHandle.ToIntPtr(GCHandle.Alloc(onScreenshot));
 
-		// Wrap a user screenshot callback in a native-compatible delegate, queued
-		// so the GC can't collect it before the native side fires it.
-		private static RenderOnScreenshotCallback QueueScreenshotCallback(ScreenshotCallback onScreenshot)
+		[UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+		private static void OnScreenshotNative(IntPtr data, TexFormat format, int width, int height, IntPtr context)
 		{
-			if (_renderCaptureCallbacks is null) _renderCaptureCallbacks = new Queue<RenderOnScreenshotCallback>();
-			RenderOnScreenshotCallback native = (IntPtr data, TexFormat format, int w, int h, IntPtr context) =>
-			{
-				onScreenshot.Invoke(data, format, w, h);
-				_ = _renderCaptureCallbacks.Dequeue();
-			};
-			_renderCaptureCallbacks.Enqueue(native);
-			return native;
+			GCHandle           handle   = GCHandle.FromIntPtr(context);
+			ScreenshotCallback callback = (ScreenshotCallback)handle.Target;
+			handle.Free();
+
+			callback(data, format, width, height);
 		}
 
 		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
@@ -432,8 +433,8 @@ namespace StereoKit
 		/// <param name="fieldOfViewDegrees">The angle of the viewport, in 
 		/// degrees.</param>
 		/// <param name="texFormat">The pixel format of the color data.</param>
-		public static void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90, TexFormat texFormat = TexFormat.Rgba32)
-			=> NativeAPI.render_screenshot_capture(QueueScreenshotCallback(onScreenshot), Pose.LookAt(from, at), width, height, fieldOfViewDegrees, texFormat, IntPtr.Zero);
+		public static unsafe void Screenshot(ScreenshotCallback onScreenshot, Vec3 from, Vec3 at, int width, int height, float fieldOfViewDegrees = 90, TexFormat texFormat = TexFormat.Rgba32)
+			=> NativeAPI.render_screenshot_capture(&OnScreenshotNative, Pose.LookAt(from, at), width, height, fieldOfViewDegrees, texFormat, PinScreenshotCallback(onScreenshot));
 
 		/// <summary>Schedules a screenshot for the end of the frame! The view
 		/// will be rendered from the given position at the given point, with a
@@ -461,8 +462,8 @@ namespace StereoKit
 		/// unaffected by the viewport, so this will clean the entire 
 		/// surface!</param>
 		/// <param name="texFormat">The pixel format of the color data.</param>
-		public static void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect), TexFormat texFormat = TexFormat.Rgba32)
-			=> NativeAPI.render_screenshot_viewpoint(QueueScreenshotCallback(onScreenshot), camera, projection, width, height, layerFilter, clear, viewport, texFormat, IntPtr.Zero);
+		public static unsafe void Screenshot(ScreenshotCallback onScreenshot, Matrix camera, Matrix projection, int width, int height, RenderLayer layerFilter = RenderLayer.All, RenderClear clear = RenderClear.All, Rect viewport = default(Rect), TexFormat texFormat = TexFormat.Rgba32)
+			=> NativeAPI.render_screenshot_viewpoint(&OnScreenshotNative, camera, projection, width, height, layerFilter, clear, viewport, texFormat, PinScreenshotCallback(onScreenshot));
 
 		/// <summary>This renders the current scene to the indicated 
 		/// rendertarget texture, from the specified viewpoint. This call 

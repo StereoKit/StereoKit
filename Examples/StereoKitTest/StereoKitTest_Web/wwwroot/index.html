@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!--
+  The page a StereoKit web app runs in. This is the app's own file, so rename
+  the header, restyle it, embed the canvas in a larger page, whatever suits.
+  Only three things are load-bearing:
+
+    * a <canvas> for main.js to hand to skRun,
+    * tabindex on it, so it can take key events,
+    * the module script that runs main.js.
+
+  Kept deliberately close to tools/web/sk_shell.html, which is the same page
+  for C++ apps.
+-->
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>StereoKit Test</title>
+	<link rel="icon" href="stereokit-logo.svg">
+	<link rel="preload" id="webassembly" />
+	<script type="importmap"></script>
+	<script type="module" src="main.js"></script>
+	<style>
+		:root {
+			--sk-bg:     #14161a;
+			--sk-text:   #e8eaed;
+			--sk-dim:    #9aa0a6;
+			--sk-accent: #45a8ff;
+		}
+		html, body { margin: 0; height: 100%; background: var(--sk-bg); overflow: hidden; }
+		canvas {
+			display: block;
+			width: 100%; height: 100%;
+			outline: none;
+			-webkit-tap-highlight-color: transparent;
+		}
+
+		.sk-header {
+			position: fixed;
+			top: 0; left: 0; right: 0;
+			z-index: 10;
+			display: flex;
+			align-items: center;
+			gap: 0.6em;
+			padding: 10px 16px;
+			pointer-events: none; /* clicks fall through to the canvas */
+			font: 600 15px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+			color: var(--sk-text);
+			background: linear-gradient(to bottom, #14161ae6, #14161a00);
+			user-select: none;
+		}
+		.sk-header img     { height: 22px; }
+		.sk-header .name   { color: var(--sk-accent); }
+		.sk-header .detail { color: var(--sk-dim); font-weight: 400; font-size: 12px; }
+
+		/* Controls hint, faded out on the first interaction */
+		.sk-hint {
+			position: fixed;
+			bottom: 14px; left: 0; right: 0;
+			z-index: 10;
+			text-align: center;
+			pointer-events: none;
+			user-select: none;
+			color: var(--sk-dim);
+			font: 400 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+			transition: opacity 0.4s ease;
+		}
+		.sk-hint.hidden { opacity: 0; }
+		.sk-hint kbd {
+			background: #1c2026;
+			border: 1px solid #2b3037;
+			border-radius: 4px;
+			padding: 1px 5px;
+			font-family: inherit;
+			color: var(--sk-text);
+		}
+
+		.sk-overlay {
+			position: fixed;
+			inset: 0;
+			z-index: 20;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 12px;
+			background: var(--sk-bg);
+			color: var(--sk-dim);
+			font: 400 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+			transition: opacity 0.25s ease;
+		}
+		.sk-overlay.hidden { opacity: 0; pointer-events: none; }
+		.sk-overlay img    { height: 52px; opacity: 0.9; }
+		.sk-overlay .spinner {
+			width: 28px; height: 28px;
+			border: 3px solid #2b3037;
+			border-top-color: var(--sk-accent);
+			border-radius: 50%;
+			animation: sk-spin 0.9s linear infinite;
+		}
+		.sk-overlay.error .spinner { display: none; }
+		.sk-overlay.error          { color: var(--sk-text); }
+		.sk-overlay a              { color: var(--sk-accent); }
+		@keyframes sk-spin { to { transform: rotate(360deg); } }
+	</style>
+</head>
+
+<body>
+	<div class="sk-header">
+		<img src="stereokit-wide.svg" alt="StereoKit">
+		<span class="name">StereoKit Test</span>
+		<span class="detail">WebGPU</span>
+	</div>
+
+	<div class="sk-hint" id="sk-hint">
+		<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to move &nbsp;·&nbsp; right-drag to look
+	</div>
+
+	<div class="sk-overlay" id="sk-overlay">
+		<img src="stereokit-wide.svg" alt="StereoKit">
+		<div class="spinner"></div>
+		<div id="sk-status">Loading…</div>
+	</div>
+
+	<canvas id="canvas" tabindex="-1"></canvas>
+</body>
+
+</html>

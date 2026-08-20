@@ -2293,8 +2293,11 @@ namespace StereoKit
 		[Obsolete("StereoKit is now Vulkan-only; the WebGL backend is no longer supported.")]
 		WebGL,
 		/// <summary>Vulkan is used for rendering, this works basically on every platform, and
-		/// is the only backend StereoKit currently supports!</summary>
+		/// is StereoKit's default backend!</summary>
 		Vulkan,
+		/// <summary>WebGPU is used for rendering, via Dawn on native platforms and the
+		/// browser's own implementation on the web.</summary>
+		WebGPU,
 	}
 
 	/// <summary>Identifies a Vulkan queue family that StereoKit's Vulkan backend interacts

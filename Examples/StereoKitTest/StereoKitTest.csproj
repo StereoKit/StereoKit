@@ -26,10 +26,13 @@
 	<ItemGroup>
 		<Compile Remove="StereoKitTest_NetAndroid\**" />
 		<Compile Remove="StereoKitTest_AndroidService\**" />
+		<Compile Remove="StereoKitTest_Web\**" />
 		<EmbeddedResource Remove="StereoKitTest_NetAndroid\**" />
 		<EmbeddedResource Remove="StereoKitTest_AndroidService\**" />
+		<EmbeddedResource Remove="StereoKitTest_Web\**" />
 		<None Remove="StereoKitTest_NetAndroid\**" />
 		<None Remove="StereoKitTest_AndroidService\**" />
+		<None Remove="StereoKitTest_Web\**" />
 	</ItemGroup>
 	
 

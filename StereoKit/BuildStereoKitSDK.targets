@@ -12,8 +12,10 @@
 		<SKSDKFolder Condition="'$(SKSDKFolder)'==''">$(MSBuildThisFileDirectory)\..</SKSDKFolder>
 		<SKSDKFolder Condition="'$(SKSDKFolder)'!=''">$([MSBuild]::NormalizePath('$(SKSDKFolder)'))</SKSDKFolder>
 
-		<!-- Get a nice name for the OS/Platform we're building for. -->
-		<SKSDKBuildOS Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">Android</SKSDKBuildOS>
+		<!-- Get a nice name for the OS/Platform we're building for. A wasm
+		     project has no target platform in its TFM, so it's found by SDK. -->
+		<SKSDKBuildOS Condition="'$(UsingMicrosoftNETSdkWebAssembly)'=='true'"                              >Web</SKSDKBuildOS>
+		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)'))=='android'">Android</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(OS)'=='Windows_NT'"                           >Win32</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and $([MSBuild]::IsOSPlatform('OSX'))"               >MacOS</SKSDKBuildOS>
 		<SKSDKBuildOS Condition="'$(SKSDKBuildOS)'=='' and '$(OS)'!='Windows_NT'"                           >Linux</SKSDKBuildOS>
@@ -53,10 +55,25 @@
 	</PropertyGroup>
 
 
+	<!-- ~~~~~~~~~~~~~~~~~~ Web ~~~~~~~~~~~~~~~~~~
+	     The web link setup itself lives in SKWeb.targets, shared with the
+	     NuGet package; these properties are just where this repo keeps the
+	     pieces it needs. Inert off the web. -->
+	<PropertyGroup Condition="'$(SKSDKBuildOS)'=='Web'">
+		<SKSDKWebNativeDir>$([MSBuild]::NormalizePath('$(SKSDKFolder)\bin\intermediate\Web_$(Configuration)_Fast\'))</SKSDKWebNativeDir>
+		<SKWebNativeDir>$(SKSDKWebNativeDir)</SKWebNativeDir>
+
+		<!-- StereoKit's page script, imported by the app's main.js. -->
+		<SKWebSdkRoot>$([MSBuild]::NormalizeDirectory('$(SKSDKFolder)\StereoKit\web'))</SKWebSdkRoot>
+	</PropertyGroup>
+
+
 	<!-- Import some key functionality from StereoKit's build system. -->
 	<Import Project="$(SKSDKFolder)\StereoKit\StereoKit.props" />
 	<Import Project="$(SKSDKFolder)\StereoKit\SKAssets.targets" />
 	<Import Project="$(SKSDKFolder)\StereoKit\SKShaders.targets" />
+	<Import Project="$(SKSDKFolder)\StereoKit\SKWeb.targets" />
+
 	<ItemGroup>
 		<ProjectReference Include="$(SKSDKFolder)\StereoKit\StereoKit.csproj" Name="StereoKit"/>
 	</ItemGroup>
@@ -69,22 +86,31 @@
 	     run unless the consuming project has dirty code.-->
 	<Target Name="StereoKit_BuildNative" BeforeTargets="BeforeBuild;StereoKit_Properties" Condition="'$(DesignTimeBuild)' != 'true'">
 		<PropertyGroup>
-			<SKSDKPresetFast Condition="'$(Configuration)'=='Debug'">_Fast</SKSDKPresetFast>
+			<SKSDKPresetFast Condition="'$(Configuration)'=='Debug' and '$(SKSDKBuildOS)'!='Web'">_Fast</SKSDKPresetFast>
 			<!-- Overridable, so a cross-compile can pick a preset that doesn't follow the OS name, like MinGW. -->
+			<SKSDKPreset Condition="'$(SKSDKPreset)'=='' and '$(SKSDKBuildOS)'=='Web'">Web_$(Configuration)_Fast</SKSDKPreset>
 			<SKSDKPreset Condition="'$(SKSDKPreset)'==''">$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)$(SKSDKPresetFast)</SKSDKPreset>
 			<!-- Windows uses multi-config generator (MSVC), others use single-config (Ninja) -->
+			<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Web'"  >$(SKSDKWebNativeDir)CMakeCache.txt</SKSDKCacheFile>
 			<SKSDKCacheFile Condition="'$(SKSDKBuildOS)'=='Win32'">$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)$(SKSDKPresetFast)\CMakeCache.txt</SKSDKCacheFile>
 			<SKSDKCacheFile Condition="'$(SKSDKCacheFile)'==''"   >$(SKSDKFolder)\bin\intermediate\$(SKSDKBuildOS)_$(SKSDKBuildModePreset)_$(Configuration)$(SKSDKPresetFast)\CMakeCache.txt</SKSDKCacheFile>
+			<!-- The web archives have to be built with .NET's own emscripten, so
+			     they go through the env script rather than cmake directly. It's
+			     a shell script, so a host without one falls through to
+			     SKSDKWebCheckArchives explaining how to build them by hand. -->
+			<SKSDKNativeTarget Condition="'$(SKSDKBuildOS)'=='Web'">StereoKit_BuildNativeWeb</SKSDKNativeTarget>
+			<SKSDKNativeTarget Condition="'$(SKSDKNativeTarget)'==''">StereoKit_BuildNative</SKSDKNativeTarget>
 		</PropertyGroup>
 
 		<MSBuild Projects="$(MSBuildThisFileDirectory)BuildStereoKitNative.proj"
-		         Targets="StereoKit_BuildNative"
-		         Properties="SKSDKFolder=$(SKSDKFolder);SKSDKPreset=$(SKSDKPreset);SKSDKCacheFile=$(SKSDKCacheFile)"
+		         Targets="$(SKSDKNativeTarget)"
+		         Properties="SKSDKFolder=$(SKSDKFolder);SKSDKPreset=$(SKSDKPreset);SKSDKCacheFile=$(SKSDKCacheFile);SKSDKWebArchive=$(SKSDKWebNativeDir)StereoKitC.a"
 		         RemoveProperties="TargetFramework;RuntimeIdentifier;Platform;Configuration;DesignTimeBuild" />
 	</Target>
-	
-	<!-- Attach the native library binaries. -->
-	<ItemGroup>
+
+	<!-- Attach the native library binaries. A wasm build links its archives in
+	     instead, there's nothing to load at runtime. -->
+	<ItemGroup Condition="'$(SKSDKBuildOS)'!='Web'">
 		<None                                                                 Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKLibFile)" Include="$(SKSDKLibPath)" />
 		<None Condition="'$(SKSDKDbgFile)'!='' and Exists('$(SKSDKDbgPath)')" Visible="false" CopyToOutputDirectory="PreserveNewest" Link="runtimes\$(SKSDKRID)\native\$(SKSDKDbgFile)" Include="$(SKSDKDbgPath)" />
 	</ItemGroup>
@@ -131,8 +157,14 @@
 	</Target>
 	
 	<!-- Error out if StereoKitC hasn't successfully built! -->
-	<Target Name="SKSDKCheckBuildFiles" AfterTargets="PreBuildEvent" BeforeTargets="CoreCompile">
+	<Target Name="SKSDKCheckBuildFiles" AfterTargets="PreBuildEvent" BeforeTargets="CoreCompile" Condition="'$(SKSDKBuildOS)'!='Web'">
 		<Error Condition="!Exists('$(SKSDKLibPath)')" Text="[StereoKit SDK] StereoKitC was not properly built! Binary file $(SKSDKLibPath) is missing." />
 		<Message Importance="high" Text="[StereoKit SDK] Using locally built StereoKitC at $(SKSDKLibPath)"/>
+	</Target>
+
+	<Target Name="SKSDKWebCheckArchives" AfterTargets="PreBuildEvent" BeforeTargets="CoreCompile" Condition="'$(SKSDKBuildOS)'=='Web'">
+		<Error Condition="!Exists('$(SKSDKWebNativeDir)StereoKitC.a')"
+		       Text="[StereoKit SDK] No native archives at $(SKSDKWebNativeDir). Build them with .NET's emscripten: source $(SKSDKFolder)/tools/web/dotnet_emsdk_env.sh &amp;&amp; cmake --preset Web_$(Configuration)_Fast &amp;&amp; cmake --build --preset Web_$(Configuration)_Fast" />
+		<Message Importance="high" Text="[StereoKit SDK] Using locally built StereoKitC archives at $(SKSDKWebNativeDir)"/>
 	</Target>
 </Project>

@@ -32,8 +32,14 @@ struct _tex_t {
 	skr_tex_t        gpu_tex;
 	tex_t            depth_buffer;
 	spherical_harmonics_t *light_info;
+	bool32_t         sh_pending;   // a deferred lighting readback is in flight
 };
 
 void tex_destroy(tex_t texture);
+
+// Hands finished off-thread work (SH readbacks, browser image decodes) to the
+// tasks parked on it. Main thread only.
+void tex_step_deferred    ();
+void tex_shutdown_deferred();
 
 } // namespace sk

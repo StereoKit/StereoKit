@@ -251,6 +251,10 @@ class DemoRainThunder : ITest
 	}
 	void GenStart()
 	{
+		// A browser is single threaded, and Thread.Start throws there.
+		// Step drains genWork instead.
+		if (System.OperatingSystem.IsBrowser()) return;
+
 		for (int t = 0; t < 2; t++)
 			new Thread(() => {
 				while (genWork.TryDequeue(out Action work)) work();
@@ -811,6 +815,10 @@ class DemoRainThunder : ITest
 
 	public void Step()
 	{
+		// Nothing generating in the background in a browser, so take a piece
+		// per frame.
+		if (System.OperatingSystem.IsBrowser() && genWork.TryDequeue(out Action work)) work();
+
 		// Turn finished background buffers into Sounds, a couple per frame
 		// so a big piece landing never hitches a frame.
 		for (int i = 0; i < 2 && genReady.TryDequeue(out Action finish); i++)

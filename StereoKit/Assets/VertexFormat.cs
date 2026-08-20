@@ -4,6 +4,7 @@
 // Copyright (c) 2026 Qualcomm Technologies, Inc.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -62,7 +63,7 @@ namespace StereoKit
 	/// its [VertComponent] attributes. Validation is aggressive, a layout
 	/// that doesn't exactly describe the struct's memory throws with an
 	/// explanation at first use.</summary>
-	internal static class VertLayout<T> where T : unmanaged
+	internal static class VertLayout<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields)] T> where T : unmanaged
 	{
 		static VertComponent[] _components;
 

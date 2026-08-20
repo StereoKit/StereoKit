@@ -9,17 +9,22 @@
 
 ///////////////////////////////////////////
 
-#if defined(__ANDROID__)
+// Emscripten also defines __linux__, so it has to be tested first
+#if defined(__EMSCRIPTEN__)
+	#define SK_OS_WEB
+#elif defined(__ANDROID__)
 	#define SK_OS_ANDROID
-	#define SK_XR_OPENXR
 #elif defined(__APPLE__)
 	#define SK_OS_MACOS
-	#define SK_XR_OPENXR
 #elif defined(__linux__)
 	#define SK_OS_LINUX
-	#define SK_XR_OPENXR
 #elif defined(_WIN32)
 	#define SK_OS_WINDOWS
+#endif
+
+// The OpenXR backend imports XR swapchain images as Vulkan textures, so it only
+// exists on the Vulkan backend. CMake matches this with SK_ENABLE_OPENXR.
+#if !defined(SKR_WEBGPU)
 	#define SK_XR_OPENXR
 #endif
 
@@ -89,5 +94,12 @@ char  *platform_pop_path_new      (const char *path);
 
 bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t *out_size);
 size_t   platform_file_size       (const char *filename);
+
+typedef void (*platform_read_callback_t)(bool32_t success, void *data, size_t size, void *context);
+// Reads a file without blocking the caller; the callback owns `data`. Off the
+// web the callback runs before this returns. On the web a file the page
+// preloaded does the same, and anything else streams in from the server,
+// landing on the main thread later.
+void platform_read_file_async(const char *filename, platform_read_callback_t callback, void *context);
 
 } // namespace sk

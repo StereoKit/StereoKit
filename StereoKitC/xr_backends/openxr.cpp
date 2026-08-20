@@ -692,11 +692,6 @@ void openxr_step_end() {
 	if (xr_has_session) { openxr_render_frame(); }
 	else                { render_clear(); render_pipeline_skip_present(); ska_time_sleep(33); }
 
-	// Both branches above tick sk_renderer's frame counter via
-	// render_pipeline_skip_present (directly or inside openxr_render_frame),
-	// so commit here keeps our mirror counter in lockstep.
-	openxr_cpu_dead_commit();
-
 	xr_extension_structs_clear();
 
 	// If the OpenXR state is idling, the device is likely in some sort of

@@ -421,8 +421,9 @@ stref_t stref_stripcapture(stref_t &word, char capture_char_start, char capture_
 ///////////////////////////////////////////
 
 // Powers of ten 10^0 .. 10^22 are all exactly representable as doubles. Shared
-// by the locale-independent float parser and formatter below.
-static const double pow10[] = {
+// by the locale-independent float parser and formatter below. Not named pow10,
+// some math.h implementations declare that.
+static const double sk_pow10_table[] = {
 	1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,
 	1e8,  1e9,  1e10, 1e11, 1e12, 1e13, 1e14, 1e15,
 	1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22 };
@@ -432,7 +433,7 @@ static double sk_pow10(int32_t e) {
 	bool neg = e < 0; if (neg) e = -e;
 	double r = 1.0;
 	while (e > 22) { r *= 1e22; e -= 22; }
-	r *= pow10[e];
+	r *= sk_pow10_table[e];
 	return neg ? 1.0 / r : r;
 }
 
@@ -505,19 +506,19 @@ float string_to_float(const char *str) {
 		if (mantissa <= 0x20000000000000ull && exponent >= -22 && exponent <= 22) {
 			// Fast path: both operands are exact in a double, so this is a
 			// single correctly-rounded operation.
-			if (exponent >= 0) result = result * pow10[exponent];
-			else               result = result / pow10[-exponent];
+			if (exponent >= 0) result = result * sk_pow10_table[exponent];
+			else               result = result / sk_pow10_table[-exponent];
 		} else {
 			// Extreme magnitude, doesn't occur in real assets. Chain the scale
 			// in steps of 10^22; may round in the last bit.
 			int32_t e = exponent;
 			if (e > 0) {
 				while (e > 22) { result *= 1e22; e -= 22; if (result > 1e308) break; }
-				result *= pow10[e];
+				result *= sk_pow10_table[e];
 			} else {
 				e = -e;
 				while (e > 22) { result /= 1e22; e -= 22; if (result == 0.0) break; }
-				result /= pow10[e];
+				result /= sk_pow10_table[e];
 			}
 		}
 	}

@@ -37,6 +37,10 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#if defined(SK_OS_WEB)
+	#include <emscripten.h>
+#endif
+
 #if defined(SK_OS_WINDOWS)
 
 	#ifndef WIN32_LEAN_AND_MEAN
@@ -142,8 +146,9 @@ bool platform_init() {
 	skr_settings.enable_validation = true;
 	#endif
 
-	// Build extension array - start with platform-specific surface extensions from sk_app
+	// Instance extensions are a Vulkan concept, WebGPU has no equivalent.
 	array_t<const char*> vk_extensions = {};
+#if !defined(SKR_WEBGPU)
 	uint32_t     ska_ext_count = 0;
 	const char** ska_exts      = ska_vk_get_instance_extensions(&ska_ext_count);
 	if (ska_exts != nullptr) {
@@ -163,6 +168,27 @@ bool platform_init() {
 
 	skr_settings.required_extensions      = vk_extensions.data;
 	skr_settings.required_extension_count = (uint32_t)vk_extensions.count;
+#endif
+
+#if defined(SK_OS_WEB)
+	// The page's pre-init JS acquired the device, see tools/web/sk_pre.js.
+	// Probe first: wrapping a device that was never set traps in JS.
+	if (EM_ASM_INT({ return Module['preinitializedWebGPUDevice'] ? 1 : 0; }) == 0) {
+		log_fail_reason(95, log_error, "No pre-initialized WebGPU device, does this browser support WebGPU?");
+		vk_extensions.free();
+		return false;
+	}
+	// No TimedWaitAny feature: readbacks poll skr_future_check across frames,
+	// so nothing needs a suspendable stack.
+	WGPUInstanceDescriptor wgpu_desc = {};
+	skr_settings.wgpu_instance = wgpuCreateInstance(&wgpu_desc);
+	if (skr_settings.wgpu_instance == nullptr) {
+		log_fail_reason(95, log_error, "wgpuCreateInstance failed");
+		vk_extensions.free();
+		return false;
+	}
+	skr_settings.wgpu_device = emscripten_webgpu_get_device();
+#endif
 
 	bool skr_result = skr_init(skr_settings);
 	vk_extensions.free();
@@ -182,10 +208,32 @@ bool platform_init() {
 		return false;
 	}
 
+#if defined(SKR_WEBGPU)
+	// No adapter when the device was pre-provided, which is always so on web
+	char        gpu_name[128] = "WebGPU";
+	WGPUAdapter gpu_adapter   = skr_get_wgpu_adapter();
+	if (gpu_adapter != nullptr) {
+		// WGPUStringView isn't null terminated, so it can't go straight to string_copy
+		WGPUAdapterInfo adapter_info = {};
+		if (wgpuAdapterGetInfo(gpu_adapter, &adapter_info) == WGPUStatus_Success) {
+			snprintf(gpu_name, sizeof(gpu_name), "%.*s", (int32_t)adapter_info.device.length, adapter_info.device.data);
+			wgpuAdapterInfoFreeMembers(adapter_info);
+		}
+	}
+	#if defined(SK_OS_WEB)
+	else {
+		// The JS that requested the device kept the name for us, see sk_pre.js
+		const char* js_name = emscripten_run_script_string("Module['skWebGPUAdapterName'] || 'WebGPU'");
+		if (js_name != nullptr) snprintf(gpu_name, sizeof(gpu_name), "%s", js_name);
+	}
+	#endif
+	device_data.gpu = string_copy(gpu_name);
+#else
 	// Get GPU name from Vulkan physical device properties
 	VkPhysicalDeviceProperties props;
 	vkGetPhysicalDeviceProperties(skr_get_vk_physical_device(), &props);
 	device_data.gpu = string_copy(props.deviceName);
+#endif
 
 	// Start up the current mode!
 	bool result = platform_set_mode(settings->mode);
@@ -516,6 +564,11 @@ static char *platform_find_existing_file(char *normalized) {
 	if (is_relative && strlen(normalized) >= 2 && normalized[1] == ':')
 		is_relative = false;
 #endif
+#if defined(SK_OS_WEB)
+	// No executable to be relative to, and asking sk_app logs an error for
+	// every streamed-file miss.
+	is_relative = false;
+#endif
 	if (!is_relative) { sk_free(normalized); return nullptr; }
 
 	char exe_path[1024];
@@ -604,6 +657,17 @@ bool32_t platform_read_file(const char* filename, void** out_data, size_t* out_s
 	sk_free(asset_filename);
 	return read_file_result;
 }
+
+///////////////////////////////////////////
+
+#if !defined(SK_OS_WEB)
+void platform_read_file_async(const char* filename, platform_read_callback_t callback, void* context) {
+	void*  data = nullptr;
+	size_t size = 0;
+	bool32_t success = platform_read_file(filename, &data, &size);
+	callback(success, data, size, context);
+}
+#endif
 
 ///////////////////////////////////////////
 

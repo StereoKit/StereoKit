@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include "../../platforms/platform.h"
+#if defined(SK_XR_OPENXR)
+
 #include "../openxr.h"
 #include "../../libraries/array.h"
 
@@ -34,3 +37,4 @@ void ext_management_evt_step_end           ();
 void ext_management_evt_poll_event         (const XrEventDataBuffer* event_data);
 
 }
+#endif
