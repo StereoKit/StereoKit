@@ -120,32 +120,6 @@ inline key_ ska_mouse_button_to_key(ska_mouse_button_ button) {
 	}
 }
 
-// Decode UTF-8 text to UTF-32 codepoints and inject into input system
-inline void ska_inject_text_input(const char* text) {
-	while (*text) {
-		uint32_t codepoint = 0;
-		if ((*text & 0x80) == 0) {
-			codepoint = *text++;
-		} else if ((*text & 0xE0) == 0xC0) {
-			codepoint = (*text++ & 0x1F) << 6;
-			if (*text) codepoint |= (*text++ & 0x3F);
-		} else if ((*text & 0xF0) == 0xE0) {
-			codepoint = (*text++ & 0x0F) << 12;
-			if (*text) codepoint |= (*text++ & 0x3F) << 6;
-			if (*text) codepoint |= (*text++ & 0x3F);
-		} else if ((*text & 0xF8) == 0xF0) {
-			codepoint = (*text++ & 0x07) << 18;
-			if (*text) codepoint |= (*text++ & 0x3F) << 12;
-			if (*text) codepoint |= (*text++ & 0x3F) << 6;
-			if (*text) codepoint |= (*text++ & 0x3F);
-		} else {
-			text++;
-			continue;
-		}
-		input_text_inject_char((char32_t)codepoint);
-	}
-}
-
 ///////////////////////////////////////////
 // Common event handler for events that backends don't handle themselves
 // Backends poll ska_event_poll() and handle backend-specific events, then
@@ -170,7 +144,7 @@ inline void ska_handle_event(ska_event_t* evt) {
 			input_key_inject_release(key);
 	} break;
 	case ska_event_text_input:
-		ska_inject_text_input(evt->text.text);
+		input_text_inject(evt->text.text);
 		break;
 	case ska_event_mouse_button_down: {
 		if (sk_app_focus() == app_focus_active) {

@@ -3314,6 +3314,52 @@ typedef enum key_ {
 	key_MAX = 0xFF,
 } key_;
 
+/*Describes what kind of keyboard input event this is.*/
+typedef enum keyboard_event_type_ {
+	/*Not an event. Consuming returns this once no events remain in this
+	  frame's queue, and reading by index returns it for an index outside the
+	  queue.*/
+	keyboard_event_type_none = 0,
+	/*A key was pressed. Auto-repeats arrive as additional press events with no
+	  release between them, one per repeat.*/
+	keyboard_event_type_key_press,
+	/*A key was released.*/
+	keyboard_event_type_key_release,
+	/*A single codepoint of insertable text.*/
+	keyboard_event_type_text,
+} keyboard_event_type_;
+
+/*A bit flag describing which of the keyboard's modifier keys are held.*/
+typedef enum key_mod_ {
+	/*No modifier keys are held.*/
+	key_mod_none = 0,
+	/*Either shift key.*/
+	key_mod_shift = 1 << 0,
+	/*Either ctrl key.*/
+	key_mod_ctrl = 1 << 1,
+	/*Either alt key.*/
+	key_mod_alt = 1 << 2,
+	/*Either Windows/Mac Command key.*/
+	key_mod_cmd = 1 << 3,
+} key_mod_;
+SK_MakeFlag(key_mod_);
+
+/*A single keyboard input event, either a key press, a key release, or one
+  codepoint of insertable text. Events preserve the exact order they were
+  produced in, including how text and keys interleave.*/
+typedef struct keyboard_event_t {
+	/*What kind of event this is, and which of the fields below apply.*/
+	keyboard_event_type_ type;
+	/*The key for press and release events, and none for text events. Mouse
+	  buttons arrive here too, as the mouse key values.*/
+	key_                 key;
+	/*The modifier keys held when this event was produced. A modifier's own
+	  press event includes itself, its release event does not.*/
+	key_mod_             modifiers;
+	/*The UTF-32 codepoint for text events, 0 for key events.*/
+	char32_t             character;
+} keyboard_event_t;
+
 /*Represents an input from an XR headset's controller!*/
 typedef enum controller_key_ {
 	/*Doesn't represent a key, generally means this item has not been set to
@@ -3566,9 +3612,10 @@ SK_API void                  input_mouse_mode_set            (mouse_mode_ mode);
 SK_API mouse_mode_           input_mouse_mode_get            (void);
 SK_API void                  input_key_inject_press          (key_ key);
 SK_API void                  input_key_inject_release        (key_ key);
-SK_API char32_t              input_text_consume              (void);
-SK_API void                  input_text_reset                (void);
-SK_API void                  input_text_inject_char          (char32_t character);
+SK_API keyboard_event_t      input_keyboard_consume          (void);
+SK_API int32_t               input_keyboard_event_count      (void);
+SK_API keyboard_event_t      input_keyboard_event_at         (int32_t index);
+SK_API void                  input_text_inject               (const char* text_utf8);
 SK_API void                  input_hand_visible              (handed_ hand, bool32_t visible);
 SK_API bool32_t              input_hand_get_visible          (handed_ hand);
 SK_API void                  input_hand_material             (handed_ hand, material_t material);
@@ -3593,6 +3640,9 @@ SK_API hand_sim_id_t         input_hand_sim_pose_add         (const pose_t* in_a
 SK_API void                  input_hand_sim_pose_remove      (hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear       (void);
 
+SK_API SK_DEPRECATED char32_t input_text_consume             (void);
+SK_API SK_DEPRECATED void    input_text_reset                (void);
+SK_API SK_DEPRECATED void    input_text_inject_char          (char32_t character);
 SK_API SK_DEPRECATED int32_t input_pointer_count             (input_source_ filter sk_default(input_source_any));
 SK_API SK_DEPRECATED pointer_t input_pointer                 (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API SK_DEPRECATED void    input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));

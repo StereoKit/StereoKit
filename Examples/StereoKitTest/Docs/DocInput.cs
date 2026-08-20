@@ -28,6 +28,43 @@ class DocInput : ITest
 		Input.FingerGlow = true;
 	}
 
+	/// :CodeSample: Input.KeyboardConsume KeyboardEvent
+	/// ### Reading the keyboard event queue
+	/// `Input.KeyboardConsume` reads this frame's key presses, releases, and
+	/// text in the exact order the user produced them, which is the right
+	/// foundation for custom text editing. Text events carry the layout and
+	/// language sensitive characters to insert, while key events carry the
+	/// editing intent that text can't express, and each auto-repeat of a held
+	/// key is its own press event.
+	///
+	/// Reading consumes, so a focused `UI.Input` earlier in the frame will
+	/// empty the queue. If observing is all you need, `Input.KeyboardEventAt`
+	/// reads by index without consuming anything.
+	static string typed = "";
+	static void ReadKeyboardEvents()
+	{
+		while (Input.KeyboardConsume(out KeyboardEvent e))
+		{
+			switch (e.type)
+			{
+				case KeyboardEventType.Text:
+					// Text may be two chars, for emoji and other codepoints
+					// too large for a single C# char.
+					typed += e.Text;
+					break;
+				case KeyboardEventType.KeyPress:
+					if (e.key == Key.Backspace && typed.Length > 0)
+					{
+						// Erase the whole codepoint, which may be two chars
+						int last = char.IsLowSurrogate(typed[typed.Length-1]) ? 2 : 1;
+						typed = typed.Remove(typed.Length - last);
+					}
+					break;
+			}
+		}
+	}
+	/// :End:
+
 	/// :CodeSample: Input.MouseMode MouseMode MouseMode.Relative
 	/// ### Mouse-look camera control
 	/// `MouseMode.Relative` hides the cursor and pins it in place, so the
@@ -54,6 +91,7 @@ class DocInput : ITest
 	public void Step      ()
 	{
 		FingerGlowWindow();
+		ReadKeyboardEvents();
 		MouseLook();
 
 		Tests.Hand([new HandJoint(V.XYZ(-0.009f, -0.171f, -0.402f), new Quat(0.221f, -0.047f, -0.827f, 0.515f), 0.020f), new HandJoint(V.XYZ(-0.009f, -0.171f, -0.402f), new Quat(0.221f, -0.047f, -0.827f, 0.515f), 0.020f), new HandJoint(V.XYZ(0.005f, -0.166f, -0.432f), new Quat(0.245f, 0.010f, -0.766f, 0.594f), 0.013f), new HandJoint(V.XYZ(0.018f, -0.155f, -0.463f), new Quat(0.221f, -0.045f, -0.827f, 0.516f), 0.010f), new HandJoint(V.XYZ(0.030f, -0.151f, -0.485f), new Quat(0.221f, -0.045f, -0.827f, 0.516f), 0.009f), new HandJoint(V.XYZ(-0.016f, -0.164f, -0.394f), new Quat(0.488f, -0.042f, -0.077f, 0.868f), 0.022f), new HandJoint(V.XYZ(-0.001f, -0.112f, -0.421f), new Quat(0.422f, 0.007f, -0.091f, 0.902f), 0.011f), new HandJoint(V.XYZ(0.002f, -0.082f, -0.446f), new Quat(0.338f, 0.008f, -0.065f, 0.939f), 0.009f), new HandJoint(V.XYZ(0.003f, -0.066f, -0.466f), new Quat(0.308f, 0.029f, -0.040f, 0.950f), 0.008f), new HandJoint(V.XYZ(0.002f, -0.051f, -0.484f), new Quat(0.308f, 0.029f, -0.040f, 0.950f), 0.007f), new HandJoint(V.XYZ(-0.033f, -0.161f, -0.390f), new Quat(0.488f, -0.042f, -0.077f, 0.868f), 0.022f), new HandJoint(V.XYZ(-0.023f, -0.106f, -0.417f), new Quat(0.276f, 0.070f, 0.005f, 0.958f), 0.012f), new HandJoint(V.XYZ(-0.029f, -0.082f, -0.454f), new Quat(-0.219f, 0.054f, 0.050f, 0.973f), 0.008f), new HandJoint(V.XYZ(-0.031f, -0.094f, -0.479f), new Quat(-0.497f, 0.040f, 0.136f, 0.856f), 0.008f), new HandJoint(V.XYZ(-0.030f, -0.116f, -0.493f), new Quat(-0.497f, 0.040f, 0.136f, 0.856f), 0.007f), new HandJoint(V.XYZ(-0.049f, -0.157f, -0.387f), new Quat(0.488f, -0.042f, -0.077f, 0.868f), 0.020f), new HandJoint(V.XYZ(-0.044f, -0.110f, -0.416f), new Quat(0.308f, 0.064f, 0.052f, 0.948f), 0.010f), new HandJoint(V.XYZ(-0.050f, -0.087f, -0.449f), new Quat(-0.235f, -0.000f, 0.113f, 0.965f), 0.008f), new HandJoint(V.XYZ(-0.048f, -0.099f, -0.473f), new Quat(-0.560f, -0.064f, 0.133f, 0.815f), 0.007f), new HandJoint(V.XYZ(-0.042f, -0.122f, -0.484f), new Quat(-0.560f, -0.064f, 0.133f, 0.815f), 0.006f), new HandJoint(V.XYZ(-0.058f, -0.158f, -0.389f), new Quat(0.459f, -0.018f, 0.173f, 0.871f), 0.019f), new HandJoint(V.XYZ(-0.064f, -0.120f, -0.417f), new Quat(0.381f, 0.037f, 0.111f, 0.917f), 0.009f), new HandJoint(V.XYZ(-0.069f, -0.098f, -0.439f), new Quat(-0.135f, -0.038f, 0.192f, 0.971f), 0.007f), new HandJoint(V.XYZ(-0.066f, -0.104f, -0.459f), new Quat(-0.482f, -0.152f, 0.167f, 0.846f), 0.007f), new HandJoint(V.XYZ(-0.057f, -0.120f, -0.472f), new Quat(-0.482f, -0.152f, 0.167f, 0.846f), 0.006f), new HandJoint(V.XYZ(-0.028f, -0.133f, -0.403f), new Quat(-0.269f, 0.025f, -0.084f, 0.959f), 0.000f), new HandJoint(V.XYZ(-0.039f, -0.187f, -0.363f), new Quat(0.488f, -0.042f, -0.077f, 0.868f), 0.000f)]);

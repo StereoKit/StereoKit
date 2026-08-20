@@ -1943,6 +1943,36 @@ namespace StereoKit
 		MAX          = 0xFF,
 	}
 
+	/// <summary>Describes what kind of keyboard input event this is.</summary>
+	public enum KeyboardEventType {
+		/// <summary>Not an event. Consuming returns this once no events remain in this
+		/// frame's queue, and reading by index returns it for an index outside the
+		/// queue.</summary>
+		None         = 0,
+		/// <summary>A key was pressed. Auto-repeats arrive as additional press events with no
+		/// release between them, one per repeat.</summary>
+		KeyPress,
+		/// <summary>A key was released.</summary>
+		KeyRelease,
+		/// <summary>A single codepoint of insertable text.</summary>
+		Text,
+	}
+
+	/// <summary>A bit flag describing which of the keyboard's modifier keys are held.</summary>
+	[Flags]
+	public enum KeyMod {
+		/// <summary>No modifier keys are held.</summary>
+		None         = 0,
+		/// <summary>Either shift key.</summary>
+		Shift        = 1 << 0,
+		/// <summary>Either ctrl key.</summary>
+		Ctrl         = 1 << 1,
+		/// <summary>Either alt key.</summary>
+		Alt          = 1 << 2,
+		/// <summary>Either Windows/Mac Command key.</summary>
+		Cmd          = 1 << 3,
+	}
+
 	/// <summary>Represents an input from an XR headset's controller!</summary>
 	public enum ControllerKey {
 		/// <summary>Doesn't represent a key, generally means this item has not been set to
