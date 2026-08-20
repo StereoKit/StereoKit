@@ -816,4 +816,34 @@ namespace StereoKit
 		}
 	}
 
+	/// <summary>A single keyboard input event, either a key press, a key
+	/// release, or one codepoint of insertable text. Events preserve the exact
+	/// order they were produced in, including how text and keys interleave.
+	/// </summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct KeyboardEvent
+	{
+		/// <summary>What kind of event this is, and which of the fields below
+		/// apply.</summary>
+		public KeyboardEventType type;
+		/// <summary>The key for press and release events, and none for text
+		/// events. Mouse buttons arrive here too, as the mouse key values.
+		/// </summary>
+		public Key key;
+		/// <summary>The modifier keys held when this event was produced. A
+		/// modifier's own press event includes itself, its release event does
+		/// not.</summary>
+		public KeyMod modifiers;
+		// The raw UTF-32 codepoint stays private so readers go through Text,
+		// where a (char) cast can't truncate codepoints past the BMP.
+		private uint character;
+
+		/// <summary>This event's text, as a string. Emoji and other codepoints
+		/// outside the Basic Multilingual Plane don't fit in a single C# char,
+		/// so this is the safe way to read one. Empty for key events.</summary>
+		public string Text => type == KeyboardEventType.Text
+			? char.ConvertFromUtf32((int)character)
+			: "";
+	}
+
 }

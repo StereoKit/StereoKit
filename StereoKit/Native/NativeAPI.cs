@@ -856,9 +856,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern MouseMode    input_mouse_mode_get();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_key_inject_press(Key key);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_key_inject_release(Key key);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint         input_text_consume();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_text_reset();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_text_inject_char(uint character);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern KeyboardEvent input_keyboard_consume();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          input_keyboard_event_count();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern KeyboardEvent input_keyboard_event_at(int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_text_inject([MarshalAs(UnmanagedType.LPUTF8Str)] string text_utf8);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_hand_visible(Handed hand, [MarshalAs(UnmanagedType.Bool)] bool visible);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         input_hand_get_visible(Handed hand);
@@ -881,6 +882,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern HandSimId    input_hand_sim_pose_add([In] Pose[] in_arr_palm_relative_hand_joints_25, ControllerKey button1, ControllerKey and_button2, Key or_hotkey1, Key and_hotkey2);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_hand_sim_pose_remove(HandSimId id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_hand_sim_pose_clear();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint         input_text_consume();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_text_reset();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_text_inject_char(uint character);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          input_pointer_count(InputSource filter);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pointer      input_pointer(int index, InputSource filter);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         input_subscribe(InputSource source, BtnState input_event, [MarshalAs(UnmanagedType.FunctionPtr)] InputEventCallback input_event_callback);

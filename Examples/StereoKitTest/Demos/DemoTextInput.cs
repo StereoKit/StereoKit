@@ -64,54 +64,51 @@ class DemoTextInput : ITest
 		{
 			Platform.KeyboardSetLayout(TextContext.Text, new string[]
 			{
-				"q|w|e|r|t|y|u|i|o|p\n---1|a|s|d|f|g|h|j|k|l\nspr:sk/ui/shift---3-visit_1|z|x|c|v|b|n|m|spr:sk/ui/backspace-\\b--3\nspr:sk/ui/close----close|123---3-go_2|,| - --7|.|Return-\\n--4|",
-				"Q|W|E|R|T|Y|U|I|O|P\n---1|A|S|D|F|G|H|J|K|L\nspr:sk/ui/shift---3-go_0|Z|X|C|V|B|N|M|spr:sk/ui/backspace-\\b--3\nspr:sk/ui/close----close|123---3-go_2|!| - --7|?|Return-\\n--4|",
-				"1|2|3|4|5|6|7|8|9|0\n---1|\\-|/|:|;|(|)|$|&|@\nspr:sk/ui/shift---3-go_0|*|=|+|#|%|'|\"|spr:sk/ui/backspace-\\b--3\nspr:sk/ui/close----close|123---3-go_0|!| - --7|?|Return-\\n--4|"
+				"q|w|e|r|t|y|u|i|o|p\n---1|a|s|d|f|g|h|j|k|l\nspr:sk/ui/shift---3-visit_1|z|x|c|v|b|n|m|spr:sk/ui/backspace--8-3\nspr:sk/ui/close----close|123---3-go_2|,| - --7|.|Return-\\n--4|",
+				"Q|W|E|R|T|Y|U|I|O|P\n---1|A|S|D|F|G|H|J|K|L\nspr:sk/ui/shift---3-go_0|Z|X|C|V|B|N|M|spr:sk/ui/backspace--8-3\nspr:sk/ui/close----close|123---3-go_2|!| - --7|?|Return-\\n--4|",
+				"1|2|3|4|5|6|7|8|9|0\n---1|\\-|/|:|;|(|)|$|&|@\nspr:sk/ui/shift---3-go_0|*|=|+|#|%|'|\"|spr:sk/ui/backspace--8-3\nspr:sk/ui/close----close|123---3-go_0|!| - --7|?|Return-\\n--4|"
 			});
 		}
 
 		UI.WindowEnd();
 	}
 
-	/// :CodeSample: Input.TextReset Input.TextConsume
-	/// ### Raw Text Input
-	// If you need to read text input directly from a soft or hard keyboard,
-	// these functions give you direct access to the stream of Unicode
-	// characters produced! These characters are language and keyboard layout
-	// sensitive, making these functions the correct ones for working with text
-	// content vs. the `Input.Key` functions, which are not language specific.
+	/// :CodeSample: Input.KeyboardEventCount Input.KeyboardEventAt
+	/// ### Raw Keyboard Input
+	// If you need to read the keyboard directly from a soft or hard keyboard,
+	// this gives you the frame's events in the exact order the user made them.
+	// Text events are language and keyboard layout sensitive, which makes them
+	// the correct choice for text content, and key events carry the editing
+	// intent that text can't express, like backspace and enter.
 	//
-	// Every frame, `Input.TextConsume` will have a list of new characters that
-	// have been pressed or submitted to the app. Reading them will "consume"
-	// them, making them unavailable to anything that comes after. If you need
-	// to bypass some earlier element consuming them, you can reset the current
-	// frame's consume queue with `Input.TextReset`.
+	// `Input.KeyboardConsume` reads events destructively, so an element like
+	// UI.Input can hide input from whatever comes after it. Reading by index
+	// observes the frame's events without consuming anything, which is what a
+	// display like this window wants.
 	Pose         rawWinPose = new Pose(0.3f,0,0);
 	List<string> uniChars   = new List<string>(Enumerable.Repeat("", 10));
 	void ShowRawInputWindow()
 	{
-		UI.WindowBegin("Raw keyboard code points:", ref rawWinPose);
+		UI.WindowBegin("Raw keyboard events:", ref rawWinPose);
 
-		// Reset the text input back to the start of the list, since any
-		// UI.Input before this will consume the characters first and we
-		// always want to show input on this window.
-		Input.TextReset();
-
-		while (true)
+		// Read each of this frame's events, even the ones an earlier UI.Input
+		// may have consumed.
+		for (int evt = 0; evt < Input.KeyboardEventCount; evt++)
 		{
-			// Consume each new character, 0 marks the end of the list of new
-			// characters.
-			char c = Input.TextConsume();
-			if (c == 0) break;
+			KeyboardEvent e = Input.KeyboardEventAt(evt);
+			// Text events carry their character data in e.Text, which handles
+			// emoji and other codepoints too large for a single C# char.
+			string desc = e.type == KeyboardEventType.Text
+				? $"U+{char.ConvertToUtf32(e.Text, 0):X4} '{e.Text}'"
+				: $"{e.key} {(e.type == KeyboardEventType.KeyPress ? "down" : "up")}";
 
-			// Insert the codepoint at the start of the list, and bump off any
-			// more than 10 items.
-			uniChars.Insert(0, $"{(int)c}");
+			// Insert at the start of the list, and bump off any more than 10.
+			uniChars.Insert(0, desc);
 			if (uniChars.Count > 10)
 				uniChars.RemoveAt(uniChars.Count - 1);
 		}
 
-		// Show each character code as a label
+		// Show each event as a label
 		for (int i = 0; i < uniChars.Count; i++)
 			UI.Label(uniChars[i]);
 

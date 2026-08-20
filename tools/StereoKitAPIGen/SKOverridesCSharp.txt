@@ -124,6 +124,8 @@ audio_env_t AudioEnvironment
 @noimpl hand_sim_id_t id_hash_t
 # Request struct has string/feature arrays, hand-marshaled in Backend.Vulkan.Request
 @noimpl backend_vulkan_request_t
+# Keeps the raw codepoint private so readers use Text, which can't truncate
+@noimpl keyboard_event_t
 
 # UI types with special handling
 # (none currently)

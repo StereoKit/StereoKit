@@ -715,22 +715,73 @@ namespace StereoKit
 		/// event queue. It will be processed at the start of the next frame,
 		/// and will be indistinguishable from a physical key press. Remember
 		/// to release your key as well!
-		/// 
-		/// This will _not_ submit text to StereoKit's text queue, and will not
-		/// show up in places like UI.Input. For that, you must submit a
-		/// TextInjectChar call.</summary>
+		///
+		/// This will _not_ submit text to StereoKit's text queue, so to type a
+		/// character into something like UI.Input, you must submit a
+		/// TextInject call. Editing keys are the other way around: backspace,
+		/// delete, enter, and escape act on UI.Input through this call.</summary>
 		/// <param name="key">The key to press.</param>
 		public static void KeyInjectPress(Key key) => NativeAPI.input_key_inject_press(key);
 		/// <summary>This will inject a key release event into StereoKit's
 		/// input event queue. It will be processed at the start of the next
 		/// frame, and will be indistinguishable from a physical key release.
 		/// This should be preceded by a key press!
-		/// 
-		/// This will _not_ submit text to StereoKit's text queue, and will not
-		/// show up in places like UI.Input. For that, you must submit a
-		/// TextInjectChar call.</summary>
+		///
+		/// This will _not_ submit text to StereoKit's text queue, so to type a
+		/// character into something like UI.Input, you must submit a
+		/// TextInject call. Editing keys are the other way around: backspace,
+		/// delete, enter, and escape act on UI.Input through KeyInjectPress.</summary>
 		/// <param name="key">The key to release.</param>
 		public static void KeyInjectRelease(Key key) => NativeAPI.input_key_inject_release(key);
+
+		/// <summary>Reads the next keyboard event from this frame's queue, and
+		/// advances to the one after it. Key presses, key releases, and text
+		/// all arrive here in the exact order the user produced them, so a
+		/// text field can apply them without guessing at what came first.
+		///
+		/// Each auto-repeat of a held key is its own press event, which is why
+		/// this is the right way to drive editing keys. `Input.Key` reports
+		/// state for the whole frame instead, so it cannot tell one press from
+		/// several.
+		///
+		/// Events are consumed as they're read, and a focused `UI.Input` reads
+		/// the whole queue. To observe events without consuming them, read by
+		/// index with `Input.KeyboardEventCount` and `Input.KeyboardEventAt`
+		/// instead. Like the rest of the input API, the queue belongs to the
+		/// main thread, and is rebuilt at the start of each frame.</summary>
+		/// <param name="keyboardEvent">The next event in this frame's queue,
+		/// or an event of type `KeyboardEventType.None` if none remain.</param>
+		/// <returns>True if an event was read, false once the queue is empty.
+		/// </returns>
+		public static bool KeyboardConsume(out KeyboardEvent keyboardEvent)
+		{
+			keyboardEvent = NativeAPI.input_keyboard_consume();
+			return keyboardEvent.type != KeyboardEventType.None;
+		}
+		/// <summary>The number of keyboard events this frame, for reading by
+		/// index with `Input.KeyboardEventAt`. This is the whole frame's count,
+		/// unaffected by what `Input.KeyboardConsume` has consumed.</summary>
+		public static int KeyboardEventCount => NativeAPI.input_keyboard_event_count();
+		/// <summary>Reads a keyboard event by index, without consuming
+		/// anything. This suits code that wants to observe the frame's input
+		/// even after something else, like a focused `UI.Input`, has consumed
+		/// the queue.</summary>
+		/// <param name="index">Index of the event, from 0 up to
+		/// `Input.KeyboardEventCount`.</param>
+		/// <returns>The event at that index, or an event of type
+		/// `KeyboardEventType.None` if the index is out of range.</returns>
+		public static KeyboardEvent KeyboardEventAt(int index) => NativeAPI.input_keyboard_event_at(index);
+		/// <summary>Injects text into StereoKit's keyboard event queue, as if
+		/// the user had typed or pasted it. It will be available at the start
+		/// of the next frame, and is indistinguishable from normal text entry.
+		/// The whole string arrives as one uninterrupted run of events.
+		///
+		/// This is for text only. Carriage returns arrive as newlines, with
+		/// CRLF counting as a single one. Other control characters are ignored
+		/// here with a warning, since editing keys belong in
+		/// `Input.KeyInjectPress`.</summary>
+		/// <param name="text">The text to inject, as a normal string.</param>
+		public static void TextInject(string text) => NativeAPI.input_text_inject(text);
 
 		/// <summary>Returns the next text character from the list of
 		/// characters that have been entered this frame! Will return '\0' if
@@ -738,12 +789,18 @@ namespace StereoKit
 		/// system's text entry system, and so can be unicode, will repeat if
 		/// their 'key' is held down, and could arrive from something like a
 		/// copy/paste operation.
-		/// 
+		///
+		/// This is insertable text only. Editing keys such as backspace,
+		/// delete, enter, and escape never arrive here, so a text field must
+		/// read them with `Input.Key`, the same way it reads the arrow keys.
+		/// Newline and tab are text, and can arrive from a paste or an IME.
+		///
 		/// If you wish to reset this function to begin at the start of the
 		/// read list on the next call, you can call `Input.TextReset`.</summary>
 		/// <returns>The next character in this frame's list, or '\0' if none
 		/// remain.</returns>
-		public static char TextConsume() 
+		[Obsolete("Use Input.KeyboardConsume. It keeps text in order with the key events around it, and reports full UTF-32 codepoints instead of truncating to a char.")]
+		public static char TextConsume()
 			=> (char)NativeAPI.input_text_consume();
 		/// <summary>Resets the `Input.TextConsume` read list back to the
 		/// start.
@@ -754,6 +811,7 @@ namespace StereoKit
 		/// in the frame, you would read everything with `TextConsume`, and
 		/// then `TextReset` afterwards to reset the read list for the 
 		/// following `UI.Input`.</summary>
+		[Obsolete("Use Input.KeyboardEventCount and Input.KeyboardEventAt, which read events without consuming them at all.")]
 		public static void TextReset()
 			=> NativeAPI.input_text_reset();
 		/// <summary>This will inject a UTF32 Unicode text character into
@@ -762,9 +820,12 @@ namespace StereoKit
 		/// entry.
 		/// 
 		/// This will _not_ submit key press/release events to StereoKit's
-		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// input queue, use KeyInjectPress/Release for that. The text queue
+		/// carries insertable text only, so carriage returns become newlines,
+		/// and other control characters are ignored here with a warning.</summary>
 		/// <param name="unicodeCharUTF32">An unsigned integer representing a
 		/// single UTF32 character.</param>
+		[Obsolete("Use Input.TextInject.")]
 		public static void TextInjectChar(uint unicodeCharUTF32) => NativeAPI.input_text_inject_char(unicodeCharUTF32);
 		/// <summary>This will convert a C# string into a number of UTF32
 		/// Unicode text characters, and inject them into StereoKit's text
@@ -772,9 +833,12 @@ namespace StereoKit
 		/// and will be indistinguishable from normal text entry.
 		/// 
 		/// This will _not_ submit key press/release events to StereoKit's
-		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// input queue, use KeyInjectPress/Release for that. The text queue
+		/// carries insertable text only, so carriage returns become newlines,
+		/// and other control characters are ignored here with a warning.</summary>
 		/// <param name="chars">A collection of characters to submit as text
 		/// input.</param>
+		[Obsolete("Use Input.TextInject.")]
 		public static void TextInjectChar(string chars) {
 			byte[] bytes = Encoding.Convert(Encoding.Unicode, Encoding.UTF32, Encoding.Unicode.GetBytes(chars));
 			for (int i = 0; i+4 <= bytes.Length; i += 4)
@@ -786,12 +850,15 @@ namespace StereoKit
 		/// frame, and will be indistinguishable from normal text entry.
 		/// 
 		/// This will _not_ submit key press/release events to StereoKit's
-		/// input queue, use KeyInjectPress/Release for that.</summary>
+		/// input queue, use KeyInjectPress/Release for that. The text queue
+		/// carries insertable text only, so carriage returns become newlines,
+		/// and other control characters are ignored here with a warning.</summary>
 		/// <param name="chars">A byte array representing a string in some
 		/// encoded format.</param>
 		/// <param name="charEncoding">The encoding format of the byte array.
 		/// Note that an encoding of UTF32 will skip converting bytes to UTF32.
 		/// </param>
+		[Obsolete("Use Input.TextInject.")]
 		public static void TextInjectChar(byte[] chars, Encoding charEncoding)
 		{
 			byte[] bytes = charEncoding == Encoding.UTF32 && chars.Length % 4 == 0

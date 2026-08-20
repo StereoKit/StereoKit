@@ -375,9 +375,9 @@ namespace StereoKit
 		/// diffuse color but it's been superseded - prefer Etc2 or Astc
 		/// on newer hardware!</summary>
 		Etc1Rgb,
-		/// <summary>ETC1 sRGB RGB, no alpha, 4 bpp. The sRGB variant of Etc1Rgb
-		/// for color textures on older Android devices. Prefer Etc2 or
-		/// Astc on newer hardware!</summary>
+		/// <summary>ETC1 sRGB RGB, no alpha, 4 bpp. The sRGB counterpart to
+		/// Etc1Rgb - the GPU converts to linear on sample, so this is
+		/// the correct choice for color textures.</summary>
 		Etc1RgbSrgb,
 		/// <summary>ETC2 sRGB color with full alpha, 8 bpp. The standard
 		/// compressed RGBA format on OpenGL ES 3.0+ mobile devices, and
@@ -427,18 +427,17 @@ namespace StereoKit
 		/// <summary>ASTC 4x4 linear color with full alpha, 8 bpp. High-quality
 		/// compressed format for data textures on modern mobile GPUs.</summary>
 		Astc4x4Rgba,
-		/// <summary>ASTC 6x6 sRGB color with full alpha, ~3.6 bpp. A great
-		/// middle ground between the 4x4 and 8x8 block sizes, with good
-		/// quality at a compact size for sRGB color textures on modern
-		/// mobile GPUs.</summary>
+		/// <summary>ASTC 6x6 sRGB color with full alpha, ~3.56 bpp. Larger blocks
+		/// than Astc4x4 for less than half the memory, at some cost to
+		/// quality - a good trade for large or low-frequency textures.</summary>
 		Astc6x6RgbaSrgb,
-		/// <summary>ASTC 6x6 linear color with full alpha, ~3.6 bpp. A compact
-		/// compressed format for data textures on modern mobile GPUs.</summary>
+		/// <summary>ASTC 6x6 linear color with full alpha, ~3.56 bpp. The linear
+		/// counterpart to Astc6x6RgbaSrgb, for data textures.</summary>
 		Astc6x6Rgba,
-		/// <summary>ASTC 8x8 HDR color, 2 bpp. Sampling produces FP16 RGB, with
-		/// the HDR profile signalled by the encoded block contents
-		/// rather than the format itself. Requires hardware ASTC HDR
-		/// support, which software decoders typically lack.</summary>
+		/// <summary>ASTC 8x8 HDR color with full alpha, 2 bpp. Compressed HDR on
+		/// mobile GPUs, and much cheaper than an uncompressed float
+		/// format. Requires the ASTC HDR extension, which is separate
+		/// from baseline ASTC support!</summary>
 		Astc8x8RgbaHdr,
 		/// <summary>ATC RGB on Qualcomm Adreno GPUs, 4 bpp. Historical
 		/// Qualcomm-specific format - prefer Astc or Etc2 on newer
@@ -1968,6 +1967,36 @@ namespace StereoKit
 		Divide       = 0x6F,
 		/// <summary>Maximum value for key codes.</summary>
 		MAX          = 0xFF,
+	}
+
+	/// <summary>Describes what kind of keyboard input event this is.</summary>
+	public enum KeyboardEventType {
+		/// <summary>Not an event. Consuming returns this once no events remain in this
+		/// frame's queue, and reading by index returns it for an index outside the
+		/// queue.</summary>
+		None         = 0,
+		/// <summary>A key was pressed. Auto-repeats arrive as additional press events with no
+		/// release between them, one per repeat.</summary>
+		KeyPress,
+		/// <summary>A key was released.</summary>
+		KeyRelease,
+		/// <summary>A single codepoint of insertable text.</summary>
+		Text,
+	}
+
+	/// <summary>A bit flag describing which of the keyboard's modifier keys are held.</summary>
+	[Flags]
+	public enum KeyMod {
+		/// <summary>No modifier keys are held.</summary>
+		None         = 0,
+		/// <summary>Either shift key.</summary>
+		Shift        = 1 << 0,
+		/// <summary>Either ctrl key.</summary>
+		Ctrl         = 1 << 1,
+		/// <summary>Either alt key.</summary>
+		Alt          = 1 << 2,
+		/// <summary>Either Windows/Mac Command key.</summary>
+		Cmd          = 1 << 3,
 	}
 
 	/// <summary>Represents an input from an XR headset's controller!</summary>

@@ -214,31 +214,11 @@ CPMAddPackage(
 )
 target_compile_options(meshoptimizer PRIVATE ${SK_WARNING_FLAG})
 
-#### basis_universal - https://github.com/BinomialLLC/basis_universal ####
-CPMAddPackage(
-  NAME basis_universal
-  GITHUB_REPOSITORY BinomialLLC/basis_universal
-  GIT_TAG           1.16.4
-  GIT_SHALLOW       1
-  DOWNLOAD_ONLY     YES # basis universal doesn't have a library in it, we include code from this library directly
-)
-if (basis_universal_SOURCE_DIR)
-  # A separate library for basisu to properly suppress warnings. STATIC rather
-  # than OBJECT so --exclude-libs below keeps its symbols (incl. zstd) private.
-  add_library(basisu_transcoder STATIC
-    ${basis_universal_SOURCE_DIR}/transcoder/basisu_transcoder.cpp
-    ${basis_universal_SOURCE_DIR}/zstd/zstd.c)
-  target_include_directories(basisu_transcoder SYSTEM PUBLIC ${basis_universal_SOURCE_DIR}/transcoder)
-  target_compile_options    (basisu_transcoder PRIVATE ${SK_WARNING_FLAG})
-  target_compile_definitions(basisu_transcoder PRIVATE
-    BASISD_SUPPORT_FXT1=0
-    BASISD_SUPPORT_PVRTC1=0
-    BASISD_SUPPORT_PVRTC2=0
-    BASISD_SUPPORT_ATC=0
-    BASISD_SUPPORT_ETC2_EAC_A8=0
-    BASISD_SUPPORT_BC7=0
-    BASISD_SUPPORT_BC7_MODE5=0)
-endif()
+#### zstd - https://github.com/facebook/zstd ####
+# sk_ktx2 vendors no compression code, so Zstd supercompressed UASTC borrows this
+# from us. STATIC rather than OBJECT so --exclude-libs below keeps ZSTD_* private.
+add_library(zstd_decompress STATIC StereoKitC/libraries/zstddeclib.c)
+target_compile_options(zstd_decompress PRIVATE ${SK_WARNING_FLAG})
 
 #### Tracy Profiler - https://github.com/wolfpld/tracy ####
 
@@ -259,6 +239,7 @@ endif()
 #### sk_renderer - https://github.com/StereoKit/sk_renderer ####
 set(SKR_ENABLE_STATIC_ANALYSIS OFF CACHE BOOL "Faster build" FORCE)
 set(SKR_BUILD_EXAMPLES OFF CACHE BOOL "Faster build" FORCE)
+set(SKR_BUILD_KTX2 ON CACHE BOOL "KTX2 texture loading" FORCE)
 # If we're only using the SVSL shader compiler, we can drop glslang from
 # skshaderc and save ourselves a lot of binary size and build time!
 if (SK_USE_SVSL)
@@ -270,7 +251,7 @@ if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.8.12
+    GIT_TAG v2026.8.13
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to
@@ -290,7 +271,7 @@ if (NOT SK_LOCAL_SK_APP)
   CPMAddPackage(
     NAME sk_app
     GITHUB_REPOSITORY StereoKit/sk_app
-    GIT_TAG v2026.8.12
+    GIT_TAG v2026.8.19
   )
 else()
   # For building directly with in-progress sk_app changes, point this to your
@@ -697,7 +678,8 @@ target_link_libraries( StereoKitC
     ${WINDOWS_LIBS}
     ${CMAKE_DL_LIBS}
     meshoptimizer
-    basisu_transcoder
+    sk_ktx2
+    zstd_decompress
   PUBLIC
     sk_app
     sk_renderer
@@ -741,7 +723,8 @@ target_link_options   (StereoKitC PUBLIC ${SK_LINKER_FLAGS})
 # Android app libs bind to StereoKitC's ska_* exports, so those stay visible.
 if (ANDROID)
   target_link_options(StereoKitC PRIVATE
-    "-Wl,--exclude-libs,libbasisu_transcoder.a"
+    "-Wl,--exclude-libs,libsk_ktx2.a"
+    "-Wl,--exclude-libs,libzstd_decompress.a"
     "-Wl,--exclude-libs,libmeshoptimizer.a")
 elseif (NOT MSVC AND NOT APPLE)
   target_link_options(StereoKitC PRIVATE "-Wl,--exclude-libs,ALL")

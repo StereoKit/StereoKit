@@ -2,208 +2,193 @@
 #include "../sk_memory.h"
 
 #include <sk_renderer.h>
+#include <sk_ktx2.h>
 
-// basisu has a lot of deprecated-builtin warnings embedded in its headers
-#pragma warning(push)
-#pragma warning(disable : 4068)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-builtins"
-#include <basisu_transcoder.h>
-#pragma clang diagnostic pop
-#pragma warning(pop)
+#include <inttypes.h>
 
-using namespace basist;
+// The subset we call from libraries/zstddeclib.c. Its copy of zstd.h is baked
+// into the amalgamation, so there's no header to include.
+extern "C" {
+size_t   ZSTD_decompress(void* dst, size_t dst_capacity, const void* src, size_t src_size);
+unsigned ZSTD_isError   (size_t code);
+}
 
 namespace sk {
+
+// ETC1S is entropy coded, so a few hundred bytes can ask for gigabytes. sk_ktx2
+// reports that size rather than refusing it, and sk_malloc aborts on failure.
+#define TEX_KTX2_MAX_BYTES (1024 * 1024 * 1024)
+
+struct texture_compression_state_t {
+	ktx2_context_t ktx2; // ETC1S tables, ~43KB, read-only after init so asset threads can share it
+};
+static texture_compression_state_t local = {};
+
+///////////////////////////////////////////
+
+static size_t ktx2_zstd_inflate(void*, const void* src, size_t src_bytes, void* out_dst, size_t dst_bytes) {
+	size_t result = ZSTD_decompress(out_dst, dst_bytes, src, src_bytes);
+	return ZSTD_isError(result) ? 0 : result;
+}
 
 ///////////////////////////////////////////
 
 void texture_compression_init() {
-	basist::basisu_transcoder_init();
+	local.ktx2.zstd = ktx2_zstd_inflate;
+	ktx2_context_prepare(&local.ktx2);
 }
 
 ///////////////////////////////////////////
 
-skr_tex_fmt_ texture_preferred_compressed_format(int32_t channels, bool is_srgb) {
-	// The Adreno docs say this:
-	// https://developer.qualcomm.com/sites/default/files/docs/adreno-gpu/snapdragon-game-toolkit/gdg/gpu/best_practices_texture.html#compression-strategies
-	//
-	// - Use ASTC compression if it is available.
-	// - Otherwise, use ETC2 compression if available.
-	// - Otherwise, select the compression format as follows :
-	//   - ATC if using alpha
-	//   - ETC if not using alpha
-
-	if (channels == 1) {
-		if      (skr_tex_fmt_is_supported(skr_tex_fmt_etc2_r11, (skr_tex_flags_)0, 1))  return skr_tex_fmt_etc2_r11;
-		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc4_r,    (skr_tex_flags_)0, 1))  return skr_tex_fmt_bc4_r;
-		else                                                                            return skr_tex_fmt_r8;
-	} else if (channels == 2) {
-		if      (skr_tex_fmt_is_supported(skr_tex_fmt_etc2_rg11, (skr_tex_flags_)0, 1)) return skr_tex_fmt_etc2_rg11;
-		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc5_rg,    (skr_tex_flags_)0, 1)) return skr_tex_fmt_bc5_rg;
-		else                                                                            return skr_tex_fmt_r8g8;
-	} else if (channels == 3) {
-		if      (skr_tex_fmt_is_supported(skr_tex_fmt_astc4x4_rgba, (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_astc4x4_rgba_srgb : skr_tex_fmt_astc4x4_rgba);
-		//else if (skr_tex_fmt_is_supported(skr_tex_fmt_atc_rgb,      (skr_tex_flags_)0, 1)) return skr_tex_fmt_atc_rgb;
-		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc1_rgb,      (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_bc1_rgb_srgb      : skr_tex_fmt_bc1_rgb);
-		else                                                                               return (is_srgb ? skr_tex_fmt_rgba32_srgb       : skr_tex_fmt_rgba32_linear);
-	} else if (channels == 4) {
-		if      (skr_tex_fmt_is_supported(skr_tex_fmt_astc4x4_rgba, (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_astc4x4_rgba_srgb : skr_tex_fmt_astc4x4_rgba);
-		//else if (skr_tex_fmt_is_supported(skr_tex_fmt_atc_rgba,     (skr_tex_flags_)0, 1)) return skr_tex_fmt_atc_rgba;
-		else if (skr_tex_fmt_is_supported(skr_tex_fmt_bc3_rgba,     (skr_tex_flags_)0, 1)) return (is_srgb ? skr_tex_fmt_bc3_rgba_srgb     : skr_tex_fmt_bc3_rgba);
-		else                                                                               return (is_srgb ? skr_tex_fmt_rgba32_srgb       : skr_tex_fmt_rgba32_linear);
-	}
-	log_err("Shouldn't get here!");
-	return skr_tex_fmt_none;
+// sk_ktx2 asks for capability by family, which is how the hardware reports it:
+// BC1-BC7 arrive as a single feature bit, and ASTC LDR as another.
+static ktx2_caps_ texture_compression_caps() {
+	ktx2_caps_ caps = ktx2_caps_none;
+	if (skr_tex_fmt_is_supported(skr_tex_fmt_bc7_rgba,     (skr_tex_flags_)0, 1)) caps = (ktx2_caps_)(caps | ktx2_caps_bc);
+	if (skr_tex_fmt_is_supported(skr_tex_fmt_etc2_rgba,    (skr_tex_flags_)0, 1)) caps = (ktx2_caps_)(caps | ktx2_caps_etc2);
+	if (skr_tex_fmt_is_supported(skr_tex_fmt_astc4x4_rgba, (skr_tex_flags_)0, 1)) caps = (ktx2_caps_)(caps | ktx2_caps_astc_ldr);
+	return caps;
 }
 
 ///////////////////////////////////////////
 
-transcoder_texture_format texture_transcode_format(skr_tex_fmt_ format) {
+static tex_format_ texture_compression_format(ktx2_fmt_ format) {
 	switch (format) {
-	case skr_tex_fmt_rgba32_srgb:
-	case skr_tex_fmt_rgba32_linear:    return transcoder_texture_format::cTFRGBA32;
-	case skr_tex_fmt_bc1_rgb:
-	case skr_tex_fmt_bc1_rgb_srgb:     return transcoder_texture_format::cTFBC1_RGB;
-	case skr_tex_fmt_bc3_rgba:
-	case skr_tex_fmt_bc3_rgba_srgb:    return transcoder_texture_format::cTFBC3_RGBA;
-	case skr_tex_fmt_bc4_r:            return transcoder_texture_format::cTFBC4_R;
-	case skr_tex_fmt_bc5_rg:           return transcoder_texture_format::cTFBC5_RG;
-	case skr_tex_fmt_bc7_rgba:
-	case skr_tex_fmt_bc7_rgba_srgb:    return transcoder_texture_format::cTFBC7_RGBA;
-	case skr_tex_fmt_atc_rgb:          return transcoder_texture_format::cTFATC_RGB;
-	case skr_tex_fmt_atc_rgba:         return transcoder_texture_format::cTFATC_RGBA;
-	case skr_tex_fmt_astc4x4_rgba:
-	case skr_tex_fmt_astc4x4_rgba_srgb:return transcoder_texture_format::cTFASTC_4x4_RGBA;
-	//case skr_tex_fmt_pvrtc2_rgb:   return transcoder_texture_format::cTFPVRTC2_4_RGB;
-	case skr_tex_fmt_pvrtc2_rgba:      return transcoder_texture_format::cTFPVRTC2_4_RGBA;
-	case skr_tex_fmt_etc2_r11:         return transcoder_texture_format::cTFETC2_EAC_R11;
-	case skr_tex_fmt_etc2_rg11:        return transcoder_texture_format::cTFETC2_EAC_RG11;
-	case skr_tex_fmt_etc2_rgba:
-	case skr_tex_fmt_etc2_rgba_srgb:   return transcoder_texture_format::cTFETC2_RGBA;
+	case ktx2_fmt_etc1_rgb:          return tex_format_etc1_rgb;
+	case ktx2_fmt_etc1_rgb_srgb:     return tex_format_etc1_rgb_srgb;
+	case ktx2_fmt_etc2_rgba:         return tex_format_etc2_rgba;
+	case ktx2_fmt_etc2_rgba_srgb:    return tex_format_etc2_rgba_srgb;
+	case ktx2_fmt_eac_r11:           return tex_format_etc2_r11;
+	case ktx2_fmt_eac_rg11:          return tex_format_etc2_rg11;
+	case ktx2_fmt_bc1_rgb:           return tex_format_bc1_rgb;
+	case ktx2_fmt_bc1_rgb_srgb:      return tex_format_bc1_rgb_srgb;
+	case ktx2_fmt_bc3_rgba:          return tex_format_bc3_rgba;
+	case ktx2_fmt_bc3_rgba_srgb:     return tex_format_bc3_rgba_srgb;
+	case ktx2_fmt_bc4_r:             return tex_format_bc4_r;
+	case ktx2_fmt_bc5_rg:            return tex_format_bc5_rg;
+	case ktx2_fmt_bc7_rgba:          return tex_format_bc7_rgba;
+	case ktx2_fmt_bc7_rgba_srgb:     return tex_format_bc7_rgba_srgb;
+	case ktx2_fmt_astc4x4_rgba:      return tex_format_astc4x4_rgba;
+	case ktx2_fmt_astc4x4_rgba_srgb: return tex_format_astc4x4_rgba_srgb;
+	case ktx2_fmt_r8:                return tex_format_r8;
+	case ktx2_fmt_rg8:               return tex_format_r8g8;
+	case ktx2_fmt_rgba32:            return tex_format_rgba32_linear;
+	case ktx2_fmt_rgba32_srgb:       return tex_format_rgba32_srgb;
 	default:
-		log_err("Shouldn't get here!");
-		return transcoder_texture_format::cTFRGBA32;
+		log_errf("Unmapped KTX2 output format: %s", ktx2_fmt_str(format));
+		return tex_format_none;
 	}
 }
 
 ///////////////////////////////////////////
 
-bool ktx2_info(void* data, size_t data_size, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count) {
-	ktx2_transcoder ktx_transcoder;
-	if (!ktx_transcoder.init(data, (uint32_t)data_size)) return false;
-
-	ktx2_header header = ktx_transcoder.get_header();
-	*out_width       = ktx_transcoder.get_width ();
-	*out_height      = ktx_transcoder.get_height();
-	*out_mip_count   = ktx_transcoder.get_levels() == 0 ? 1 : ktx_transcoder.get_levels();
-	*out_array_count = ktx_transcoder.get_layers() == 0 ? 1 : ktx_transcoder.get_layers();
-	if (ktx_transcoder.get_faces() > 1) { // If it's a cubemap, it'll have a value of 6 here, otherwise it'll be 1.
-		*out_array_count = ktx_transcoder.get_faces();
-		*ref_image_type  = tex_type_cubemap;
+// One open+plan drives both info and decode. They have to agree on the format,
+// and the plan is the only place that choice gets made.
+static bool ktx2_prepare(void* data, size_t data_size, ktx2_reader_t* out_reader, ktx2_plan_t* out_plan) {
+	ktx2_result_ result = ktx2_open(data, data_size, out_reader);
+	if (result == ktx2_result_not_ktx2) return false; // Just not our format, the caller is still guessing
+	if (result != ktx2_result_success) {
+		log_warnf("KTX2 file rejected: %s", ktx2_result_str(result));
+		return false;
 	}
 
-	int32_t channels = ktx_transcoder.get_has_alpha() ? 4 : 3;
-	bool    is_srgb  = ktx_transcoder.get_dfd_transfer_func() == KTX2_KHR_DF_TRANSFER_SRGB;
-	*out_format = (tex_format_)texture_preferred_compressed_format(channels, is_srgb);
-	ktx_transcoder.clear();
+	result = ktx2_plan(out_reader, &local.ktx2, texture_compression_caps(), out_plan);
+	if (result != ktx2_result_success) {
+		log_warnf("KTX2 file unusable: %s", ktx2_result_str(result));
+		return false;
+	}
+	if (out_plan->data_bytes > TEX_KTX2_MAX_BYTES) {
+		log_warnf("KTX2 file wants %" PRIu64 " bytes, over the %d byte limit", (uint64_t)out_plan->data_bytes, TEX_KTX2_MAX_BYTES);
+		return false;
+	}
+	// Checked here so a format we can't name fails the same way in both entry
+	// points, rather than reaching the GPU as tex_format_none.
+	if (texture_compression_format(out_plan->format) == tex_format_none)
+		return false;
+	// tex_type_ has no flag for a layered cubemap, and the upload path would
+	// build a 6 layer one and then hand it layers*6 images.
+	ktx2_info_t info = ktx2_get_info(out_reader);
+	if (info.face_count > 1 && info.layer_count > 1) {
+		log_warnf("KTX2 cubemap arrays aren't supported, this file has %d layers", info.layer_count);
+		return false;
+	}
 	return true;
 }
 
 ///////////////////////////////////////////
 
-bool ktx2_decode(void* data, size_t data_size, tex_type_ *ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data_arr) {
-	ktx2_transcoder ktx_transcoder;
-	if (!ktx_transcoder.init(data, (uint32_t)data_size)) return false;
-
-	ktx2_header header = ktx_transcoder.get_header();
-	*out_width       = ktx_transcoder.get_width ();
-	*out_height      = ktx_transcoder.get_height();
-	*out_mip_count   = ktx_transcoder.get_levels() == 0 ? 1 : ktx_transcoder.get_levels();
-	*out_array_count = ktx_transcoder.get_layers() == 0 ? 1 : ktx_transcoder.get_layers();
-	if (ktx_transcoder.get_faces() > 1) { // If it's a cubemap, it'll have a value of 6 here, otherwise it'll be 1.
-		*out_array_count = ktx_transcoder.get_faces();
-		*ref_image_type  = tex_type_cubemap;
-	}
-
-	int32_t channels = ktx_transcoder.get_has_alpha() ? 4 : 3;
-	bool    is_srgb  = ktx_transcoder.get_dfd_transfer_func() == KTX2_KHR_DF_TRANSFER_SRGB;
-	*out_format = (tex_format_)texture_preferred_compressed_format(channels, is_srgb);
-	transcoder_texture_format tc_fmt = texture_transcode_format((skr_tex_fmt_)*out_format);
-
-	uint32_t block_width, block_height, bytes_per_block;
-	skr_tex_fmt_block_info((skr_tex_fmt_)*out_format, &block_width, &block_height, &bytes_per_block);
-
-	skr_vec3i_t base_size  = { *out_width, *out_height, 1 };
-	uint64_t    layer_size = 0;
-	for (int32_t mip = 0; mip < *out_mip_count; mip++) {
-		layer_size += skr_tex_calc_mip_size((skr_tex_fmt_)*out_format, base_size, mip);
-	}
-	for (int32_t i = 0; i < *out_array_count; i++) {
-		out_data_arr[i] = sk_malloc(layer_size);
-	}
-
-	ktx2_transcoder_state state;
-	state.clear();
-	ktx_transcoder.start_transcoding();
-	bool     success    = true;
-	uint64_t mip_offset = 0;
-	for (uint32_t mip = 0; success && mip < ktx_transcoder.get_levels(); mip++) {
-		skr_vec3i_t mip_dims         = skr_tex_calc_mip_dimensions(base_size, mip);
-		int32_t     mip_block_width  = (mip_dims.x + (block_width -1)) / block_width;
-		int32_t     mip_block_height = (mip_dims.y + (block_height-1)) / block_height;
-
-		int32_t layer_count = ktx_transcoder.get_layers() == 0 ? 1 : ktx_transcoder.get_layers();
-		for (int32_t layer = 0; success && layer < layer_count; layer++) {
-			for (uint32_t face = 0; success && face < ktx_transcoder.get_faces(); face++) {
-				int32_t layer_idx = layer + face;
-
-				success = ktx_transcoder.transcode_image_level(mip, layer, face, ((uint8_t*)out_data_arr[layer_idx]) + mip_offset, mip_block_width * mip_block_height, tc_fmt, 0, mip_block_width, mip_block_height, 0, 0, &state);
-			}
-		}
-		mip_offset += skr_tex_calc_mip_size((skr_tex_fmt_)*out_format, base_size, mip);
-	}
-	ktx_transcoder.clear();
-	if (!success) {
-		for (int32_t i = 0; i < *out_array_count; i++) {
-			sk_free(out_data_arr[i]);
-		}
-	}
-	return success;
+// Layers and cube faces are both just images to us, and the file orders them
+// layer-then-face. ktx2_prepare rejects anything carrying both.
+static int32_t ktx2_image_count(const ktx2_info_t* info) {
+	return info->layer_count * info->face_count;
 }
 
 ///////////////////////////////////////////
 
-bool basisu_info(void* data, size_t data_size, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count) {
-	return false;
+bool ktx2_info(void* data, size_t data_size, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count) {
+	ktx2_reader_t reader = {};
+	ktx2_plan_t   plan   = {};
+	if (!ktx2_prepare(data, data_size, &reader, &plan)) return false;
+
+	ktx2_info_t info = ktx2_get_info(&reader);
+	*out_format      = texture_compression_format(plan.format);
+	*out_width       = info.width;
+	*out_height      = info.height;
+	*out_mip_count   = plan.mip_count;
+	*out_array_count = ktx2_image_count(&info);
+	// tex_type_ is a bit field, and the caller may already have set mips,
+	// dynamic or rendertarget on it. Assigning here would drop those.
+	if (info.face_count > 1) *ref_image_type |= tex_type_cubemap;
+	return true;
 }
 
 ///////////////////////////////////////////
 
-bool basisu_decode(void* data, size_t data_size, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data_arr) {
-	basisu_transcoder transcoder;
-	if (!transcoder.validate_header(data, (uint32_t)data_size)) return false;
+bool ktx2_decode(void* data, size_t data_size, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data) {
+	ktx2_reader_t reader = {};
+	ktx2_plan_t   plan   = {};
+	if (!ktx2_prepare(data, data_size, &reader, &plan)) return false;
 
-	basisu_file_info file_info = {};
-	if (!transcoder.get_file_info(data, (uint32_t)data_size, file_info))
-		return false;
+	ktx2_info_t info       = ktx2_get_info(&reader);
+	int32_t     images     = ktx2_image_count(&info);
+	tex_format_ format     = texture_compression_format(plan.format);
+	skr_vec3i_t base_size  = { info.width, info.height, 1 };
+	uint64_t    image_size = 0;
+	for (int32_t mip = 0; mip < plan.mip_count; mip++)
+		image_size += skr_tex_calc_mip_size((skr_tex_fmt_)format, base_size, mip);
 
-	if (file_info.m_tex_type != cBASISTexType2D)
-		return false;
-
-	basisu_image_info image_info = {};
-	if (!transcoder.get_image_info(data, (uint32_t)data_size, image_info, 0)) {
+	// sk_ktx2 sizes the mip chain independently of sk_renderer, so a mismatch
+	// here means one of the two is wrong about the format, not about this file.
+	if (image_size * images != plan.data_bytes) {
+		log_errf("KTX2 size disagreement for %s: sk_ktx2 says %" PRIu64 " bytes, sk_renderer says %" PRIu64, ktx2_fmt_str(plan.format), (uint64_t)plan.data_bytes, image_size * images);
 		return false;
 	}
 
-	*out_width  = image_info.m_width;
-	*out_height = image_info.m_height;
-	// Transcode the .basis file to RGBA32
-	/*if (!transcoder.transcode_image_level(basisFileData.data(), basisFileData.size(), 0, 0, decodedImage.data(), imageInfo.m_width * imageInfo.m_height, basist::transcoder_texture_format::cTFRGBA32)) {
-		std::cerr << "Failed to transcode image!" << std::endl;
-		return -1;
-	}*/
-	return false;
+	// Scratch is ours rather than the library's so both allocations go through
+	// sk_malloc and stay accountable.
+	void*        all     = sk_malloc(plan.data_bytes);
+	void*        scratch = plan.scratch_bytes > 0 ? sk_malloc(plan.scratch_bytes) : nullptr;
+	ktx2_result_ result  = ktx2_transcode(&plan, all, plan.data_bytes, scratch);
+	sk_free(scratch);
+	if (result != ktx2_result_success) {
+		log_warnf("KTX2 transcode failed: %s", ktx2_result_str(result));
+		sk_free(all);
+		return false;
+	}
+
+	// Already mip-major with images within a level, which is the layout both the
+	// GPU and tex_load_image_data want, so it hands over untouched.
+	*out_data = all;
+
+	*out_format      = format;
+	*out_width       = info.width;
+	*out_height      = info.height;
+	*out_mip_count   = plan.mip_count;
+	*out_array_count = images;
+	// tex_type_ is a bit field, and the caller may already have set mips,
+	// dynamic or rendertarget on it. Assigning here would drop those.
+	if (info.face_count > 1) *ref_image_type |= tex_type_cubemap;
+	return true;
 }
 
 }

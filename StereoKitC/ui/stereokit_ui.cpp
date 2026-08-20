@@ -12,6 +12,7 @@
 #include "../sk_math.h"
 #include "../sk_memory.h"
 #include "../hierarchy.h"
+#include "../systems/input_keyboard.h"
 #include "../libraries/array.h"
 #include "../libraries/unicode.h"
 #include "../libraries/stref.h"
@@ -505,6 +506,34 @@ void ui_model(model_t model, vec2 ui_size, float model_scale) {
 inline vec2 text_char_at_o(const char*     text, text_style_t style, int32_t char_index, vec2* opt_size, text_fit_ fit, pivot_ position, align_ align) { return text_char_at   (text, style, char_index, opt_size, fit, position, align); }
 inline vec2 text_char_at_o(const char16_t* text, text_style_t style, int32_t char_index, vec2* opt_size, text_fit_ fit, pivot_ position, align_ align) { return text_char_at_16(text, style, char_index, opt_size, fit, position, align); }
 
+// Removes the selected range, and returns true if there was one to remove.
+template<typename C>
+bool ui_input_delete_selection_g(C* buffer) {
+	if (skui_input_caret == skui_input_caret_end) return false;
+
+	int32_t start = mini(skui_input_caret, skui_input_caret_end);
+	int32_t count = maxi(skui_input_caret, skui_input_caret_end) - start;
+	utf_remove_chars(utf_advance_chars(buffer, start), count);
+	skui_input_caret_end = skui_input_caret = start;
+	return true;
+}
+
+///////////////////////////////////////////
+
+// Inserts at the caret, replacing any selection. Returns true if the buffer
+// changed, which a full buffer's failed insert doesn't undo.
+template<typename C>
+bool ui_input_insert_g(C* buffer, int32_t buffer_size, char32_t add) {
+	bool changed = ui_input_delete_selection_g(buffer);
+	if (utf_insert_char(buffer, buffer_size, utf_advance_chars(buffer, skui_input_caret), add)) {
+		skui_input_caret_end = skui_input_caret = skui_input_caret + 1;
+		changed = true;
+	}
+	return changed;
+}
+
+///////////////////////////////////////////
+
 template<typename C>
 bool32_t ui_input_at_g(const C* id, C* buffer, int32_t buffer_size, vec3 window_relative_pos, vec2 size, text_context_ type) {
 	id_hash_t id_hash  = ui_stack_hash(id);
@@ -532,67 +561,69 @@ bool32_t ui_input_at_g(const C* id, C* buffer, int32_t buffer_size, vec3 window_
 
 	// If focused, acquire any input in the keyboard's queue
 	if (skui_input_target == id_hash) {
-		uint32_t curr = input_text_consume();
-		while (curr != 0) {
-			uint32_t add = '\0';
+		// Walking the event queue keeps text and editing in the order the user
+		// produced them, and gives every auto-repeat its own action.
+		keyboard_event_t evt = input_keyboard_consume();
+		while (evt.type != keyboard_event_type_none) {
+			bool shift = (evt.modifiers & key_mod_shift) != key_mod_none;
 
-			if (curr == key_backspace) {
-				if (skui_input_caret != skui_input_caret_end) {
-					int32_t start = mini(skui_input_caret, skui_input_caret_end);
-					int32_t count = maxi(skui_input_caret, skui_input_caret_end) - start;
-					utf_remove_chars(utf_advance_chars(buffer, start), count);
-					skui_input_caret_end = skui_input_caret = start;
+			if (evt.type == keyboard_event_type_text) {
+				// The queue is insertable text by contract, this is a guard
+				if (input_text_insertable(evt.character) && ui_input_insert_g(buffer, buffer_size, evt.character))
 					result = true;
-				} else if (skui_input_caret > 0) {
-					skui_input_caret_end = skui_input_caret = skui_input_caret - 1;
-					utf_remove_chars(utf_advance_chars(buffer, skui_input_caret), 1);
-					result = true;
+			} else if (evt.type == keyboard_event_type_key_press) {
+				switch (evt.key) {
+				case key_backspace: {
+					if (ui_input_delete_selection_g(buffer)) {
+						result = true;
+					} else if (skui_input_caret > 0) {
+						skui_input_caret_end = skui_input_caret = skui_input_caret - 1;
+						utf_remove_chars(utf_advance_chars(buffer, skui_input_caret), 1);
+						result = true;
+					}
+				} break;
+				case key_del: {
+					if (ui_input_delete_selection_g(buffer) ||
+					    utf_remove_chars(utf_advance_chars(buffer, skui_input_caret), 1))
+						result = true;
+				} break;
+				case key_tab: {
+					if (ui_input_insert_g(buffer, buffer_size, '\t')) result = true;
+				} break;
+				case key_return: {
+					if (shift) { if (ui_input_insert_g(buffer, buffer_size, '\n')) result = true; }
+					else       { skui_input_target = 0; platform_keyboard_show(false, type); result = true; }
+				} break;
+				case key_esc: {
+					skui_input_target = 0;
+					platform_keyboard_show(false, type);
+				} break;
+				case key_left: {
+					skui_input_blink = time_totalf_unscaled();
+					if (shift) skui_input_caret = maxi(0, skui_input_caret - 1);
+					else {
+						if (skui_input_caret_end == skui_input_caret) skui_input_caret = maxi(0, skui_input_caret - 1);
+						skui_input_caret_end = skui_input_caret;
+					}
+				} break;
+				case key_right: {
+					skui_input_blink = time_totalf_unscaled();
+					if (shift) skui_input_caret = mini((int32_t)utf_charlen(buffer), skui_input_caret + 1);
+					else {
+						if (skui_input_caret_end == skui_input_caret) skui_input_caret = mini((int32_t)utf_charlen(buffer), skui_input_caret + 1);
+						skui_input_caret_end = skui_input_caret;
+					}
+				} break;
+				default: break;
 				}
-			} else if (curr == 0x7f) {
-				if (skui_input_caret != skui_input_caret_end) {
-					int32_t start = mini(skui_input_caret, skui_input_caret_end);
-					int32_t count = maxi(skui_input_caret, skui_input_caret_end) - start;
-					utf_remove_chars(utf_advance_chars(buffer, start), count);
-					skui_input_caret_end = skui_input_caret = start;
-					result = true;
-				} else if (skui_input_caret >= 0) {
-					utf_remove_chars(utf_advance_chars(buffer, skui_input_caret), 1);
-					result = true;
-				}
-			} else if (curr == 0x0D) { // Enter, carriage return
-				skui_input_target = 0;
-				platform_keyboard_show(false, type);
-				result = true;
-			} else if (curr == 0x0A) { // Shift+Enter, linefeed 
-				add = '\n';
-			} else if (curr == 0x1B) { // Escape
-				skui_input_target = 0;
-				platform_keyboard_show(false, type);
-			} else {
-				add = curr;
 			}
 
-			if (add != '\0') {
-				// Remove any selected
-				if (skui_input_caret != skui_input_caret_end) {
-					int32_t start = mini(skui_input_caret, skui_input_caret_end);
-					int32_t count = maxi(skui_input_caret, skui_input_caret_end) - start;
-					utf_remove_chars(utf_advance_chars(buffer, start), count);
-					skui_input_caret_end = skui_input_caret = start;
-				}
-				if (utf_insert_char(buffer, buffer_size, utf_advance_chars(buffer, skui_input_caret), add)) {
-					skui_input_caret += 1;
-					skui_input_caret_end = skui_input_caret;
-					result = true;
-				}
-			}
+			// Submit or escape closed the field, so leave the rest of the
+			// frame's events for whoever reads next.
+			if (skui_input_target != id_hash) break;
 
-			curr = input_text_consume();
+			evt = input_keyboard_consume();
 		}
-		if      (input_key(key_shift) & button_state_active && input_key(key_left ) & button_state_just_active) { skui_input_blink = time_totalf_unscaled(); skui_input_caret = maxi(0, skui_input_caret - 1); }
-		else if (input_key(key_left ) & button_state_just_active)                                               { skui_input_blink = time_totalf_unscaled(); if (skui_input_caret_end == skui_input_caret) skui_input_caret = maxi(0, skui_input_caret - 1); skui_input_caret_end = skui_input_caret; }
-		if      (input_key(key_shift) & button_state_active && input_key(key_right) & button_state_just_active) { skui_input_blink = time_totalf_unscaled(); skui_input_caret = mini((int32_t)utf_charlen(buffer), skui_input_caret + 1); }
-		else if (input_key(key_right) & button_state_just_active)                                               { skui_input_blink = time_totalf_unscaled(); if (skui_input_caret_end == skui_input_caret) skui_input_caret = mini((int32_t)utf_charlen(buffer), skui_input_caret + 1); skui_input_caret_end = skui_input_caret; }
 	}
 
 	// Render the input UI

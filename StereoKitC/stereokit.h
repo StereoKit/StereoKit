@@ -502,9 +502,9 @@ typedef enum tex_format_ {
 	  diffuse color but it's been superseded - prefer Etc2 or Astc
 	  on newer hardware!*/
 	tex_format_etc1_rgb,
-	/*ETC1 sRGB RGB, no alpha, 4 bpp. The sRGB variant of Etc1Rgb
-	  for color textures on older Android devices. Prefer Etc2 or
-	  Astc on newer hardware!*/
+	/*ETC1 sRGB RGB, no alpha, 4 bpp. The sRGB counterpart to
+	  Etc1Rgb - the GPU converts to linear on sample, so this is
+	  the correct choice for color textures.*/
 	tex_format_etc1_rgb_srgb,
 	/*ETC2 sRGB color with full alpha, 8 bpp. The standard
 	  compressed RGBA format on OpenGL ES 3.0+ mobile devices, and
@@ -554,18 +554,17 @@ typedef enum tex_format_ {
 	/*ASTC 4x4 linear color with full alpha, 8 bpp. High-quality
 	  compressed format for data textures on modern mobile GPUs.*/
 	tex_format_astc4x4_rgba,
-	/*ASTC 6x6 sRGB color with full alpha, ~3.6 bpp. A great
-	  middle ground between the 4x4 and 8x8 block sizes, with good
-	  quality at a compact size for sRGB color textures on modern
-	  mobile GPUs.*/
+	/*ASTC 6x6 sRGB color with full alpha, ~3.56 bpp. Larger blocks
+	  than Astc4x4 for less than half the memory, at some cost to
+	  quality - a good trade for large or low-frequency textures.*/
 	tex_format_astc6x6_rgba_srgb,
-	/*ASTC 6x6 linear color with full alpha, ~3.6 bpp. A compact
-	  compressed format for data textures on modern mobile GPUs.*/
+	/*ASTC 6x6 linear color with full alpha, ~3.56 bpp. The linear
+	  counterpart to Astc6x6RgbaSrgb, for data textures.*/
 	tex_format_astc6x6_rgba,
-	/*ASTC 8x8 HDR color, 2 bpp. Sampling produces FP16 RGB, with
-	  the HDR profile signalled by the encoded block contents
-	  rather than the format itself. Requires hardware ASTC HDR
-	  support, which software decoders typically lack.*/
+	/*ASTC 8x8 HDR color with full alpha, 2 bpp. Compressed HDR on
+	  mobile GPUs, and much cheaper than an uncompressed float
+	  format. Requires the ASTC HDR extension, which is separate
+	  from baseline ASTC support!*/
 	tex_format_astc8x8_rgba_hdr,
 	/*ATC RGB on Qualcomm Adreno GPUs, 4 bpp. Historical
 	  Qualcomm-specific format - prefer Astc or Etc2 on newer
@@ -3374,6 +3373,52 @@ typedef enum key_ {
 	key_MAX = 0xFF,
 } key_;
 
+/*Describes what kind of keyboard input event this is.*/
+typedef enum keyboard_event_type_ {
+	/*Not an event. Consuming returns this once no events remain in this
+	  frame's queue, and reading by index returns it for an index outside the
+	  queue.*/
+	keyboard_event_type_none = 0,
+	/*A key was pressed. Auto-repeats arrive as additional press events with no
+	  release between them, one per repeat.*/
+	keyboard_event_type_key_press,
+	/*A key was released.*/
+	keyboard_event_type_key_release,
+	/*A single codepoint of insertable text.*/
+	keyboard_event_type_text,
+} keyboard_event_type_;
+
+/*A bit flag describing which of the keyboard's modifier keys are held.*/
+typedef enum key_mod_ {
+	/*No modifier keys are held.*/
+	key_mod_none = 0,
+	/*Either shift key.*/
+	key_mod_shift = 1 << 0,
+	/*Either ctrl key.*/
+	key_mod_ctrl = 1 << 1,
+	/*Either alt key.*/
+	key_mod_alt = 1 << 2,
+	/*Either Windows/Mac Command key.*/
+	key_mod_cmd = 1 << 3,
+} key_mod_;
+SK_MakeFlag(key_mod_);
+
+/*A single keyboard input event, either a key press, a key release, or one
+  codepoint of insertable text. Events preserve the exact order they were
+  produced in, including how text and keys interleave.*/
+typedef struct keyboard_event_t {
+	/*What kind of event this is, and which of the fields below apply.*/
+	keyboard_event_type_ type;
+	/*The key for press and release events, and none for text events. Mouse
+	  buttons arrive here too, as the mouse key values.*/
+	key_                 key;
+	/*The modifier keys held when this event was produced. A modifier's own
+	  press event includes itself, its release event does not.*/
+	key_mod_             modifiers;
+	/*The UTF-32 codepoint for text events, 0 for key events.*/
+	char32_t             character;
+} keyboard_event_t;
+
 /*Represents an input from an XR headset's controller!*/
 typedef enum controller_key_ {
 	/*Doesn't represent a key, generally means this item has not been set to
@@ -3626,9 +3671,10 @@ SK_API void                  input_mouse_mode_set            (mouse_mode_ mode);
 SK_API mouse_mode_           input_mouse_mode_get            (void);
 SK_API void                  input_key_inject_press          (key_ key);
 SK_API void                  input_key_inject_release        (key_ key);
-SK_API char32_t              input_text_consume              (void);
-SK_API void                  input_text_reset                (void);
-SK_API void                  input_text_inject_char          (char32_t character);
+SK_API keyboard_event_t      input_keyboard_consume          (void);
+SK_API int32_t               input_keyboard_event_count      (void);
+SK_API keyboard_event_t      input_keyboard_event_at         (int32_t index);
+SK_API void                  input_text_inject               (const char* text_utf8);
 SK_API void                  input_hand_visible              (handed_ hand, bool32_t visible);
 SK_API bool32_t              input_hand_get_visible          (handed_ hand);
 SK_API void                  input_hand_material             (handed_ hand, material_t material);
@@ -3653,6 +3699,9 @@ SK_API hand_sim_id_t         input_hand_sim_pose_add         (const pose_t* in_a
 SK_API void                  input_hand_sim_pose_remove      (hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear       (void);
 
+SK_API SK_DEPRECATED char32_t input_text_consume             (void);
+SK_API SK_DEPRECATED void    input_text_reset                (void);
+SK_API SK_DEPRECATED void    input_text_inject_char          (char32_t character);
 SK_API SK_DEPRECATED int32_t input_pointer_count             (input_source_ filter sk_default(input_source_any));
 SK_API SK_DEPRECATED pointer_t input_pointer                 (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API SK_DEPRECATED void    input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));

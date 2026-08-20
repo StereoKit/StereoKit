@@ -231,6 +231,13 @@ namespace StereoKit
 		public static bool IsInteracting(Handed hand)
 			=> NativeAPI.interactor_is_interacting(HandToSource(hand));
 
+		/// <summary>Is a `UI.Input` currently focused and taking keyboard
+		/// input? A focused Input reads the whole keyboard event queue, so
+		/// this is how you tell whether your own keyboard handling should
+		/// stand down for the frame.</summary>
+		public static bool HasKeyboardFocus
+			=> NativeAPI.ui_has_keyboard_focus();
+
 		/// <summary>This allows you to explicitly set a theme color, for finer
 		/// grained control over the UI appearance. Each theme type is still
 		/// used by many different UI elements. This will automatically
@@ -1059,7 +1066,8 @@ namespace StereoKit
 		/// <summary>This is an input field where users can input text to the
 		/// app! Selecting it will spawn a virtual keyboard, or act as the
 		/// keyboard focus. Hitting escape or enter, or focusing another UI
-		/// element will remove focus from this Input.</summary>
+		/// element will remove focus from this Input. Shift+Enter adds a
+		/// newline instead, and tab adds a tab.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
 		/// <param name="value">The string that will store the Input's 
@@ -1087,7 +1095,8 @@ namespace StereoKit
 		/// <summary>This is an input field where users can input text to the
 		/// app! Selecting it will spawn a virtual keyboard, or act as the
 		/// keyboard focus. Hitting escape or enter, or focusing another UI
-		/// element will remove focus from this Input.</summary>
+		/// element will remove focus from this Input. Shift+Enter adds a
+		/// newline instead, and tab adds a tab.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
 		/// <param name="value">The string that will store the Input's

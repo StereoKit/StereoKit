@@ -35,12 +35,31 @@
 
 namespace sk {
 
-bool   tex_load_image_data(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data_arr);
+// tex_format_ and skr_tex_fmt_ are cast into each other all over this file, so
+// they have to stay value-identical. These pin the spots a change would shift.
+#define TEX_FMT_MATCHES(name) static_assert((int)tex_format_##name == (int)skr_tex_fmt_##name, "tex_format_ and skr_tex_fmt_ have diverged at " #name)
+TEX_FMT_MATCHES(none);
+TEX_FMT_MATCHES(rgba32_srgb);
+TEX_FMT_MATCHES(depth32s8);
+TEX_FMT_MATCHES(bc1_rgb_srgb);
+TEX_FMT_MATCHES(bc7_rgba);
+TEX_FMT_MATCHES(etc1_rgb);
+TEX_FMT_MATCHES(etc2_rg11);
+TEX_FMT_MATCHES(astc4x4_rgba_srgb);
+TEX_FMT_MATCHES(astc8x8_rgba_hdr);
+TEX_FMT_MATCHES(atc_rgba);
+TEX_FMT_MATCHES(yuv420p);
+#undef TEX_FMT_MATCHES
+
+// out_data receives every image in one allocation, mip-major with images within
+// a level. Only KTX2 decodes more than one image, and only from a lone file.
+bool   tex_load_image_data(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data);
 bool   tex_load_image_info(void* data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_* out_format, int32_t *out_width, int32_t *out_height, int32_t* out_array_count, int32_t* out_mip_count);
 void   tex_update_label   (tex_t texture);
 size_t tex_format_pitch   (tex_format_ format, int32_t width);
 void  _tex_set_options    (skr_tex_t* texture, tex_sample_ sample, tex_address_ address_mode, tex_sample_comp_ compare, int32_t anisotropy_level);
 void   tex_compute_sh     (tex_t texture);
+void   tex_set_color_flat_mips(tex_t texture, int32_t width, int32_t height, void* flat_data, int32_t array_count, int32_t mip_count);
 
 const char *tex_msg_load_failed           = "Texture file failed to load: %s";
 const char *tex_msg_invalid_fmt           = "Texture invalid format: %s";
@@ -158,7 +177,7 @@ struct tex_load_t {
 	void      **file_data;
 	size_t     *file_sizes;
 
-	void      **color_data;
+	void      **color_data;  // One entry per file, see tex_load_image_data
 	int32_t     color_width;
 	int32_t     color_height;
 	int32_t     color_array_count;
@@ -277,7 +296,9 @@ bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_dat
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
-	data->color_data = sk_malloc_t(void*, data->file_count * data->color_array_count);
+	// One allocation per file, zeroed so tex_load_free has nothing to free for
+	// the entries a failed parse never reached.
+	data->color_data = sk_malloc_zero_t(void*, data->file_count);
 
 	// Parse all files
 	int32_t array_index = 0;
@@ -287,7 +308,7 @@ bool32_t tex_load_arr_parse(asset_task_t *, asset_header_t *asset, void *job_dat
 		int32_t     array_count = 0;
 		int32_t     mip_count   = 0;
 		tex_format_ format      = tex_format_none;
-		if (!tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &tex->type, &format, &width, &height, &array_count, &mip_count, &data->color_data[array_index])) {
+		if (!tex_load_image_data(data->file_data[i], data->file_sizes[i], data->is_srgb, &tex->type, &format, &width, &height, &array_count, &mip_count, &data->color_data[i])) {
 			log_warnf(tex_msg_invalid_fmt, data->file_names[i]);
 			tex->header.state = asset_state_error_unsupported;
 			goto end;
@@ -334,8 +355,10 @@ bool32_t tex_load_arr_upload(asset_task_t *, asset_header_t *asset, void *job_da
 	tex_load_t *data = (tex_load_t *)job_data;
 	tex_t       tex  = (tex_t)asset;
 
-	// Create with the data we have
-	tex_set_color_arr_mips(tex, tex->width, tex->height, data->color_data, data->color_array_count, data->color_mip_count);
+	// A lone file arrives as one mip-major block already, several files arrive
+	// as one image each and have to be interleaved.
+	if (data->file_count == 1) tex_set_color_flat_mips(tex, tex->width, tex->height, data->color_data[0], data->color_array_count, data->color_mip_count);
+	else                       tex_set_color_arr_mips (tex, tex->width, tex->height, data->color_data,    data->color_array_count, data->color_mip_count);
 
 	return true;
 }
@@ -390,15 +413,12 @@ bool tex_load_image_info(void *data, size_t data_size, bool32_t srgb_data, tex_t
 	if (ktx2_info(data, data_size, ref_image_type, out_format, out_width, out_height, out_array_count, out_mip_count))
 		return true;
 
-	if (basisu_info(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count))
-		return true;
-
 	return false;
 }
 
 ///////////////////////////////////////////
 
-bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_ *out_format, int32_t *out_width, int32_t *out_height, int32_t *out_array_count, int32_t *out_mip_count, void **out_data_arr) {
+bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_type_* ref_image_type, tex_format_ *out_format, int32_t *out_width, int32_t *out_height, int32_t *out_array_count, int32_t *out_mip_count, void **out_data) {
 	int32_t channels = 0;
 
 	// Check for valid .HDR formats
@@ -410,7 +430,7 @@ bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_t
 		*out_mip_count   = 1;
 		*out_width       = hdr_header.width;
 		*out_height      = hdr_header.height;
-		*out_data_arr    = img.pixels;
+		*out_data    = img.pixels;
 		return true;
 	}
 
@@ -431,7 +451,7 @@ bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_t
 		for (int32_t i=0; i < ct; i += 1) {
 			packed[i] = fhf_f32_to_r11g11ba10f(&full[i * 4]);
 		}
-		*out_data_arr = packed;
+		*out_data = packed;
 
 		free(full);
 
@@ -439,18 +459,18 @@ bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_t
 	}
 
 	// Check through stbi's list of image formats
-	*out_data_arr = stbi_load_from_memory ((stbi_uc*)data, (int)data_size, out_width, out_height, &channels, 4);
-	if (*out_data_arr != nullptr) {
+	*out_data = stbi_load_from_memory ((stbi_uc*)data, (int)data_size, out_width, out_height, &channels, 4);
+	if (*out_data != nullptr) {
 		*out_format      = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
 		*out_array_count = 1;
 		*out_mip_count   = 1;
-		return *out_data_arr != nullptr;
+		return *out_data != nullptr;
 	}
 
 	// Check for qoi images
 	qoi_desc q_desc = {};
-	*out_data_arr = qoi_decode(data, (int)data_size, &q_desc, 4);
-	if (*out_data_arr != nullptr) {
+	*out_data = qoi_decode(data, (int)data_size, &q_desc, 4);
+	if (*out_data != nullptr) {
 		*out_width       = q_desc.width;
 		*out_height      = q_desc.height;
 		*out_array_count = 1;
@@ -458,15 +478,11 @@ bool tex_load_image_data(void *data, size_t data_size, bool32_t srgb_data, tex_t
 		// If QOI claims it's linear, then we'll go with that!
 		if (q_desc.colorspace == QOI_LINEAR) *out_format = tex_format_rgba32_linear;
 		else                                 *out_format = srgb_data ? tex_format_rgba32 : tex_format_rgba32_linear;
-		return *out_data_arr != nullptr;
+		return *out_data != nullptr;
 	}
 
 	// Check for KTX2
-	if (ktx2_decode(data, data_size, ref_image_type, out_format, out_width, out_height, out_array_count, out_mip_count, out_data_arr))
-		return true;
-
-	// Check for basisu
-	if (basisu_decode(data, data_size, out_format, out_width, out_height, out_array_count, out_mip_count, out_data_arr))
+	if (ktx2_decode(data, data_size, ref_image_type, out_format, out_width, out_height, out_array_count, out_mip_count, out_data))
 		return true;
 
 	return false;
@@ -1208,8 +1224,9 @@ void tex_compute_sh(tex_t texture) {
 
 ///////////////////////////////////////////
 
-// TODO: would be nice to maybe merge these into one function, simplify the memory layout
-void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
+// Uploads one mip-major block: every layer of mip 0, then every layer of mip 1.
+// flat_data is the caller's to free, and null resizes without touching pixels.
+void _tex_set_color_flat(tex_t texture, int32_t width, int32_t height, void* flat_data, int32_t array_count, int32_t mip_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
 	profiler_zone();
 
 	if (texture->type & tex_type_volume) {
@@ -1226,41 +1243,11 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 	bool dynamic        = texture->type & tex_type_dynamic;
 	bool different_size = texture->width != width || texture->height != height || (int32_t)texture->gpu_tex.layer_count != array_count;
 	bool different_msaa = skr_tex_is_valid(&texture->gpu_tex) && skr_tex_get_multisample(&texture->gpu_tex) != multisample;
-	if (!different_size && !different_msaa && (array_data == nullptr || *array_data == nullptr))
+	if (!different_size && !different_msaa && flat_data == nullptr)
 		return;
 
-	// Build texture data descriptor from array_data
-	// array_data layout: array_data[layer * mip_count + mip] for layer-major
-	// skr_tex_data_t expects mip-major: all layers for mip0, then all layers for mip1, etc.
 	skr_tex_data_t tex_data = {};
-	void*          flat_data = nullptr;
-	size_t         total_size = 0;
-
-	if (array_data != nullptr && *array_data != nullptr) {
-		// Calculate total size and flatten data to mip-major layout
-		skr_vec3i_t base_size = { width, height, 1 };
-		for (int32_t mip = 0; mip < mip_count; mip++) {
-			total_size += skr_tex_calc_mip_size((skr_tex_fmt_)texture->format, base_size, mip) * array_count;
-		}
-		flat_data = sk_malloc(total_size);
-
-		uint8_t* dst = (uint8_t*)flat_data;
-
-		// Convert from packed layer data to mip-major layout.
-		// KTX2/basisu pack all mips for each layer into a single allocation:
-		//   array_data[layer] points to: [mip0][mip1][mip2]...
-		// We need to convert to mip-major: all layers for mip0, then mip1, etc.
-		uint64_t mip_offset = 0;
-		for (int32_t mip = 0; mip < mip_count; mip++) {
-			uint64_t mip_size = skr_tex_calc_mip_size((skr_tex_fmt_)texture->format, base_size, mip);
-			for (int32_t layer = 0; layer < array_count; layer++) {
-				uint8_t* src = ((uint8_t*)array_data[layer]) + mip_offset;
-				memcpy(dst, src, (size_t)mip_size);
-				dst += mip_size;
-			}
-			mip_offset += mip_size;
-		}
-
+	if (flat_data != nullptr) {
 		tex_data.data        = flat_data;
 		tex_data.mip_count   = mip_count;
 		tex_data.layer_count = array_count;
@@ -1339,8 +1326,6 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		log_warn("Attempting additional writes to a non-dynamic texture!");
 	}
 
-	sk_free(flat_data);
-
 	if (skr_tex_is_valid(&texture->gpu_tex)) {
 		// Lighting data is only computed when the caller asks for it.
 		if ((texture->type & tex_type_cubemap) && sh_lighting_info != nullptr && texture->light_info == nullptr)
@@ -1355,6 +1340,36 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		tex_set_fallback(texture, _tex_get_error_fallback(texture));
 		texture->header.state = asset_state_error;
 	}
+}
+
+///////////////////////////////////////////
+
+// TODO: would be nice to maybe merge these into one function, simplify the memory layout
+void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
+	// array_data[layer] holds that layer's whole mip chain, and the GPU wants the
+	// transpose of that, so gather across layers before uploading.
+	void* flat_data = nullptr;
+	if (array_data != nullptr && *array_data != nullptr) {
+		skr_vec3i_t base_size  = { width, height, 1 };
+		size_t      total_size = 0;
+		for (int32_t mip = 0; mip < mip_count; mip++)
+			total_size += skr_tex_calc_mip_size((skr_tex_fmt_)texture->format, base_size, mip) * array_count;
+		flat_data = sk_malloc(total_size);
+
+		uint8_t* dst        = (uint8_t*)flat_data;
+		uint64_t mip_offset = 0;
+		for (int32_t mip = 0; mip < mip_count; mip++) {
+			uint64_t mip_size = skr_tex_calc_mip_size((skr_tex_fmt_)texture->format, base_size, mip);
+			for (int32_t layer = 0; layer < array_count; layer++) {
+				memcpy(dst, (uint8_t*)array_data[layer] + mip_offset, (size_t)mip_size);
+				dst += mip_size;
+			}
+			mip_offset += mip_size;
+		}
+	}
+
+	_tex_set_color_flat(texture, width, height, flat_data, array_count, mip_count, sh_lighting_info, multisample);
+	sk_free(flat_data);
 }
 
 ///////////////////////////////////////////
@@ -1383,6 +1398,30 @@ void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void *
 	assets_execute_blocking([](void *data) {
 		tex_upload_job_t *job_data = (tex_upload_job_t *)data;
 		_tex_set_color_arr(job_data->texture, job_data->width, job_data->height, job_data->array_data, job_data->array_count, job_data->mip_count, job_data->sh_lighting_info, job_data->multisample);
+		return (bool32_t)true;
+	}, &job_data);
+}
+
+///////////////////////////////////////////
+
+// The mip-major counterpart to tex_set_color_arr_mips, for loaders that already
+// produced that layout. Internal: the public API only speaks per-layer.
+void tex_set_color_flat_mips(tex_t texture, int32_t width, int32_t height, void* flat_data, int32_t array_count, int32_t mip_count) {
+	profiler_zone();
+
+	struct tex_upload_job_t {
+		tex_t   texture;
+		int32_t width;
+		int32_t height;
+		void*   flat_data;
+		int32_t array_count;
+		int32_t mip_count;
+	};
+	tex_upload_job_t job_data = {texture, width, height, flat_data, array_count, mip_count};
+
+	assets_execute_blocking([](void *data) {
+		tex_upload_job_t *job_data = (tex_upload_job_t *)data;
+		_tex_set_color_flat(job_data->texture, job_data->width, job_data->height, job_data->flat_data, job_data->array_count, job_data->mip_count, nullptr, 1);
 		return (bool32_t)true;
 	}, &job_data);
 }
