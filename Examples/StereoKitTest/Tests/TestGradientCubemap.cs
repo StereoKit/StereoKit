@@ -17,7 +17,8 @@ class TestGradientCubemap : ITest
 			new GradientKey(new Color(0.4f, 0.6f, 0.9f), 0.5f),
 			new GradientKey(new Color(1.0f, 0.9f, 0.7f), 1.0f));
 
-		cubemap = Tex.GenCubemap(gradient, out lighting, Vec3.Up, 64);
+		cubemap  = Tex.GenCubemap(gradient, Vec3.Up, 64);
+		lighting = cubemap.CubemapLighting;
 
 		Renderer.SkyboxTex = cubemap;
 		Lighting.Ambient   = lighting;

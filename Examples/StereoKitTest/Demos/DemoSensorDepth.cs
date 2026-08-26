@@ -68,7 +68,7 @@ class DemoSensorDepth : ITest
 		modelPose = new Pose(0, 0, -0.6f, Quat.LookDir(0, 0, 1));
 
 		depthTex = null;
-		Permission.Request(PermissionType.Scene);
+		Permission.Request(PermissionType.DepthSensing);
 	}
 
 	public void Shutdown()

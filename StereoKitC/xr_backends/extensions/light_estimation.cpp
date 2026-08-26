@@ -3,7 +3,6 @@
 #include "ext_management.h"
 #include "light_estimation.h"
 
-#include "../../asset_types/texture.h"
 #include "../../sk_memory.h"
 #include "../../systems/lighting.h"
 
@@ -223,7 +222,7 @@ xr_system_ xr_ext_android_light_estimation_initialize(void*) {
 		return xr_system_fail;
 	}
 
-	// NOTE: the scene permission is deliberately NOT checked here! This runs
+	// NOTE: the estimation permission is deliberately NOT checked here! This runs
 	// inside Platform init, before the Permission system, so it would always
 	// read 'unknown'. xr_ext_android_light_estimation_available() checks it.
 
@@ -258,10 +257,10 @@ void xr_ext_android_light_estimation_shutdown(void*) {
 void xr_ext_android_light_estimation_step_begin(void*) {
 	if (!local.started) return;
 
-	// If the fine scene permission was granted after the estimator was
-	// created SH-only, recreate it to pick up cubemap estimates.
+	// If the reflection estimation permission was granted after the estimator
+	// was created SH-only, recreate it to pick up cubemap estimates.
 	if (local.cubemap_available && !local.cubemap_started && !local.cubemap_refused &&
-		permission_state(permission_type_scene_fine) == permission_state_granted) {
+		permission_state(permission_type_reflection_estimation) == permission_state_granted) {
 		xr_ext_light_estimation_stop ();
 		xr_ext_light_estimation_start();
 		if (!local.started) return;
@@ -312,9 +311,9 @@ void xr_ext_android_light_estimation_step_begin(void*) {
 bool xr_ext_android_light_estimation_available() {
 	if (!local.available) return false;
 
-	// 'unavailable' means the scene permission isn't in the AndroidManifest,
-	// so it can never be granted. 'capable' is fine; lighting_set_mode asks.
-	permission_state_ perms = permission_state(permission_type_scene);
+	// 'unavailable' means the permission isn't in the AndroidManifest, so it
+	// can never be granted. 'capable' is fine; lighting_request_mode asks.
+	permission_state_ perms = permission_state(permission_type_ambient_estimation);
 	return perms != permission_state_unavailable && perms != permission_state_unknown;
 }
 
@@ -325,10 +324,11 @@ bool xr_ext_light_estimation_start() {
 	if (local.started)    return true;
 
 	// Cubemap estimates show imagery of the user's surroundings, so they need
-	// the fine scene permission on top of the coarse one. Without it we start
-	// SH-only, and step_begin upgrades the estimator if it arrives later.
+	// the reflection estimation permission on top of ambient estimation.
+	// Without it we start SH-only, and step_begin upgrades the estimator if
+	// it arrives later.
 	bool use_cubemap = local.cubemap_available && !local.cubemap_refused &&
-		permission_state(permission_type_scene_fine) == permission_state_granted;
+		permission_state(permission_type_reflection_estimation) == permission_state_granted;
 
 	XrLightEstimatorCreateInfoANDROID        info         = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATOR_CREATE_INFO_ANDROID};
 	XrCubemapLightEstimatorCreateInfoANDROID cubemap_info = {(XrStructureType)XR_TYPE_CUBEMAP_LIGHT_ESTIMATOR_CREATE_INFO_ANDROID};
@@ -486,13 +486,10 @@ bool xr_ext_light_estimation_fetch_reflection(tex_t ref_cubemap) {
 		faces[layer] = dst;
 	}
 
-	// The estimate's SH describes the same environment, so setting it here
-	// skips a redundant GPU SH pass on upload.
-	if (ref_cubemap->light_info == nullptr)
-		ref_cubemap->light_info = sk_malloc_t(spherical_harmonics_t, 1);
-	*ref_cubemap->light_info = local.sh_data;
-
 	tex_set_color_arr(ref_cubemap, res, res, faces, 6);
+	// The runtime's SH estimate describes this same capture, saving the
+	// first lighting query a GPU projection of the uploaded faces.
+	tex_set_cubemap_lighting(ref_cubemap, local.sh_data);
 	return true;
 }
 

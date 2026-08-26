@@ -18,7 +18,7 @@ void xr_ext_light_estimation_stop             (void);
 bool xr_ext_light_estimation_update_sh        (spherical_harmonics_t* ref_sh);
 
 // True when the system can provide cubemap light estimates at all. Starting
-// them also needs permission_type_scene_fine.
+// them also needs permission_type_reflection_estimation.
 bool xr_ext_light_estimation_cubemap_available(void);
 
 // Format and face resolution that started cubemap estimates arrive in, so the

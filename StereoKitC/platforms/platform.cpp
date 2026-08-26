@@ -95,6 +95,14 @@ bool platform_init() {
 	local = sk_malloc_zero_t(platform_state_t, 1);
 	const sk_settings_t* settings = sk_get_settings_ref();
 
+	ska_callback_log([](ska_log_ level, const char* text, void*) {
+		switch (level) {
+		case ska_log_info:  log_diagf("[<~cyn>ska<~clr>] %s", text); break;
+		case ska_log_warn:  log_warnf("[<~cyn>ska<~clr>] %s", text); break;
+		case ska_log_error: log_errf ("[<~cyn>ska<~clr>] %s", text); break;
+		}
+	}, nullptr);
+
 	// Initialize sk_app for platform abstraction (file I/O, windowing, etc.)
 	// sk_app handles cross-platform window management and input for non-XR modes
 	ska_settings_t ska_settings = {};
@@ -123,9 +131,9 @@ bool platform_init() {
 	// Initialize graphics with sk_renderer
 	skr_callback_log([](skr_log_ level, const char *text) {
 		switch (level) {
-		case skr_log_info:     log_diagf("[<~ylw>sk_renderer<~clr>] %s", text); break;
-		case skr_log_warning:  log_warnf("[<~ylw>sk_renderer<~clr>] %s", text); break;
-		case skr_log_critical: log_errf ("[<~ylw>sk_renderer<~clr>] %s", text); break;
+		case skr_log_info:     log_diagf("[<~ylw>skr<~clr>] %s", text); break;
+		case skr_log_warning:  log_warnf("[<~ylw>skr<~clr>] %s", text); break;
+		case skr_log_critical: log_errf ("[<~ylw>skr<~clr>] %s", text); break;
 		}
 	});
 

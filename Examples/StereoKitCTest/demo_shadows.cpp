@@ -39,8 +39,9 @@ static vec3              light_dir     = {0.577f, 0.577f, 0.0f}; // normalized (
 static model_t    shadow_model      = {};
 static pose_t     shadow_model_pose = {};
 
-static spherical_harmonics_t old_lighting = {};
-static tex_t                 old_tex      = {};
+static spherical_harmonics_t old_lighting   = {};
+static tex_t                 old_tex        = {};
+static tex_t                 old_reflection = {};
 
 ///////////////////////////////////////////
 
@@ -93,20 +94,23 @@ void demo_shadows_init() {
 	shadow_model_pose.orientation = quat_identity;
 
 	// Save old lighting
-	old_lighting = render_get_skylight();
-	old_tex      = render_get_skybox_tex();
+	old_lighting   = lighting_get_ambient();
+	old_tex        = render_get_skybox_tex();
+	old_reflection = lighting_get_reflection();
 
-	// Load environment map and update lighting when loaded
-	tex_t env_tex = tex_create_cubemap_file("old_depot.hdr");
-	render_set_skybox_tex(env_tex);
-	tex_on_load      (env_tex, [](tex_t t, void*) {
-		spherical_harmonics_t lighting = tex_get_cubemap_lighting(t);
-		render_set_skylight(lighting);
-		// Update light direction from dominant light
-		light_dir = sh_dominant_dir(lighting);
-		light_dir = vec3_normalize(light_dir);
-	}, nullptr);
-	tex_release(env_tex); // tex_on_load keeps a reference
+	// Load the environment map. Lighting data comes from the reflection once
+	// it generates; the raw skybox no longer carries any.
+	tex_t env_tex    = tex_create_cubemap_file("old_depot.hdr");
+	tex_t reflection = nullptr;
+	lighting_set_environment(env_tex, &reflection);
+	if (reflection != nullptr) {
+		tex_on_load(reflection, [](tex_t t, void*) {
+			// Update light direction from dominant light
+			light_dir = vec3_normalize(sh_dominant_dir(tex_get_cubemap_lighting(t)));
+		}, nullptr);
+		tex_release(reflection); // tex_on_load keeps a reference
+	}
+	tex_release(env_tex);
 
 	// Bind shadow buffer globally
 	render_global_buffer(shadow_buffer_slot, shadow_buffer);
@@ -177,8 +181,9 @@ void demo_shadows_update() {
 
 void demo_shadows_shutdown() {
 	// Restore old lighting
-	render_set_skylight(old_lighting);
-	render_set_skybox_tex(old_tex);
+	render_set_skybox_tex  (old_tex);
+	lighting_set_reflection(old_reflection);
+	lighting_set_ambient   (old_lighting);
 
 	// Unbind global resources
 	render_global_buffer (shadow_buffer_slot, nullptr);
@@ -189,6 +194,7 @@ void demo_shadows_shutdown() {
 	material_buffer_release(shadow_buffer);
 	model_release          (shadow_model);
 	tex_release            (old_tex);
+	tex_release            (old_reflection);
 }
 
 ///////////////////////////////////////////

@@ -4,8 +4,6 @@
 // Copyright (c) 2025 Qualcomm Technologies, Inc.
 
 #include "permission.h"
-#include "../platforms/platform.h"
-#include "../libraries/stref.h"
 #include "../sk_memory.h"
 #include "../xr_backends/openxr.h"
 
@@ -17,38 +15,24 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-#include <android/native_activity.h>
+#include <sk_app.h>
 
+// StereoKit names permissions after the feature they unlock; sk_app owns the
+// Android permission state, keyed on the system permission string. Features
+// that share a string therefore share a state for free.
 struct permission_state_t {
-	permission_state_ present             [permission_type_max];
-	bool              requires_interaction[permission_type_max];
-	const char*       permission_str      [permission_type_max];
-
-	jclass    class_context;
-	jmethodID context_checkSelfPermission;
-	jmethodID activity_requestPermissions;
-	bool      context_is_activity;
+	const char* permission_str[permission_type_max]; // null when unknown here
 };
 static permission_state_t local;
 
-const int32_t PERMISSION_DENIED = -1;
-const int32_t PERMISSION_GRANTED = 0;
-const int32_t PERMISSION_PROTECTION_DANGEROUS = 0x1;
-const int32_t PROTECTION_MASK_BASE = 0x0000000f;
-
 ///////////////////////////////////////////
 
-bool        _permission_check_app_permission      (const char* permission);
-void        _permission_check_manifest_permissions(void);
-bool        _permission_manifest_has              (JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals, const char* permission_str);
-const char* _permission_check_string              (permission_type_ type, xr_runtime_ runtime, JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals);
-
-///////////////////////////////////////////
-
-const char* _permission_check_string(permission_type_ type, xr_runtime_ runtime, JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals) {
+const char* _permission_check_string(permission_type_ type, xr_runtime_ runtime) {
 	const char* result = nullptr;
 
-	#define PERMISSION_CHECK(r, s) if (runtime == r && !result && _permission_manifest_has(env, permission_list, list_count, string_equals, s)) { result = s; }
+	// 'undeclared' is sk_app for 'not in the AndroidManifest', which is how a
+	// runtime with several official strings picks the one the app shipped.
+	#define PERMISSION_CHECK(r, s) if (runtime == r && !result && ska_android_permission_get(s) != ska_android_permission_undeclared) { result = s; }
 	#define PERMISSION_SET(r, s) if (runtime == r && !result) { result = s; }
 
 	// Some good sources for finding permission strings
@@ -100,18 +84,26 @@ const char* _permission_check_string(permission_type_ type, xr_runtime_ runtime,
 		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.FACE_TRACKING");
 		PERMISSION_SET  (xr_runtime_pico,       "com.picovr.permission.FACE_TRACKING");
 		break;
-	case permission_type_scene:
+	case permission_type_ambient_estimation:
 		PERMISSION_SET  (xr_runtime_android_xr, "android.permission.SCENE_UNDERSTANDING_COARSE");
 		PERMISSION_CHECK(xr_runtime_meta,       "com.oculus.permission.USE_SCENE");
 		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.USE_SCENE");
 		PERMISSION_SET  (xr_runtime_pico,       "com.picovr.permission.SPATIAL_DATA");
 		break;
-	case permission_type_scene_fine:
+	// Reflection estimates and depth sensing expose detailed data, which
+	// Android XR splits out as a 'fine' permission. Other runtimes cover
+	// them with their single scene permission, same as ambient above.
+	case permission_type_reflection_estimation:
+	case permission_type_depth_sensing:
 		PERMISSION_SET  (xr_runtime_android_xr, "android.permission.SCENE_UNDERSTANDING_FINE");
-		// Other runtimes don't split scene understanding into coarse/fine,
-		// their regular scene permission covers it.
 		PERMISSION_CHECK(xr_runtime_meta,       "com.oculus.permission.USE_SCENE");
 		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.USE_SCENE");
+		PERMISSION_SET  (xr_runtime_pico,       "com.picovr.permission.SPATIAL_DATA");
+		break;
+	case permission_type_anchors:
+		PERMISSION_SET  (xr_runtime_android_xr, "android.permission.SCENE_UNDERSTANDING_COARSE");
+		PERMISSION_CHECK(xr_runtime_meta,       "com.oculus.permission.USE_ANCHOR_API");
+		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.USE_ANCHOR_API");
 		PERMISSION_SET  (xr_runtime_pico,       "com.picovr.permission.SPATIAL_DATA");
 		break;
 	default:
@@ -129,30 +121,9 @@ const char* _permission_check_string(permission_type_ type, xr_runtime_ runtime,
 bool permission_init() {
 	local = {};
 
-	// Cache a few JNI objects for faster permission checking, this is used by
-	// android_check_app_permission, which may be used every frame.
-	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env();
-	jobject activity = (jobject)backend_android_get_activity();
-
-	jclass local_class_context = env->GetObjectClass(activity);
-	// Promote this one to a global reference, so it doesn't get cleaned up
-	local.class_context = (jclass)env->NewGlobalRef(local_class_context);
-	env->DeleteLocalRef(local_class_context);
-
-	// Check if the context is actually an Activity (not a Service or other Context)
-	jclass class_activity = env->FindClass("android/app/Activity");
-	local.context_is_activity = env->IsInstanceOf(activity, class_activity);
-	env->DeleteLocalRef(class_activity);
-
-	// A jmethodID is valid for as long as the class is, no global ref needed
-	local.context_checkSelfPermission = env->GetMethodID(local.class_context, "checkSelfPermission", "(Ljava/lang/String;)I");
-	// This method is only available on Activity, not on Service or other Context types
-	local.activity_requestPermissions = local.context_is_activity
-		? env->GetMethodID(local.class_context, "requestPermissions", "([Ljava/lang/String;I)V")
-		: nullptr;
-
-	// Check what permissions we've got in the manifest
-	_permission_check_manifest_permissions();
+	xr_runtime_ runtime = openxr_get_known_runtime();
+	for (int32_t i = 0; i < permission_type_max; i++)
+		local.permission_str[i] = _permission_check_string((permission_type_)i, runtime);
 
 	return true;
 }
@@ -160,192 +131,59 @@ bool permission_init() {
 ///////////////////////////////////////////
 
 void permission_shutdown() {
-	JNIEnv* env = (JNIEnv*)backend_android_get_jni_env();
-	env->DeleteGlobalRef(local.class_context);
-
 	local = {};
 }
 
 ///////////////////////////////////////////
 
+static permission_state_ _permission_from_ska(ska_android_permission_ state) {
+	switch (state) {
+	case ska_android_permission_granted: return permission_state_granted;
+	case ska_android_permission_askable: return permission_state_capable;
+	case ska_android_permission_pending: return permission_state_requesting;
+	case ska_android_permission_denied:  return permission_state_denied;
+	case ska_android_permission_blocked: return permission_state_blocked;
+	default:                             return permission_state_unavailable;
+	}
+}
+
+///////////////////////////////////////////
+
 bool32_t permission_is_interactive(permission_type_ permission) {
-	return local.requires_interaction[permission];
+	const char* str = local.permission_str[permission];
+	return str != nullptr && ska_android_permission_prompts(str);
 }
 
 ///////////////////////////////////////////
 
 permission_state_ permission_state(permission_type_ permission) {
-	if (local.present[permission] == permission_state_capable) {
-		if (_permission_check_app_permission(local.permission_str[permission]))
-			local.present[permission] = permission_state_granted;
-	}
-	return local.present[permission];
+	const char* str = local.permission_str[permission];
+	if (str == nullptr) return permission_state_unknown;
+	return _permission_from_ska(ska_android_permission_get(str));
 }
 
 ///////////////////////////////////////////
 
 void permission_request(const permission_type_* in_arr_permissions, int32_t permission_count) {
-	// Resolve early so unknown-permission warnings fire even for non-Activity
-	// contexts, and we can skip the JNI work when nothing valid was requested.
-	const char** permission_strs = permission_count > 0 ? sk_malloc_t(const char*, permission_count) : nullptr;
+	if (permission_count <= 0) return;
+
+	const char** permission_strs = sk_malloc_t(const char*, permission_count);
 	int32_t      valid_count     = 0;
 	for (int32_t i = 0; i < permission_count; i++) {
 		permission_type_ p = in_arr_permissions[i];
-		if (p < 0 || p >= permission_type_max || local.permission_str[p] == NULL)
+		if (p < 0 || p >= permission_type_max || local.permission_str[p] == nullptr) {
 			log_warnf("Permission string for 0x%X unknown on current platform", p);
-		else
-			permission_strs[valid_count++] = local.permission_str[p];
-	}
-
-	// We can only actually request if we're an Activity. Services or other
-	// Android contexts will have to manage permission requests themselves.
-	if (valid_count > 0 && local.context_is_activity) {
-		JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env ();
-		jobject activity = (jobject)backend_android_get_activity();
-
-		jclass       class_string         = env->FindClass    ("java/lang/String");
-		jobjectArray jobj_permission_list = env->NewObjectArray(valid_count, class_string, NULL);
-
-		static const jint SK_REQUEST_CODE_PERMS = 0x534B;
-
-		for (int32_t i = 0; i < valid_count; i++) {
-			jstring jobj_permission = env->NewStringUTF(permission_strs[i]);
-			env->SetObjectArrayElement(jobj_permission_list, i, jobj_permission);
-			env->DeleteLocalRef       (jobj_permission);
+			continue;
 		}
-		env->CallVoidMethod(activity, local.activity_requestPermissions, jobj_permission_list, SK_REQUEST_CODE_PERMS);
-
-		env->DeleteLocalRef(jobj_permission_list);
-		env->DeleteLocalRef(class_string);
+		permission_strs[valid_count++] = local.permission_str[p];
 	}
+
+	// sk_app collapses duplicate and already-settled names into one prompt,
+	// so features sharing a system permission need no special handling here.
+	if (valid_count > 0 && !ska_android_permission_request(permission_strs, valid_count))
+		log_warnf("Permission request failed: %s", ska_error_get());
 
 	sk_free(permission_strs);
-}
-
-///////////////////////////////////////////
-
-bool _permission_check_app_permission(const char* permission) {
-	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env();
-	jobject activity = (jobject)backend_android_get_activity();
-
-	jstring jobj_permission = env->NewStringUTF(permission);
-	jint    result          = env->CallIntMethod(activity, local.context_checkSelfPermission, jobj_permission);
-	env->DeleteLocalRef(jobj_permission);
-
-	return result == PERMISSION_GRANTED;
-}
-
-///////////////////////////////////////////
-
-bool _permission_manifest_has(JNIEnv* env, jobjectArray permission_list, jsize list_count, jmethodID string_equals, const char* permission_str) {
-	bool result = false;
-	jstring jobj_permission_str = env->NewStringUTF(permission_str);
-	for (jsize i = 0; i < list_count; i++) {
-		jstring jobj_curr_permission = (jstring)env->GetObjectArrayElement(permission_list, i);
-
-		result = env->CallBooleanMethod(jobj_permission_str, string_equals, jobj_curr_permission);
-
-		env->DeleteLocalRef(jobj_curr_permission);
-
-		if (result) break;
-	}
-	env->DeleteLocalRef(jobj_permission_str);
-	return result;
-}
-
-///////////////////////////////////////////
-
-void _permission_check_manifest_permissions() {
-	JNIEnv* env      = (JNIEnv*)backend_android_get_jni_env ();
-	jobject activity = (jobject)backend_android_get_activity();
-
-	jmethodID    context_getPackageManager     =          env->GetMethodID     (local.class_context, "getPackageManager", "()Landroid/content/pm/PackageManager;");
-	jmethodID    context_getPackageName        =          env->GetMethodID     (local.class_context, "getPackageName", "()Ljava/lang/String;");
-	jobject      jobj_packageManager           =          env->CallObjectMethod(activity, context_getPackageManager);
-	jclass       class_packageManager          =          env->GetObjectClass  (jobj_packageManager);
-	jmethodID    packageManager_getPackageInfo =          env->GetMethodID     (class_packageManager, "getPackageInfo",    "(Ljava/lang/String;I)Landroid/content/pm/PackageInfo;");
-	jmethodID    packageManager_getPermissionInfo =       env->GetMethodID     (class_packageManager, "getPermissionInfo", "(Ljava/lang/String;I)Landroid/content/pm/PermissionInfo;");
-	jmethodID    activity_shouldShowRationale  = local.context_is_activity
-		? env->GetMethodID(local.class_context, "shouldShowRequestPermissionRationale", "(Ljava/lang/String;)Z")
-		: nullptr;
-
-	jstring      jobj_packageName              = (jstring)env->CallObjectMethod(activity, context_getPackageName);
-
-	jint         flags = 4096; // PackageManager.GET_PERMISSIONS
-	jobject      jobj_packageInfo  = env->CallObjectMethod(jobj_packageManager, packageManager_getPackageInfo, jobj_packageName, flags);
-	jclass       class_packageInfo = env->GetObjectClass  (jobj_packageInfo);
-
-	jfieldID     packageInfo_requestedPermissions =               env->GetFieldID    (class_packageInfo, "requestedPermissions", "[Ljava/lang/String;");
-	jobjectArray jobj_requestedPermissions        = (jobjectArray)env->GetObjectField(jobj_packageInfo, packageInfo_requestedPermissions);
-
-	jclass    class_string  = env->FindClass  ("java/lang/String");
-	jmethodID string_equals = env->GetMethodID(class_string, "equals", "(Ljava/lang/Object;)Z");
-
-	// look through all permissions in the manifest, and match them up to ones
-	// StereoKit knows about.
-	jsize       length  = jobj_requestedPermissions ? env->GetArrayLength(jobj_requestedPermissions) : 0;
-	xr_runtime_ runtime = openxr_get_known_runtime();
-	for (int32_t p = 0; p < permission_type_max; p++) {
-
-		local.permission_str[p] = _permission_check_string((permission_type_)p, runtime, env, jobj_requestedPermissions, length, string_equals);
-
-		if (local.permission_str[p] == nullptr) {
-			// We didn't find a string we know about for this runtime, we have
-			// no idea about this permission.
-			local.present[p] = permission_state_unknown;
-			continue;
-		}
-		if (!_permission_manifest_has(env, jobj_requestedPermissions, length, string_equals, local.permission_str[p])) {
-			// We know the permission string, but it is not present in the
-			// app's manifest, so we can't use it.
-			local.present[p] = permission_state_unavailable;
-			continue;
-		}
-
-		jstring  jstr_permission = env->NewStringUTF(local.permission_str[p]);
-		jboolean is_interactive  = activity_shouldShowRationale
-			? env->CallBooleanMethod(activity, activity_shouldShowRationale, jstr_permission)
-			: JNI_FALSE;
-		jobject  permission_info = env->CallObjectMethod(jobj_packageManager, packageManager_getPermissionInfo, jstr_permission, 0);
-		if (env->ExceptionCheck()) { env->ExceptionClear(); }
-		env->DeleteLocalRef(jstr_permission);
-
-		// permission_info may be null if the permission string we decided on
-		// isn't known by the device.
-		if (permission_info == nullptr) {
-			local.present[p] = permission_state_unavailable;
-			continue;
-		}
-
-		jclass    class_permissionInfo         = env->GetObjectClass(permission_info);
-		jmethodID permissionInfo_getProtection = env->GetMethodID   (class_permissionInfo, "getProtection", "()I");
-
-		jint protection_level_core;
-		if (permissionInfo_getProtection) {
-			// getProtection may only be available in newer Android versions
-			protection_level_core = env->CallIntMethod(permission_info, permissionInfo_getProtection);
-		} else {
-			// protectionLevel is deprecated
-			jfieldID permissionInfo_protectionLevel = env->GetFieldID (class_permissionInfo, "protectionLevel", "I");
-			jint     protection_level               = env->GetIntField(permission_info, permissionInfo_protectionLevel);
-			protection_level_core = (protection_level & PROTECTION_MASK_BASE);
-		}
-		
-		local.requires_interaction[p] = (is_interactive == JNI_TRUE) || (protection_level_core == PERMISSION_PROTECTION_DANGEROUS);
-		local.present             [p] = permission_state_capable;
-		log_infof("Found manifest permission for %s", local.permission_str[p]);
-
-		env->DeleteLocalRef(permission_info);
-		env->DeleteLocalRef(class_permissionInfo);
-	}
-
-	env->DeleteLocalRef(class_string);
-	env->DeleteLocalRef(class_packageInfo);
-	env->DeleteLocalRef(class_packageManager);
-	env->DeleteLocalRef(jobj_packageManager);
-	env->DeleteLocalRef(jobj_packageName);
-	env->DeleteLocalRef(jobj_packageInfo);
-	if (jobj_requestedPermissions) env->DeleteLocalRef(jobj_requestedPermissions);
 }
 
 ///////////////////////////////////////////

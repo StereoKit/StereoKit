@@ -59,8 +59,8 @@ class DemoLighting : ITest
 		if (mode == LightMode.World)
 		{
 			UI.PushEnabled(Lighting.ModeAvailable(LightingMode.World));
-			bool useEstimation = Lighting.Mode == LightingMode.World;
-			if (UI.Toggle("Use Light Estimation", ref useEstimation)) Lighting.Mode = useEstimation ? LightingMode.World : LightingMode.Manual;
+			bool useEstimation = Lighting.Mode != LightingMode.Manual;
+			if (UI.Toggle("Use Light Estimation", ref useEstimation)) Lighting.RequestMode(useEstimation ? LightingMode.World : LightingMode.Manual);
 			UI.PopEnabled();
 		}
 		

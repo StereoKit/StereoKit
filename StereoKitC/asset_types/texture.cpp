@@ -603,11 +603,11 @@ tex_t tex_create_rendertarget(int32_t width, int32_t height, int32_t msaa, tex_f
 	if (color_format == tex_format_none && depth_format != tex_format_none) {
 		result = tex_create(tex_type_image_nomips | tex_type_depthtarget, depth_format);
 
-		tex_set_color_arr(result, width, height, nullptr, 1, msaa, nullptr);
+		tex_set_color_arr(result, width, height, nullptr, 1, msaa);
 	} else {
 		result = tex_create(tex_type_image_nomips | tex_type_rendertarget, color_format);
 
-		tex_set_color_arr(result, width, height, nullptr, 1, msaa, nullptr);
+		tex_set_color_arr(result, width, height, nullptr, 1, msaa);
 		if (depth_format != tex_format_none)
 			tex_add_zbuffer(result, depth_format);
 	}
@@ -912,7 +912,7 @@ void tex_add_zbuffer(tex_t texture, tex_format_ format) {
 	assets_unique_name(asset_type_tex, "sk/tex/zbuffer/", id, sizeof(id));
 	texture->depth_buffer = tex_create(tex_type_zbuffer, format);
 	tex_set_id       (texture->depth_buffer, id);
-	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->gpu_tex.layer_count, msaa, nullptr);
+	tex_set_color_arr(texture->depth_buffer, texture->width, texture->height, nullptr, texture->gpu_tex.layer_count, msaa);
 	texture->depth_buffer->header.state = asset_state_loaded;
 }
 
@@ -1139,7 +1139,9 @@ void tex_on_load_remove(tex_t texture, void (*on_load)(tex_t texture, void *cont
 struct tex_reflection_job_t {
 	tex_t   source;
 	int32_t max_resolution;
-	bool    fresh; // dest was created for this job, so it may error out
+	bool    fresh;         // dest was created for this job, so it may error out
+	bool    has_source_sh; // source_sh was snapshotted at queue time
+	spherical_harmonics_t source_sh;
 };
 
 ///////////////////////////////////////////
@@ -1162,25 +1164,31 @@ static bool32_t tex_sh_resolve(tex_t texture, bool32_t block) {
 
 ///////////////////////////////////////////
 
-// Records the SH projection into the open command scope. The caller attaches
-// the scope's future; the readback then resolves lazily on query. Samples the
-// first mip at or below 32px per face, where one sample per texel covers the
-// sphere; a sparse grid on anything larger would miss concentrated sources
-// like an HDRI sun. Returns false when the chain has no such mip; lighting
-// for mip-less skyboxes comes from tex_gen_cubemap_reflection instead.
-static bool _tex_compute_sh_dispatch(tex_t texture) {
+// The mip the SH projection samples: the first at or below 32px per face,
+// where one sample per texel covers the sphere; a sparse grid on anything
+// larger would miss concentrated sources like an HDRI sun. Warns and returns
+// negative when the chain has no such mip; lighting for mip-less skyboxes
+// comes from tex_gen_cubemap_reflection instead.
+static int32_t _tex_sh_mip(tex_t texture) {
 	skr_vec3i_t base_size = { texture->width, texture->height, 1 };
 	int32_t     mip_count = (int32_t)texture->gpu_tex.mip_levels;
-	int32_t     mip_level = -1;
-	skr_vec3i_t mip_size  = base_size;
 	for (int32_t m = 0; m < mip_count; m++) {
-		skr_vec3i_t size = skr_tex_calc_mip_dimensions(base_size, m);
-		if (size.x <= 32) { mip_level = m; mip_size = size; break; }
+		if (skr_tex_calc_mip_dimensions(base_size, m).x <= 32) return m;
 	}
-	if (mip_level < 0) {
-		log_warnf("Lighting data needs a mip chain on cubemaps over 32px. Generate a reflection from '%s' with tex_gen_cubemap_reflection and query that instead.", tex_get_id(texture));
-		return false;
-	}
+	log_warnf("Lighting data needs a mip chain on cubemaps over 32px. Generate a reflection from '%s' with tex_gen_cubemap_reflection and query that instead.", tex_get_id(texture));
+	return -1;
+}
+
+///////////////////////////////////////////
+
+// Records the SH projection into the open command scope. The caller attaches
+// the scope's future; the readback then resolves lazily on query. Returns
+// false when the texture has no mip the projection can sample.
+static bool _tex_compute_sh_dispatch(tex_t texture) {
+	int32_t mip_level = _tex_sh_mip(texture);
+	if (mip_level < 0) return false;
+	skr_vec3i_t base_size = { texture->width, texture->height, 1 };
+	skr_vec3i_t mip_size  = skr_tex_calc_mip_dimensions(base_size, mip_level);
 
 	// A dispatch already in flight must land before its buffer is replaced.
 	tex_sh_resolve(texture, true);
@@ -1204,12 +1212,12 @@ static bool _tex_compute_sh_dispatch(tex_t texture) {
 
 ///////////////////////////////////////////
 
-// Dispatches the SH compute shader and waits for results. Works inside
-// an already-open command scope: the dispatch is flushed rather than
-// ended there, which submits the work but leaves the scope open.
-void tex_compute_sh(tex_t texture) {
-	profiler_zone();
-
+// Dispatches the SH compute shader without waiting on the result. Works
+// inside an already-open command scope: the dispatch is flushed rather than
+// ended there, which submits the work but leaves the scope open. The readback
+// resolves lazily on a later query, which keeps any cached value answering
+// until the fresh one is actually available.
+static void tex_compute_sh_async(tex_t texture) {
 	bool was_active = skr_cmd_is_active();
 	skr_cmd_begin();
 	if (!_tex_compute_sh_dispatch(texture)) {
@@ -1218,15 +1226,24 @@ void tex_compute_sh(tex_t texture) {
 	}
 	texture->sh_future  = was_active ? skr_cmd_flush() : skr_cmd_end();
 	texture->sh_pending = true;
-	tex_sh_resolve(texture, true);
 	if (was_active) skr_cmd_end();
+}
+
+///////////////////////////////////////////
+
+// Same dispatch, but blocking until the result is in light_info.
+void tex_compute_sh(tex_t texture) {
+	profiler_zone();
+
+	tex_compute_sh_async(texture);
+	tex_sh_resolve(texture, true);
 }
 
 ///////////////////////////////////////////
 
 // Uploads one mip-major block: every layer of mip 0, then every layer of mip 1.
 // flat_data is the caller's to free, and null resizes without touching pixels.
-void _tex_set_color_flat(tex_t texture, int32_t width, int32_t height, void* flat_data, int32_t array_count, int32_t mip_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
+void _tex_set_color_flat(tex_t texture, int32_t width, int32_t height, void* flat_data, int32_t array_count, int32_t mip_count, int32_t multisample) {
 	profiler_zone();
 
 	if (texture->type & tex_type_volume) {
@@ -1309,7 +1326,7 @@ void _tex_set_color_flat(tex_t texture, int32_t width, int32_t height, void* fla
 		tex_set_meta(texture, width, height, 1, texture->format);
 
 		if (texture->depth_buffer != nullptr) {
-			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->gpu_tex.layer_count, multisample, nullptr);
+			tex_set_color_arr(texture->depth_buffer, width, height, nullptr, texture->gpu_tex.layer_count, multisample);
 			tex_set_zbuffer  (texture, texture->depth_buffer);
 		}
 		tex_update_label(texture);
@@ -1327,12 +1344,10 @@ void _tex_set_color_flat(tex_t texture, int32_t width, int32_t height, void* fla
 	}
 
 	if (skr_tex_is_valid(&texture->gpu_tex)) {
-		// Lighting data is only computed when the caller asks for it.
-		if ((texture->type & tex_type_cubemap) && sh_lighting_info != nullptr && texture->light_info == nullptr)
-			tex_compute_sh(texture);
-
-		if (sh_lighting_info != nullptr)
-			*sh_lighting_info = tex_get_cubemap_lighting(texture);
+		// New content makes cached lighting stale, but the cache keeps
+		// answering queries until a fresh projection replaces it.
+		if ((texture->type & tex_type_cubemap) && flat_data != nullptr)
+			texture->sh_dirty = true;
 
 		tex_set_fallback(texture, nullptr);
 		texture->header.state = asset_state_loaded;
@@ -1345,7 +1360,7 @@ void _tex_set_color_flat(tex_t texture, int32_t width, int32_t height, void* fla
 ///////////////////////////////////////////
 
 // TODO: would be nice to maybe merge these into one function, simplify the memory layout
-void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, spherical_harmonics_t *sh_lighting_info, int32_t multisample) {
+void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample) {
 	// array_data[layer] holds that layer's whole mip chain, and the GPU wants the
 	// transpose of that, so gather across layers before uploading.
 	void* flat_data = nullptr;
@@ -1368,36 +1383,35 @@ void _tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void **arr
 		}
 	}
 
-	_tex_set_color_flat(texture, width, height, flat_data, array_count, mip_count, sh_lighting_info, multisample);
+	_tex_set_color_flat(texture, width, height, flat_data, array_count, mip_count, multisample);
 	sk_free(flat_data);
 }
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t multisample, spherical_harmonics_t* out_sh_lighting_info) {
-	tex_set_color_arr_mips(texture, width, height, array_data, array_count, 1, multisample, out_sh_lighting_info);
+void tex_set_color_arr(tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t multisample) {
+	tex_set_color_arr_mips(texture, width, height, array_data, array_count, 1, multisample);
 }
 
 ///////////////////////////////////////////
 
-void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample, spherical_harmonics_t * out_sh_lighting_info) {
+void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void **array_data, int32_t array_count, int32_t mip_count, int32_t multisample) {
 	profiler_zone();
 
 	struct tex_upload_job_t {
-		tex_t                  texture;
-		int32_t                width;
-		int32_t                height;
-		void                 **array_data;
-		int32_t                array_count;
-		int32_t                mip_count;
-		spherical_harmonics_t *sh_lighting_info;
-		int32_t                multisample;
+		tex_t    texture;
+		int32_t  width;
+		int32_t  height;
+		void   **array_data;
+		int32_t  array_count;
+		int32_t  mip_count;
+		int32_t  multisample;
 	};
-	tex_upload_job_t job_data = {texture, width, height, array_data, array_count, mip_count, out_sh_lighting_info, multisample};
+	tex_upload_job_t job_data = {texture, width, height, array_data, array_count, mip_count, multisample};
 
 	assets_execute_blocking([](void *data) {
 		tex_upload_job_t *job_data = (tex_upload_job_t *)data;
-		_tex_set_color_arr(job_data->texture, job_data->width, job_data->height, job_data->array_data, job_data->array_count, job_data->mip_count, job_data->sh_lighting_info, job_data->multisample);
+		_tex_set_color_arr(job_data->texture, job_data->width, job_data->height, job_data->array_data, job_data->array_count, job_data->mip_count, job_data->multisample);
 		return (bool32_t)true;
 	}, &job_data);
 }
@@ -1421,7 +1435,7 @@ void tex_set_color_flat_mips(tex_t texture, int32_t width, int32_t height, void*
 
 	assets_execute_blocking([](void *data) {
 		tex_upload_job_t *job_data = (tex_upload_job_t *)data;
-		_tex_set_color_flat(job_data->texture, job_data->width, job_data->height, job_data->flat_data, job_data->array_count, job_data->mip_count, nullptr, 1);
+		_tex_set_color_flat(job_data->texture, job_data->width, job_data->height, job_data->flat_data, job_data->array_count, job_data->mip_count, 1);
 		return (bool32_t)true;
 	}, &job_data);
 }
@@ -1473,7 +1487,7 @@ void tex_set_mem(tex_t texture, void* data, size_t data_size, bool32_t srgb_data
 // Non-blocking query for a cubemap's SH lighting, resolving a finished
 // readback if one is pending. False while the GPU is still working, or
 // when the texture has no lighting data at all.
-bool32_t tex_cubemap_lighting_try(tex_t cubemap_texture, spherical_harmonics_t* out_sh) {
+static bool32_t tex_cubemap_lighting_try(tex_t cubemap_texture, spherical_harmonics_t* out_sh) {
 	if (!tex_sh_resolve(cubemap_texture, false)) return false;
 	*out_sh = *cubemap_texture->light_info;
 	return true;
@@ -1484,14 +1498,33 @@ bool32_t tex_cubemap_lighting_try(tex_t cubemap_texture, spherical_harmonics_t* 
 spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 	assets_block_until(&cubemap_texture->header, asset_state_loaded);
 
-	if (cubemap_texture->sh_pending)
-		tex_sh_resolve(cubemap_texture, true);
+	// Fold in a finished background refresh; an unfinished one leaves the
+	// cache answering with its previous value.
+	tex_sh_resolve(cubemap_texture, false);
 
-	// Reflection generation usually produces this. Other cubemaps pay for a
-	// blocking GPU projection here, on first query.
-	if (cubemap_texture->light_info == nullptr &&
-	    (cubemap_texture->type & tex_type_cubemap) != 0 &&
-	    skr_tex_is_valid(&cubemap_texture->gpu_tex)) {
+	if (cubemap_texture->light_info != nullptr) {
+		// Stale cache: kick a refresh, and keep answering with the cached
+		// value until that projection lands on a later query.
+		if (cubemap_texture->sh_dirty && !cubemap_texture->sh_pending) {
+			cubemap_texture->sh_dirty = false;
+			assets_execute_blocking([](void* data) {
+				tex_compute_sh_async((tex_t)data);
+				return (bool32_t)true;
+			}, cubemap_texture);
+		}
+		return *cubemap_texture->light_info;
+	}
+
+	// No cached value to answer with, so block for first results. Reflection
+	// generation usually leaves a readback in flight here; other cubemaps
+	// pay for a blocking GPU projection on this first query. The mip check
+	// skips the blocking hop for textures the projection can't sample.
+	cubemap_texture->sh_dirty = false;
+	if (cubemap_texture->sh_pending) {
+		tex_sh_resolve(cubemap_texture, true);
+	} else if ((cubemap_texture->type & tex_type_cubemap) != 0 &&
+	           skr_tex_is_valid(&cubemap_texture->gpu_tex) &&
+	           _tex_sh_mip(cubemap_texture) >= 0) {
 		assets_execute_blocking([](void* data) {
 			tex_compute_sh((tex_t)data);
 			return (bool32_t)true;
@@ -1501,6 +1534,32 @@ spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture) {
 	return cubemap_texture->light_info
 		? *cubemap_texture->light_info
 		: spherical_harmonics_t{};
+}
+
+///////////////////////////////////////////
+
+void tex_set_cubemap_lighting(tex_t cubemap_texture, const spherical_harmonics_t& lighting_info) {
+	if ((cubemap_texture->type & tex_type_cubemap) == 0) {
+		log_warn("tex_set_cubemap_lighting needs a cubemap texture.");
+		return;
+	}
+	// The value describes the texture's content, so wait for that content: an
+	// upload landing after this call would silently refresh over the value.
+	assets_block_until(&cubemap_texture->header, asset_state_loaded);
+
+	// An in-flight readback must land before its result is replaced.
+	tex_sh_resolve(cubemap_texture, true);
+	if (cubemap_texture->light_info == nullptr)
+		cubemap_texture->light_info = sk_malloc_t(spherical_harmonics_t, 1);
+	*cubemap_texture->light_info = lighting_info;
+	cubemap_texture->sh_dirty    = false;
+}
+
+///////////////////////////////////////////
+
+void tex_lighting_dirty(tex_t texture) {
+	if (texture->type & tex_type_cubemap)
+		texture->sh_dirty = true;
 }
 
 ///////////////////////////////////////////
@@ -2049,7 +2108,7 @@ tex_t tex_gen_particle(int32_t width, int32_t height, float roundness, gradient_
 
 ///////////////////////////////////////////
 
-tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info) {
+tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, int32_t resolution) {
 	tex_t result = tex_create(tex_type_image_nomips | tex_type_cubemap, tex_format_rg11b10);
 	if (result == nullptr) {
 		return nullptr;
@@ -2122,15 +2181,10 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 
 	sh_windowing(sh, 0.01f);
 
-	// Set light_info before uploading so _tex_set_color_arr skips the
-	// redundant SH compute - this cubemap was generated from a gradient.
-	result->light_info  = sk_malloc_t(spherical_harmonics_t, 1);
-	*result->light_info = sh;
-
-	if (out_sh_lighting_info != nullptr)
-		*out_sh_lighting_info = sh;
-
-	tex_set_color_arr(result, size, size, (void**)data, 6);
+	// The gradient's exact SH is known here, saving the first lighting query
+	// a GPU projection of the uploaded faces.
+	tex_set_color_arr       (result, size, size, (void**)data, 6);
+	tex_set_cubemap_lighting(result, sh);
 
 	for (int32_t i = 0; i < 6; i++) {
 		sk_free(data[i]);
@@ -2211,12 +2265,10 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 		}
 	}
 
-	// Set light_info before uploading so _tex_set_color_arr skips the
-	// redundant SH compute - this cubemap was generated from SH data.
-	result->light_info  = sk_malloc_t(spherical_harmonics_t, 1);
-	*result->light_info = lookup;
-
-	tex_set_color_arr(result, size, size, (void**)data, 6);
+	// The image came from this exact SH, saving the first lighting query a
+	// GPU projection of the uploaded faces.
+	tex_set_color_arr       (result, size, size, (void**)data, 6);
+	tex_set_cubemap_lighting(result, lookup);
 
 	for (int32_t i = 0; i < 6; i++) {
 		sk_free(data[i]);
@@ -2307,23 +2359,24 @@ static bool32_t tex_reflection_generate(asset_task_t*, asset_header_t* asset, vo
 	// for the roughness the PBR shader will sample it at.
 	skr_tex_generate_mips(&dest->gpu_tex, &sk_default_shader_cubemap_ggx->gpu_shader);
 
-	// The source's SH describes the same environment, so prefer copying it
-	// over a GPU projection of the convolved chain. Readbacks resolve
-	// lazily via tex_cubemap_lighting_try / tex_get_cubemap_lighting.
-	if (source->light_info != nullptr) {
+	// A source SH snapshotted at queue time describes the same environment,
+	// so prefer copying it over projecting the convolved chain. Either way it
+	// resolves before the state flip: a loaded reflection carries lighting.
+	if (job->has_source_sh) {
 		// An older dispatch must land before its result is replaced.
 		tex_sh_resolve(dest, true);
 		if (dest->light_info == nullptr)
 			dest->light_info = sk_malloc_t(spherical_harmonics_t, 1);
-		*dest->light_info = *source->light_info;
+		*dest->light_info = job->source_sh;
 		skr_cmd_end();
-	} else if (_tex_compute_sh_dispatch(dest)) {
-		// The freshly convolved chain always has a mip small enough here.
-		dest->sh_future  = skr_cmd_end();
-		dest->sh_pending = true;
 	} else {
+		// The freshly convolved chain always has a mip small enough for the
+		// projection to sample, so this won't warn and skip.
+		tex_compute_sh(dest);
 		skr_cmd_end();
 	}
+	// Both paths above leave lighting that matches this fresh content.
+	dest->sh_dirty = false;
 
 	tex_set_fallback(dest, nullptr);
 	dest->header.state = asset_state_loaded;
@@ -2360,7 +2413,7 @@ tex_t tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into, int32_t max_r
 		return nullptr;
 	}
 	if (into != nullptr && !tex_format_is_mippable(into->format)) {
-		log_warn("tex_gen_cubemap_reflection destination format can't be rendered to.");
+		log_warn("tex_gen_cubemap_reflection destination format can't generate a mip chain.");
 		return nullptr;
 	}
 	if (max_resolution <= 0) max_resolution = 64;
@@ -2377,6 +2430,9 @@ tex_t tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into, int32_t max_r
 	job->source         = source_cubemap;
 	job->max_resolution = max_resolution;
 	job->fresh          = into == nullptr;
+	// Snapshot the source's lighting on this thread; the task runs on an
+	// asset thread, where reading the live field would race a concurrent set.
+	job->has_source_sh  = tex_cubemap_lighting_try(source_cubemap, &job->source_sh);
 
 	static const asset_load_action_t actions[] = { tex_reflection_generate };
 	asset_task_t task  = {};

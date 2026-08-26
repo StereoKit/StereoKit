@@ -992,27 +992,47 @@ void render_set_post_process(const material_t* materials, int32_t material_count
 ///////////////////////////////////////////
 
 // Set the pass sample count on any MSAA spec constant, flush material params,
-// and attach each already-picked material as a postfx subpass.
+// and attach each already-picked material as a postfx subpass. A material
+// whose 'color' input attachment is SubpassInputMS reads the raw samples, so
+// it becomes the pass's manual MSAA resolve subpass instead - it resolves
+// AND applies its effect in one subpass, and the rest of the chain reads its
+// resolved output.
 static void render_pass_apply_post_process(skr_pass_t* pass, material_t* picked, int32_t picked_count) {
 	int32_t samples = 1;
 	if      (pass->color) samples = skr_tex_get_multisample(pass->color);
 	else if (pass->depth) samples = skr_tex_get_multisample(pass->depth);
 
+	bool32_t has_resolve = false;
 	for (int32_t i = 0; i < picked_count; i++) {
 		material_t mat = picked[i];
 
 		// Set the pass sample count on an MSAA spec constant if present -
 		// unchanged is a no-op, a new value bakes a cached pipeline variant.
 		const sksc_shader_meta_t* meta = &mat->shader->gpu_shader.meta;
+		bool32_t ms_color = false;
 		for (uint32_t s = 0; s < meta->spec_constant_count; s++) {
 			if (strcmp(meta->spec_constants[s].name, "MSAA") == 0) {
 				material_set_int(mat, "MSAA", samples);
 				break;
 			}
 		}
+		for (uint32_t r = 0; r < meta->resource_count; r++) {
+			if (meta->resources[r].bind.register_type == skr_register_input_attachment &&
+			    (meta->resources[r].shape & SKSC_SHAPE_MS) != 0 &&
+			    strcmp(meta->resources[r].name, "color") == 0) { ms_color = true; break; }
+		}
 
 		material_check_dirty(mat);
-		skr_pass_add_postfx(pass, &mat->gpu_mat);
+		if (ms_color) {
+			if (has_resolve) {
+				log_errf("Post-process chain has more than one MSAA-resolve material (SubpassInputMS 'color') - skipping '%s'", mat->header.id_text);
+				continue;
+			}
+			skr_pass_add_resolve(pass, &mat->gpu_mat);
+			has_resolve = true;
+		} else {
+			skr_pass_add_postfx(pass, &mat->gpu_mat);
+		}
 	}
 }
 
@@ -1087,7 +1107,7 @@ void render_check_screenshots() {
 		// The MSAA surface only ever feeds resolve_tex, so it's transient. The
 		// readback below reads the resolve, never this.
 		tex_t color_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget | tex_type_transient_internal, local.screenshot_list[i].tex_format);
-		tex_set_color_arr(color_surface, w, h, nullptr, 1, 8, nullptr);
+		tex_set_color_arr(color_surface, w, h, nullptr, 1, 8);
 		// Passed as the DEPTH format, not the color one: only depth targets
 		// get input attachment usage, which postfx needs to read depth.
 		tex_t depth_surface = tex_create_rendertarget(w, h, 8, tex_format_none, tex_get_supported_depth_format(render_preferred_depth_fmt(), true, 8));
@@ -1213,6 +1233,7 @@ void render_draw_viewpoint(render_action_viewpoint_t* vp) {
 	// The chain was already selected + ref'd at enqueue, just apply it
 	render_pass_apply_post_process(&pass, vp->post_process, vp->post_process_count);
 	skr_pass_submit(&pass);
+	tex_lighting_dirty(vp->rendertarget);
 
 	// Release the references we added, the user should have their own
 	for (int32_t i = 0; i < vp->post_process_count; i++)
@@ -1250,6 +1271,7 @@ void render_blit(tex_t to, material_t material) {
 	skr_vec3i_t size = skr_tex_get_size(&to->gpu_tex);
 	skr_recti_t bounds = { 0, 0, size.x, size.y };
 	skr_renderer_blit(&material->gpu_mat, &to->gpu_tex, bounds);
+	tex_lighting_dirty(to);
 }
 
 ///////////////////////////////////////////

@@ -35,13 +35,14 @@ struct lighting_state_t {
 	spherical_harmonics_t   ambient_src;
 	tex_t                   reflection;
 	tex_t                   reflection_pending_tex;
+	tex_t                   reflection_default;  // restored when set to null
 	bool                    ambient_auto_pending; // reflection SH -> ambient
 	tex_t                   world_env;           // raw environment estimate
 	tex_t                   world_reflection;    // the estimate, convolved
 	spherical_harmonics_t   world_reflected_sh;  // SH at the last reflection rebuild
 	bool                    world_reflected;     // world_reflection has been built
 
-	bool                    pending_scene_permission;
+	bool                    pending_world_permission; // world mode starts on grant
 };
 static lighting_state_t local = {};
 
@@ -102,13 +103,18 @@ static void check_pending_skytex() {
 ///////////////////////////////////////////
 
 static void check_pending_reflection() {
-	tex_t tex = check_pending_cubemap(&local.reflection_pending_tex, "Reflection texture");
+	bool  had_pending = local.reflection_pending_tex != nullptr;
+	tex_t tex         = check_pending_cubemap(&local.reflection_pending_tex, "Reflection texture");
 	if (tex != nullptr) {
 		if (local.reflection != nullptr) tex_release(local.reflection);
 		local.reflection = tex;
 
 		// Shaders read the reflection cubemap from the sk_cubemap global.
 		render_global_texture(render_reflection_register, local.reflection);
+	} else if (had_pending && local.reflection_pending_tex == nullptr) {
+		// The pending reflection died, and deriving ambient from whatever
+		// reflection came before it would apply stale lighting.
+		local.ambient_auto_pending = false;
 	}
 }
 
@@ -118,15 +124,14 @@ void lighting_check_pending() {
 	check_pending_skytex();
 	check_pending_reflection();
 
-	// Apply the reflection's lighting data once its SH readback lands. The
-	// pending check keeps a stale result from applying mid-regeneration.
-	spherical_harmonics_t sh;
+	// A loaded reflection always carries its lighting data, so this settles
+	// the same frame generation finishes. The pending check keeps a stale
+	// result from applying mid-regeneration.
 	if (local.ambient_auto_pending &&
 	    local.mode                   != lighting_mode_world &&
 	    local.reflection             != nullptr &&
-	    local.reflection_pending_tex == nullptr &&
-	    tex_cubemap_lighting_try(local.reflection, &sh)) {
-		_lighting_set_ambient(sh);
+	    local.reflection_pending_tex == nullptr) {
+		_lighting_set_ambient(tex_get_cubemap_lighting(local.reflection));
 		local.ambient_auto_pending = false;
 	}
 }
@@ -162,15 +167,13 @@ bool lighting_init() {
 	render_set_skybox_visible(true);
 
 	// The default cubemap is a mip 0 skybox, and reflections need a mip chain.
-	tex_t default_reflection = tex_gen_cubemap_reflection(sky_cubemap, nullptr, SK_LIGHTING_REFLECTION_SIZE);
-	if (default_reflection != nullptr) {
-		tex_set_id(default_reflection, "sk/lighting/reflection_default");
-		lighting_set_reflection(default_reflection);
-		tex_release(default_reflection);
+	local.reflection_default = tex_gen_cubemap_reflection(sky_cubemap, nullptr, SK_LIGHTING_REFLECTION_SIZE);
+	if (local.reflection_default != nullptr) {
+		tex_set_id(local.reflection_default, "sk/lighting/reflection_default");
+		lighting_set_reflection(local.reflection_default);
 	}
 
 	lighting_set_ambient(sk_default_lighting);
-	lighting_set_mode   (lighting_mode_auto);
 
 	tex_release(sky_cubemap);
 
@@ -184,14 +187,14 @@ void lighting_step() {
 
 	// If we asked for permission to do world lighting, check on the status of
 	// that.
-	if (local.pending_scene_permission) {
-		permission_state_ state = permission_state(permission_type_scene);
+	if (local.pending_world_permission) {
+		permission_state_ state = permission_state(permission_type_ambient_estimation);
 		if (state == permission_state_granted) {
-			local.pending_scene_permission = false;
-			lighting_set_mode(lighting_mode_world);
-		} else if (state == permission_state_unavailable) {
-			local.pending_scene_permission = false;
-			lighting_set_mode(lighting_mode_manual);
+			local.pending_world_permission = false;
+			lighting_request_mode(lighting_mode_world);
+		} else if (state != permission_state_requesting) {
+			// Denied, or otherwise settled without a grant. Stay in manual.
+			local.pending_world_permission = false;
 		}
 	}
 
@@ -268,6 +271,7 @@ void lighting_shutdown() {
 	tex_release     (local.sky_pending_tex);
 	tex_release     (local.reflection);
 	tex_release     (local.reflection_pending_tex);
+	tex_release     (local.reflection_default);
 	tex_release     (local.world_env);
 	tex_release     (local.world_reflection);
 	material_release(local.sky_mat_default);
@@ -364,7 +368,6 @@ const vec4* lighting_get_lighting() {
 
 bool32_t lighting_mode_available(lighting_mode_ mode) {
 	switch (mode) {
-	case lighting_mode_auto:   return true;
 	case lighting_mode_manual: return true;
 	case lighting_mode_world:  return xr_ext_android_light_estimation_available();
 	default:                   return false;
@@ -373,40 +376,48 @@ bool32_t lighting_mode_available(lighting_mode_ mode) {
 
 ///////////////////////////////////////////
 
-bool32_t lighting_set_mode(lighting_mode_ mode) {
-	// In auto mode, select the best mode based on current conditions
-	if (mode == lighting_mode_auto) {
-		display_blend_ blend = device_display_get_blend();
-		return lighting_set_mode((blend & display_blend_any_transparent) > 0 && lighting_mode_available(lighting_mode_world) 
-			? lighting_mode_world
-			: lighting_mode_manual);
+void lighting_request_mode(lighting_mode_ mode) {
+	if (mode == lighting_mode_world_pending) {
+		log_warn("lighting_request_mode: world_pending is a read-only status, not a requestable mode.");
+		return;
+	}
+	if (mode == lighting_mode_world && !lighting_mode_available(lighting_mode_world)) {
+		log_warn("lighting_request_mode: world lighting isn't available here, see lighting_mode_available.");
+		return;
 	}
 
-	if (local.mode == mode) return true;
+	// A non-world request cancels a pending world permission request even
+	// when the mode is unchanged, since pending requests apply on grant.
+	if (mode != lighting_mode_world)
+		local.pending_world_permission = false;
+
+	if (local.mode == mode) return;
 
 	if (mode == lighting_mode_world) {
-		// Scene permission gates light estimation itself, while fine scene
-		// understanding additionally unlocks cubemap estimates.
+		// Ambient estimation gates world mode itself, while reflection
+		// estimation additionally unlocks cubemap estimates. Denied
+		// permissions are only re-asked by an explicit permission_request.
 		permission_type_ request[2];
 		int32_t          request_count = 0;
-		if (permission_state(permission_type_scene) == permission_state_capable)
-			request[request_count++] = permission_type_scene;
-		if (xr_ext_light_estimation_cubemap_available() && permission_state(permission_type_scene_fine) == permission_state_capable)
-			request[request_count++] = permission_type_scene_fine;
+		if (permission_state(permission_type_ambient_estimation) == permission_state_capable)
+			request[request_count++] = permission_type_ambient_estimation;
+		if (xr_ext_light_estimation_cubemap_available() &&
+		    permission_state(permission_type_reflection_estimation) == permission_state_capable)
+			request[request_count++] = permission_type_reflection_estimation;
 		if (request_count > 0)
 			permission_request(request, request_count);
 
 		// Permissions may be granted immediately
-		permission_state_ perms = permission_state(permission_type_scene);
+		permission_state_ perms = permission_state(permission_type_ambient_estimation);
 
 		if (perms != permission_state_granted) {
-			// If we're still waiting on permission, set a flag
-			if (perms == permission_state_capable)
-				local.pending_scene_permission = true;
+			// While the request is in flight, world mode applies on grant.
+			// Anything else just settles in manual mode, which the app can
+			// see for itself in lighting_get_mode and permission_state.
+			if (perms == permission_state_requesting)
+				local.pending_world_permission = true;
 			mode = lighting_mode_manual;
 		}
-	} else {
-		local.pending_scene_permission = false;
 	}
 
 	// Stop light estimation if we're leaving world mode
@@ -421,19 +432,18 @@ bool32_t lighting_set_mode(lighting_mode_ mode) {
 	// reflection since the last world session.
 	if (mode == lighting_mode_world) {
 		if (!xr_ext_light_estimation_start()) {
+			// The extension warns with the reason on its own.
 			local.mode = lighting_mode_manual;
-			return false;
+			return;
 		}
 		local.world_reflected = false;
 	}
-
-	return true;
 }
 
 ///////////////////////////////////////////
 
 lighting_mode_ lighting_get_mode(void) {
-	return local.pending_scene_permission ? lighting_mode_world : local.mode;
+	return local.pending_world_permission ? lighting_mode_world_pending : local.mode;
 }
 
 ///////////////////////////////////////////
@@ -482,6 +492,8 @@ spherical_harmonics_t lighting_get_ambient(void) {
 ///////////////////////////////////////////
 
 static void _lighting_set_reflection(tex_t ibl_cubemap) {
+	// Null restores the default reflection, like the skybox material does.
+	if (ibl_cubemap == nullptr) ibl_cubemap = local.reflection_default;
 	if (ibl_cubemap == nullptr) return;
 
 	tex_addref(ibl_cubemap);

@@ -33,12 +33,15 @@ namespace StereoKit
 		public static PermissionState State(PermissionType permission)
 			=> NativeAPI.permission_state(permission);
 
-		/// <summary>Does this permission need the user to approve it? This
-		/// typically means a popup window will come up when you Request this
-		/// permission, and the user has a chance to decline it.
-		/// 
-		/// If your app is an Android Service, this only reflects the Dangerous
-		/// status of the permission.</summary>
+		/// <summary>Might requesting this permission interrupt the user with a
+		/// popup? This is a prediction from how sensitive the platform
+		/// considers the permission, not a promise. The system can still
+		/// grant one silently, most often when the user already approved a
+		/// related permission earlier in the session, so a true here means
+		/// "may interrupt" rather than "will".
+		///
+		/// There's no way to know for certain in advance, since the answer
+		/// depends on what the user has already agreed to.</summary>
 		/// <param name="permission">The permission you're interested in.</param>
 		/// <returns>True if the permission requires user interaction, false
 		/// otherwise.</returns>

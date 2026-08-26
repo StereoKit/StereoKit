@@ -63,8 +63,10 @@ class DemoShadows : ITest
 
 		// The environment provides visuals and lighting; the shadow direction
 		// additionally needs the reflection's lighting data once it's ready.
+		// In world lighting mode SetEnvironment is a no-op and returns null.
 		Lighting.SetEnvironment(Tex.FromCubemap(@"old_depot.hdr"), out Tex reflection);
-		reflection.OnLoaded += t => lightDir = t.CubemapLighting.DominantLightDirection;
+		if (reflection != null)
+			reflection.OnLoaded += t => lightDir = t.CubemapLighting.DominantLightDirection;
 
 		Renderer.SetGlobalBuffer(13, shadowBuffer);
 	}

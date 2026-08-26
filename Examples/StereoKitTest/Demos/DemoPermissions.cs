@@ -16,10 +16,16 @@ class DemoPermissions : ITest
 	TextStyle warn;
 	TextStyle good;
 
+	Color tintPrompt; // Requesting this interrupts the user with a dialog
+	Color tintSilent; // Requesting this resolves without asking
+
 	public void Initialize()
 	{
 		warn = TextStyle.FromFont(Font.Default, UI.TextStyle.LayoutHeight, Color.HSV(0.16f, 0.7f, 0.9f));
 		good = TextStyle.FromFont(Font.Default, UI.TextStyle.LayoutHeight, Color.HSV(0.33f, 0.7f, 0.9f));
+
+		tintPrompt = Color.HSV(0.16f, 0.4f, 1);
+		tintSilent = Color.HSV(0.33f, 0.4f, 1);
 	}
 
 	public void Shutdown()
@@ -52,9 +58,20 @@ class DemoPermissions : ITest
 			UI.PopTextStyle();
 			UI.SameLine();
 
-			// Allow the user to request the permission if it needs it
-			UI.PushEnabled(state == PermissionState.Capable && Permission.IsInteractive(permission));
+			// Allow the user to request the permission if it needs it. The
+			// tint shows whether a request may pop a system dialog; the
+			// system can still grant silently. Denied permissions can be
+			// re-asked, blocked ones can't, so only the former stays enabled.
+			bool  requestable = state == PermissionState.Capable
+			                 || state == PermissionState.Denied;
+			Color tint        = !requestable                         ? Color.White
+			                  : Permission.IsInteractive(permission) ? tintPrompt
+			                  :                                        tintSilent;
+
+			UI.PushEnabled(requestable);
+			UI.PushTint   (tint);
 			if (UI.Button("Request")) Permission.Request(permission);
+			UI.PopTint   ();
 			UI.PopEnabled();
 
 			UI.PopId();
