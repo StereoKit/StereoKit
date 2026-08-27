@@ -89,7 +89,7 @@ static tex_t check_pending_cubemap(tex_t* ref_pending, const char* description) 
 // TODO: back-compat? Apps that only set a sky texture used to get reflections
 // from it for free. Could derive one here if the app never set a reflection.
 static void check_pending_skytex() {
-	tex_t tex = check_pending_cubemap(&local.sky_pending_tex, "Skytex");
+	tex_t tex = check_pending_cubemap(&local.sky_pending_tex, "Skybox texture");
 	if (tex != nullptr) {
 		if (local.sky_tex != nullptr) tex_release(local.sky_tex);
 		local.sky_tex = tex;
@@ -209,7 +209,11 @@ void lighting_step() {
 		if (xr_ext_light_estimation_update_sh(&sh)) {
 			_lighting_set_ambient(sh);
 
-			if (!local.world_reflected || sh_delta(sh, local.world_reflected_sh) > 0.05f) {
+			// A rebuild can't reuse the reflection texture until its previous
+			// generation task has landed; skip and let later estimates retry.
+			bool reflection_busy = local.world_reflection != nullptr &&
+			                       tex_asset_state(local.world_reflection) < asset_state_loaded;
+			if (!reflection_busy && (!local.world_reflected || sh_delta(sh, local.world_reflected_sh) > 0.05f)) {
 				// Reflections come from the cubemap estimate when the device
 				// has one, otherwise they're approximated from the SH. Either
 				// way it convolves into a persistent texture, created on the
@@ -284,12 +288,13 @@ void lighting_shutdown() {
 ///////////////////////////////////////////
 
 void render_set_skybox_tex(tex_t skybox_texture) {
+	// Null restores the default sky, like the material and reflection do.
+	if (skybox_texture != nullptr) tex_addref(skybox_texture);
+	else                           skybox_texture = tex_find(default_id_cubemap);
 	if (skybox_texture == nullptr) return;
 
-	tex_addref(skybox_texture);
 	if (local.sky_pending_tex != nullptr) tex_release(local.sky_pending_tex);
 	local.sky_pending_tex = skybox_texture;
-
 
 	// This is also checked every step, but if the texture is already valid, we
 	// can set it up right away and avoid any potential frame delays.
@@ -410,10 +415,13 @@ void lighting_request_mode(lighting_mode_ mode) {
 		// Permissions may be granted immediately
 		permission_state_ perms = permission_state(permission_type_ambient_estimation);
 
-		if (perms != permission_state_granted) {
+		if (perms != permission_state_granted && perms != permission_state_unknown) {
 			// While the request is in flight, world mode applies on grant.
 			// Anything else just settles in manual mode, which the app can
 			// see for itself in lighting_get_mode and permission_state.
+			// 'unknown' proceeds instead: StereoKit has no permission string
+			// for this runtime, so the runtime arbitrates on its own when
+			// estimation starts.
 			if (perms == permission_state_requesting)
 				local.pending_world_permission = true;
 			mode = lighting_mode_manual;

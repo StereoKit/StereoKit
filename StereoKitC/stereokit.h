@@ -1318,7 +1318,7 @@ SK_API        color128 color_to_gamma (color128 srgb_linear);
 
 static inline color128 color_lerp     (color128 a, color128 b, float t) { color128 result = {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; return result; }
 static inline color32  color_to_32    (color128 a)                      { color32  result = {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; return result; }
-static inline color32  color_to_32_sat(color128 a)                      { color32  result = {(uint8_t)((a.r>1?1:a.r) * 255.f), (uint8_t)((a.g>1?1:a.g) * 255.f), (uint8_t)((a.b>1?1:a.b) * 255.f), (uint8_t)((a.a>1?1:a.a) * 255.f)}; return result; }
+static inline color32  color_to_32_sat(color128 a)                      { color32  result = {(uint8_t)((a.r<0?0:a.r>1?1:a.r) * 255.f), (uint8_t)((a.g<0?0:a.g>1?1:a.g) * 255.f), (uint8_t)((a.b<0?0:a.b>1?1:a.b) * 255.f), (uint8_t)((a.a<0?0:a.a>1?1:a.a) * 255.f)}; return result; }
 
 static inline color128 color32_to_128 (color32 color) { color128 result = { color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f }; return result; }
 static inline color32  color32_hex    (uint32_t hex)  { color32  result = {(uint8_t)(hex>>24), (uint8_t)((hex>>16)&0x000000FF), (uint8_t)((hex>>8)&0x000000FF), (uint8_t)(hex&0x000000FF)}; return result; };

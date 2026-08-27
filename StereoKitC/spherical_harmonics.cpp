@@ -66,6 +66,7 @@ void sh_window_fit_radiance(spherical_harmonics_t &harmonics) {
 
 spherical_harmonics_t sh_create(const sh_light_t* lights, int32_t light_count) {
 	spherical_harmonics_t result = {};
+	if (light_count <= 0) return result;
 	for (int32_t i = 0; i < light_count; i++) {
 		sh_add(result, vec3_normalize(lights[i].dir_to), { lights[i].color.r, lights[i].color.g, lights[i].color.b });
 	}

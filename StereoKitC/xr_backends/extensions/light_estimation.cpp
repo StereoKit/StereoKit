@@ -313,8 +313,10 @@ bool xr_ext_android_light_estimation_available() {
 
 	// 'unavailable' means the permission isn't in the AndroidManifest, so it
 	// can never be granted. 'capable' is fine; lighting_request_mode asks.
-	permission_state_ perms = permission_state(permission_type_ambient_estimation);
-	return perms != permission_state_unavailable && perms != permission_state_unknown;
+	// 'unknown' means StereoKit has no permission string registered for this
+	// runtime at all, so try the feature: the runtime enforces its own
+	// permissions, and estimator creation fails cleanly if it minds.
+	return permission_state(permission_type_ambient_estimation) != permission_state_unavailable;
 }
 
 ///////////////////////////////////////////
@@ -326,9 +328,11 @@ bool xr_ext_light_estimation_start() {
 	// Cubemap estimates show imagery of the user's surroundings, so they need
 	// the reflection estimation permission on top of ambient estimation.
 	// Without it we start SH-only, and step_begin upgrades the estimator if
-	// it arrives later.
+	// it arrives later. 'unknown' (no permission string registered for this
+	// runtime) also tries; the runtime refuses for itself if it minds.
+	permission_state_ reflection_perm = permission_state(permission_type_reflection_estimation);
 	bool use_cubemap = local.cubemap_available && !local.cubemap_refused &&
-		permission_state(permission_type_reflection_estimation) == permission_state_granted;
+		(reflection_perm == permission_state_granted || reflection_perm == permission_state_unknown);
 
 	XrLightEstimatorCreateInfoANDROID        info         = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATOR_CREATE_INFO_ANDROID};
 	XrCubemapLightEstimatorCreateInfoANDROID cubemap_info = {(XrStructureType)XR_TYPE_CUBEMAP_LIGHT_ESTIMATOR_CREATE_INFO_ANDROID};

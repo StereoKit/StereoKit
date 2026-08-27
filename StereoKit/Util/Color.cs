@@ -248,13 +248,13 @@ namespace StereoKit
 		public static implicit operator Color32(Color c)
 			=> new Color32((byte)(c.r*255), (byte)(c.g*255), (byte)(c.b*255), (byte)(c.a*255));
 
-		/// <summary>Converts to Color32, clamping each channel's top end to 1
-		/// first: values over 1 wrap when crushed to bytes, turning HDR colors
-		/// into hue garbage. Costs a little more than the implicit conversion,
-		/// which skips the clamp.</summary>
+		/// <summary>Converts to Color32, clamping each channel to 0-1 first:
+		/// values outside that range wrap when crushed to bytes, turning HDR
+		/// colors into hue garbage. Costs a little more than the implicit
+		/// conversion, which skips the clamp.</summary>
 		/// <returns>A crushed down color.</returns>
 		public Color32 ToColor32Sat()
-			=> new Color32((byte)((r>1?1:r)*255), (byte)((g>1?1:g)*255), (byte)((b>1?1:b)*255), (byte)((a>1?1:a)*255));
+			=> new Color32((byte)((r<0?0:r>1?1:r)*255), (byte)((g<0?0:g>1?1:g)*255), (byte)((b<0?0:b>1?1:b)*255), (byte)((a<0?0:a>1?1:a)*255));
 		/// <summary>This will multiply a color linearly, including alpha. Best
 		/// done on a color in linear space. No clamping is applied.</summary>
 		/// <param name="a">The source color.</param>

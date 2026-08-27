@@ -37,7 +37,8 @@ namespace StereoKit
 		/// typical way to set up a sky is `Lighting.SetEnvironment`, which
 		/// assigns this along with the lighting it derives from the same
 		/// cubemap. Assign this directly to draw a different sky than the
-		/// one you're lighting with.</summary>
+		/// one you're lighting with. Assigning null restores StereoKit's
+		/// built-in default sky.</summary>
 		public static Tex SkyboxTex
 		{
 			get  { IntPtr ptr = NativeAPI.render_get_skybox_tex(); return ptr == IntPtr.Zero ? null : new Tex(ptr); }
