@@ -6,9 +6,11 @@
 ///////////////////////////////////////////
 
 min16float3 sk_pbr_fresnel_schlick_roughness(min16float ndotv, min16float3 F0, min16float roughness) {
-	// Sebastian approximates pow(1.0 - ndotv, 5.0) as exp2((-5.55473 * ndotv - 6.98316) * ndotv)
-	// https://seblagarde.wordpress.com/2012/06/03/spherical-gaussien-approximation-for-blinn-phong-phong-and-fresnel/
-	return F0 + (max(1.0h - roughness, F0) - F0) * exp2((-5.55473h * ndotv - 6.98316h) * ndotv);
+	// Exact pow(1 - ndotv, 5) by squaring, like Filament's pow5. Three half muls
+	// beat the classic exp2 fit now that transcendentals don't co-issue for free.
+	min16float f  = 1.0h - ndotv;
+	min16float f2 = f * f;
+	return F0 + max(1.0h - roughness - F0, 0.0h) * (f2 * f2 * f);
 }
 
 ///////////////////////////////////////////
@@ -26,11 +28,19 @@ min16float2 sk_pbr_brdf_appx(min16float roughness, min16float ndotv) {
 
 ///////////////////////////////////////////
 
+// log2 read straight off the float exponent field, good to ~0.03. Plenty for
+// picking a mip, and keeps a transcendental out of the pre-fetch dep chain.
+float sk_log2_fast(float x) { return (float)asint(x) * 1.1920929e-7 - 126.9426950; }
+
+///////////////////////////////////////////
+
 min16float4 sk_pbr_shade(min16float4 albedo, min16float3 irradiance, min16float ao, min16float metal, min16float rough, float3 view_dir, min16float3 surface_normal) {
 	// View direction and reflection must stay float for precision
-	float3     view        = normalize(view_dir);
-	float3     reflection  = reflect(-view, (float3)surface_normal);
-	min16float ndotv       = (min16float)max(0, dot((float3)surface_normal, view));
+	float3     view       = normalize(view_dir);
+	float3     normal     = (float3)surface_normal;
+	float      ndotv_full = dot(normal, view);
+	float3     reflection = normal * (2*ndotv_full) - view; // reflect(-view, normal)
+	min16float ndotv      = (min16float)max(0, ndotv_full);
 
 	// Pre-compute specular AA kernel from screen-space normal derivatives.
 	// All ddx/ddy calls stay in the same WQM region; only the sqrt is
@@ -52,7 +62,7 @@ min16float4 sk_pbr_shade(min16float4 albedo, min16float3 irradiance, min16float 
 	// Footprint clamp: variance already tracks the normal's angular step per
 	// pixel, and sk_cubemap_i.w packs the constants (texel density, reflection
 	// doubling). Catches glint aliasing on curvature that roughness misses.
-	mip = max(mip, 0.5 * log2(max((float)variance, 1e-12)) + sk_cubemap_i.w);
+	mip = max(mip, 0.5 * sk_log2_fast((float)variance) + sk_cubemap_i.w);
 	min16float3  prefilteredColor = (min16float3)sk_cubemap.SampleLevel(sk_cubemap_s, reflection, mip).rgb;
 
 	// Apply specular AA after the cubemap is in flight, so sqrt runs hidden
@@ -69,18 +79,21 @@ min16float4 sk_pbr_shade(min16float4 albedo, min16float3 irradiance, min16float 
 	// inter-reflections at high roughness, brightening rough metals.
 	// Fdez-Aguera, "A Multiple-Scattering Microfacet Model for Real-Time
 	// Image Based Lighting" (SIGGRAPH 2019)
-	min16float3 energyCompensation = 1.0h + F0 * (1.0h / max(envBRDF.x + envBRDF.y, 0.001h) - 1.0h);
+	// 1/Ess - 1 in closed form: envBRDF.x + envBRDF.y is exactly 1 - 0.55*rough
+	// (a004 cancels), which a cubic fits to 0.008 with no rcp and no ndotv term.
+	min16float  boost              = rough * (0.64474h + rough * (-0.16204h + rough * 0.73952h));
+	min16float3 energyCompensation = 1.0h + F0 * boost;
 	specular *= energyCompensation;
 
 	// Diffuse weight is plain Disney-style (1 - metal). Attenuating by Fresnel
 	// too ((1 - F) * (1 - metal)) loses up to ~20% energy at mid-metallic.
 	min16float kD = 1.0h - metal;
 
-	min16float3 diffuse = albedo.rgb * irradiance * ao;
+	min16float3 diffuse = albedo.rgb * irradiance;
 	// Gotanda (tri-Ace, 2014): roughness-dependent retroreflection boost
 	// approximating Disney/Burley diffuse for IBL. Near-free.
 	// diffuse *= 1.0h + 0.5h * rough;
-	min16float3 color   = kD * diffuse + specular * ao;
+	min16float3 color   = (kD * diffuse + specular) * ao;
 
 	return min16float4(color, albedo.a);
 }

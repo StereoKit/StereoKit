@@ -60,23 +60,18 @@ struct finger_dist_t {
 };
 
 finger_dist_t sk_finger_distance_info(float3 world_pos, float3 world_norm) {
+	float3 to_0 = sk_fingertip[0].xyz - world_pos;
+	float3 to_1 = sk_fingertip[1].xyz - world_pos;
+	float  sq_0 = dot(to_0, to_0);
+	float  sq_1 = dot(to_1, to_1);
+	float  d_0  = dot(world_norm, to_0);
+	float  d_1  = dot(world_norm, to_1);
+
+	// The tangential leg is |to_finger|^2 - d^2, so both distances fall out
+	// of dots we already need, and only the winners get a sqrt.
 	finger_dist_t result;
-	result.from_finger = 10000;
-	result.on_plane    = 10000;
-	
-	for	(int i=0;i<2;i++) {
-		float3 to_finger = sk_fingertip[i].xyz - world_pos;
-		float  d         = dot(world_norm, to_finger);
-		float3 on_plane  = sk_fingertip[i].xyz - d*world_norm;
-
-		// Also make distances behind the plane negative
-		float finger_dist = length(to_finger);
-		if (abs(result.from_finger) > finger_dist)
-			result.from_finger = finger_dist * sign(d);
-		
-		result.on_plane = min(result.on_plane, length(world_pos - on_plane));
-	}
-
+	result.from_finger = sqrt(min(sq_0, sq_1)) * sign(sq_0 < sq_1 ? d_0 : d_1);
+	result.on_plane    = sqrt(max(min(sq_0 - d_0*d_0, sq_1 - d_1*d_1), 0));
 	return result;
 }
 
@@ -98,7 +93,9 @@ float sk_finger_distance(float3 world_pos) {
 
 min16float sk_finger_glow(float3 world_pos) {
 	min16float d_sq = sk_finger_distance_sq(world_pos);
-	return max(0, 1/(1+10000*d_sq)-0.0069h);
+	// The reciprocal can't exceed 1, so saturate covers the low clamp and
+	// rides along as a free output modifier.
+	return saturate(1/(1+10000*d_sq)-0.0069h);
 }
 
 ///////////////////////////////////////////
