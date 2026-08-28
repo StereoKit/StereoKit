@@ -103,6 +103,8 @@ class DemoLighting : ITest
 		// Mode shapes any environment derived lighting, not just estimates!
 		bool splitMain = Lighting.Mode == LightingMode.MainLight;
 		if (UI.Toggle("Separate Main Light", ref splitMain)) Lighting.Mode = splitMain ? LightingMode.MainLight : LightingMode.Ambient;
+		UI.SameLine();
+		if (UI.Button("Reset")) Lighting.SetEnvironment(null);
 
 		UI.HSeparator();
 

@@ -107,6 +107,7 @@ typedef struct xr_light_estimation_state_t {
 	uint32_t                            cubemap_face_bytes;
 	uint8_t*                            cubemap_buffer; // 6 faces, +X -X +Y -Y +Z -Z
 	uint8_t*                            cubemap_repack; // RGB32F -> RGBA32F
+	bool                                cubemap_warned_rotation;
 } xr_light_estimation_state_t;
 static xr_light_estimation_state_t local = { };
 
@@ -217,13 +218,12 @@ xr_system_ xr_ext_android_light_estimation_initialize(void*) {
 		properties_light.next = &properties_cubemap;
 	XrResult result = xrGetSystemProperties(xr_instance, xr_system_id, &properties);
 	if (XR_FAILED(result)) {
-		log_infof("%s: [%s]", "xrGetSystemProperties", openxr_string(result));
+		log_infof("%s [%s]", "xrGetSystemProperties", openxr_string(result));
 		return xr_system_fail;
 	}
-	if (properties_light.supportsLightEstimation == false) {
-		log_diag("Light estimation: extension present, but the system doesn't support it.");
+	// Silent, lighting_source_available reports this for itself.
+	if (properties_light.supportsLightEstimation == false)
 		return xr_system_fail;
-	}
 
 	// NOTE: the estimation permission is deliberately NOT checked here! This runs
 	// inside Platform init, before the Permission system, so it would always
@@ -308,7 +308,7 @@ void xr_ext_android_light_estimation_step_begin(void*) {
 	sh_ambient.kind = XR_SPHERICAL_HARMONICS_KIND_AMBIENT_ANDROID;
 	XrResult result = xrGetLightEstimateANDROID(local.estimator, &info, &estimate);
 	if (XR_FAILED(result)) {
-		log_warnf("%s: [%s]", "xrGetLightEstimateANDROID", openxr_string(result));
+		log_warnf("%s [%s]", "xrGetLightEstimateANDROID", openxr_string(result));
 		return;
 	}
 
@@ -374,16 +374,13 @@ bool xr_ext_light_estimation_start() {
 	// If the runtime refuses the cubemap request, fall back to SH-only
 	// estimation rather than losing light estimation entirely.
 	if (XR_FAILED(result) && use_cubemap) {
-		log_warnf("%s: [%s], retrying without cubemap estimation", "xrCreateLightEstimatorANDROID", openxr_string(result));
+		log_warnf("%s [%s]", "xrCreateLightEstimatorANDROID, retrying without cubemap estimation", openxr_string(result));
 		local.cubemap_refused = true;
 		use_cubemap = false;
 		info.next   = nullptr;
 		result = xrCreateLightEstimatorANDROID(xr_session, &info, &local.estimator);
 	}
-	if (XR_FAILED(result)) {
-		log_warnf("%s: [%s]", "xrCreateLightEstimatorANDROID", openxr_string(result));
-		return false;
-	}
+	xr_check_ret(result, "xrCreateLightEstimatorANDROID", false);
 
 	local.cubemap_started = use_cubemap;
 	if (local.cubemap_started && local.cubemap_buffer == nullptr) {
@@ -408,9 +405,13 @@ void xr_ext_light_estimation_stop() {
 		xrDestroyLightEstimatorANDROID(local.estimator);
 		local.estimator = XR_NULL_HANDLE;
 	}
+	// A new estimator can report the same lastUpdatedTime as the old one, so
+	// clear it or the first estimate after a restart reads as unchanged.
 	local.started         = false;
 	local.cubemap_started = false;
 	local.split_valid     = false;
+	local.sh_updated      = false;
+	local.last_update     = 0;
 }
 
 ///////////////////////////////////////////
@@ -472,17 +473,13 @@ bool xr_ext_light_estimation_fetch_reflection(tex_t ref_cubemap) {
 	XrLightEstimateANDROID estimate = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATE_ANDROID};
 	estimate.next = &cubemap;
 	XrResult result = xrGetLightEstimateANDROID(local.estimator, &info, &estimate);
-	if (XR_FAILED(result)) {
-		log_warnf("%s: [%s]", "xrGetLightEstimateANDROID", openxr_string(result));
-		return false;
-	}
+	xr_check_ret(result, "xrGetLightEstimateANDROID", false);
 	if (cubemap.state != XR_LIGHT_ESTIMATE_STATE_VALID_ANDROID) return false;
 
 	// reproject is enabled, so rotation should be identity. If a runtime
 	// returns one anyway, reflections will be angled.
-	static bool warned_rotation = false;
-	if (!warned_rotation && fabsf(cubemap.rotation.w) < 0.999f) {
-		warned_rotation = true;
+	if (!local.cubemap_warned_rotation && fabsf(cubemap.rotation.w) < 0.999f) {
+		local.cubemap_warned_rotation = true;
 		log_warn("Light estimation cubemap arrived with a non-identity rotation, reflections may be rotated.");
 	}
 

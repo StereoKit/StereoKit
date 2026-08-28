@@ -127,13 +127,17 @@ class TestLighting : ITest
 		if (Vec3.Dot(Lighting.MainLight.directionTo, lightDir) < 0.98f)
 			Tests.Fail("Environment derived MainLight direction is off");
 
-		// A mode change re-delivers the environment lighting, replacing
-		// earlier assignments: last write wins.
+		// The override is the scene's newest total lighting, so it survives
+		// a Mode toggle too, the resolved environment doesn't resurface.
 		Lighting.Mode = LightingMode.MainLight;
 		Lighting.Mode = LightingMode.Ambient;
+		if ((Lighting.Ambient.coefficient1 - marker).Length > 0.001f)
+			Tests.Fail("A Mode change resurfaced the overridden environment lighting");
+
+		// The environment's own lighting for the split tests below, assigned
+		// as the newest total lighting.
+		Lighting.Ambient = reflection.CubemapLighting;
 		SphericalHarmonics total = Lighting.Ambient;
-		if ((total.coefficient1 - marker).Length < 0.001f)
-			Tests.Fail("A Mode change didn't re-deliver the environment lighting");
 
 		// Splitting the main light out must not collapse the ambient! The
 		// uniform portion of the environment stays behind.
@@ -152,6 +156,16 @@ class TestLighting : ITest
 		Lighting.Mode = LightingMode.Ambient;
 		if (Lum(Lighting.Ambient.Sample(lightDir)) < Lum(total.Sample(lightDir)) * 0.99f)
 			Tests.Fail("Returning to ambient mode didn't restore the total lighting");
+
+		// A null environment is a full reset: sky, reflection, and lighting
+		// all return to StereoKit's defaults, with no reflection generated.
+		Lighting.SetEnvironment(null, out Tex defaultReflection);
+		if (defaultReflection != null)
+			Tests.Fail("A null SetEnvironment shouldn't generate a reflection");
+		if (Renderer.SkyboxTex.Id != "default/cubemap")
+			Tests.Fail("A null SetEnvironment didn't restore the default sky");
+		if (Lighting.Reflection.Id != "sk/lighting/reflection_default")
+			Tests.Fail("A null SetEnvironment didn't restore the default reflection");
 	}
 
 	public void Shutdown()

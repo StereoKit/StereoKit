@@ -1395,10 +1395,10 @@ namespace StereoKit
 		None         = 1,
 	}
 
-	/// <summary>This determines where lighting data comes from! The default is the
-	/// `Manual`, where the application provides all lighting via the `Lighting`
-	/// functions. Devices that can estimate lighting from the user's
-	/// surroundings also have the `World` option.</summary>
+	/// <summary>This determines where lighting data comes from! The default is `Manual`,
+	/// where the application provides all lighting via the `Lighting` functions.
+	/// Devices that can estimate lighting from the user's surroundings also have
+	/// the `World` option.</summary>
 	public enum LightingSource {
 		/// <summary>Lighting values are set manually by the application. Use the
 		/// `Lighting` functions to configure the scene lighting.</summary>

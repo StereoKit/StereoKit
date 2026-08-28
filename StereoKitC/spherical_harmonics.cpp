@@ -118,6 +118,12 @@ static const float SH_PROJECT_NORM = 4.0f;
 static const float SH_BASIS_0 = 0.282094791773878140f;
 static const float SH_BASIS_1 = 0.488602511902919920f;
 
+// Per-band weights of the cosine lobe kernel, applied when SH radiance is
+// looked up as irradiance on a surface.
+static const float SH_COSINE_A0 = 3.141592654f;
+static const float SH_COSINE_A1 = (2.0f * 3.141592654f) / 3.0f;
+static const float SH_COSINE_A2 = 3.141592654f * 0.25f;
+
 void sh_add(spherical_harmonics_t &to, vec3 light_dir, vec3 light_color) {
 	light_dir = { -light_dir.x, -light_dir.y, light_dir.z };
 
@@ -150,25 +156,20 @@ void sh_add(spherical_harmonics_t &to, vec3 light_dir, vec3 light_color) {
 color128 sh_lookup(const spherical_harmonics_t &harmonics, vec3 normal) {
 	vec3 result = {};
 
-	static const float Pi = 3.141592654f;
-	static const float CosineA0 = Pi;
-	static const float CosineA1 = (2.0f * Pi) / 3.0f;
-	static const float CosineA2 = Pi * 0.25f;
-
 	// Band 0
-	result += harmonics.coefficients[0] * (0.282095f * CosineA0);
+	result += harmonics.coefficients[0] * (0.282095f * SH_COSINE_A0);
 
 	// Band 1
-	result += harmonics.coefficients[1] * (0.488603f * normal.y * CosineA1);
-	result += harmonics.coefficients[2] * (0.488603f * normal.z * CosineA1);
-	result += harmonics.coefficients[3] * (0.488603f * normal.x * CosineA1);
+	result += harmonics.coefficients[1] * (0.488603f * normal.y * SH_COSINE_A1);
+	result += harmonics.coefficients[2] * (0.488603f * normal.z * SH_COSINE_A1);
+	result += harmonics.coefficients[3] * (0.488603f * normal.x * SH_COSINE_A1);
 
 	// Band 2
-	result += harmonics.coefficients[4] * (1.092548f * normal.x * normal.y * CosineA2);
-	result += harmonics.coefficients[5] * (1.092548f * normal.y * normal.z * CosineA2);
-	result += harmonics.coefficients[6] * (0.315392f * (3.0f * normal.z * normal.z - 1.0f) * CosineA2);
-	result += harmonics.coefficients[7] * (1.092548f * normal.x * normal.z * CosineA2);
-	result += harmonics.coefficients[8] * (0.546274f * (normal.x * normal.x - normal.y * normal.y) * CosineA2);
+	result += harmonics.coefficients[4] * (1.092548f * normal.x * normal.y * SH_COSINE_A2);
+	result += harmonics.coefficients[5] * (1.092548f * normal.y * normal.z * SH_COSINE_A2);
+	result += harmonics.coefficients[6] * (0.315392f * (3.0f * normal.z * normal.z - 1.0f) * SH_COSINE_A2);
+	result += harmonics.coefficients[7] * (1.092548f * normal.x * normal.z * SH_COSINE_A2);
+	result += harmonics.coefficients[8] * (0.546274f * (normal.x * normal.x - normal.y * normal.y) * SH_COSINE_A2);
 
 	return { result.x, result.y, result.z, 1 };
 }
@@ -193,6 +194,15 @@ color128 sh_lookup_radiance(const spherical_harmonics_t &harmonics, vec3 dir) {
 	// Undo the projection's directional-light normalization.
 	result = result * ((4.0f * MATH_PI) / SH_PROJECT_NORM);
 	return { result.x, result.y, result.z, 1 };
+}
+
+///////////////////////////////////////////
+
+// Inverts the cosine lobe convolution on an irradiance SH, so that
+// sh_lookup_radiance reconstructs the environment the irradiance came from.
+void sh_irradiance_to_radiance(spherical_harmonics_t &harmonics) {
+	for (int32_t i = 1; i < 4; i++) harmonics.coefficients[i] *= SH_COSINE_A1 / SH_COSINE_A0;
+	for (int32_t i = 4; i < 9; i++) harmonics.coefficients[i] *= SH_COSINE_A2 / SH_COSINE_A0;
 }
 
 ///////////////////////////////////////////
@@ -268,20 +278,16 @@ sh_light_t sh_subtract_light(spherical_harmonics_t &harmonics, sh_light_t light)
 ///////////////////////////////////////////
 
 void sh_to_fast(const spherical_harmonics_t& lookup, vec4* fast_7) {
-	static const float CosineA0 = 3.141592654f;
-	static const float CosineA1 = (2.0f * CosineA0) / 3.0f;
-	static const float CosineA2 = CosineA0 * 0.25f;
-
 	// Pre-bake SH basis constants into coefficients
-	vec3 sh0 = lookup.coefficients[0] * (0.282095f * CosineA0);
-	vec3 sh1 = lookup.coefficients[1] * (0.488603f * CosineA1);
-	vec3 sh2 = lookup.coefficients[2] * (0.488603f * CosineA1);
-	vec3 sh3 = lookup.coefficients[3] * (0.488603f * CosineA1);
-	vec3 sh4 = lookup.coefficients[4] * (1.092548f * CosineA2);
-	vec3 sh5 = lookup.coefficients[5] * (1.092548f * CosineA2);
-	vec3 sh6 = lookup.coefficients[6] * (0.315392f * CosineA2);
-	vec3 sh7 = lookup.coefficients[7] * (1.092548f * CosineA2);
-	vec3 sh8 = lookup.coefficients[8] * (0.546274f * CosineA2);
+	vec3 sh0 = lookup.coefficients[0] * (0.282095f * SH_COSINE_A0);
+	vec3 sh1 = lookup.coefficients[1] * (0.488603f * SH_COSINE_A1);
+	vec3 sh2 = lookup.coefficients[2] * (0.488603f * SH_COSINE_A1);
+	vec3 sh3 = lookup.coefficients[3] * (0.488603f * SH_COSINE_A1);
+	vec3 sh4 = lookup.coefficients[4] * (1.092548f * SH_COSINE_A2);
+	vec3 sh5 = lookup.coefficients[5] * (1.092548f * SH_COSINE_A2);
+	vec3 sh6 = lookup.coefficients[6] * (0.315392f * SH_COSINE_A2);
+	vec3 sh7 = lookup.coefficients[7] * (1.092548f * SH_COSINE_A2);
+	vec3 sh8 = lookup.coefficients[8] * (0.546274f * SH_COSINE_A2);
 
 	// Pack into dot-product form for efficient GPU evaluation.
 	// Shader evaluates as:

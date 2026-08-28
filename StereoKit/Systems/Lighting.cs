@@ -27,12 +27,14 @@ namespace StereoKit
 		/// `Tex.FromCubemap` provides are perfect here, no mip chain needed.
 		///
 		/// Anything you assign to those properties afterwards overrides that
-		/// piece. Ignored when using `World` as a lighting source.</summary>
+		/// piece. Null resets all of it to StereoKit's defaults. Ignored when
+		/// using `World` as a lighting source.</summary>
 		/// <param name="skyCubemap">A cubemap of the environment's radiance,
-		/// such as one from `Tex.FromCubemap`.</param>
+		/// such as one from `Tex.FromCubemap`, or null to reset to the
+		/// default environment.</param>
 		public static void SetEnvironment(Tex skyCubemap)
 		{
-			NativeAPI.lighting_set_environment(skyCubemap._inst, out IntPtr reflection);
+			NativeAPI.lighting_set_environment(skyCubemap == null ? IntPtr.Zero : skyCubemap._inst, out IntPtr reflection);
 			if (reflection != IntPtr.Zero) NativeAPI.tex_release(reflection);
 		}
 
@@ -40,12 +42,14 @@ namespace StereoKit
 		/// generated, for hooking `Tex.OnLoaded`, or re-convolving later
 		/// with `Tex.GenCubemapReflection`.</summary>
 		/// <param name="skyCubemap">A cubemap of the environment's radiance,
-		/// such as one from `Tex.FromCubemap`.</param>
-		/// <param name="reflection">The generated reflection, or null if the
-		/// call did nothing, such as when using `World` as a lighting source.</param>
+		/// such as one from `Tex.FromCubemap`, or null to reset to the
+		/// default environment.</param>
+		/// <param name="reflection">The generated reflection, or null if none
+		/// was generated, such as on a null reset, or when using `World` as a
+		/// lighting source.</param>
 		public static void SetEnvironment(Tex skyCubemap, out Tex reflection)
 		{
-			NativeAPI.lighting_set_environment(skyCubemap._inst, out IntPtr inst);
+			NativeAPI.lighting_set_environment(skyCubemap == null ? IntPtr.Zero : skyCubemap._inst, out IntPtr inst);
 			reflection = inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
@@ -108,10 +112,11 @@ namespace StereoKit
 		/// Build one with `SphericalHarmonics.FromLights`, or let
 		/// `SetEnvironment` derive it from a cubemap.
 		///
-		/// Assignments apply exactly as provided, and stick through a
-		/// `SetEnvironment` that's still loading. Later environment lighting
-		/// replaces them: a new `SetEnvironment`, a `Mode` change, or world
-		/// source estimates, where assignments are ignored entirely.</summary>
+		/// Assignments apply exactly as provided, and win over a
+		/// `SetEnvironment` that's still loading, even once it finishes.
+		/// Later environment lighting replaces them: a new `SetEnvironment`,
+		/// or world source estimates, where assignments are ignored entirely.
+		/// A `Mode` change re-shapes the newest lighting, assigned or not.</summary>
 		public static SphericalHarmonics Ambient
 		{
 			get => NativeAPI.lighting_get_ambient();

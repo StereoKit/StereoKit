@@ -2,6 +2,7 @@
 #include "../platforms/platform.h"
 #include "../stereokit.h"
 #include "../_stereokit.h"
+#include "../spherical_harmonics.h"
 #include "../shaders_builtin/shader_builtin.h"
 #include "../asset_types/font.h"
 #include "../asset_types/texture_.h"
@@ -182,10 +183,8 @@ bool defaults_init() {
 	// Cubemap
 	spherical_harmonics_t lighting = sk_default_lighting;
 	sh_brightness(lighting, 0.75f);
-	// A slight tweak to the SH to maintain the default skybox's colors after
-	// revisions to tex_gen_cubemap_sh.
-	for (int32_t i = 1; i < 4; i++) lighting.coefficients[i] *= 2.0f / 3.0f;
-	for (int32_t i = 4; i < 9; i++) lighting.coefficients[i] *= 0.25f;
+	// The default SH is irradiance, and tex_gen_cubemap_sh draws radiance.
+	sh_irradiance_to_radiance(lighting);
 	sk_default_cubemap = tex_gen_cubemap_sh(lighting, 16, 0.3f);
 	tex_set_id(sk_default_cubemap, default_id_cubemap);
 
@@ -334,18 +333,18 @@ bool defaults_init() {
 	material_set_id(sk_default_material_unlit_clip,  default_id_material_unlit_clip);
 	material_set_id(sk_default_material_equirect,    default_id_material_equirect);
 	material_set_id(sk_default_material_cubemap_downsample, default_id_material_cubemap_downsample);
-
-	// The equirect and downsample conversions run through skr_renderer_blit
-	// with no depth attached.
-	material_set_depth_test (sk_default_material_equirect, depth_test_always);
-	material_set_depth_write(sk_default_material_equirect, false);
-	material_set_depth_test (sk_default_material_cubemap_downsample, depth_test_always);
-	material_set_depth_write(sk_default_material_cubemap_downsample, false);
 	material_set_id(sk_default_material_font,        default_id_material_font);
 	material_set_id(sk_default_material_ui,          default_id_material_ui);
 	material_set_id(sk_default_material_ui_box,      default_id_material_ui_box);
 	material_set_id(sk_default_material_ui_quadrant, default_id_material_ui_quadrant);
 	material_set_id(sk_default_material_ui_aura,     default_id_material_ui_aura);
+
+	// The equirect and downsample conversions run through skr_renderer_blit
+	// with no depth attached.
+	material_set_depth_test  (sk_default_material_equirect, depth_test_always);
+	material_set_depth_write (sk_default_material_equirect, false);
+	material_set_depth_test  (sk_default_material_cubemap_downsample, depth_test_always);
+	material_set_depth_write (sk_default_material_cubemap_downsample, false);
 
 	material_set_texture     (sk_default_material_font, "diffuse", sk_default_tex);
 	material_set_transparency(sk_default_material_font, transparency_blend);

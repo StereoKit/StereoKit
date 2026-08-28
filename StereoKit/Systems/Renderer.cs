@@ -45,16 +45,16 @@ namespace StereoKit
 			set => NativeAPI.render_set_skybox_tex(value == null ? IntPtr.Zero : value._inst);
 		}
 
-		/// <summary>The skybox texture no longer affects scene lighting, it is
-		/// purely the visual backdrop now! For the old behavior where the sky
-		/// also drove reflections and ambient light, use
-		/// `Lighting.SetEnvironment`. To only change the backdrop, use
-		/// `SkyboxTex`.</summary>
-		[Obsolete("Visual only now! Use Lighting.SetEnvironment for sky + lighting (the old behavior), or SkyboxTex for just the backdrop.")]
+		/// <summary>Deprecated with the skybox/lighting split! Assigning this
+		/// still behaves like the old API: it routes through
+		/// `Lighting.SetEnvironment`, so the cubemap drives reflections and
+		/// ambient light as well as the backdrop. Call that directly, or use
+		/// `SkyboxTex` for just the backdrop.</summary>
+		[Obsolete("Assigning routes through Lighting.SetEnvironment for the old sky + lighting behavior. Call that directly, or use SkyboxTex for just the backdrop.")]
 		public static Tex SkyTex
 		{
 			get => SkyboxTex;
-			set => SkyboxTex = value;
+			set => Lighting.SetEnvironment(value);
 		}
 
 		/// <summary>This is the Material that StereoKit is currently using to

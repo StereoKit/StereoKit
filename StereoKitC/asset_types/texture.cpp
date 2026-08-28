@@ -2115,8 +2115,8 @@ tex_t tex_gen_cubemap(const gradient_t gradient_bot_to_top, vec3 gradient_dir, i
 	}
 	gradient_dir = vec3_normalize(gradient_dir);
 
-	// round size up to a power of two
-	int32_t size = 1 << (int32_t)ceilf(log2f((float)resolution));
+	// round size up to a power of two, log2f(0) would be -inf
+	int32_t size = 1 << (int32_t)ceilf(log2f((float)maxi(1, resolution)));
 
 	float    half_px = 0.5f / size;
 	int32_t  size2 = size * size;
@@ -2222,8 +2222,8 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 			light_pt = pt;
 	}
 
-	// round size up to a power of two
-	int32_t size = 1 << (int32_t)ceilf(log2f((float)face_size));
+	// round size up to a power of two, log2f(0) would be -inf
+	int32_t size = 1 << (int32_t)ceilf(log2f((float)maxi(1, face_size)));
 
 	float     half_px = 0.5f / size;
 	int32_t   size2 = size * size;

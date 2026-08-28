@@ -2507,16 +2507,16 @@ SK_API void                  render_list_pop          (void);
 
 ///////////////////////////////////////////
 
-/*This determines where lighting data comes from! The default is the
-  `Manual`, where the application provides all lighting via the `Lighting`
-  functions. Devices that can estimate lighting from the user's
-  surroundings also have the `World` option.*/
+/*This determines where lighting data comes from! The default is `Manual`,
+  where the application provides all lighting via the `Lighting` functions.
+  Devices that can estimate lighting from the user's surroundings also have
+  the `World` option.*/
 typedef enum lighting_source_ {
 	/*Lighting values are set manually by the application. Use the
 	  `Lighting` functions to configure the scene lighting.*/
 	lighting_source_manual,
 	/*Lighting data is pulled from the world via the device's light estimation
-	  capabilities. StereoKit will overwrite any data in `Lighting.Ambient`, 
+	  capabilities. StereoKit will overwrite any data in `Lighting.Ambient`,
 	  `MainLight`, and `Reflection` when using this source. You can check
 	  `Lighting.SourceAvailable` to see if this is supported before requesting
 	  it.*/
