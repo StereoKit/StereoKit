@@ -2208,9 +2208,9 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 	sh_window_fit_radiance(radiance);
 
 	// Calculate information used to create the light spot, which sits toward
-	// the light source, opposite the travel direction sh_dominant_dir gives.
-	vec3     light_dir = sh_dominant_dir(lookup);
-	color128 light_col = sh_lookup      (lookup, -light_dir) * light_spot_intensity;
+	// the light source.
+	vec3     light_to  = sh_dominant_dir_to(lookup);
+	color128 light_col = sh_lookup(lookup, light_to) * light_spot_intensity;
 	vec3     light_pt  = { 100000,100000,100000 };
 	for (int32_t i = 0; i < 6; i++) {
 		vec3 p1 = math_cubemap_corner(i * 4);
@@ -2218,7 +2218,7 @@ tex_t tex_gen_cubemap_sh(const spherical_harmonics_t& lookup, int32_t face_size,
 		vec3 p3 = math_cubemap_corner(i * 4 + 2);
 		plane_t plane = plane_from_points(p1, p2, p3);
 		vec3    pt;
-		if (plane_ray_intersect(plane, { vec3_zero, -light_dir }, &pt) && vec3_magnitude_sq(pt) < vec3_magnitude_sq(light_pt))
+		if (plane_ray_intersect(plane, { vec3_zero, light_to }, &pt) && vec3_magnitude_sq(pt) < vec3_magnitude_sq(light_pt))
 			light_pt = pt;
 	}
 

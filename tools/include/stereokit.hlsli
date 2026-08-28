@@ -13,6 +13,8 @@ cbuffer stereokit_buffer : register(b1) {
 	float4x4 sk_proj_inv   [SK_MAX_VIEWS];
 	float4x4 sk_viewproj   [SK_MAX_VIEWS];
 	float4   sk_lighting_sh[7];
+	float4   sk_light_dir_to; // Main light: .xyz = normalized direction toward it
+	float4   sk_light_color;  // .rgb = linear color, .w = 1 when a light exists
 	float4   sk_camera_pos [SK_MAX_VIEWS];
 	float4   sk_camera_dir [SK_MAX_VIEWS];
 	float4   sk_fingertip  [2];
@@ -111,7 +113,7 @@ float sk_aspect_ratio(uint view_id) {
 
 ///////////////////////////////////////////
 
-// System vertex IDs — multiview provides SV_ViewID via the driver,
+// System vertex IDs. Multiview provides SV_ViewID via the driver,
 // SV_InstanceID is the real instance index (no view packing).
 struct sk_ids_t {
 	uint inst : SV_InstanceID;

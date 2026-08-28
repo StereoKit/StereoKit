@@ -34,7 +34,6 @@ static const int   shadow_buffer_slot    = 13;
 
 static tex_t             shadow_map    = {};
 static material_buffer_t shadow_buffer = {};
-static vec3              light_dir     = {0.577f, 0.577f, 0.0f}; // normalized (1,1,0)
 
 static model_t    shadow_model      = {};
 static pose_t     shadow_model_pose = {};
@@ -98,18 +97,10 @@ void demo_shadows_init() {
 	old_tex        = render_get_skybox_tex();
 	old_reflection = lighting_get_reflection();
 
-	// Load the environment map. Lighting data comes from the reflection once
-	// it generates; the raw skybox no longer carries any.
-	tex_t env_tex    = tex_create_cubemap_file("old_depot.hdr");
-	tex_t reflection = nullptr;
-	lighting_set_environment(env_tex, &reflection);
-	if (reflection != nullptr) {
-		tex_on_load(reflection, [](tex_t t, void*) {
-			// Update light direction from dominant light
-			light_dir = vec3_normalize(sh_dominant_dir(tex_get_cubemap_lighting(t)));
-		}, nullptr);
-		tex_release(reflection); // tex_on_load keeps a reference
-	}
+	// The environment provides visuals and lighting, the shadow direction
+	// comes from lighting_get_main_light once the cubemap is done loading!
+	tex_t env_tex = tex_create_cubemap_file("old_depot.hdr");
+	lighting_set_environment(env_tex, nullptr);
 	tex_release(env_tex);
 
 	// Bind shadow buffer globally
@@ -118,17 +109,19 @@ void demo_shadows_init() {
 
 ///////////////////////////////////////////
 
-static void setup_shadow_map(vec3 light_direction) {
+static void setup_shadow_map() {
 	// Position the center of the shadow map in front of the user
-	pose_t head        = input_head();
+	pose_t     head  = input_head();
+	sh_light_t light = lighting_get_main_light();
+
 	vec3   head_fwd    = head.orientation * vec3_forward;
 	vec3   head_fwd_xz = vec3_normalize(vec3{head_fwd.x, 0, head_fwd.z});
 	vec3   head_pos_xz = vec3{head.position.x, 0, head.position.z};
 	vec3   forward_pos = head_pos_xz + head_fwd_xz * 0.5f * shadow_map_size;
 
-	quat light_orientation = quat_lookat_up(vec3_zero, light_direction, vec3_up);
+	quat light_orientation = quat_lookat_up(vec3_zero, -light.dir_to, vec3_up);
 	vec3 light_pos = quantize_light_pos(
-		forward_pos + light_direction * -10.0f,
+		forward_pos + light.dir_to * 10.0f,
 		light_orientation,
 		shadow_map_size / shadow_map_resolution
 	);
@@ -146,7 +139,7 @@ static void setup_shadow_map(vec3 light_direction) {
 	shadow_buffer_t buffer_data = {};
 	buffer_data.shadowmap_transform = matrix_transpose(matrix_invert(view) * proj);
 	buffer_data.shadowmap_bias      = bias;
-	buffer_data.light_direction     = -light_direction;
+	buffer_data.light_direction     = light.dir_to;
 	buffer_data.light_color         = vec3{1, 1, 1};
 	buffer_data.shadowmap_pixel_size = 1.0f / shadow_map_resolution;
 	material_buffer_set_data(shadow_buffer, &buffer_data);
@@ -168,7 +161,7 @@ static void setup_shadow_map(vec3 light_direction) {
 ///////////////////////////////////////////
 
 void demo_shadows_update() {
-	setup_shadow_map(light_dir);
+	setup_shadow_map();
 
 	// UI handle for the model
 	bounds_t model_bounds = model_get_bounds(shadow_model);

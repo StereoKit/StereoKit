@@ -113,6 +113,11 @@ void sh_brightness(spherical_harmonics_t &harmonics, float scale) {
 // shader_builtin_sh_compute.hlsl.
 static const float SH_PROJECT_NORM = 4.0f;
 
+// Orthonormal basis constants for bands 0 and 1, shared with the extraction
+// functions below, which invert this projection through them.
+static const float SH_BASIS_0 = 0.282094791773878140f;
+static const float SH_BASIS_1 = 0.488602511902919920f;
+
 void sh_add(spherical_harmonics_t &to, vec3 light_dir, vec3 light_color) {
 	light_dir = { -light_dir.x, -light_dir.y, light_dir.z };
 
@@ -128,11 +133,11 @@ void sh_add(spherical_harmonics_t &to, vec3 light_dir, vec3 light_color) {
 	const float s2 = light_dir.x*s1 + light_dir.y*c1;
 	const float c2 = light_dir.x*c1 - light_dir.y*s1;
 
-	to.coefficients[0] += light_color * 0.282094791773878140f;
-	to.coefficients[2] += light_color * 0.488602511902919920f*light_dir.z;
+	to.coefficients[0] += light_color * SH_BASIS_0;
+	to.coefficients[2] += light_color * SH_BASIS_1*light_dir.z;
 	to.coefficients[6] += light_color * (0.946174695757560080f*z2 + -0.315391565252520050f);
-	to.coefficients[1] += light_color * -0.488602511902919920f*s1;
-	to.coefficients[3] += light_color * -0.488602511902919920f*c1;
+	to.coefficients[1] += light_color * -SH_BASIS_1*s1;
+	to.coefficients[3] += light_color * -SH_BASIS_1*c1;
 	const float p_2_1 = -1.092548430592079200f*light_dir.z;
 	to.coefficients[5] += light_color * p_2_1*s1;
 	to.coefficients[7] += light_color * p_2_1*c1;
@@ -192,7 +197,7 @@ color128 sh_lookup_radiance(const spherical_harmonics_t &harmonics, vec3 dir) {
 
 ///////////////////////////////////////////
 
-vec3 sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics) {
+vec3 sh_dominant_dir_to(const sk_ref(spherical_harmonics_t) harmonics) {
 	// Reference from here:
 	// https://seblagarde.wordpress.com/2011/10/09/dive-in-sh-buffer-idea/
 	vec3 dir = {
@@ -200,11 +205,64 @@ vec3 sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics) {
 		harmonics.coefficients[1].x * 0.3f + harmonics.coefficients[1].y * 0.59f + harmonics.coefficients[1].z * 0.11f,
 		harmonics.coefficients[2].x * 0.3f + harmonics.coefficients[2].y * 0.59f + harmonics.coefficients[2].z * 0.11f };
 
-	// If no lighting data, default to light traveling down from above
+	// If no lighting data, default to a light shining down from above
 	if (vec3_magnitude_sq(dir) < 0.0001f)
-		return { 0, -1, 0 };
+		return { 0, 1, 0 };
 
-	return -vec3_normalize(dir);
+	return vec3_normalize(dir);
+}
+
+///////////////////////////////////////////
+
+// The directional light whose sh_add projection matches this SH's linear
+// band, pointing at the brightest region. Subtracting it back out via sh_add
+// removes exactly that light's own projection, so an environment with any
+// non-directional light left over keeps it. Pricing the light by the
+// reconstructed radiance instead over-subtracts badly: SH smears a light
+// across the whole sphere.
+sh_light_t sh_dominant_light(const spherical_harmonics_t &harmonics) {
+	vec3 dir = sh_dominant_dir_to(harmonics);
+
+	// Per channel amplitude of the linear band along dir, inverted through
+	// sh_add's projection scale for that band.
+	const float inv = 1.0f / (SH_PROJECT_NORM * SH_BASIS_1);
+	vec3 amp = {
+		dir.x*harmonics.coefficients[3].x + dir.y*harmonics.coefficients[1].x + dir.z*harmonics.coefficients[2].x,
+		dir.x*harmonics.coefficients[3].y + dir.y*harmonics.coefficients[1].y + dir.z*harmonics.coefficients[2].y,
+		dir.x*harmonics.coefficients[3].z + dir.y*harmonics.coefficients[1].z + dir.z*harmonics.coefficients[2].z };
+
+	sh_light_t result = {};
+	result.dir_to = dir;
+	result.color  = { fmaxf(0, amp.x*inv), fmaxf(0, amp.y*inv), fmaxf(0, amp.z*inv), 1 };
+	return result;
+}
+
+///////////////////////////////////////////
+
+// Removes a directional light from the SH, clamped per channel so band 0
+// never goes negative, then re-fit so the reconstruction stays that way.
+// Physically projected SH never clamps, but imported or runtime SH with an
+// oversized linear band can. Returns the light actually removed, which may
+// be dimmer than requested.
+sh_light_t sh_subtract_light(spherical_harmonics_t &harmonics, sh_light_t light) {
+	// A zero direction can't be normalized, and describes no light at all.
+	if (vec3_magnitude_sq(light.dir_to) < 0.000001f)
+		return sh_light_t{ light.dir_to, { 0, 0, 0, 1 } };
+	light.dir_to = vec3_normalize(light.dir_to);
+
+	// sh_add puts color * SH_PROJECT_NORM * Y0 into band 0.
+	const float to_dc = SH_PROJECT_NORM * SH_BASIS_0;
+	vec3 dc  = harmonics.coefficients[0];
+	vec3 col = {
+		fminf(fmaxf(0, light.color.r), fmaxf(0, dc.x) / to_dc),
+		fminf(fmaxf(0, light.color.g), fmaxf(0, dc.y) / to_dc),
+		fminf(fmaxf(0, light.color.b), fmaxf(0, dc.z) / to_dc) };
+
+	sh_add       (harmonics, light.dir_to, -col);
+	sh_window_fit(harmonics);
+
+	light.color = { col.x, col.y, col.z, 1 };
+	return light;
 }
 
 ///////////////////////////////////////////

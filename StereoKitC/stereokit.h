@@ -1032,18 +1032,18 @@ typedef enum permission_type_ {
 	  varies per-runtime.*/
 	permission_type_face_tracking,
 	/*For estimating ambient lighting from the user's surroundings, this is
-	  what world lighting mode feeds into Lighting.Ambient. This is typically
-	  an interactive permission that the user will need to explicitly
-	  approve.
+	  what the world lighting source feeds into Lighting.Ambient. This is
+	  typically an interactive permission that the user will need to
+	  explicitly approve.
 
 	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
 	  XR, but varies per-runtime.*/
 	permission_type_ambient_estimation,
 	/*For estimating an environment cubemap from the user's surroundings,
-	  this is what world lighting mode feeds into Lighting.Reflection. The
-	  estimate shows imagery of the user's space, so runtimes may treat it
-	  more strictly than ambient estimation. This is typically an interactive
-	  permission that the user will need to explicitly approve.
+	  this is what the world lighting source feeds into Lighting.Reflection.
+	  The estimate shows imagery of the user's space, so runtimes may treat
+	  it more strictly than ambient estimation. This is typically an
+	  interactive permission that the user will need to explicitly approve.
 
 	  This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
 	  but varies per-runtime.*/
@@ -1370,8 +1370,14 @@ SK_API void       gradient_destroy    (gradient_t gradient);
 
   Coefficient convention: band 0 [0]=constant; band 1 [1]=y, [2]=z, [3]=x;
   band 2 [4]=xy, [5]=yz, [6]=3z^2-1, [7]=xz, [8]=x^2-y^2. All basis signs
-  are positive, so a light from above lands as a _positive_ [1], and the
-  linear band ([3], [1], [2]) points _toward_ the brightest region.
+  are positive (no Condon-Shortley phase), so a light from above lands as
+  a _positive_ [1], and the linear band ([3], [1], [2]) points _toward_
+  the brightest region.
+
+  Values are radiance in the orthonormal real SH basis: basis constants
+  are applied at evaluation rather than baked into the coefficients, and
+  no cosine lobe is applied. Convolution to irradiance happens when this
+  bakes down into StereoKit's shader constants.
 
   Watch out when importing coefficients from elsewhere: SH sign
   conventions vary (Condon-Shortley phase), and many libraries (ARCore,
@@ -1391,11 +1397,13 @@ typedef struct sh_light_t {
 	color128 color;
 } sh_light_t;
 
-SK_API spherical_harmonics_t sh_create      (const sh_light_t* in_arr_lights, int32_t light_count);
-SK_API void                  sh_brightness  (      sk_ref(spherical_harmonics_t) ref_harmonics, float scale);
-SK_API void                  sh_add         (      sk_ref(spherical_harmonics_t) ref_harmonics, vec3 light_dir, vec3 light_color);
-SK_API color128              sh_lookup      (const sk_ref(spherical_harmonics_t) harmonics, vec3 normal);
-SK_API vec3                  sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics);
+SK_API spherical_harmonics_t sh_create         (const sh_light_t* in_arr_lights, int32_t light_count);
+SK_API void                  sh_brightness     (      sk_ref(spherical_harmonics_t) ref_harmonics, float scale);
+SK_API void                  sh_add            (      sk_ref(spherical_harmonics_t) ref_harmonics, vec3 light_dir, vec3 light_color);
+SK_API color128              sh_lookup         (const sk_ref(spherical_harmonics_t) harmonics, vec3 normal);
+SK_API vec3                  sh_dominant_dir_to(const sk_ref(spherical_harmonics_t) harmonics);
+SK_API sh_light_t            sh_dominant_light (const sk_ref(spherical_harmonics_t) harmonics);
+SK_API sh_light_t            sh_subtract_light (      sk_ref(spherical_harmonics_t) ref_harmonics, sh_light_t light);
 
 ///////////////////////////////////////////
 
@@ -2434,9 +2442,6 @@ SK_API void                  render_set_skybox_visible (bool32_t visible);
 SK_API bool32_t              render_get_skybox_visible (void);
 SK_API void                  render_set_skybox_material(material_t skybox_material);
 SK_API material_t            render_get_skybox_material(void);
-// Deprecated, use lighting_set_ambient / lighting_get_ambient
-SK_API SK_DEPRECATED void    render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
-SK_API SK_DEPRECATED spherical_harmonics_t render_get_skylight   (void);
 SK_API void                  render_set_filter     (render_layer_ layer_filter);
 SK_API render_layer_         render_get_filter     (void);
 SK_API void                  render_set_scaling    (float display_tex_scale);
@@ -2502,36 +2507,54 @@ SK_API void                  render_list_pop          (void);
 
 ///////////////////////////////////////////
 
-/*This determines how scene lighting is sourced. The default is manual
-  mode, where the application provides all lighting via the Lighting
-  functions. Devices that can estimate lighting from their surroundings
-  also offer world mode as an explicit opt-in.*/
-typedef enum lighting_mode_ {
+/*This determines where lighting data comes from! The default is the
+  `Manual`, where the application provides all lighting via the `Lighting`
+  functions. Devices that can estimate lighting from the user's
+  surroundings also have the `World` option.*/
+typedef enum lighting_source_ {
 	/*Lighting values are set manually by the application. Use the
-	  Lighting functions to configure the scene lighting.*/
-	lighting_mode_manual,
-	/*Lighting is sourced from the real world via the device's light
-	  estimation capabilities. The Lighting functions will have no
-	  effect in this mode, and values set here are not saved for when it
-	  ends, so re-apply your own lighting after switching away. You can
-	  check Lighting.ModeAvailable to see if this is supported before
-	  requesting it.*/
-	lighting_mode_world,
-	/*Only returned when reading the lighting mode: world lighting was
-	  requested, and StereoKit is waiting on a permission request. This
-	  settles to world mode on grant, or manual mode on denial, generally
-	  within moments. Requesting this mode does nothing.*/
-	lighting_mode_world_pending,
+	  `Lighting` functions to configure the scene lighting.*/
+	lighting_source_manual,
+	/*Lighting data is pulled from the world via the device's light estimation
+	  capabilities. StereoKit will overwrite any data in `Lighting.Ambient`, 
+	  `MainLight`, and `Reflection` when using this source. You can check
+	  `Lighting.SourceAvailable` to see if this is supported before requesting
+	  it.*/
+	lighting_source_world,
+} lighting_source_;
+
+/*This determines what form scene lighting takes: all of it can fold into
+  the ambient probe, or the dominant directional light can be separated
+  out from it. This shapes lighting derived from an environment: both the
+  world source's estimates, and what Lighting.SetEnvironment derives from
+  its cubemap. Changing the mode re-delivers the scene's most recent full
+  lighting in the new shape, replacing Ambient and MainLight.*/
+typedef enum lighting_mode_ {
+	/*All light folds into the Ambient probe. This is the default.
+	  MainLight still reports the dominant directional light, but as
+	  information only: its energy remains inside Ambient, so it suits
+	  things like shadow direction, not additional shading.*/
+	lighting_mode_ambient,
+	/*The dominant directional light is separated out into MainLight, and
+	  Ambient carries only the remainder. This is for applications that
+	  render that light themselves, such as for shadow casting, since
+	  otherwise its energy is counted twice.*/
+	lighting_mode_main_light,
 } lighting_mode_;
 
-SK_API bool32_t              lighting_mode_available  (lighting_mode_ mode);
-SK_API void                  lighting_request_mode    (lighting_mode_ mode);
-SK_API lighting_mode_        lighting_get_mode        (void);
-SK_API void                  lighting_set_environment (tex_t sky_cubemap, tex_t* out_reflection sk_default(nullptr));
-SK_API void                  lighting_set_ambient     (const sk_ref(spherical_harmonics_t) ambient_lighting);
-SK_API spherical_harmonics_t lighting_get_ambient     (void);
-SK_API void                  lighting_set_reflection  (tex_t ibl_cubemap);
-SK_API tex_t                 lighting_get_reflection  (void);
+SK_API bool32_t              lighting_source_available (lighting_source_ source);
+SK_API void                  lighting_request_source   (lighting_source_ source);
+SK_API lighting_source_      lighting_get_source       (void);
+SK_API bool32_t              lighting_source_pending   (void);
+SK_API void                  lighting_set_mode         (lighting_mode_ mode);
+SK_API lighting_mode_        lighting_get_mode         (void);
+SK_API void                  lighting_set_main_light   (const sk_ref(sh_light_t) light);
+SK_API sh_light_t            lighting_get_main_light   (void);
+SK_API void                  lighting_set_environment  (tex_t sky_cubemap, tex_t* out_reflection sk_default(nullptr));
+SK_API void                  lighting_set_ambient      (const sk_ref(spherical_harmonics_t) ambient_lighting);
+SK_API spherical_harmonics_t lighting_get_ambient      (void);
+SK_API void                  lighting_set_reflection   (tex_t ibl_cubemap);
+SK_API tex_t                 lighting_get_reflection   (void);
 
 ///////////////////////////////////////////
 

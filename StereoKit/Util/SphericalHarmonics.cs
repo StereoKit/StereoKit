@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace StereoKit
 {
@@ -7,7 +8,8 @@ namespace StereoKit
 	[StructLayout(LayoutKind.Sequential)]
 	public struct SHLight
 	{
-		/// <summary>Direction to the light source.</summary>
+		/// <summary>Direction to the light source. StereoKit expects this
+		/// normalized, and anything it hands back is.</summary>
 		public Vec3 directionTo;
 		/// <summary>Color of the light in linear space! Values here can
 		/// exceed 1.</summary>
@@ -19,7 +21,7 @@ namespace StereoKit
 	/// out [here](http://www.ppsloan.org/publications/StupidSH36.pdf) for
 	/// more details about how Spherical Harmonics work in this context!
 	/// 
-	/// However, the more prctical thing is, SH can be a function that
+	/// However, the more practical thing is, SH can be a function that
 	/// describes a value over the surface of a sphere! This is particularly
 	/// useful for lighting, since you can basically store the lighting
 	/// information for a space in this value! This is often used for
@@ -28,15 +30,26 @@ namespace StereoKit
 	/// looks quite good, and is really fast! That's extremely great when
 	/// you're trying to hit 60fps, or even 144fps.
 	///
-	/// StereoKit's coefficient convention: each coefficient field documents
-	/// the basis term it stores, and all basis signs are positive, so a
-	/// light from above lands as a _positive_ `coefficient2` (the linear y
-	/// term), and the linear band points _toward_ the brightest region.
-	/// Watch out when importing coefficients from elsewhere: SH sign
-	/// conventions vary, and many libraries (ARCore, DirectXMath) flip the
-	/// odd terms (coefficients 2, 4, 6, and 8) relative to this. If
-	/// imported lighting shows up rotated 180 degrees, with up reading as
-	/// down, negate those four.</summary>
+	/// StereoKit's SH format at a glance, both for this CPU side struct, and
+	/// for the GPU side representation:
+	///
+	/// | Choice        | SphericalHarmonics struct            | Shader constants          |
+	/// |---------------|--------------------------------------|---------------------------|
+	/// | Basis phase   | No Condon-Shortley phase             | Same                      |
+	/// | Normalization | Orthonormal, constants at eval time  | Constants pre-baked       |
+	/// | Domain        | Radiance, no cosine lobe             | Irradiance, lobe baked in |
+	/// | Packing       | Bands ascending, RGB per coefficient | 7 Vec4s, dot-product form |
+	///
+	/// This struct is the CPU side format! Math and imports happen
+	/// here, and StereoKit converts it to the baked shader form once per
+	/// lighting change. With no phase factor, all basis signs are
+	/// positive, so a light from above lands as a _positive_ `coefficient2`
+	/// (the linear y term), and the linear band points _toward_ the
+	/// brightest region. Watch out when importing coefficients from
+	/// elsewhere as many libraries (ARCore, DirectXMath) include the phase
+	/// factor, flipping the odd terms (coefficients 2, 4, 6, and 8)
+	/// relative to this. If imported lighting shows up rotated 180
+	/// degrees, with up reading as down, negate those four!</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public struct SphericalHarmonics
 	{
@@ -59,15 +72,25 @@ namespace StereoKit
 		/// <summary>Band 2, the x^2-y^2 term.</summary>
 		public Vec3 coefficient9;
 
+		/// <summary>The direction toward the strongest light source in this
+		/// lighting data, following the same convention as
+		/// `SHLight.directionTo`. The value is normalized, and sampling the
+		/// light's color is `sh.Sample(sh.DominantLightDirectionTo)`.
+		/// </summary>
+		public Vec3 DominantLightDirectionTo => NativeAPI.sh_dominant_dir_to(this);
+
+		/// <summary>The dominant directional light in this lighting data,
+		/// the same derivation `Lighting.MainLight` uses! The direction is
+		/// normalized, and the color is the projection matched directional
+		/// component: the light you could remove from this SH, or add back
+		/// on top of it.</summary>
+		public SHLight DominantLight => NativeAPI.sh_dominant_light(this);
+
 		/// <summary>The direction the dominant light is _traveling_,
 		/// pointing away from the light source, the opposite of
-		/// `SHLight.directionTo`. The direction value is normalized.
-		///
-		/// Since this points away from the light, negate it to look _at_
-		/// the light, like when sampling the light's color with the
-		/// struct's Sample method:
-		/// `light.Sample(-light.DominantLightDirection)`. </summary>
-		public Vec3 DominantLightDirection => NativeAPI.sh_dominant_dir(this);
+		/// `SHLight.directionTo`.</summary>
+		[Obsolete("Use -DominantLightDirectionTo instead. Note the negation!")]
+		public Vec3 DominantLightDirection => -NativeAPI.sh_dominant_dir_to(this);
 
 		/// <summary>Creates a SphericalHarmonic from an array of
 		/// coefficients. Useful for loading stored data!</summary>
@@ -118,6 +141,17 @@ namespace StereoKit
 		/// space. Values can exceed 1.</param>
 		public void Add(Vec3 lightDir, Color lightColor)
 			=> NativeAPI.sh_add(ref this, lightDir, new Vec3(lightColor.r, lightColor.g, lightColor.b));
+
+		/// <summary>Removes a directional light from this lighting data,
+		/// clamped to the light actually present so the result stays
+		/// physical. Pairs with `DominantLight` for splitting the dominant
+		/// light out of an SH, the way `Lighting.MainLight` does.</summary>
+		/// <param name="light">The light to remove, such as one from
+		/// `DominantLight`.</param>
+		/// <returns>The light actually removed, which may be dimmer than
+		/// requested when this SH doesn't contain that much light.</returns>
+		public SHLight SubtractLight(SHLight light)
+			=> NativeAPI.sh_subtract_light(ref this, light);
 
 		/// <summary>Scales all the SphericalHarmonic's coefficients! This
 		/// behaves as if you're modifying the brightness of the lighting

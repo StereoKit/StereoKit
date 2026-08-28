@@ -17,6 +17,8 @@ bool xr_ext_light_estimation_start            (void);
 void xr_ext_light_estimation_stop             (void);
 bool xr_ext_light_estimation_update_sh        (spherical_harmonics_t* ref_sh);
 
+bool xr_ext_light_estimation_get_split        (spherical_harmonics_t* out_ambient, sh_light_t* out_light);
+
 // True when the system can provide cubemap light estimates at all. Starting
 // them also needs permission_type_reflection_estimation.
 bool xr_ext_light_estimation_cubemap_available(void);

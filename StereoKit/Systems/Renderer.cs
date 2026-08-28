@@ -83,14 +83,15 @@ namespace StereoKit
 			set => SkyboxMaterial = value;
 		}
 
-		/// <summary>Sets the lighting information for the scene! You can
-		/// build one through `SphericalHarmonics.FromLights`, or grab one
-		/// from `Tex.FromEquirectangular` or `Tex.GenCubemap`</summary>
+		/// <summary>Scene lighting moved to its own class with the
+		/// skybox/lighting split, this is `Lighting.Ambient` now. You can
+		/// still build one through `SphericalHarmonics.FromLights`, or let
+		/// `Lighting.SetEnvironment` derive one from a cubemap.</summary>
 		[Obsolete("Use Lighting.Ambient")]
 		public static SphericalHarmonics SkyLight
 		{
-			set => NativeAPI.render_set_skylight(value);
-			get => NativeAPI.render_get_skylight();
+			get => Lighting.Ambient;
+			set => Lighting.Ambient = value;
 		}
 
 		/// <summary>Is the skybox backdrop drawn? On by default on Opaque
@@ -610,9 +611,9 @@ namespace StereoKit
 		/// <summary>Sets the main display's post-process chain! The
 		/// Materials apply in array order, at most 2 per pass, and calling
 		/// this with no arguments clears the chain. Post-processing here is
-		/// tile-renderer friendly: effects run as subpasses that stay in
+		/// tile-renderer friendly! Effects run as subpasses that stay in
 		/// tile memory on mobile GPUs, and they apply to the main display
-		/// and to screenshots - what you see is what you shoot.
+		/// and to screenshots.
 		///
 		/// A post-process Material's shader reads the scene through a
 		/// pixel-local input attachment named 'color' (in HLSL,

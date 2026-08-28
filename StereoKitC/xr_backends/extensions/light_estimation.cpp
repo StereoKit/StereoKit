@@ -93,6 +93,9 @@ typedef struct xr_light_estimation_state_t {
 	XrTime                    last_update;
 	bool                      sh_updated;
 	sk::spherical_harmonics_t sh_data;
+	bool                      split_valid;
+	sk::spherical_harmonics_t ambient_data;
+	sk::sh_light_t            light_data;
 
 	// XR_ANDROID_light_estimation_cubemap
 	bool                                cubemap_available;
@@ -254,6 +257,21 @@ void xr_ext_android_light_estimation_shutdown(void*) {
 
 ///////////////////////////////////////////
 
+// ARCore's SH basis sign-flips the odd-m terms relative to StereoKit's (see
+// sh_add), so unconverted coefficients light the scene rotated 180 degrees
+// around Z, where a ceiling light reads as a floor light. Negate the terms
+// odd under (x,y) -> (-x,-y). Verified on Galaxy XR against the room's real
+// lighting.
+static void _sh_from_android(spherical_harmonics_t* out_sh, const float coefficients[9][3]) {
+	memcpy(out_sh->coefficients, coefficients, sizeof(out_sh->coefficients));
+	out_sh->coefficients[1] = -out_sh->coefficients[1];
+	out_sh->coefficients[3] = -out_sh->coefficients[3];
+	out_sh->coefficients[5] = -out_sh->coefficients[5];
+	out_sh->coefficients[7] = -out_sh->coefficients[7];
+}
+
+///////////////////////////////////////////
+
 void xr_ext_android_light_estimation_step_begin(void*) {
 	if (!local.started) return;
 
@@ -274,14 +292,20 @@ void xr_ext_android_light_estimation_step_begin(void*) {
 	// servicing a cubemap request costs the runtime real GPU time
 	// (reprojection + readback) every call, whether or not the estimate
 	// changed. xr_ext_light_estimation_fetch_reflection pulls it on demand.
-	XrSphericalHarmonicsANDROID  sh       = {(XrStructureType)XR_TYPE_SPHERICAL_HARMONICS_ANDROID};
-	XrLightEstimateANDROID       estimate = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATE_ANDROID};
-	estimate.next = &sh;
-	// KIND_TOTAL bakes the main light into the SH, which is what StereoKit
-	// needs, since its PBR shading has no analytic light to add back. The
-	// Android docs describe TOTAL/AMBIENT backwards (as of 2026-07); device
-	// captures confirm TOTAL's DC term carries the full environment's energy.
-	sh.kind = XR_SPHERICAL_HARMONICS_KIND_TOTAL_ANDROID;
+	//
+	// The Android docs describe TOTAL/AMBIENT backwards (as of 2026-07);
+	// device captures confirm TOTAL's DC term carries the full environment's
+	// energy. TOTAL feeds ambient lighting and reflections, while AMBIENT
+	// plus the directional light form the runtime's main light split.
+	XrSphericalHarmonicsANDROID sh          = {(XrStructureType)XR_TYPE_SPHERICAL_HARMONICS_ANDROID};
+	XrSphericalHarmonicsANDROID sh_ambient  = {(XrStructureType)XR_TYPE_SPHERICAL_HARMONICS_ANDROID};
+	XrDirectionalLightANDROID   directional = {(XrStructureType)XR_TYPE_DIRECTIONAL_LIGHT_ANDROID};
+	XrLightEstimateANDROID      estimate    = {(XrStructureType)XR_TYPE_LIGHT_ESTIMATE_ANDROID};
+	estimate  .next = &sh;
+	sh        .next = &sh_ambient;
+	sh_ambient.next = &directional;
+	sh        .kind = XR_SPHERICAL_HARMONICS_KIND_TOTAL_ANDROID;
+	sh_ambient.kind = XR_SPHERICAL_HARMONICS_KIND_AMBIENT_ANDROID;
 	XrResult result = xrGetLightEstimateANDROID(local.estimator, &info, &estimate);
 	if (XR_FAILED(result)) {
 		log_warnf("%s: [%s]", "xrGetLightEstimateANDROID", openxr_string(result));
@@ -291,17 +315,20 @@ void xr_ext_android_light_estimation_step_begin(void*) {
 	if (local.last_update != estimate.lastUpdatedTime) {
 		local.last_update = estimate.lastUpdatedTime;
 		if (sh.state == XR_LIGHT_ESTIMATE_STATE_VALID_ANDROID) {
-			memcpy(local.sh_data.coefficients, sh.coefficients, sizeof(local.sh_data.coefficients));
-			// ARCore's SH basis sign-flips the odd-m terms relative to
-			// StereoKit's (see sh_add), so unconverted coefficients light the
-			// scene rotated 180 degrees around Z, where a ceiling light reads
-			// as a floor light. Negate the terms odd under (x,y) -> (-x,-y).
-			// Verified on Galaxy XR against the room's real lighting.
-			local.sh_data.coefficients[1] = -local.sh_data.coefficients[1];
-			local.sh_data.coefficients[3] = -local.sh_data.coefficients[3];
-			local.sh_data.coefficients[5] = -local.sh_data.coefficients[5];
-			local.sh_data.coefficients[7] = -local.sh_data.coefficients[7];
+			_sh_from_android(&local.sh_data, sh.coefficients);
 			local.sh_updated = true;
+		}
+
+		local.split_valid =
+			sh_ambient .state == XR_LIGHT_ESTIMATE_STATE_VALID_ANDROID &&
+			directional.state == XR_LIGHT_ESTIMATE_STATE_VALID_ANDROID;
+		if (local.split_valid) {
+			_sh_from_android(&local.ambient_data, sh_ambient.coefficients);
+			// The runtime reports the direction the light travels, while
+			// dir_to points back at the light. Device-verified: unnegated,
+			// the light lands mirrored, subtracting the wrong sky side.
+			local.light_data.dir_to = { -directional.direction.x, -directional.direction.y, -directional.direction.z };
+			local.light_data.color  = { directional.intensity.x, directional.intensity.y, directional.intensity.z, 1 };
 		}
 	}
 }
@@ -312,7 +339,7 @@ bool xr_ext_android_light_estimation_available() {
 	if (!local.available) return false;
 
 	// 'unavailable' means the permission isn't in the AndroidManifest, so it
-	// can never be granted. 'capable' is fine; lighting_request_mode asks.
+	// can never be granted. 'capable' is fine; lighting_request_source asks.
 	// 'unknown' means StereoKit has no permission string registered for this
 	// runtime at all, so try the feature: the runtime enforces its own
 	// permissions, and estimator creation fails cleanly if it minds.
@@ -383,6 +410,7 @@ void xr_ext_light_estimation_stop() {
 	}
 	local.started         = false;
 	local.cubemap_started = false;
+	local.split_valid     = false;
 }
 
 ///////////////////////////////////////////
@@ -394,6 +422,15 @@ bool xr_ext_light_estimation_update_sh(spherical_harmonics_t* ref_sh) {
 		return true;
 	}
 	return false;
+}
+
+///////////////////////////////////////////
+
+bool xr_ext_light_estimation_get_split(spherical_harmonics_t* out_ambient, sh_light_t* out_light) {
+	if (!local.split_valid) return false;
+	*out_ambient = local.ambient_data;
+	*out_light   = local.light_data;
+	return true;
 }
 
 ///////////////////////////////////////////

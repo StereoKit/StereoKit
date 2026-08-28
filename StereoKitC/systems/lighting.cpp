@@ -30,19 +30,28 @@ struct lighting_state_t {
 	tex_t                   sky_tex;
 	tex_t                   sky_pending_tex;
 
+	lighting_source_        source;
 	lighting_mode_          mode;
 	vec4                    ambient[7];
 	spherical_harmonics_t   ambient_src;
+	sh_light_t              main_light;          // black color means none
+	vec4                    main_light_fast[2];  // shader copy, dir + color
 	tex_t                   reflection;
 	tex_t                   reflection_pending_tex;
 	tex_t                   reflection_default;  // restored when set to null
-	bool                    ambient_auto_pending; // reflection SH -> ambient
+	bool                    env_apply_pending;   // reflection SH -> derived lighting
+	bool                    env_skip_ambient;    // env_apply_pending skips ambient
+	bool                    env_skip_main_light; // env_apply_pending skips main light
+	tex_t                   env_pending_tex;     // SetEnvironment's reflection, the
+	                                             // SH source while pending
 	tex_t                   world_env;           // raw environment estimate
 	tex_t                   world_reflection;    // the estimate, convolved
 	spherical_harmonics_t   world_reflected_sh;  // SH at the last reflection rebuild
 	bool                    world_reflected;     // world_reflection has been built
+	spherical_harmonics_t   env_sh;              // SH lighting was derived from
+	bool                    env_sh_valid;        // env_sh has been received
 
-	bool                    pending_world_permission; // world mode starts on grant
+	bool                    pending_world_permission; // world source starts on grant
 };
 static lighting_state_t local = {};
 
@@ -50,6 +59,8 @@ static lighting_state_t local = {};
 
 static void _lighting_set_reflection(tex_t ibl_cubemap);
 static void _lighting_set_ambient   (const spherical_harmonics_t& ambient_lighting);
+static void _lighting_set_main_light(const sh_light_t& light);
+static void _lighting_apply_sh      (const spherical_harmonics_t& sh, bool skip_ambient, bool skip_main_light);
 
 ///////////////////////////////////////////
 
@@ -103,18 +114,13 @@ static void check_pending_skytex() {
 ///////////////////////////////////////////
 
 static void check_pending_reflection() {
-	bool  had_pending = local.reflection_pending_tex != nullptr;
-	tex_t tex         = check_pending_cubemap(&local.reflection_pending_tex, "Reflection texture");
+	tex_t tex = check_pending_cubemap(&local.reflection_pending_tex, "Reflection texture");
 	if (tex != nullptr) {
 		if (local.reflection != nullptr) tex_release(local.reflection);
 		local.reflection = tex;
 
 		// Shaders read the reflection cubemap from the sk_cubemap global.
 		render_global_texture(render_reflection_register, local.reflection);
-	} else if (had_pending && local.reflection_pending_tex == nullptr) {
-		// The pending reflection died, and deriving ambient from whatever
-		// reflection came before it would apply stale lighting.
-		local.ambient_auto_pending = false;
 	}
 }
 
@@ -124,15 +130,26 @@ void lighting_check_pending() {
 	check_pending_skytex();
 	check_pending_reflection();
 
-	// A loaded reflection always carries its lighting data, so this settles
-	// the same frame generation finishes. The pending check keeps a stale
-	// result from applying mid-regeneration.
-	if (local.ambient_auto_pending &&
-	    local.mode                   != lighting_mode_world &&
-	    local.reflection             != nullptr &&
-	    local.reflection_pending_tex == nullptr) {
-		_lighting_set_ambient(tex_get_cubemap_lighting(local.reflection));
-		local.ambient_auto_pending = false;
+	// The generated reflection carries its lighting data once it loads. It's
+	// tracked apart from the bound reflection, so an explicit Reflection
+	// assignment replaces only the visual, not this pending derivation.
+	if (local.env_apply_pending && local.source != lighting_source_world) {
+		asset_state_ state = tex_asset_state(local.env_pending_tex);
+		if (state < 0) {
+			// The environment died, so its lighting never arrives.
+			tex_release(local.env_pending_tex);
+			local.env_pending_tex   = nullptr;
+			local.env_apply_pending = false;
+		} else if (state >= asset_state_loaded) {
+			local.env_sh       = tex_get_cubemap_lighting(local.env_pending_tex);
+			local.env_sh_valid = true;
+			_lighting_apply_sh(local.env_sh, local.env_skip_ambient, local.env_skip_main_light);
+			tex_release(local.env_pending_tex);
+			local.env_pending_tex     = nullptr;
+			local.env_apply_pending   = false;
+			local.env_skip_ambient    = false;
+			local.env_skip_main_light = false;
+		}
 	}
 }
 
@@ -173,7 +190,11 @@ bool lighting_init() {
 		lighting_set_reflection(local.reflection_default);
 	}
 
-	lighting_set_ambient(sk_default_lighting);
+	// The default lighting counts as environment-derived:
+	// lighting_set_mode can re-shape it, and MainLight derives from it.
+	local.env_sh       = sk_default_lighting;
+	local.env_sh_valid = true;
+	_lighting_apply_sh(sk_default_lighting, false, false);
 
 	tex_release(sky_cubemap);
 
@@ -191,14 +212,14 @@ void lighting_step() {
 		permission_state_ state = permission_state(permission_type_ambient_estimation);
 		if (state == permission_state_granted) {
 			local.pending_world_permission = false;
-			lighting_request_mode(lighting_mode_world);
+			lighting_request_source(lighting_source_world);
 		} else if (state != permission_state_requesting) {
 			// Denied, or otherwise settled without a grant. Stay in manual.
 			local.pending_world_permission = false;
 		}
 	}
 
-	if (local.mode == lighting_mode_world) {
+	if (local.source == lighting_source_world) {
 		spherical_harmonics_t sh;
 		// Ambient is cheap to apply, so it tracks every estimate. Rebuilding
 		// the reflection is not (a runtime cubemap render + readback, then a
@@ -207,7 +228,11 @@ void lighting_step() {
 		// *rebuilt* SH rather than the previous frame's lets slow drift
 		// accumulate until it crosses the threshold instead of never firing.
 		if (xr_ext_light_estimation_update_sh(&sh)) {
-			_lighting_set_ambient(sh);
+			// Reflections represent the whole environment, so they always work
+			// from the total estimate, never the main light remainder.
+			local.env_sh       = sh;
+			local.env_sh_valid = true;
+			_lighting_apply_sh(sh, false, false);
 
 			// A rebuild can't reuse the reflection texture until its previous
 			// generation task has landed; skip and let later estimates retry.
@@ -229,7 +254,7 @@ void lighting_step() {
 						tex_addref(env);
 					}
 				} else {
-					env = tex_gen_cubemap_sh(local.ambient_src, SK_LIGHTING_REFLECTION_SIZE / 2, 0.2f, 2.0f);
+					env = tex_gen_cubemap_sh(local.env_sh, SK_LIGHTING_REFLECTION_SIZE / 2, 0.2f, 2.0f);
 				}
 
 				if (env != nullptr) {
@@ -276,6 +301,7 @@ void lighting_shutdown() {
 	tex_release     (local.reflection);
 	tex_release     (local.reflection_pending_tex);
 	tex_release     (local.reflection_default);
+	tex_release     (local.env_pending_tex);
 	tex_release     (local.world_env);
 	tex_release     (local.world_reflection);
 	material_release(local.sky_mat_default);
@@ -341,18 +367,6 @@ material_t render_get_skybox_material(void) {
 
 ///////////////////////////////////////////
 
-void render_set_skylight(const spherical_harmonics_t &light_info) {
-	lighting_set_ambient(light_info);
-}
-
-///////////////////////////////////////////
-
-spherical_harmonics_t render_get_skylight() {
-	return lighting_get_ambient();
-}
-
-///////////////////////////////////////////
-
 void render_set_skybox_visible(bool32_t visible) {
 	local.sky_show = visible;
 }
@@ -371,35 +385,37 @@ const vec4* lighting_get_lighting() {
 
 ///////////////////////////////////////////
 
-bool32_t lighting_mode_available(lighting_mode_ mode) {
-	switch (mode) {
-	case lighting_mode_manual: return true;
-	case lighting_mode_world:  return xr_ext_android_light_estimation_available();
-	default:                   return false;
+const vec4* lighting_get_main_light_fast() {
+	return local.main_light_fast;
+}
+
+///////////////////////////////////////////
+
+bool32_t lighting_source_available(lighting_source_ source) {
+	switch (source) {
+	case lighting_source_manual: return true;
+	case lighting_source_world:  return xr_ext_android_light_estimation_available();
+	default:                     return false;
 	}
 }
 
 ///////////////////////////////////////////
 
-void lighting_request_mode(lighting_mode_ mode) {
-	if (mode == lighting_mode_world_pending) {
-		log_warn("lighting_request_mode: world_pending is a read-only status, not a requestable mode.");
-		return;
-	}
-	if (mode == lighting_mode_world && !lighting_mode_available(lighting_mode_world)) {
-		log_warn("lighting_request_mode: world lighting isn't available here, see lighting_mode_available.");
+void lighting_request_source(lighting_source_ source) {
+	if (source == lighting_source_world && !lighting_source_available(lighting_source_world)) {
+		log_warn("lighting_request_source: world lighting isn't available here, see lighting_source_available.");
 		return;
 	}
 
 	// A non-world request cancels a pending world permission request even
-	// when the mode is unchanged, since pending requests apply on grant.
-	if (mode != lighting_mode_world)
+	// when the source is unchanged, since pending requests apply on grant.
+	if (source != lighting_source_world)
 		local.pending_world_permission = false;
 
-	if (local.mode == mode) return;
+	if (local.source == source) return;
 
-	if (mode == lighting_mode_world) {
-		// Ambient estimation gates world mode itself, while reflection
+	if (source == lighting_source_world) {
+		// Ambient estimation gates the world source itself, while reflection
 		// estimation additionally unlocks cubemap estimates. Denied
 		// permissions are only re-asked by an explicit permission_request.
 		permission_type_ request[2];
@@ -416,50 +432,82 @@ void lighting_request_mode(lighting_mode_ mode) {
 		permission_state_ perms = permission_state(permission_type_ambient_estimation);
 
 		if (perms != permission_state_granted && perms != permission_state_unknown) {
-			// While the request is in flight, world mode applies on grant.
-			// Anything else just settles in manual mode, which the app can
-			// see for itself in lighting_get_mode and permission_state.
+			// While the request is in flight, the world source applies on
+			// grant. Anything else just settles in manual, which the app can
+			// see for itself in lighting_get_source and permission_state.
 			// 'unknown' proceeds instead: StereoKit has no permission string
 			// for this runtime, so the runtime arbitrates on its own when
 			// estimation starts.
 			if (perms == permission_state_requesting)
 				local.pending_world_permission = true;
-			mode = lighting_mode_manual;
+			source = lighting_source_manual;
 		}
 	}
 
-	// Stop light estimation if we're leaving world mode
-	if (local.mode == lighting_mode_world) {
+	// Stop light estimation if we're leaving the world source
+	if (local.source == lighting_source_world) {
 		xr_ext_light_estimation_stop();
 	}
 
-	local.mode = mode;
+	local.source = source;
 
-	// Start light estimation if we're entering world mode. Force a
-	// reflection rebuild on entry: manual mode may have replaced the bound
-	// reflection since the last world session.
-	if (mode == lighting_mode_world) {
+	// Start light estimation if we're entering the world source. Force a
+	// reflection rebuild on entry: the manual source may have replaced the
+	// bound reflection since the last world session.
+	if (source == lighting_source_world) {
 		if (!xr_ext_light_estimation_start()) {
 			// The extension warns with the reason on its own.
-			local.mode = lighting_mode_manual;
+			local.source = lighting_source_manual;
 			return;
 		}
-		local.world_reflected = false;
+		local.world_reflected     = false;
+		local.env_sh_valid        = false;
+		local.env_apply_pending   = false;
+		local.env_skip_ambient    = false;
+		local.env_skip_main_light = false;
+		if (local.env_pending_tex != nullptr) {
+			tex_release(local.env_pending_tex);
+			local.env_pending_tex = nullptr;
+		}
 	}
 }
 
 ///////////////////////////////////////////
 
+lighting_source_ lighting_get_source(void) {
+	return local.source;
+}
+
+///////////////////////////////////////////
+
+bool32_t lighting_source_pending(void) {
+	return local.pending_world_permission;
+}
+
+///////////////////////////////////////////
+
+void lighting_set_mode(lighting_mode_ mode) {
+	if (local.mode == mode) return;
+	local.mode = mode;
+
+	// A mode change re-delivers the environment's lighting in the new
+	// shape, replacing Ambient and MainLight: last write wins.
+	if (local.env_sh_valid)
+		_lighting_apply_sh(local.env_sh, false, false);
+}
+
+///////////////////////////////////////////
+
 lighting_mode_ lighting_get_mode(void) {
-	return local.pending_world_permission ? lighting_mode_world_pending : local.mode;
+	return local.mode;
 }
 
 ///////////////////////////////////////////
 
 void lighting_set_environment(tex_t sky_cubemap, tex_t* out_reflection) {
 	if (out_reflection != nullptr) *out_reflection = nullptr;
-	if (local.mode == lighting_mode_world) {
-		log_warn("lighting_set_environment is ignored in world lighting mode, lighting comes from the device there.");
+	if (local.source == lighting_source_world) {
+		log_warn("lighting_set_environment is ignored in the world lighting source, lighting comes from the device there.");
 		return;
 	}
 
@@ -468,8 +516,15 @@ void lighting_set_environment(tex_t sky_cubemap, tex_t* out_reflection) {
 	tex_t reflection = tex_gen_cubemap_reflection(sky_cubemap);
 	if (reflection == nullptr) return;
 	_lighting_set_reflection(reflection);
-	// Once the reflection's SH readback lands, it becomes the ambient too.
-	local.ambient_auto_pending = true;
+	// Once the reflection's SH readback lands, it becomes the ambient and
+	// main light too. Overrides come after this call: assignments made
+	// while that's still loading win over it.
+	tex_addref(reflection);
+	if (local.env_pending_tex != nullptr) tex_release(local.env_pending_tex);
+	local.env_pending_tex     = reflection;
+	local.env_apply_pending   = true;
+	local.env_skip_ambient    = false;
+	local.env_skip_main_light = false;
 	// The reference transfers to the caller when they want it.
 	if (out_reflection != nullptr) *out_reflection = reflection;
 	else                           tex_release(reflection);
@@ -485,9 +540,14 @@ static void _lighting_set_ambient(const spherical_harmonics_t& ambient_lighting)
 ///////////////////////////////////////////
 
 void lighting_set_ambient(const spherical_harmonics_t& ambient_lighting) {
-	if (local.mode == lighting_mode_world) return;
-	// An explicit ambient overrides whatever a pending reflection carries.
-	local.ambient_auto_pending = false;
+	if (local.source == lighting_source_world) return;
+	// An assignment after SetEnvironment wins over its async apply when
+	// that lands, but only for this value.
+	if (local.env_apply_pending) local.env_skip_ambient = true;
+	// It's also the scene's newest total lighting, so a Mode change
+	// re-delivers from it rather than from a stale environment.
+	local.env_sh       = ambient_lighting;
+	local.env_sh_valid = true;
 	_lighting_set_ambient(ambient_lighting);
 }
 
@@ -495,6 +555,84 @@ void lighting_set_ambient(const spherical_harmonics_t& ambient_lighting) {
 
 spherical_harmonics_t lighting_get_ambient(void) {
 	return local.ambient_src;
+}
+
+///////////////////////////////////////////
+
+// Stores the main light along with the shader-ready copy of it. A black color
+// or a zero direction both mean there is no main light at all.
+static void _lighting_set_main_light(const sh_light_t& light) {
+	vec3 color = { light.color.r, light.color.g, light.color.b };
+	vec3 dir   = light.dir_to;
+	if ((color.x <= 0 && color.y <= 0 && color.z <= 0) || vec3_magnitude_sq(dir) < 0.000001f) {
+		local.main_light         = {};
+		local.main_light_fast[0] = {};
+		local.main_light_fast[1] = {};
+		return;
+	}
+
+	// The stored direction is normalized, so readers can rely on it.
+	dir = vec3_normalize(dir);
+	local.main_light.dir_to  = dir;
+	local.main_light.color   = { color.x, color.y, color.z, 1 };
+	local.main_light_fast[0] = { dir.x, dir.y, dir.z, 0 };
+	local.main_light_fast[1] = { color.x, color.y, color.z, 1 };
+}
+
+///////////////////////////////////////////
+
+// Delivers environment lighting to Ambient and MainLight, shaped by the
+// mode. In the world source the runtime's own ambient/directional split is
+// preferred when it has one, with sh_dominant_light as the fallback. The
+// skip flags serve SetEnvironment's async apply, so assignments made after
+// that call aren't overwritten when its lighting lands.
+static void _lighting_apply_sh(const spherical_harmonics_t& sh, bool skip_ambient, bool skip_main_light) {
+	if (skip_ambient && skip_main_light) return;
+
+	// The runtime split only describes the world source's own estimate, so
+	// it never applies to a manually provided environment.
+	spherical_harmonics_t ambient    = {};
+	sh_light_t            light      = {};
+	bool                  have_split = local.source == lighting_source_world &&
+	                                   xr_ext_light_estimation_get_split(&ambient, &light);
+	if (have_split)
+		// Runtime SH quality varies, so dering it like the local split does.
+		sh_window_fit(ambient);
+	else
+		light = sh_dominant_light(sh);
+
+	if (local.mode == lighting_mode_main_light) {
+		if (!have_split) {
+			// Splitting clamps to what the SH actually holds, and MainLight
+			// reports what was removed, so ambient plus light stays total.
+			ambient = sh;
+			light   = sh_subtract_light(ambient, light);
+		}
+		if (!skip_ambient)
+			_lighting_set_ambient(ambient);
+	} else if (!skip_ambient) {
+		// In ambient mode the main light is informational: its energy stays
+		// in Ambient, so shading with both would count it twice.
+		_lighting_set_ambient(sh);
+	}
+	if (!skip_main_light)
+		_lighting_set_main_light(light);
+}
+
+///////////////////////////////////////////
+
+void lighting_set_main_light(const sh_light_t& light) {
+	if (local.source == lighting_source_world) return;
+	// An assignment after SetEnvironment wins over its async apply when
+	// that lands, but only for this value.
+	if (local.env_apply_pending) local.env_skip_main_light = true;
+	_lighting_set_main_light(light);
+}
+
+///////////////////////////////////////////
+
+sh_light_t lighting_get_main_light(void) {
+	return local.main_light;
 }
 
 ///////////////////////////////////////////
@@ -516,10 +654,7 @@ static void _lighting_set_reflection(tex_t ibl_cubemap) {
 ///////////////////////////////////////////
 
 void lighting_set_reflection(tex_t ibl_cubemap) {
-	if (local.mode == lighting_mode_world) return;
-	// A manual reflection sets only the reflection; deriving ambient from it
-	// is lighting_set_environment's job.
-	local.ambient_auto_pending = false;
+	if (local.source == lighting_source_world) return;
 	_lighting_set_reflection(ibl_cubemap);
 }
 

@@ -58,10 +58,12 @@ class DemoLighting : ITest
 
 		if (mode == LightMode.World)
 		{
-			UI.PushEnabled(Lighting.ModeAvailable(LightingMode.World));
-			bool useEstimation = Lighting.Mode != LightingMode.Manual;
-			if (UI.Toggle("Use Light Estimation", ref useEstimation)) Lighting.RequestMode(useEstimation ? LightingMode.World : LightingMode.Manual);
+			UI.PushEnabled(Lighting.SourceAvailable(LightingSource.World));
+			bool useEstimation = Lighting.Source != LightingSource.Manual;
+			if (UI.Toggle("Use Light Estimation", ref useEstimation)) Lighting.RequestSource(useEstimation ? LightingSource.World : LightingSource.Manual);
 			UI.PopEnabled();
+			// Always present so this tab matches the others' height.
+			UI.Label(Lighting.SourcePending ? "Waiting on permission..." : "");
 		}
 
 		if (mode == LightMode.Lights)
@@ -98,6 +100,12 @@ class DemoLighting : ITest
 
 		UI.HSeparator();
 
+		// Mode shapes any environment derived lighting, not just estimates!
+		bool splitMain = Lighting.Mode == LightingMode.MainLight;
+		if (UI.Toggle("Separate Main Light", ref splitMain)) Lighting.Mode = splitMain ? LightingMode.MainLight : LightingMode.Ambient;
+
+		UI.HSeparator();
+
 		if (UI.Button("Print Lighting Code"))
 		{
 			Vec3[] c = Lighting.Ambient.ToArray();
@@ -120,11 +128,11 @@ class DemoLighting : ITest
 		Hierarchy.Push(Matrix.T(lightToolPose.position));
 		lightMesh.Draw(lightProbeMat, Matrix.S(0.04f));
 
-		// A line pointing at the brightest part of the ambient lighting. The
-		// sampled color is HDR, so saturate it before it crushes to Color32.
-		Vec3    lightDir   = Lighting.Ambient.DominantLightDirection;
-		Color32 lightColor = Lighting.Ambient.Sample(-lightDir).ToColor32Sat();
-		Lines.Add(-lightDir * 0.02f, -lightDir * 0.06f, lightColor, lightColor, 0.005f);
+		// A line pointing at the scene's main light. The color is HDR, so
+		// saturate it before it crushes to Color32.
+		Vec3    lightDir   = Lighting.MainLight.directionTo;
+		Color32 lightColor = Lighting.MainLight.color.ToColor32Sat();
+		Lines.Add(lightDir * 0.02f, lightDir * 0.06f, lightColor, lightColor, 0.005f);
 		DrawSH(Lighting.Ambient, 0.02f, 0.06f);
 		if (mode == LightMode.Lights)
 		{ 

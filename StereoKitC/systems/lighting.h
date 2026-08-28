@@ -24,5 +24,8 @@ void lighting_check_pending();
 
 // For render.cpp to get lighting data for the global shader buffer
 const vec4* lighting_get_lighting();
+// The main light as 2 vec4s: [0].xyz direction toward it, [1].rgb linear
+// color, [1].w 1 when a light exists. All zero when there is none.
+const vec4* lighting_get_main_light_fast();
 
 } // namespace sk

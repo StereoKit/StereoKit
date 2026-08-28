@@ -19,7 +19,6 @@ class DemoShadows : ITest
 
 	Tex                          shadowMap;
 	MaterialBuffer<ShadowBuffer> shadowBuffer;
-	Vec3                         lightDir = new Vec3(1,1,0).Normalized;
 
 	const float ShadowMapSize       = 2;
 	const int   ShadowMapResolution = 1024;
@@ -61,12 +60,10 @@ class DemoShadows : ITest
 		oldTex        = Renderer.SkyboxTex;
 		oldReflection = Lighting.Reflection;
 
-		// The environment provides visuals and lighting; the shadow direction
-		// additionally needs the reflection's lighting data once it's ready.
-		// In world lighting mode SetEnvironment is a no-op and returns null.
-		Lighting.SetEnvironment(Tex.FromCubemap(@"old_depot.hdr"), out Tex reflection);
-		if (reflection != null)
-			reflection.OnLoaded += t => lightDir = t.CubemapLighting.DominantLightDirection;
+		// The environment provides visuals and lighting, we can pull the
+		// shadow direction from Lighting.MainLight once the cubemap is done
+		// loading!
+		Lighting.SetEnvironment(Tex.FromCubemap(@"old_depot.hdr"));
 
 		Renderer.SetGlobalBuffer(13, shadowBuffer);
 	}
@@ -81,7 +78,7 @@ class DemoShadows : ITest
 	}
 	public void Step()
 	{
-		SetupShadowMap(lightDir);
+		SetupShadowMap();
 
 		UI.Handle("Model", ref modelPose, model.Bounds);
 		model.Draw(modelPose.ToMatrix());
@@ -91,13 +88,14 @@ class DemoShadows : ITest
 			new Bounds(V.XY0(0, -0.05f), V.XYZ(.6f, .4f, 0.6f)));
 	}
 
-	void SetupShadowMap(Vec3 lightDir)
+	void SetupShadowMap()
 	{
 		// Position the center of the shadow map in front of the user.
-		Pose head = Input.Head;
+		Pose    head  = Input.Head;
+		SHLight light = Lighting.MainLight;
 		Vec3 forwardPos       = head.position.X0Z + head.Forward.X0Z.Normalized * 0.5f * ShadowMapSize;
-		Quat lightOrientation = Quat.LookAt(Vec3.Zero, lightDir, Vec3.Up);
-		Vec3 lightPos         = QuantizeLightPos( forwardPos + lightDir * -10, lightOrientation, ShadowMapSize/ShadowMapResolution );
+		Quat lightOrientation = Quat.LookAt(Vec3.Zero, -light.directionTo, Vec3.Up);
+		Vec3 lightPos         = QuantizeLightPos( forwardPos + light.directionTo * 10, lightOrientation, ShadowMapSize/ShadowMapResolution );
 
 		// Create rendering matrices for the shadow map
 		Matrix view = Matrix.TR(lightPos, lightOrientation);
@@ -108,7 +106,7 @@ class DemoShadows : ITest
 		shadowBuffer.Set(new ShadowBuffer {
 			shadowMapTransform = (view.Inverse * proj).Transposed,
 			shadowMapBias      = 2 * MathF.Max(((ShadowMapFarClip - ShadowMapNearClip) / ushort.MaxValue), ShadowMapSize / ShadowMapResolution),
-			lightDirection     = -lightDir,
+			lightDirection     = light.directionTo,
 			lightColor         =  V.XYZ(1,1,1),
 			shadowMapPixelSize = 1.0f / ShadowMapResolution
 		});

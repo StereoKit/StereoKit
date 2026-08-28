@@ -8,30 +8,28 @@ using System;
 namespace StereoKit
 {
 	/// <summary>Scene lighting! StereoKit's lighting is entirely environment
-	/// based: an ambient lighting probe (`Ambient`) provides soft directional
-	/// light, and a specular reflection cubemap (`Reflection`) provides
-	/// shiny highlights and mirror surfaces. `SetEnvironment` fills in all
-	/// of this from a single cubemap, and is the easiest place to start!
+	/// based. An ambient lighting probe (`Ambient`) provides soft directional
+	/// light, a specular reflection cubemap (`Reflection`) provides shiny
+	/// highlights and mirror surfaces, and a dominant directional light
+	/// (`MainLight`) is derived from it all for effects like shadows.
+	/// `SetEnvironment` fills in all of this from a single cubemap, and is
+	/// the easiest place to start!
 	///
-	/// On devices that can estimate lighting from their surroundings, world
-	/// mode keeps all of this matched to the user's real room instead, see
-	/// `Mode`.</summary>
+	/// On devices that can estimate lighting from their surroundings, the
+	/// world source keeps all of this matched to the user's real room
+	/// instead, see `Source`.</summary>
 	public static class Lighting
 	{
-		/// <summary>Set up the whole scene environment from a single cubemap!
-		/// The skybox backdrop will show it, a specular `Reflection` is
-		/// generated from it, and once that reflection is ready, its lighting
-		/// data is applied to `Ambient` as well. Raw radiance cubemaps, like
-		/// those `Tex.FromCubemap` provides, are perfect here, and need no
-		/// mip chain.
+		/// <summary>Sets up the whole scene's lighting from a single cubemap!
+		/// This includes the `Renderer.SkyboxTex`, a generated
+		/// `Lighting.Reflection`, and once that's finished generating,
+		/// `Ambient` and `MainLight` too. Raw radiance cubemaps like
+		/// `Tex.FromCubemap` provides are perfect here, no mip chain needed.
 		///
-		/// This is a convenience over assigning `Renderer.SkyboxTex`,
-		/// `Lighting.Reflection`, and `Lighting.Ambient` individually, and
-		/// anything you assign to those afterwards overrides that piece. In
-		/// world lighting mode this call is ignored, since lighting comes
-		/// from the device's sensors there.</summary>
-		/// <param name="skyCubemap">A cubemap texture representing the
-		/// environment's radiance, such as one from `Tex.FromCubemap`.</param>
+		/// Anything you assign to those properties afterwards overrides that
+		/// piece. Ignored when using `World` as a lighting source.</summary>
+		/// <param name="skyCubemap">A cubemap of the environment's radiance,
+		/// such as one from `Tex.FromCubemap`.</param>
 		public static void SetEnvironment(Tex skyCubemap)
 		{
 			NativeAPI.lighting_set_environment(skyCubemap._inst, out IntPtr reflection);
@@ -39,94 +37,107 @@ namespace StereoKit
 		}
 
 		/// <summary>This overload also hands back the reflection texture it
-		/// generated, for hooking `Tex.OnLoaded` or re-convolving later with
-		/// `Tex.GenCubemapReflection`. See the other overload for the full
-		/// story.</summary>
-		/// <param name="skyCubemap">A cubemap texture representing the
-		/// environment's radiance, such as one from `Tex.FromCubemap`.</param>
-		/// <param name="reflection">The reflection generated from the
-		/// cubemap, or null if the call did nothing, such as in world
-		/// lighting mode.</param>
+		/// generated, for hooking `Tex.OnLoaded`, or re-convolving later
+		/// with `Tex.GenCubemapReflection`.</summary>
+		/// <param name="skyCubemap">A cubemap of the environment's radiance,
+		/// such as one from `Tex.FromCubemap`.</param>
+		/// <param name="reflection">The generated reflection, or null if the
+		/// call did nothing, such as when using `World` as a lighting source.</param>
 		public static void SetEnvironment(Tex skyCubemap, out Tex reflection)
 		{
 			NativeAPI.lighting_set_environment(skyCubemap._inst, out IntPtr inst);
 			reflection = inst == IntPtr.Zero ? null : new Tex(inst);
 		}
 
-		/// <summary>Where scene lighting comes from, right now. In manual
-		/// mode, the application provides it via this class. In world mode,
-		/// it's estimated live from the user's surroundings via the device's
-		/// sensors, and assignments to `Ambient` and `Reflection` are
-		/// ignored. The default is manual mode, and world mode is an explicit
-		/// opt-in via `RequestMode`, so lighting never changes or requests
-		/// permissions on its own.
+		/// <summary>Where scene lighting comes from right now? The
+		/// application (`Manual`, the default), or estimated live from the
+		/// user's surroundings (`World`). This never changes on its own, the
+		/// world source is an opt-in via `RequestSource`.
 		///
-		/// This reads `WorldPending` while a world request is waiting on a
-		/// permission, settling to `World` or `Manual` within moments.</summary>
-		public static LightingMode Mode
-			=> NativeAPI.lighting_get_mode();
+		/// A request that's still settling reads as its previous value here,
+		/// see `SourcePending`.</summary>
+		public static LightingSource Source
+			=> NativeAPI.lighting_get_source();
 
-		/// <summary>Request a switch to a lighting mode! Manual applies
-		/// immediately, while world mode may need a permission the user can
-		/// decline, so this is a request with no guarantee: watch `Mode` for
-		/// the result. Requesting world mode can show the system's permission
-		/// dialog, but a previously denied permission is never re-asked here;
-		/// if the user changes their mind, re-ask with an explicit
-		/// `Permission.Request` before requesting world mode again.
-		/// `ModeAvailable` and `Permission.State` can predict this request's
-		/// odds without asking.
+		/// <summary>True while a `RequestSource` is still settling, which is
+		/// typically a permission dialog. Resolves within moments, with the
+		/// outcome in `Source`.</summary>
+		public static bool SourcePending
+			=> NativeAPI.lighting_source_pending();
+
+		/// <summary>Requests a switch to a lighting source! `Manual` applies
+		/// immediately, while `World` may show a permission dialog the user
+		/// can decline, watch `SourcePending` and `Source` for the result.</summary>
+		/// <param name="source">The lighting source to switch to.</param>
+		public static void RequestSource(LightingSource source)
+			=> NativeAPI.lighting_request_source(source);
+
+		/// <summary>How environment lighting is delivered! `Ambient` folds
+		/// all light into the `Ambient` SH, while `MainLight` splits the
+		/// dominant directional light out into `MainLight`, leaving `Ambient`
+		/// the remainder.
 		///
-		/// Switching back to manual leaves the last world lighting in place.
-		/// StereoKit doesn't hold onto what you had before world mode, so
-		/// re-apply your own `SetEnvironment`, `Ambient`, or `Reflection`
-		/// after the switch.</summary>
-		/// <param name="mode">The mode to switch to, `WorldPending` is a
-		/// read-only status, and not valid here.</param>
-		public static void RequestMode(LightingMode mode)
-			=> NativeAPI.lighting_request_mode(mode);
-		/// <summary>The ambient light probe for the scene, as spherical
-		/// harmonics! This is soft omnidirectional lighting: think of it as
-		/// the color and intensity of the light arriving from each
-		/// direction, rather than a discrete light source. You can build one
-		/// from a list of directional lights with
-		/// `SphericalHarmonics.FromLights`, or from an environment via
-		/// `SetEnvironment` or a reflection's `Tex.CubemapLighting`.
+		/// NOTE: StereoKit builtin shaders do not yet account for
+		/// directional light, you will need your own shaders for `MainLight`
+		/// mode to work. Changing `Mode` will ALSO change your _current_
+		/// `Ambient` SH, adding or subtracting the MainLight's energy.</summary>
+		public static LightingMode Mode
+		{
+			get => NativeAPI.lighting_get_mode();
+			set => NativeAPI.lighting_set_mode(value);
+		}
+
+		/// <summary>The scene's dominant directional light, ideal as a
+		/// shadow direction! Environment lighting keeps this derived, and
+		/// the direction is always normalized. Check `Mode` before shading
+		/// with it, since in `Ambient` mode this light's energy is _also_
+		/// inside the `Ambient` probe.
 		///
-		/// Assigning this overrides any ambient that a `SetEnvironment` call
-		/// would derive, so set the environment first, then your override.
-		/// In world lighting mode this is managed by the system, and
-		/// assignments are ignored, not saved for when world mode
-		/// ends.</summary>
+		/// A black color means no light. Assignments follow the same rules
+		/// as `Ambient`: applied as-is until the next environment lighting
+		/// replaces them. Built-in shaders don't consume this, it's for
+		/// your own shaders and effects.</summary>
+		public static SHLight MainLight
+		{
+			get => NativeAPI.lighting_get_main_light();
+			set => NativeAPI.lighting_set_main_light(value);
+		}
+		/// <summary>The scene's ambient light probe, as spherical harmonics!
+		/// This is soft omnidirectional light, the color and intensity
+		/// arriving from each direction rather than a discrete source.
+		/// Build one with `SphericalHarmonics.FromLights`, or let
+		/// `SetEnvironment` derive it from a cubemap.
+		///
+		/// Assignments apply exactly as provided, and stick through a
+		/// `SetEnvironment` that's still loading. Later environment lighting
+		/// replaces them: a new `SetEnvironment`, a `Mode` change, or world
+		/// source estimates, where assignments are ignored entirely.</summary>
 		public static SphericalHarmonics Ambient
 		{
 			get => NativeAPI.lighting_get_ambient();
 			set => NativeAPI.lighting_set_ambient(value);
 		}
 		/// <summary>The specular reflection cubemap used by PBR shading: GGX
-		/// convolved radiance with one roughness level per mip. Generate one
-		/// from an environment cubemap with `Tex.GenCubemapReflection`. A
-		/// cubemap without a convolved mip chain will still bind, but reads as
-		/// mirror-sharp at every roughness. In world lighting mode this is
-		/// managed by the system, and assignments are ignored, not saved
-		/// for when world mode ends.
+		/// convolved radiance, one roughness level per mip. Generate one
+		/// with `Tex.GenCubemapReflection`, and null restores the built-in
+		/// default.
 		///
-		/// Assigning a reflection sets only the reflection. If you want
-		/// ambient lighting derived from it too, `SetEnvironment` does
-		/// that. Assigning null restores StereoKit's built-in default
-		/// reflection.</summary>
+		/// A cubemap without a convolved mip chain still binds, but reads
+		/// mirror-sharp at every roughness. In the world source this is fed
+		/// by estimation, and assignments are ignored.</summary>
 		public static Tex Reflection
 		{
 			get { IntPtr inst = NativeAPI.lighting_get_reflection(); return inst == IntPtr.Zero ? null : new Tex(inst); }
 			set { NativeAPI.lighting_set_reflection(value != null ? value._inst : IntPtr.Zero); }
 		}
-		/// <summary>Check if a lighting mode is supported on this device
-		/// without switching to it! Manual mode is always available, while
-		/// world mode needs light estimation support from the XR runtime.
-		/// Note that world mode may also need a permission the user can
-		/// still decline when you call `RequestMode`.</summary>
-		/// <param name="mode">The lighting mode to check on.</param>
-		/// <returns>True if the mode can be used on this device.</returns>
-		public static bool ModeAvailable(LightingMode mode)
-			=> NativeAPI.lighting_mode_available(mode);
+		/// <summary>Check if a lighting source is supported on this device,
+		/// without switching to it! Manual is always available, while world
+		/// needs light estimation support from the XR runtime, and may still
+		/// need a permission the user can decline at `RequestSource`
+		/// time.</summary>
+		/// <param name="source">The lighting source to check on.</param>
+		/// <returns>True if the source can be used on this device.</returns>
+		public static bool SourceAvailable(LightingSource source)
+			=> NativeAPI.lighting_source_available(source);
 	}
 }

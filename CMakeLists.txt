@@ -634,7 +634,10 @@ skshaderc_compile_headers(StereoKitC
   StereoKitC/shaders_builtin/shader_builtin_lightmap.hlsl
   StereoKitC/shaders_builtin/shader_builtin_depth_prepass.hlsl
   StereoKitC/shaders_builtin/shader_builtin_cubemap_ggx.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_cubemap_downsample.hlsl )
+  StereoKitC/shaders_builtin/shader_builtin_cubemap_downsample.hlsl
+  INCLUDES
+  tools/include/stereokit.hlsli
+  tools/include/stereokit_pbr.hlsli )
 
 if (NOT MSVC)
   # DirectXMath on non-msvc compilers needs a few extra files
@@ -931,7 +934,10 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/Shaders/skt_vert_custom.hlsl
     Examples/StereoKitCTest/Shaders/skt_postfx_vignette.hlsl
     Examples/StereoKitCTest/Shaders/skt_postfx_invert.hlsl
-    Examples/StereoKitCTest/Shaders/skt_postfx_depth_fog.hlsl)
+    Examples/StereoKitCTest/Shaders/skt_postfx_depth_fog.hlsl
+    INCLUDES
+    tools/include/stereokit.hlsli
+    tools/include/stereokit_pbr.hlsli)
 
   # Add source assets and compiled shaders to the app
   target_skapp_assets(StereoKitCTest ${CMAKE_CURRENT_BINARY_DIR}/shaders)
@@ -958,6 +964,8 @@ if (SK_BUILD_TESTS AND NOT ANDROID)
     tools/tests/audio_render.cpp
     tools/tests/asset_tests.h
     tools/tests/asset_tests.cpp
+    tools/tests/sh_tests.h
+    tools/tests/sh_tests.cpp
   )
 
   # See the StereoKitCTest note: pin the standard so u8 literals stay char.

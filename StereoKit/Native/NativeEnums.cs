@@ -770,17 +770,17 @@ namespace StereoKit
 		/// varies per-runtime.</summary>
 		FaceTracking,
 		/// <summary>For estimating ambient lighting from the user's surroundings, this is
-		/// what world lighting mode feeds into Lighting.Ambient. This is typically
-		/// an interactive permission that the user will need to explicitly
-		/// approve.
+		/// what the world lighting source feeds into Lighting.Ambient. This is
+		/// typically an interactive permission that the user will need to
+		/// explicitly approve.
 		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
 		/// XR, but varies per-runtime.</summary>
 		AmbientEstimation,
 		/// <summary>For estimating an environment cubemap from the user's surroundings,
-		/// this is what world lighting mode feeds into Lighting.Reflection. The
-		/// estimate shows imagery of the user's space, so runtimes may treat it
-		/// more strictly than ambient estimation. This is typically an interactive
-		/// permission that the user will need to explicitly approve.
+		/// this is what the world lighting source feeds into Lighting.Reflection.
+		/// The estimate shows imagery of the user's space, so runtimes may treat
+		/// it more strictly than ambient estimation. This is typically an
+		/// interactive permission that the user will need to explicitly approve.
 		/// This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
 		/// but varies per-runtime.</summary>
 		ReflectionEstimation,
@@ -1395,26 +1395,39 @@ namespace StereoKit
 		None         = 1,
 	}
 
-	/// <summary>This determines how scene lighting is sourced. The default is manual
-	/// mode, where the application provides all lighting via the Lighting
-	/// functions. Devices that can estimate lighting from their surroundings
-	/// also offer world mode as an explicit opt-in.</summary>
-	public enum LightingMode {
+	/// <summary>This determines where lighting data comes from! The default is the
+	/// `Manual`, where the application provides all lighting via the `Lighting`
+	/// functions. Devices that can estimate lighting from the user's
+	/// surroundings also have the `World` option.</summary>
+	public enum LightingSource {
 		/// <summary>Lighting values are set manually by the application. Use the
-		/// Lighting functions to configure the scene lighting.</summary>
+		/// `Lighting` functions to configure the scene lighting.</summary>
 		Manual,
-		/// <summary>Lighting is sourced from the real world via the device's light
-		/// estimation capabilities. The Lighting functions will have no
-		/// effect in this mode, and values set here are not saved for when it
-		/// ends, so re-apply your own lighting after switching away. You can
-		/// check Lighting.ModeAvailable to see if this is supported before
-		/// requesting it.</summary>
+		/// <summary>Lighting data is pulled from the world via the device's light estimation
+		/// capabilities. StereoKit will overwrite any data in `Lighting.Ambient`,
+		/// `MainLight`, and `Reflection` when using this source. You can check
+		/// `Lighting.SourceAvailable` to see if this is supported before requesting
+		/// it.</summary>
 		World,
-		/// <summary>Only returned when reading the lighting mode: world lighting was
-		/// requested, and StereoKit is waiting on a permission request. This
-		/// settles to world mode on grant, or manual mode on denial, generally
-		/// within moments. Requesting this mode does nothing.</summary>
-		WorldPending,
+	}
+
+	/// <summary>This determines what form scene lighting takes: all of it can fold into
+	/// the ambient probe, or the dominant directional light can be separated
+	/// out from it. This shapes lighting derived from an environment: both the
+	/// world source's estimates, and what Lighting.SetEnvironment derives from
+	/// its cubemap. Changing the mode re-delivers the scene's most recent full
+	/// lighting in the new shape, replacing Ambient and MainLight.</summary>
+	public enum LightingMode {
+		/// <summary>All light folds into the Ambient probe. This is the default.
+		/// MainLight still reports the dominant directional light, but as
+		/// information only: its energy remains inside Ambient, so it suits
+		/// things like shadow direction, not additional shading.</summary>
+		Ambient,
+		/// <summary>The dominant directional light is separated out into MainLight, and
+		/// Ambient carries only the remainder. This is for applications that
+		/// render that light themselves, such as for shadow casting, since
+		/// otherwise its energy is counted twice.</summary>
+		MainLight,
 	}
 
 	/// <summary>When used with a hierarchy modifying function that will push/pop items onto a
