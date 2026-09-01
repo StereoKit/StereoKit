@@ -817,15 +817,19 @@ bool openxr_poll_events() {
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
 			XrEventDataReferenceSpaceChangePending *pending   = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
 
-			// Update the main app space. In particular, some fallback spaces
-			// may require recalculation.
-			XrSpace new_space = {};
-			if (openxr_try_get_app_space(xr_session, sk_get_settings_ref()->origin, pending->changeTime, &xr_app_space_type, &world_origin_offset, &new_space)) {
-				if (xr_app_space) xrDestroySpace(xr_app_space);
-				xr_app_space = new_space;
-			}
+			if (pending->referenceSpaceType == xr_app_space_type) {
+				// Update the main app space. In particular, some fallback spaces
+				// may require recalculation.
+				XrSpace new_space = {};
+				if (openxr_try_get_app_space(xr_session, sk_get_settings_ref()->origin, pending->changeTime, &xr_app_space_type, &world_origin_offset, &new_space)) {
+					if (xr_app_space) xrDestroySpace(xr_app_space);
+					xr_app_space = new_space;
+				}
 
-			xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
+				xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
+			} else if (pending->referenceSpaceType == XR_REFERENCE_SPACE_TYPE_STAGE) {
+				xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
+			}
 		} break;
 		default: break;
 		}
