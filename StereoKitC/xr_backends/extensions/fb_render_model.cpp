@@ -15,11 +15,7 @@
 
 ///////////////////////////////////////////
 
-#define XR_EXT_FUNCTIONS( X )           \
-	X(xrEnumerateRenderModelPathsFB)    \
-	X(xrGetRenderModelPropertiesFB)     \
-	X(xrLoadRenderModelFB)
-OPENXR_DEFINE_FN_STATIC(XR_EXT_FUNCTIONS);
+OPENXR_DEFINE_FN_REFLECT_STATIC(XR_LIST_FUNCTIONS_XR_FB_render_model);
 
 ///////////////////////////////////////////
 
@@ -77,7 +73,7 @@ xr_system_ xr_fb_render_model_initialize(void*) {
 		backend_openxr_ext_enabled(XR_EXT_INTERACTION_RENDER_MODEL_EXTENSION_NAME))
 		return xr_system_fail;
 
-	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
+	OPENXR_LOAD_FN_REFLECT_RETURN(XR_LIST_FUNCTIONS_XR_FB_render_model, xr_system_fail);
 
 	// xrGetRenderModelPropertiesFB requires that xrEnumerateRenderModelPathsFB
 	// has been called first, so we do it once up front. The path set is static
@@ -115,7 +111,7 @@ void xr_fb_render_model_shutdown(void*) {
 		model_release(local.models[i].model);
 	}
 	local.models.free();
-	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
+	OPENXR_CLEAR_FN_REFLECT(XR_LIST_FUNCTIONS_XR_FB_render_model);
 	local = {};
 }
 

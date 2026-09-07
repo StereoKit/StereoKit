@@ -12,6 +12,7 @@
 #include "../stereokit.h"
 #include "openxr_input.h"
 #include <openxr/openxr.h>
+#include <openxr/openxr_reflection.h>
 #include <stdint.h>
 
 typedef struct XR_MAY_ALIAS XrBaseHeader {
@@ -34,6 +35,16 @@ inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_ne
 #define OPENXR_DEFINE_FN_STATIC(list) list(_OPENXR_DEFINE_FN_STATIC)
 #define _OPENXR_LOAD_FN_RESULT(name) if (xrGetInstanceProcAddr(xr_instance, #name, (PFN_xrVoidFunction*)((PFN_##name*)(&name)))<0) { result = result && false; }
 #define OPENXR_LOAD_FN_RETURN(list, failure_result) do { bool result = true; list(_OPENXR_LOAD_FN_RESULT); if (!result) return failure_result; } while(0);
+
+// Adapters for openxr_reflection.h XR_LIST_FUNCTIONS_* macros, which pass (FunctionNameWithoutXr, ExtensionNameWithoutXR_)
+#define _OPENXR_DEFINE_FN_REFLECT(name, ext)        _OPENXR_DEFINE_FN(xr##name)
+#define OPENXR_DEFINE_FN_REFLECT(list)              list(_OPENXR_DEFINE_FN_REFLECT)
+#define _OPENXR_CLEAR_FN_REFLECT(name, ext)         _OPENXR_CLEAR_FN(xr##name)
+#define OPENXR_CLEAR_FN_REFLECT(list)               list(_OPENXR_CLEAR_FN_REFLECT)
+#define _OPENXR_DEFINE_FN_REFLECT_STATIC(name, ext) _OPENXR_DEFINE_FN_STATIC(xr##name)
+#define OPENXR_DEFINE_FN_REFLECT_STATIC(list)       list(_OPENXR_DEFINE_FN_REFLECT_STATIC)
+#define _OPENXR_LOAD_FN_REFLECT_RESULT(name, ext)   _OPENXR_LOAD_FN_RESULT(xr##name)
+#define OPENXR_LOAD_FN_REFLECT_RETURN(list, failure_result) do { bool result = true; list(_OPENXR_LOAD_FN_REFLECT_RESULT); if (!result) return failure_result; } while(0);
 
 namespace sk {
 

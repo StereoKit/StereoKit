@@ -16,18 +16,7 @@
 
 #include <stdint.h>
 
-#define XR_META_ENVIRONMENT_DEPTH_FUNCTIONS(X)             \
-	X(xrCreateEnvironmentDepthProviderMETA)                \
-	X(xrDestroyEnvironmentDepthProviderMETA)               \
-	X(xrStartEnvironmentDepthProviderMETA)                 \
-	X(xrStopEnvironmentDepthProviderMETA)                  \
-	X(xrAcquireEnvironmentDepthImageMETA)                  \
-	X(xrCreateEnvironmentDepthSwapchainMETA)               \
-	X(xrDestroyEnvironmentDepthSwapchainMETA)              \
-	X(xrEnumerateEnvironmentDepthSwapchainImagesMETA)      \
-	X(xrGetEnvironmentDepthSwapchainStateMETA)             \
-	X(xrSetEnvironmentDepthHandRemovalMETA)
-OPENXR_DEFINE_FN_STATIC(XR_META_ENVIRONMENT_DEPTH_FUNCTIONS);
+OPENXR_DEFINE_FN_REFLECT_STATIC(XR_LIST_FUNCTIONS_XR_META_environment_depth);
 
 namespace sk {
 
@@ -95,7 +84,7 @@ xr_system_ xr_ext_meta_environment_depth_initialize(void*) {
 	if (!backend_openxr_ext_enabled(XR_META_ENVIRONMENT_DEPTH_EXTENSION_NAME))
 		return xr_system_fail;
 
-	OPENXR_LOAD_FN_RETURN(XR_META_ENVIRONMENT_DEPTH_FUNCTIONS, xr_system_fail);
+	OPENXR_LOAD_FN_REFLECT_RETURN(XR_LIST_FUNCTIONS_XR_META_environment_depth, xr_system_fail);
 
 	XrSystemEnvironmentDepthPropertiesMETA properties_depth = { XR_TYPE_SYSTEM_ENVIRONMENT_DEPTH_PROPERTIES_META };
 	XrSystemProperties                     properties       = { XR_TYPE_SYSTEM_PROPERTIES };
@@ -153,7 +142,7 @@ void xr_ext_meta_environment_depth_destroy() {
 
 void xr_ext_meta_environment_depth_shutdown(void*) {
 	xr_ext_meta_environment_depth_destroy();
-	OPENXR_CLEAR_FN(XR_META_ENVIRONMENT_DEPTH_FUNCTIONS);
+	OPENXR_CLEAR_FN_REFLECT(XR_LIST_FUNCTIONS_XR_META_environment_depth);
 	local = {};
 }
 

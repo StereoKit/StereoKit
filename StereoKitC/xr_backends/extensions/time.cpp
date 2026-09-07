@@ -18,16 +18,12 @@
 #ifdef XR_USE_TIMESPEC
 	#include <time.h>
 	#define XR_TIME_EXTENSION XR_KHR_CONVERT_TIMESPEC_TIME_EXTENSION_NAME
-	#define XR_EXT_FUNCTIONS( X )         \
-		X(xrConvertTimespecTimeToTimeKHR) \
-		X(xrConvertTimeToTimespecTimeKHR)
+	#define XR_TIME_FUNCTIONS XR_LIST_FUNCTIONS_XR_KHR_convert_timespec_time
 #else
 	#define XR_TIME_EXTENSION XR_KHR_WIN32_CONVERT_PERFORMANCE_COUNTER_TIME_EXTENSION_NAME
-	#define XR_EXT_FUNCTIONS( X )                    \
-		X(xrConvertWin32PerformanceCounterToTimeKHR) \
-		X(xrConvertTimeToWin32PerformanceCounterKHR )
+	#define XR_TIME_FUNCTIONS XR_LIST_FUNCTIONS_XR_KHR_win32_convert_performance_counter_time
 #endif
-OPENXR_DEFINE_FN_STATIC(XR_EXT_FUNCTIONS);
+OPENXR_DEFINE_FN_REFLECT_STATIC(XR_TIME_FUNCTIONS);
 
 ///////////////////////////////////////////
 
@@ -58,7 +54,7 @@ xr_system_ xr_ext_time_init(void*) {
 		return xr_system_fail_critical;
 
 	// Load all extension functions
-	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail_critical);
+	OPENXR_LOAD_FN_REFLECT_RETURN(XR_TIME_FUNCTIONS, xr_system_fail_critical);
 
 	// A number of items use the xr_time, so lets get this ready as soon as we're
 	// able.
@@ -70,7 +66,7 @@ xr_system_ xr_ext_time_init(void*) {
 ///////////////////////////////////////////
 
 void xr_ext_time_shutdown(void*) {
-	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
+	OPENXR_CLEAR_FN_REFLECT(XR_TIME_FUNCTIONS);
 }
 
 ///////////////////////////////////////////

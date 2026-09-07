@@ -15,20 +15,8 @@
 #include "../../asset_types/anchor.h"
 #include "../../systems/input.h"
 
-#define XR_EXT_ANCHOR_FUNCTIONS( X )             \
-	X(xrCreateSpatialAnchorMSFT)                 \
-	X(xrCreateSpatialAnchorSpaceMSFT)            \
-	X(xrDestroySpatialAnchorMSFT)
-#define XR_EXT_PERSISTENCE_FUNCTIONS( X )        \
-	X(xrCreateSpatialAnchorStoreConnectionMSFT)  \
-	X(xrDestroySpatialAnchorStoreConnectionMSFT) \
-	X(xrEnumeratePersistedSpatialAnchorNamesMSFT)\
-	X(xrCreateSpatialAnchorFromPersistedNameMSFT)\
-	X(xrPersistSpatialAnchorMSFT)                \
-	X(xrUnpersistSpatialAnchorMSFT)              \
-	X(xrClearSpatialAnchorStoreMSFT)
-OPENXR_DEFINE_FN_STATIC(XR_EXT_ANCHOR_FUNCTIONS);
-OPENXR_DEFINE_FN_STATIC(XR_EXT_PERSISTENCE_FUNCTIONS);
+OPENXR_DEFINE_FN_REFLECT_STATIC(XR_LIST_FUNCTIONS_XR_MSFT_spatial_anchor);
+OPENXR_DEFINE_FN_REFLECT_STATIC(XR_LIST_FUNCTIONS_XR_MSFT_spatial_anchor_persistence);
 
 ///////////////////////////////////////////
 
@@ -78,11 +66,11 @@ xr_system_ xr_ext_msft_spatial_anchors_initialize(void*) {
 	local.persistence = backend_openxr_ext_enabled(XR_MSFT_SPATIAL_ANCHOR_PERSISTENCE_EXTENSION_NAME);
 
 	// Load all the main anchor extension functions
-	OPENXR_LOAD_FN_RETURN(XR_EXT_ANCHOR_FUNCTIONS, xr_system_fail);
+	OPENXR_LOAD_FN_REFLECT_RETURN(XR_LIST_FUNCTIONS_XR_MSFT_spatial_anchor, xr_system_fail);
 
 	if (local.persistence) {
 		// Load the persistence extension functions
-		OPENXR_LOAD_FN_RETURN(XR_EXT_PERSISTENCE_FUNCTIONS, xr_system_fail);
+		OPENXR_LOAD_FN_REFLECT_RETURN(XR_LIST_FUNCTIONS_XR_MSFT_spatial_anchor_persistence, xr_system_fail);
 
 		// Load all the persistent anchors from storage
 		if (xr_ext_msft_spatial_anchors_load_persistent_anchors() == false)
@@ -103,8 +91,8 @@ void xr_ext_msft_spatial_anchors_shutdown(void*) {
 	local.anchors.free();
 	local = {};
 
-	OPENXR_CLEAR_FN(XR_EXT_ANCHOR_FUNCTIONS);
-	OPENXR_CLEAR_FN(XR_EXT_PERSISTENCE_FUNCTIONS);
+	OPENXR_CLEAR_FN_REFLECT(XR_LIST_FUNCTIONS_XR_MSFT_spatial_anchor);
+	OPENXR_CLEAR_FN_REFLECT(XR_LIST_FUNCTIONS_XR_MSFT_spatial_anchor_persistence);
 }
 
 ///////////////////////////////////////////

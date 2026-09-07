@@ -14,9 +14,7 @@
 
 ///////////////////////////////////////////
 
-#define XR_EXT_FUNCTIONS( X ) \
-	X(xrGetDeviceSampleRateFB)
-OPENXR_DEFINE_FN_STATIC(XR_EXT_FUNCTIONS);
+OPENXR_DEFINE_FN_REFLECT_STATIC(XR_LIST_FUNCTIONS_XR_FB_haptic_pcm);
 
 ///////////////////////////////////////////
 
@@ -56,7 +54,7 @@ xr_system_ xr_fb_haptic_initialize(void*) {
 		// xrGetDeviceSampleRateFB is the only new function from XR_FB_haptic_pcm.
 		// Both extensions chain into the existing core xrApplyHapticFeedback via
 		// XrHapticBaseHeader, so they don't add other entry points.
-		OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
+		OPENXR_LOAD_FN_REFLECT_RETURN(XR_LIST_FUNCTIONS_XR_FB_haptic_pcm, xr_system_fail);
 	}
 
 	return (local.pcm_available || local.envelope_available)
@@ -67,7 +65,7 @@ xr_system_ xr_fb_haptic_initialize(void*) {
 ///////////////////////////////////////////
 
 void xr_fb_haptic_shutdown(void*) {
-	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
+	OPENXR_CLEAR_FN_REFLECT(XR_LIST_FUNCTIONS_XR_FB_haptic_pcm);
 	local = {};
 }
 

@@ -21,19 +21,8 @@
 // Function pointers
 ///////////////////////////////////////////
 
-#define XR_VULKAN_ENABLE_FN(X)              \
-	X(xrGetVulkanInstanceExtensionsKHR)     \
-	X(xrGetVulkanDeviceExtensionsKHR)       \
-	X(xrGetVulkanGraphicsDeviceKHR)         \
-	X(xrGetVulkanGraphicsRequirementsKHR)
-OPENXR_DEFINE_FN_STATIC(XR_VULKAN_ENABLE_FN);
-
-#define XR_VULKAN_ENABLE2_FN(X)             \
-	X(xrCreateVulkanInstanceKHR)            \
-	X(xrCreateVulkanDeviceKHR)              \
-	X(xrGetVulkanGraphicsDevice2KHR)        \
-	X(xrGetVulkanGraphicsRequirements2KHR)
-OPENXR_DEFINE_FN_STATIC(XR_VULKAN_ENABLE2_FN);
+OPENXR_DEFINE_FN_REFLECT_STATIC(XR_LIST_FUNCTIONS_XR_KHR_vulkan_enable);
+OPENXR_DEFINE_FN_REFLECT_STATIC(XR_LIST_FUNCTIONS_XR_KHR_vulkan_enable2);
 
 ///////////////////////////////////////////
 // State
@@ -163,7 +152,7 @@ static void log_vulkan_requirements(const XrGraphicsRequirementsVulkanKHR* requi
 ///////////////////////////////////////////
 
 static bool xr_vulkan_enable_init() {
-	OPENXR_LOAD_FN_RETURN(XR_VULKAN_ENABLE_FN, false);
+	OPENXR_LOAD_FN_REFLECT_RETURN(XR_LIST_FUNCTIONS_XR_KHR_vulkan_enable, false);
 
 	XrGraphicsRequirementsVulkanKHR vulkan_requirements = { XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR };
 	xr_check(xrGetVulkanGraphicsRequirementsKHR(xr_instance, xr_system_id, &vulkan_requirements),
@@ -226,7 +215,7 @@ static skr_device_request_t xr_vulkan_enable_device_init(void* vk_instance, void
 ///////////////////////////////////////////
 
 static bool xr_vulkan_enable2_init() {
-	OPENXR_LOAD_FN_RETURN(XR_VULKAN_ENABLE2_FN, false);
+	OPENXR_LOAD_FN_REFLECT_RETURN(XR_LIST_FUNCTIONS_XR_KHR_vulkan_enable2, false);
 
 	XrGraphicsRequirementsVulkanKHR vulkan_requirements = { XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR };
 	xr_check(xrGetVulkanGraphicsRequirements2KHR(xr_instance, xr_system_id, &vulkan_requirements),
@@ -338,8 +327,8 @@ static void xr_ext_vulkan_enable_shutdown(void*) {
 	local.device_extensions.free();
 	local = {};
 
-	OPENXR_CLEAR_FN(XR_VULKAN_ENABLE_FN);
-	OPENXR_CLEAR_FN(XR_VULKAN_ENABLE2_FN);
+	OPENXR_CLEAR_FN_REFLECT(XR_LIST_FUNCTIONS_XR_KHR_vulkan_enable);
+	OPENXR_CLEAR_FN_REFLECT(XR_LIST_FUNCTIONS_XR_KHR_vulkan_enable2);
 }
 
 ///////////////////////////////////////////

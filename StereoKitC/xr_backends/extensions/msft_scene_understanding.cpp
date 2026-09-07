@@ -15,18 +15,7 @@
 #include "../../systems/vert_format.h"
 #include <float.h>
 
-#define XR_EXT_FUNCTIONS( X )              \
-	X(xrCreateSceneMSFT)                   \
-	X(xrCreateSceneObserverMSFT)           \
-	X(xrComputeNewSceneMSFT)               \
-	X(xrEnumerateSceneComputeFeaturesMSFT) \
-	X(xrGetSceneMeshBuffersMSFT)           \
-	X(xrGetSceneComputeStateMSFT)          \
-	X(xrGetSceneComponentsMSFT)            \
-	X(xrLocateSceneComponentsMSFT)         \
-	X(xrDestroySceneMSFT)                  \
-	X(xrDestroySceneObserverMSFT)
-OPENXR_DEFINE_FN_STATIC(XR_EXT_FUNCTIONS);
+OPENXR_DEFINE_FN_REFLECT_STATIC(XR_LIST_FUNCTIONS_XR_MSFT_scene_understanding);
 
 ///////////////////////////////////////////
 
@@ -106,7 +95,7 @@ xr_system_ xr_ext_msft_su_initialize(void*) {
 		return xr_system_fail;
 
 	// Load all extension functions
-	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
+	OPENXR_LOAD_FN_REFLECT_RETURN(XR_LIST_FUNCTIONS_XR_MSFT_scene_understanding, xr_system_fail);
 
 	// Check scene understanding features, these may be dependant on Session
 	// creation in the context of Holographic Remoting.
@@ -145,7 +134,7 @@ void xr_ext_msft_su_shutdown(void*) {
 	local.scene_visuals  .free();
 	local = {};
 
-	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
+	OPENXR_CLEAR_FN_REFLECT(XR_LIST_FUNCTIONS_XR_MSFT_scene_understanding);
 }
 
 ///////////////////////////////////////////
