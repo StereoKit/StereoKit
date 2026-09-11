@@ -1003,9 +1003,11 @@ SK_API bool32_t         device_has_hand_tracking  (void);
 
 ///////////////////////////////////////////
 
-/*A list of permissions that StereoKit knows about. On some platforms (like
-  Android), these permissions may need to be explicitly requested before using
-  certain features.*/
+/*A list of permissions that StereoKit knows about, each named for the
+  feature it unlocks. On some platforms (like Android), these permissions may
+  need to be explicitly requested before using certain features. Runtimes
+  group features into system permissions differently, so several of these may
+  resolve to the same underlying system permission.*/
 typedef enum permission_type_ {
 	/*For access to microphone data, this is typically an interactive
 	  permission that the user will need to explicitly approve.
@@ -1036,32 +1038,77 @@ typedef enum permission_type_ {
 	  This maps to android.permission.FACE_TRACKING on Android XR, but
 	  varies per-runtime.*/
 	permission_type_face_tracking,
-	/*For access to data in the user's space, this can be for things like
-	  spatial anchors, plane detection, hit testing, etc. This is typically an
+	/*For estimating ambient lighting from the user's surroundings, this is
+	  what the world lighting source feeds into Lighting.Ambient. This is
+	  typically an interactive permission that the user will need to
+	  explicitly approve.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+	  XR, but varies per-runtime.*/
+	permission_type_ambient_estimation,
+	/*For estimating an environment cubemap from the user's surroundings,
+	  this is what the world lighting source feeds into Lighting.Reflection.
+	  The estimate shows imagery of the user's space, so runtimes may treat
+	  it more strictly than ambient estimation. This is typically an
 	  interactive permission that the user will need to explicitly approve.
 
-	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
+	  This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
 	  but varies per-runtime.*/
-	permission_type_scene,
+	permission_type_reflection_estimation,
+	/*For reading depth data about the user's surroundings via Sensor.Depth,
+	  useful for things like occlusion. This is typically an interactive
+	  permission that the user will need to explicitly approve.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
+	  but varies per-runtime.*/
+	permission_type_depth_sensing,
+	/*For creating and persisting spatial anchors in the user's space, via
+	  StereoKit's Anchor API. Some runtimes grant this automatically from the
+	  manifest entry, while others treat it as an interactive permission.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+	  XR and com.oculus.permission.USE_ANCHOR_API on Meta, but varies
+	  per-runtime.*/
+	permission_type_anchors,
 	/*This enum is for tracking the number of value in this enum.*/
 	permission_type_max,
 } permission_type_;
 
 /*Permissions can be in a variety of states, depending on how users interact
   with them. Sometimes they're automatically granted, user denied, or just
-  unknown for the current runtime!*/
+  unknown for the current runtime! A positive value means you're clear to use
+  the feature, zero or negative means you're not.*/
 typedef enum permission_state_ {
-	/*This permission is known to StereoKit, but not available to request.
-	  Typically this means the correct permission string is not listed in the
-	  AndroidManfiest.xml or similar.*/
-	permission_state_unavailable = -2,
-	/*This app is capable of using the permission, but it needs to be
-	  requested first with Permission.Request.*/
+	/*StereoKit knows this permission, but nothing you do at runtime can get
+	  it granted. Usually the permission string is missing from the
+	  AndroidManifest.xml or equivalent, so check there first. Some runtimes
+	  also report this when an administrator or parental control has locked
+	  the feature off, which no amount of asking will change. Fix your app's
+	  manifest, or work without the feature.*/
+	permission_state_unavailable = -5,
+	/*The permission was refused, and the system will not prompt for it
+	  again. Requesting it is legal, but nothing will happen. Only the user
+	  can undo this, from the system's settings. Work without the feature,
+	  and if it matters, tell the user where to turn it back on.*/
+	permission_state_blocked     = -4,
+	/*The permission was refused, but the system is still willing to prompt
+	  for it. Not every platform has this state; where the first refusal is
+	  final, you'll get blocked instead. You can request it again, ideally at
+	  a moment where the user understands why you need it.*/
+	permission_state_denied      = -3,
+	/*A permission request is in flight: a dialog may be up, or StereoKit is
+	  waiting to see if the system will answer one. This settles on its own
+	  once the system answers, or the user dismisses the dialog. Wait, and
+	  check back later.*/
+	permission_state_requesting  = -2,
+	/*This app can use the permission, but hasn't been granted it yet. Ask
+	  for it with Permission.Request.*/
 	permission_state_capable     = -1,
 
 	/*StereoKit doesn't know about the permission on the current runtime. This
 	  happens when the runtime has a unique permission string (or not) and
-	  StereoKit doesn't know what it is to look up its current status.*/
+	  StereoKit doesn't know what it is to look up its current status. There's
+	  no reliable action here, try the feature and see if it works.*/
 	permission_state_unknown     =  0,
 	/*This permission is entirely approved and you can go ahead and use the
 	  associated features!*/
@@ -1278,6 +1325,7 @@ SK_API        color128 color_to_gamma (color128 srgb_linear);
 
 static inline color128 color_lerp     (color128 a, color128 b, float t) { color128 result = {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; return result; }
 static inline color32  color_to_32    (color128 a)                      { color32  result = {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; return result; }
+static inline color32  color_to_32_sat(color128 a)                      { color32  result = {(uint8_t)((a.r<0?0:a.r>1?1:a.r) * 255.f), (uint8_t)((a.g<0?0:a.g>1?1:a.g) * 255.f), (uint8_t)((a.b<0?0:a.b>1?1:a.b) * 255.f), (uint8_t)((a.a<0?0:a.a>1?1:a.a) * 255.f)}; return result; }
 
 static inline color128 color32_to_128 (color32 color) { color128 result = { color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f }; return result; }
 static inline color32  color32_hex    (uint32_t hex)  { color32  result = {(uint8_t)(hex>>24), (uint8_t)((hex>>16)&0x000000FF), (uint8_t)((hex>>8)&0x000000FF), (uint8_t)(hex&0x000000FF)}; return result; };
@@ -1324,20 +1372,45 @@ SK_API void       gradient_destroy    (gradient_t gradient);
 
 ///////////////////////////////////////////
 
+/*RGB spherical harmonic coefficients up through the 2nd band, a compact
+  approximation of environment lighting.
+
+  Coefficient convention: band 0 [0]=constant; band 1 [1]=y, [2]=z, [3]=x;
+  band 2 [4]=xy, [5]=yz, [6]=3z^2-1, [7]=xz, [8]=x^2-y^2. All basis signs
+  are positive (no Condon-Shortley phase), so a light from above lands as
+  a _positive_ [1], and the linear band ([3], [1], [2]) points _toward_
+  the brightest region.
+
+  Values are radiance in the orthonormal real SH basis: basis constants
+  are applied at evaluation rather than baked into the coefficients, and
+  no cosine lobe is applied. Convolution to irradiance happens when this
+  bakes down into StereoKit's shader constants.
+
+  Watch out when importing coefficients from elsewhere: SH sign
+  conventions vary (Condon-Shortley phase), and many libraries (ARCore,
+  DirectXMath) flip the odd terms [1],[3],[5],[7] relative to this. If
+  imported lighting shows up rotated 180 degrees (up reads as down),
+  negate those four coefficients.*/
 typedef struct spherical_harmonics_t {
 	vec3     coefficients[9];
 } spherical_harmonics_t;
 
+/*A directional light source for building spherical_harmonics_t data, see
+  sh_create.*/
 typedef struct sh_light_t {
+	/*Direction _toward_ the light source.*/
 	vec3     dir_to;
+	/*Color of the light in linear space! Values here can exceed 1.*/
 	color128 color;
 } sh_light_t;
 
-SK_API spherical_harmonics_t sh_create      (const sh_light_t* in_arr_lights, int32_t light_count);
-SK_API void                  sh_brightness  (      sk_ref(spherical_harmonics_t) ref_harmonics, float scale);
-SK_API void                  sh_add         (      sk_ref(spherical_harmonics_t) ref_harmonics, vec3 light_dir, vec3 light_color);
-SK_API color128              sh_lookup      (const sk_ref(spherical_harmonics_t) harmonics, vec3 normal);
-SK_API vec3                  sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics);
+SK_API spherical_harmonics_t sh_create         (const sh_light_t* in_arr_lights, int32_t light_count);
+SK_API void                  sh_brightness     (      sk_ref(spherical_harmonics_t) ref_harmonics, float scale);
+SK_API void                  sh_add            (      sk_ref(spherical_harmonics_t) ref_harmonics, vec3 light_dir, vec3 light_color);
+SK_API color128              sh_lookup         (const sk_ref(spherical_harmonics_t) harmonics, vec3 normal);
+SK_API vec3                  sh_dominant_dir_to(const sk_ref(spherical_harmonics_t) harmonics);
+SK_API sh_light_t            sh_dominant_light (const sk_ref(spherical_harmonics_t) harmonics);
+SK_API sh_light_t            sh_subtract_light (      sk_ref(spherical_harmonics_t) ref_harmonics, sh_light_t light);
 
 ///////////////////////////////////////////
 
@@ -1667,8 +1740,8 @@ SK_API asset_state_ tex_asset_state         (const tex_t texture);
 SK_API void         tex_on_load             (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
 SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context));
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
-SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1));
+SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1));
 SK_API void         tex_set_colors_3d       (tex_t texture, int32_t width, int32_t height, int32_t depth, void *data);
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
@@ -1677,8 +1750,9 @@ SK_API tex_t        tex_get_zbuffer         (tex_t texture);
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t data_size, int32_t mip_level sk_default(0));
 SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_gen_particle        (int32_t width, int32_t height, float roundness sk_default(1), gradient_t gradient_linear sk_default(nullptr));
-SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
+SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution);
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
+SK_API tex_t        tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into sk_default(nullptr), int32_t max_resolution sk_default(64));
 SK_API tex_format_  tex_get_format          (tex_t texture);
 SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
@@ -1695,6 +1769,7 @@ SK_API int32_t      tex_get_mips            (tex_t texture);
 SK_API void         tex_set_loading_fallback(tex_t loading_texture);
 SK_API void         tex_set_error_fallback  (tex_t error_texture);
 SK_API spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture);
+SK_API void                  tex_set_cubemap_lighting(tex_t cubemap_texture, const sk_ref(spherical_harmonics_t) lighting_info);
 
 ///////////////////////////////////////////
 
@@ -2370,12 +2445,12 @@ SK_API void                  render_set_projection (projection_ proj);
 SK_API projection_           render_get_projection (void);
 SK_API matrix                render_get_cam_root   (void);
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
-SK_API void                  render_set_skytex     (tex_t sky_texture);
-SK_API tex_t                 render_get_skytex     (void);
-SK_API void                  render_set_skymaterial(material_t sky_material);
-SK_API material_t            render_get_skymaterial(void);
-SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
-SK_API spherical_harmonics_t render_get_skylight   (void);
+SK_API void                  render_set_skybox_tex     (tex_t skybox_texture);
+SK_API tex_t                 render_get_skybox_tex     (void);
+SK_API void                  render_set_skybox_visible (bool32_t visible);
+SK_API bool32_t              render_get_skybox_visible (void);
+SK_API void                  render_set_skybox_material(material_t skybox_material);
+SK_API material_t            render_get_skybox_material(void);
 SK_API void                  render_set_filter     (render_layer_ layer_filter);
 SK_API render_layer_         render_get_filter     (void);
 SK_API void                  render_set_scaling    (float display_tex_scale);
@@ -2389,8 +2464,6 @@ SK_API render_layer_         render_get_capture_filter     (void);
 SK_API bool32_t              render_has_capture_filter     (void);
 SK_API void                  render_set_clear_color(color128 color_gamma);
 SK_API color128              render_get_clear_color(void);
-SK_API void                  render_enable_skytex  (bool32_t show_sky);
-SK_API bool32_t              render_enabled_skytex (void);
 SK_API void                  render_global_texture     (int32_t register_slot, tex_t texture);
 SK_API tex_t                 render_get_global_texture (int32_t register_slot);
 SK_API void                  render_global_buffer      (int32_t register_slot, material_buffer_t buffer);
@@ -2440,6 +2513,57 @@ SK_API void                  render_list_draw_now     (      render_list_t list,
 
 SK_API void                  render_list_push         (      render_list_t list);
 SK_API void                  render_list_pop          (void);
+
+///////////////////////////////////////////
+
+/*This determines where lighting data comes from! The default is `Manual`,
+  where the application provides all lighting via the `Lighting` functions.
+  Devices that can estimate lighting from the user's surroundings also have
+  the `World` option.*/
+typedef enum lighting_source_ {
+	/*Lighting values are set manually by the application. Use the
+	  `Lighting` functions to configure the scene lighting.*/
+	lighting_source_manual,
+	/*Lighting data is pulled from the world via the device's light estimation
+	  capabilities. StereoKit will overwrite any data in `Lighting.Ambient`,
+	  `MainLight`, and `Reflection` when using this source. You can check
+	  `Lighting.SourceAvailable` to see if this is supported before requesting
+	  it.*/
+	lighting_source_world,
+} lighting_source_;
+
+/*This determines what form scene lighting takes: all of it can fold into
+  the ambient probe, or the dominant directional light can be separated
+  out from it. This shapes lighting derived from an environment: both the
+  world source's estimates, and what Lighting.SetEnvironment derives from
+  its cubemap. Changing the mode re-delivers the scene's most recent full
+  lighting in the new shape, replacing Ambient and MainLight.*/
+typedef enum lighting_mode_ {
+	/*All light folds into the Ambient probe. This is the default.
+	  MainLight still reports the dominant directional light, but as
+	  information only: its energy remains inside Ambient, so it suits
+	  things like shadow direction, not additional shading.*/
+	lighting_mode_ambient,
+	/*The dominant directional light is separated out into MainLight, and
+	  Ambient carries only the remainder. This is for applications that
+	  render that light themselves, such as for shadow casting, since
+	  otherwise its energy is counted twice.*/
+	lighting_mode_main_light,
+} lighting_mode_;
+
+SK_API bool32_t              lighting_source_available (lighting_source_ source);
+SK_API void                  lighting_request_source   (lighting_source_ source);
+SK_API lighting_source_      lighting_get_source       (void);
+SK_API bool32_t              lighting_source_pending   (void);
+SK_API void                  lighting_set_mode         (lighting_mode_ mode);
+SK_API lighting_mode_        lighting_get_mode         (void);
+SK_API void                  lighting_set_main_light   (const sk_ref(sh_light_t) light);
+SK_API sh_light_t            lighting_get_main_light   (void);
+SK_API void                  lighting_set_environment  (tex_t sky_cubemap, tex_t* out_reflection sk_default(nullptr));
+SK_API void                  lighting_set_ambient      (const sk_ref(spherical_harmonics_t) ambient_lighting);
+SK_API spherical_harmonics_t lighting_get_ambient      (void);
+SK_API void                  lighting_set_reflection   (tex_t ibl_cubemap);
+SK_API tex_t                 lighting_get_reflection   (void);
 
 ///////////////////////////////////////////
 
@@ -4089,6 +4213,7 @@ SK_CONST char *default_id_material_pbr_clip    = "default/material_pbr_clip";
 SK_CONST char *default_id_material_unlit       = "default/material_unlit";
 SK_CONST char *default_id_material_unlit_clip  = "default/material_unlit_clip";
 SK_CONST char *default_id_material_equirect    = "default/equirect_convert";
+SK_CONST char *default_id_material_cubemap_downsample = "default/cubemap_downsample";
 SK_CONST char *default_id_material_font        = "default/material_font";
 SK_CONST char *default_id_material_hand        = "default/material_hand";
 SK_CONST char *default_id_material_ui          = "default/material_ui";
@@ -4129,6 +4254,8 @@ SK_CONST char *default_id_shader_sky           = "default/shader_sky";
 SK_CONST char *default_id_shader_lines         = "default/shader_lines";
 SK_CONST char *default_id_shader_sh_compute    = "default/shader_sh_compute";
 SK_CONST char *default_id_shader_depth_prepass = "default/shader_depth_prepass";
+SK_CONST char *default_id_shader_cubemap_ggx   = "default/shader_cubemap_ggx";
+SK_CONST char *default_id_shader_cubemap_downsample = "default/shader_cubemap_downsample";
 SK_CONST char *default_id_sound_click          = "default/sound_click";
 SK_CONST char *default_id_sound_unclick        = "default/sound_unclick";
 SK_CONST char *default_id_sound_grab           = "default/sound_grab";

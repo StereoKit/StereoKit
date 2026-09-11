@@ -14,6 +14,7 @@
 		<!-- Snapdragon -->
 		<meta-data android:name="spaces.version" android:value="0.15.0"/>
 		<!-- AndroidXR -->
+		<!-- https://developer.android.com/develop/xr/jetpack-xr-sdk/build-immersive#configure-manifest -->
 		<property android:name="android.window.PROPERTY_ACTIVITY_XR_START_MODE" android:value="XR_ACTIVITY_START_MODE_FULL_SPACE_UNMANAGED" />
 		<uses-native-library android:name="libopenxr.google.so" android:required="false"/>
 		<profileable android:shell="true"/>
@@ -35,12 +36,14 @@
 	</queries>
 
 	<!-- AndroidXR items -->
-	<!-- https://developer.android.com/develop/xr/get-started#designing-xr -->
+	<!-- https://developer.android.com/develop/xr/jetpack-xr-sdk/build-immersive#packagemanager-features -->
+	<!-- https://developer.android.com/develop/xr/permissions -->
 	<uses-feature    android:name="android.software.xr.immersive"           android:required="false" />
 	<uses-feature    android:name="android.hardware.xr.input.hand_tracking" android:required="false" />
 	<uses-feature    android:name="android.hardware.xr.input.controller"    android:required="false" />
 	<uses-feature    android:name="android.hardware.xr.input.eye_tracking"  android:required="false" />
-	<uses-permission android:name="android.permission.SCENE_UNDERSTANDING" />
+	<uses-permission android:name="android.permission.SCENE_UNDERSTANDING_COARSE" />
+	<uses-permission android:name="android.permission.SCENE_UNDERSTANDING_FINE" />
 	<uses-permission android:name="android.permission.HAND_TRACKING" />
 	<uses-permission android:name="android.permission.EYE_TRACKING_FINE" />
 

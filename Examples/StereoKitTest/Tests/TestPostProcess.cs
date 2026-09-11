@@ -30,7 +30,7 @@ class TestPostProcess : ITest
 
 		// RenderTo draws the primary list plus sky - a black background makes
 		// the pixel math predictable.
-		Renderer.EnableSky = false;
+		Renderer.SkyboxVisible = false;
 
 		Shader mathShader = Shader.FromFile("postfx_math.hlsl");
 		matInvert = new Material(mathShader);
@@ -66,7 +66,7 @@ class TestPostProcess : ITest
 
 	public void Shutdown()
 	{
-		Renderer.EnableSky = true;
+		Renderer.SkyboxVisible = true;
 		Log.Unsubscribe(OnLog);
 	}
 

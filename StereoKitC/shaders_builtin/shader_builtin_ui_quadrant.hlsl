@@ -31,10 +31,9 @@ psIn vs(vsIn input, sk_ids_t ids) {
 	world_mat[1] *= rsqrt(dot(row1, row1));
 
 	float3 normal = normalize(mul(input.norm, (float3x3)world_mat));
-	float4 world  = mul(input.pos, world_mat);
-	world.xyz    += quadrant_offset;
-	o.pos    = mul(world, sk_viewproj[ids.view]);
-	o.world  = world.xyz;
+	float3 world  = mul(input.pos.xyz, (float3x3)world_mat) + world_mat[3].xyz + quadrant_offset;
+	o.pos    = mul(float4(world, 1), sk_viewproj[ids.view]);
+	o.world  = world;
 	o.color.rgb = input.color.rgb * sk_inst[ids.inst].color.rgb * sk_lighting(normal);
 	o.color.a   = input.color.a;
 	return o;

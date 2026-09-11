@@ -251,7 +251,7 @@ if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.8.13
+    GIT_TAG v2026.8.26
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to
@@ -271,7 +271,7 @@ if (NOT SK_LOCAL_SK_APP)
   CPMAddPackage(
     NAME sk_app
     GITHUB_REPOSITORY StereoKit/sk_app
-    GIT_TAG v2026.8.19
+    GIT_TAG v2026.8.26
   )
 else()
   # For building directly with in-progress sk_app changes, point this to your
@@ -547,6 +547,8 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/xr_backends/extensions/hand_tracking.cpp
   StereoKitC/xr_backends/extensions/input_profiles.h
   StereoKitC/xr_backends/extensions/input_profiles.cpp
+  StereoKitC/xr_backends/extensions/light_estimation.h
+  StereoKitC/xr_backends/extensions/light_estimation.cpp
   StereoKitC/xr_backends/extensions/loader_init.h
   StereoKitC/xr_backends/extensions/loader_init.cpp
   StereoKitC/xr_backends/extensions/palm_pose.h
@@ -639,7 +641,12 @@ skshaderc_compile_headers(StereoKitC
   StereoKitC/shaders_builtin/shader_builtin_unlit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_unlit_clip.hlsl
   StereoKitC/shaders_builtin/shader_builtin_lightmap.hlsl
-  StereoKitC/shaders_builtin/shader_builtin_depth_prepass.hlsl )
+  StereoKitC/shaders_builtin/shader_builtin_depth_prepass.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_cubemap_ggx.hlsl
+  StereoKitC/shaders_builtin/shader_builtin_cubemap_downsample.hlsl
+  INCLUDES
+  tools/include/stereokit.hlsli
+  tools/include/stereokit_pbr.hlsli )
 
 if (NOT MSVC)
   # DirectXMath on non-msvc compilers needs a few extra files
@@ -936,7 +943,10 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/Shaders/skt_vert_custom.hlsl
     Examples/StereoKitCTest/Shaders/skt_postfx_vignette.hlsl
     Examples/StereoKitCTest/Shaders/skt_postfx_invert.hlsl
-    Examples/StereoKitCTest/Shaders/skt_postfx_depth_fog.hlsl)
+    Examples/StereoKitCTest/Shaders/skt_postfx_depth_fog.hlsl
+    INCLUDES
+    tools/include/stereokit.hlsli
+    tools/include/stereokit_pbr.hlsli)
 
   # Add source assets and compiled shaders to the app
   target_skapp_assets(StereoKitCTest ${CMAKE_CURRENT_BINARY_DIR}/shaders)
@@ -963,6 +973,8 @@ if (SK_BUILD_TESTS AND NOT ANDROID)
     tools/tests/audio_render.cpp
     tools/tests/asset_tests.h
     tools/tests/asset_tests.cpp
+    tools/tests/sh_tests.h
+    tools/tests/sh_tests.cpp
   )
 
   # See the StereoKitCTest note: pin the standard so u8 literals stay char.

@@ -1,5 +1,6 @@
 #include "render_pipeline.h"
 #include "render.h"
+#include "lighting.h"
 #include "defaults.h"
 #include "../asset_types/texture.h"
 #include "../asset_types/material.h"
@@ -42,7 +43,7 @@ static render_pipeline_state_t local = {};
 ///////////////////////////////////////////
 
 static void render_pipeline_begin() {
-	render_check_pending_skytex();
+	lighting_check_pending();
 	render_action_list_execute();
 	render_check_screenshots();
 }
@@ -214,7 +215,7 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 			snprintf(name, sizeof(name), "sk/render/pipeline_surface_%d", surface_id);
 			tex_set_id(surface->tex, name);
 		}
-		tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample, nullptr);
+		tex_set_color_arr(surface->tex, width, height, nullptr, surface->array_count, multisample);
 
 		// An existing zbuffer already tracks the color tex, and already has
 		// the id below. Naming it a second time would collide with itself.
@@ -234,7 +235,7 @@ bool32_t render_pipeline_surface_resize(pipeline_surface_id surface_id, int32_t 
 			snprintf(name, sizeof(name), "sk/render/pipeline_surface_%d_depth", surface_id);
 			tex_set_id(surface->depth_tex, name);
 		}
-		tex_set_color_arr(surface->depth_tex, width, height, nullptr, surface->array_count, 1, nullptr);
+		tex_set_color_arr(surface->depth_tex, width, height, nullptr, surface->array_count, 1);
 	}
 
 	render_update_projection();
@@ -270,7 +271,7 @@ static void render_pipeline_surface_update_present(pipeline_surface_id surface_i
 	// A resize swaps the GPU texture out from under the binding, but that
 	// changes the tex's meta hash, so material_check_dirty rebinds it.
 	if (surface->present_tex->width != surface->width || surface->present_tex->height != surface->height)
-		tex_set_color_arr(surface->present_tex, surface->width, surface->height, nullptr, surface->array_count, 1, nullptr);
+		tex_set_color_arr(surface->present_tex, surface->width, surface->height, nullptr, surface->array_count, 1);
 	if (fresh)
 		material_set_texture(surface->present_mat, "source", surface->present_tex);
 }

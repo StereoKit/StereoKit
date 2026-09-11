@@ -110,11 +110,26 @@ namespace StereoKit
 			get => NativeAPI.tex_get_anisotropy(_inst);
 			set => NativeAPI.tex_set_anisotropy(_inst, value); }
 
-		/// <summary>ONLY valid for cubemap textures! This will calculate a
-		/// spherical harmonics representation of the cubemap for use with
-		/// StereoKit's lighting. First call may take a frame or two of time,
-		/// but subsequent calls will pull from a cached value.</summary>
-		public SphericalHarmonics CubemapLighting => NativeAPI.tex_get_cubemap_lighting(_inst);
+		/// <summary>ONLY valid for cubemap textures! This is a spherical
+		/// harmonics representation of the cubemap for use with StereoKit's
+		/// lighting. The first read calculates it, blocking for the result,
+		/// and caches it. After new pixel content is uploaded, reads keep
+		/// answering with the previous lighting while a fresh calculation
+		/// runs in the background, swapping in once it's ready. Cubemaps
+		/// over 32px per face need a mip chain to answer accurately, so a
+		/// raw mip-less skybox will warn and return zeroes. Generate a
+		/// reflection from it with `GenCubemapReflection` and query that
+		/// instead, since it already carries the environment's lighting.
+		///
+		/// If you already know the lighting, from generating the cubemap
+		/// yourself for example, assigning it here skips the calculation
+		/// entirely. Assigning waits on a still-loading cubemap first, so
+		/// the value sticks to its final content. Uploading new pixels
+		/// afterwards replaces it with a calculated one, so assign after
+		/// the content, not before.</summary>
+		public SphericalHarmonics CubemapLighting {
+			get => NativeAPI.tex_get_cubemap_lighting(_inst);
+			set => NativeAPI.tex_set_cubemap_lighting(_inst, value); }
 
 		/// <summary>This allows you to attach or retreive a z/depth buffer
 		/// from a rendertarget texture. This texture _must_ be a rendertarget
@@ -360,7 +375,7 @@ namespace StereoKit
 		/// <param name="multisample">Multisample count, only relevant for
 		/// rendertarget textures.</param>
 		public void SetColors(int width, int height, IntPtr[] arrayData, int mipCount, int multisample = 1)
-			=> NativeAPI.tex_set_color_arr_mips(_inst, width, height, arrayData, arrayData.Length, mipCount, multisample, IntPtr.Zero);
+			=> NativeAPI.tex_set_color_arr_mips(_inst, width, height, arrayData, arrayData.Length, mipCount, multisample);
 		/// <summary>Set the texture's pixels for a multi-layer and/or
 		/// mip-mapped texture using a jagged color array. Each entry in
 		/// `arrayData` is one layer (face for cubemaps, slice for array
@@ -419,7 +434,7 @@ namespace StereoKit
 				handles[i] = GCHandle.Alloc(arrayData[i], GCHandleType.Pinned);
 				ptrs   [i] = handles[i].AddrOfPinnedObject();
 			}
-			NativeAPI.tex_set_color_arr_mips(_inst, width, height, ptrs, arrayData.Length, mipCount, multisample, IntPtr.Zero);
+			NativeAPI.tex_set_color_arr_mips(_inst, width, height, ptrs, arrayData.Length, mipCount, multisample);
 			for (int i = 0; i < handles.Length; i++) handles[i].Free();
 		}
 
@@ -597,7 +612,7 @@ namespace StereoKit
 		/// fragments that are drawn for each pixel to reduce sparkling /
 		/// aliasing artifacts.</param>
 		public void SetSize(int width, int height, int arrayCount = 1, int msaa = 1)
-			=> NativeAPI.tex_set_color_arr(_inst, width, height, IntPtr.Zero, arrayCount, msaa, IntPtr.Zero);
+			=> NativeAPI.tex_set_color_arr(_inst, width, height, IntPtr.Zero, arrayCount, msaa);
 
 		/// <summary>Only applicable if this texture is a rendertarget!
 		/// This creates and attaches a zbuffer surface to the texture for
@@ -690,7 +705,7 @@ namespace StereoKit
 		/// equirectangular image.</param>
 		/// <param name="lightingInfo">An out value that represents the
 		/// lighting information scraped from the cubemap! This can then be
-		/// passed to `Renderer.SkyLight`.</param>
+		/// passed to `Lighting.Ambient`.</param>
 		/// <param name="sRGBData">Is this image color data in sRGB format,
 		/// or is it normal/metal/rough/data that's not for direct display?
 		/// sRGB colors get converted to linear color space on the graphics
@@ -700,7 +715,7 @@ namespace StereoKit
 		/// in the async loading system. Lower values mean loading sooner.
 		/// </param>
 		/// <returns>A Cubemap texture asset!</returns>
-		[Obsolete("Use overload without lightingInfo, then use Tex.CubemapLighting, preferably after async tex loading has finished")]
+		[Obsolete("Use overload without lightingInfo. Lighting data comes from a reflection now: Tex.GenCubemapReflection(cubemap).CubemapLighting, or let Lighting.SetEnvironment set up lighting from the cubemap for you.")]
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true, int loadPriority = 10)
 		{
 			IntPtr tex    = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData, loadPriority);
@@ -862,7 +877,7 @@ namespace StereoKit
 		/// +X, -X, +Y, -Y, +Z, -Z.</param>
 		/// <param name="lightingInfo">An out value that represents the
 		/// lighting information scraped from the cubemap! This can then be
-		/// passed to `Renderer.SkyLight`.</param>
+		/// passed to `Lighting.Ambient`.</param>
 		/// <param name="sRGBData">Is this image color data in sRGB format,
 		/// or is it normal/metal/rough/data that's not for direct display?
 		/// sRGB colors get converted to linear color space on the graphics
@@ -872,7 +887,7 @@ namespace StereoKit
 		/// the async loading system. Lower values mean loading sooner.</param>
 		/// <returns>A Tex asset from the given files, or null if any failed 
 		/// to load.</returns>
-		[Obsolete("Use overload without lightingInfo, then use Tex.CubemapLighting, preferably after async tex loading has finished")]
+		[Obsolete("Use overload without lightingInfo. Lighting data comes from a reflection now: Tex.GenCubemapReflection(cubemap).CubemapLighting, or let Lighting.SetEnvironment set up lighting from the cubemap for you.")]
 		public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, out SphericalHarmonics lightingInfo, bool sRGBData = true, int priority = 10)
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
@@ -951,7 +966,7 @@ namespace StereoKit
 
 		/// <summary>Generates a cubemap texture from a gradient and a
 		/// direction! These are entirely suitable for skyboxes, which you
-		/// can set via Renderer.SkyTex.</summary>
+		/// can set via Renderer.SkyboxTex.</summary>
 		/// <param name="gradient">A color gradient the generator will sample
 		/// from! This looks at the 0-1 range of the gradient.</param>
 		/// <param name="gradientDirection">This vector points to where the
@@ -964,18 +979,18 @@ namespace StereoKit
 		/// <returns>A procedurally generated cubemap texture!</returns>
 		public static Tex GenCubemap(Gradient gradient, Vec3 gradientDirection, int resolution = 16)
 		{
-			IntPtr tex = NativeAPI.tex_gen_cubemap(gradient._inst, gradientDirection, resolution, IntPtr.Zero);
+			IntPtr tex = NativeAPI.tex_gen_cubemap(gradient._inst, gradientDirection, resolution);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 
 		/// <summary>Generates a cubemap texture from a gradient and a
 		/// direction! These are entirely suitable for skyboxes, which you
-		/// can set via `Renderer.SkyTex`.</summary>
+		/// can set via `Renderer.SkyboxTex`.</summary>
 		/// <param name="gradient">A color gradient the generator will sample
 		/// from! This looks at the 0-1 range of the gradient.</param>
 		/// <param name="lightingInfo">An out value that represents the
 		/// lighting information scraped from the cubemap! This can then be
-		/// passed to `Renderer.SkyLight`.</param>
+		/// passed to `Lighting.Ambient`.</param>
 		/// <param name="gradientDirection">This vector points to where the
 		/// 'top' of the color gradient will go. Conversely, the 'bottom' of
 		/// the gradient will be opposite, and it'll blend along that axis.
@@ -984,15 +999,17 @@ namespace StereoKit
 		/// face! This generally doesn't need to be large, unless you have a
 		/// really complicated gradient.</param>
 		/// <returns>A procedurally generated cubemap texture!</returns>
+		[Obsolete("Use the overload without lightingInfo, and read the result's CubemapLighting property instead.")]
 		public static Tex GenCubemap(Gradient gradient, out SphericalHarmonics lightingInfo, Vec3 gradientDirection, int resolution = 16)
 		{
-			IntPtr tex = NativeAPI.tex_gen_cubemap(gradient._inst, gradientDirection, resolution, out lightingInfo);
-			return tex == IntPtr.Zero ? null : new Tex(tex);
+			Tex result = GenCubemap(gradient, gradientDirection, resolution);
+			lightingInfo = result == null ? default : result.CubemapLighting;
+			return result;
 		}
 
 		/// <summary>Creates a cubemap from SphericalHarmonics lookups! These
 		/// are entirely suitable for skyboxes, which you can set via
-		/// `Renderer.SkyTex`.</summary>
+		/// `Renderer.SkyboxTex`.</summary>
 		/// <param name="lighting">Lighting information stored in a
 		/// SphericalHarmonics.</param>
 		/// <param name="resolution">The square size in pixels of each cubemap
@@ -1012,6 +1029,36 @@ namespace StereoKit
 		public static Tex GenCubemap(in SphericalHarmonics lighting, int resolution = 16, float lightSpotSizePct = 0, float lightSpotIntensity = 6)
 		{
 			IntPtr tex = NativeAPI.tex_gen_cubemap_sh(lighting, resolution, lightSpotSizePct, lightSpotIntensity);
+			return tex == IntPtr.Zero ? null : new Tex(tex);
+		}
+
+		/// <summary>Generates a specular reflection cubemap from an
+		/// environment cubemap: a GGX convolved mip chain suitable for
+		/// `Lighting.Reflection`. Skybox cubemaps carry only raw radiance at
+		/// mip 0, so reflections must be generated from them here. The
+		/// result also carries the environment's lighting data, ready in
+		/// `CubemapLighting` as soon as the reflection finishes loading.
+		///
+		/// This is asynchronous: a still-loading source returns a pending
+		/// texture right away, and generates when the load finishes. If the
+		/// source fails to load, a new result switches to the error
+		/// fallback, while a reused `into` keeps its previous
+		/// content.</summary>
+		/// <param name="sourceCubemap">The environment cubemap to convolve.
+		/// It does not need to be loaded yet, generation chains off the
+		/// load.</param>
+		/// <param name="into">When null, a new reflection texture is
+		/// created. Otherwise this should be a reflection cubemap from an
+		/// earlier call, whose contents are regenerated from the source,
+		/// the fast path for frequently updated environments. The source
+		/// itself is not a valid destination.</param>
+		/// <param name="maxResolution">Cap for the reflection texture's face
+		/// resolution when a new texture is created. Reflection data is
+		/// low frequency, so this can stay small.</param>
+		/// <returns>The reflection cubemap, or null on failure.</returns>
+		public static Tex GenCubemapReflection(Tex sourceCubemap, Tex into = null, int maxResolution = 64)
+		{
+			IntPtr tex = NativeAPI.tex_gen_cubemap_reflection(sourceCubemap?._inst ?? IntPtr.Zero, into?._inst ?? IntPtr.Zero, maxResolution);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 		#endregion

@@ -9,20 +9,21 @@ using namespace sk;
 
 tex_t envmap_tex = {};
 
-tex_t                 envmap_oldtex   = {};
-spherical_harmonics_t envmap_oldlight = {};
-model_t               model           = {};
+tex_t                 envmap_oldtex        = {};
+tex_t                 envmap_oldreflection = {};
+spherical_harmonics_t envmap_oldlight      = {};
+model_t               model                = {};
 
 ///////////////////////////////////////////
 
 void demo_envmap_init() {
-	envmap_oldlight = render_get_skylight();
-	envmap_oldtex   = render_get_skytex();
+	envmap_oldlight      = lighting_get_ambient();
+	envmap_oldtex        = render_get_skybox_tex();
+	envmap_oldreflection = lighting_get_reflection();
 
 	envmap_tex = tex_create_cubemap_file("old_depot.hdr");
 	tex_on_load(envmap_tex, [](tex_t t, void*) {
-		render_set_skylight(tex_get_cubemap_lighting(t));
-		render_set_skytex  (t);
+		lighting_set_environment(t);
 	}, nullptr);
 
 	model = model_create_file("DamagedHelmet.gltf");
@@ -37,9 +38,11 @@ void demo_envmap_update() {
 ///////////////////////////////////////////
 
 void demo_envmap_shutdown() {
-	render_set_skylight(envmap_oldlight);
-	render_set_skytex  (envmap_oldtex);
+	render_set_skybox_tex  (envmap_oldtex);
+	lighting_set_reflection(envmap_oldreflection);
+	lighting_set_ambient   (envmap_oldlight);
 
 	tex_release(envmap_tex);
 	tex_release(envmap_oldtex);
+	tex_release(envmap_oldreflection);
 }

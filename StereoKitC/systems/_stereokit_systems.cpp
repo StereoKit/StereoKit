@@ -75,7 +75,7 @@ bool stereokit_systems_register() {
 	systems_add(&sys_renderer);
 
 	system_t sys_lighting = { "Lighting" };
-	system_set_initialize_deps(sys_lighting, "Defaults");
+	system_set_initialize_deps(sys_lighting, "Defaults", "Permission");
 	system_set_step_deps      (sys_lighting, "Renderer");
 	sys_lighting.func_initialize = lighting_init;
 	sys_lighting.func_step       = lighting_step;
