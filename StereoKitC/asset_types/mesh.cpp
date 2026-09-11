@@ -268,16 +268,7 @@ void mesh_set_inds(mesh_t mesh, const vind_t *indices,  int32_t index_count) {
 // Async mesh loading infrastructure     //
 ///////////////////////////////////////////
 
-struct mesh_load_t {
-	void*    verts;
-	vind_t*  inds;
-	int32_t  vert_count;
-	int32_t  ind_count;
-	int32_t  vert_format; // load holds its own registry ref
-	bool32_t calc_bounds;
-};
-
-static bool32_t mesh_load_process(asset_task_t*, asset_header_t* asset, void *data) {
+bool32_t mesh_load_process(asset_task_t*, asset_header_t* asset, void *data) {
 	mesh_t       mesh = (mesh_t)asset;
 	mesh_load_t* load = (mesh_load_t*)data;
 
@@ -290,7 +281,7 @@ static bool32_t mesh_load_process(asset_task_t*, asset_header_t* asset, void *da
 	return true;
 }
 
-static bool32_t mesh_load_upload(asset_task_t*, asset_header_t* asset, void *data) {
+bool32_t mesh_load_upload(asset_task_t*, asset_header_t* asset, void *data) {
 	mesh_t       mesh = (mesh_t)asset;
 	mesh_load_t* load = (mesh_load_t*)data;
 
@@ -322,7 +313,7 @@ static bool32_t mesh_load_upload(asset_task_t*, asset_header_t* asset, void *dat
 	return true;
 }
 
-static void mesh_load_free(asset_header_t*, void *data) {
+void mesh_load_free(asset_header_t*, void *data) {
 	mesh_load_t* load = (mesh_load_t*)data;
 	vert_format_release(load->vert_format);
 	sk_free(load->verts);
@@ -330,7 +321,7 @@ static void mesh_load_free(asset_header_t*, void *data) {
 	sk_free(load);
 }
 
-static void mesh_load_on_failure(asset_header_t* asset, void *) {
+void mesh_load_on_failure(asset_header_t* asset, void *) {
 	((mesh_t)asset)->header.state = asset_state_error;
 }
 

@@ -2,8 +2,8 @@
 /// # Working with 3D Assets
 ///
 /// StereoKit's core 3D asset format is the GLTF! While there is still support
-/// for other formats, like STL, OBJ and PLY, GLTF is StereoKit's preferred
-/// format of choice. It has a well defined modern specification, and a large
+/// for other formats, like STL, OBJ, PLY, and SVG, GLTF is StereoKit's
+/// preferred format of choice. It has a well defined modern specification, and a large
 /// collection of quality tooling available in the ecosystem.
 ///
 /// > GLB is still just the "binary" format of GLTF, typically with all related
@@ -123,6 +123,57 @@
 /// - KHR_texture_basisu
 /// - KHR_texture_transform (not rotation)
 /// - EXT_meshopt_compression
+///
+/// ## Vector Art with SVG
+///
+/// SVG files load as flat, vertex colored geometry, which makes them a good
+/// fit for logos, icons, charts, and diagrams that might look bad up close
+/// when rasterized to pixels! `Mesh.FromFile` gives you the geometry on its
+/// own, and `Model.FromFile` wraps the same `Mesh` in a node with an unlit
+/// `Material`.
+///
+/// ```csharp
+/// Mesh  logo  = Mesh .FromFile("logo.svg" );
+/// Model chart = Model.FromFile("chart.svg");
+///
+/// logo .Draw(Material.Unlit, Matrix.T(0, 1.5f, -1));
+/// chart.Draw(                Matrix.T(1, 1,    -1));
+/// ```
+///
+/// All colors, gradients and opacity land in the vertex colors, so pick a
+/// `Material` that reads them. `Material.Unlit` is usually right for artwork,
+/// and `Material.Default` will light it like any other surface!
+///
+/// ### SVG supported functionality
+///
+/// This is deliberately a small, sane subset of SVG. Paths and basic
+/// shapes, groups and transforms, solid fills and strokes with joins and
+/// caps, linear and radial gradients, `use` references, and CSS classes in
+/// a `style` block all work. Clipping, masks, filters, images, dashed
+/// strokes, and `text` do not.
+///
+/// Text is the one you'll most likely run into! Most tools keep text as `text`
+/// elements, which SK will skip with a warning in the log. Convert the text
+/// to paths before exporting, and it'll load fine! A quick way to convert a
+/// file from a tool that can't is `rsvg-convert -f svg in.svg > out.svg`.
+///
+/// ### SVG size and orientation
+///
+/// If the file's root declares a real world size in `mm`, `cm`, or `in`,
+/// the `Mesh` uses that size! Otherwise the image's height is normalized to 1
+/// meter high, with the width following the aspect ratio, exactly like
+/// `Sprite`s. The `Mesh` is centered on the image and faces -Z, matching
+/// `Text` and `UI`.
+///
+/// ### SVG overlap and transparency
+///
+/// Everything in the file shares one depth, so shapes can't sort against
+/// each other the way they do in a browser. Shapes are sorted in reverse 
+/// document order, so that the last shape in the document is the first drawn
+/// shape, which survives Z-testing. This does mean that transparent shapes
+/// won't work well, a translucent shape blends with the scene behind the
+/// whole mesh but still hides the shapes behind it in the same file. Changing
+/// depth testing will also change sorting behavior!
 ///
 /// ## Notes About Alternative Formats
 ///

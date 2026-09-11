@@ -30,6 +30,7 @@ enum model_format_ {
 	model_format_obj,
 	model_format_stl,
 	model_format_ply,
+	model_format_svg,
 	model_format_none,
 };
 
@@ -60,6 +61,7 @@ static const model_fmt_t model_format_fns[] = {
 	{ modelfmt_obj_metadata,  modelfmt_obj_meshes,  modelfmt_obj_free  },
 	{ modelfmt_stl_metadata,  modelfmt_stl_meshes,  modelfmt_stl_free  },
 	{ modelfmt_ply_metadata,  modelfmt_ply_meshes,  modelfmt_ply_free  },
+	{ modelfmt_svg_metadata,  modelfmt_svg_meshes,  modelfmt_svg_free  },
 };
 
 static model_format_ model_get_format(const char *filename) {
@@ -69,6 +71,7 @@ static model_format_ model_get_format(const char *filename) {
 	else if (string_endswith(filename, ".obj",  false)) return model_format_obj;
 	else if (string_endswith(filename, ".stl",  false)) return model_format_stl;
 	else if (string_endswith(filename, ".ply",  false)) return model_format_ply;
+	else if (string_endswith(filename, ".svg",  false)) return model_format_svg;
 	return model_format_none;
 }
 
@@ -709,14 +712,18 @@ model_node_id model_node_index(model_t, int32_t index) {
 
 ///////////////////////////////////////////
 
+// Visuals only exist once the meshes have been attached, which is the last
+// step of every loader, so these wait for the whole load.
 int32_t model_node_visual_count(model_t model){
-	assets_block_until(&model->header, asset_state_loaded_meta);
+	assets_block_until(&model->header, asset_state_loaded);
 	return model->visuals.count;
 }
 
 ///////////////////////////////////////////
 
 model_node_id model_node_visual_index(model_t model, int32_t index) {
+	assets_block_until(&model->header, asset_state_loaded);
+	if (index < 0 || index >= model->visuals.count) return -1;
 	return model->visuals[index].node;
 }
 

@@ -13,7 +13,14 @@
 
 #if defined(__GNUC__) || defined(__clang__)
 	#define SK_DEPRECATED __attribute__((deprecated))
-	#define SK_EXIMPORT __attribute__((visibility("default")))
+	#if defined(_WIN32) && defined(SK_BUILD_SHARED)
+		// PE/COFF ignores ELF-style visibility attributes: MinGW/GCC shared
+		// builds need real dllexport markers to export the SK_API surface. 
+		// SK_BUILD_SHARED is passed PRIVATE to StereoKitC by its CMakeLists.
+		#define SK_EXIMPORT __declspec(dllexport)
+	#else
+		#define SK_EXIMPORT __attribute__((visibility("default")))
+	#endif
 	#define SK_CONST static const
 #elif defined(_MSC_VER)
 	#define SK_DEPRECATED __declspec(deprecated)
@@ -1583,6 +1590,8 @@ SK_API mesh_t       mesh_gen_sphere      (float diameter,  int32_t subdivisions 
 SK_API mesh_t       mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
 SK_API mesh_t       mesh_gen_cylinder    (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
 SK_API mesh_t       mesh_gen_cone        (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
+SK_API mesh_t       mesh_create_file     (const char *filename_utf8, int32_t priority sk_default(10));
+SK_API mesh_t       mesh_create_mem      (const char *filename_utf8, const void *data, size_t data_size, int32_t priority sk_default(10));
 
 ///////////////////////////////////////////
 

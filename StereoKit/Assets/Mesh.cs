@@ -530,6 +530,48 @@ namespace StereoKit
 		public void Draw(Material material, Matrix transform)
 			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, Color.White, RenderLayer.Layer0);
 
+		/// <summary>Loads a single Mesh from a .stl, .ply (ASCII), or .svg
+		/// file. These are formats that hold one mesh and no materials, so
+		/// unlike Model there's no scene to unpack. Anything richer, like
+		/// .obj or .gltf, needs to come in through Model.FromFile. Loading
+		/// happens asynchronously, so the Mesh returns right away and draws
+		/// nothing until it finishes. Check AssetState or OnLoaded if you
+		/// need to know when, and note that Bounds stays empty until then.
+		/// 
+		/// SVG files become flat, vertex colored geometry, see the "Working
+		/// with 3D Assets" guide for what's supported and how they're sized.
+		/// </summary>
+		/// <param name="file">A mesh file, an absolute filename, or a
+		/// filename relative to the assets folder.</param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading sooner.
+		/// </param>
+		/// <returns>A Mesh asset, or null if the file type is unrecognized!
+		/// A file that exists but fails to load returns a Mesh in an error
+		/// AssetState instead.</returns>
+		public static Mesh FromFile(string file, int loadPriority = 10)
+		{
+			IntPtr inst = NativeAPI.mesh_create_file(file, loadPriority);
+			return inst == IntPtr.Zero ? null : new Mesh(inst);
+		}
+
+		/// <summary>Loads a single Mesh from the contents of a .stl, .ply
+		/// (ASCII), or .svg file already in memory. This behaves
+		/// exactly like Mesh.FromFile.</summary>
+		/// <param name="filename">A filename or extension used to pick the
+		/// format, like "logo.svg" or ".stl".</param>
+		/// <param name="data">The contents of the mesh file.</param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading sooner.
+		/// </param>
+		/// <returns>A Mesh asset, or null if the file type is unrecognized!
+		/// </returns>
+		public static Mesh FromMemory(string filename, in byte[] data, int loadPriority = 10)
+		{
+			IntPtr inst = NativeAPI.mesh_create_mem(filename, data, (UIntPtr)data.Length, loadPriority);
+			return inst == IntPtr.Zero ? null : new Mesh(inst);
+		}
+
 		/// <summary>Generates a plane on the XZ axis facing up that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV
 		/// coordinates start at 0,0 at the -X,-Z corner, and go to 1,1 at the

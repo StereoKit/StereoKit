@@ -4,6 +4,7 @@
 #include "../libraries/array.h"
 #include "assets.h"
 #include "animation.h"
+#include "mesh.h"
 
 namespace sk {
 
@@ -54,6 +55,15 @@ void modelfmt_stl_free     (void *format_data);
 bool modelfmt_ply_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, void **out_format_data);
 bool modelfmt_ply_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, void *format_data);
 void modelfmt_ply_free     (void *format_data);
+
+bool modelfmt_svg_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, void **out_format_data);
+bool modelfmt_svg_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, void *format_data);
+void modelfmt_svg_free     (void *format_data);
+
+// Single mesh formats parse into vertex data the caller owns, so Mesh can
+// load them directly as well. 'name' is only for log messages.
+bool modelfmt_stl_build    (const void *file_data, size_t file_size, const char *name, mesh_load_t *out_mesh);
+bool modelfmt_ply_build    (const void *file_data, size_t file_size, const char *name, mesh_load_t *out_mesh);
 
 void model_destroy(model_t model);
 

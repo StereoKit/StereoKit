@@ -11,7 +11,7 @@ namespace StereoKit
 	/// model formats are composed this way already!
 	/// 
 	/// This class contains a number of methods for creation. If you pass in
-	/// a .obj, .stl, , .ply (ASCII), .gltf, or .glb, StereoKit will load
+	/// a .obj, .stl, .ply (ASCII), .gltf, .glb, or .svg, StereoKit will load
 	/// that model from file, and assemble materials and transforms from the
 	/// file information. But you can also assemble a model from procedurally 
 	/// generated meshes!
@@ -386,7 +386,9 @@ namespace StereoKit
 		}
 
 		/// <summary>Loads a list of mesh and material subsets from a .obj,
-		/// .stl, .ply (ASCII), .gltf, or .glb file.</summary>
+		/// .stl, .ply (ASCII), .gltf, .glb, or .svg file. An .svg becomes a
+		/// single flat, unlit, vertex colored node, see the "Working with 3D
+		/// Assets" guide for what's supported.</summary>
 		/// <param name="file">Name of the file to load! This gets prefixed
 		/// with the StereoKit asset folder if no drive letter is specified
 		/// in the path.</param>
@@ -403,7 +405,7 @@ namespace StereoKit
 		}
 
 		/// <summary>Loads a list of mesh and material subsets from a .obj,
-		/// .stl, .ply (ASCII), .gltf, or .glb file stored in memory. Note
+		/// .stl, .ply (ASCII), .gltf, .glb, or .svg file stored in memory. Note
 		/// that this function won't work well on files that reference other
 		/// files, such as .gltf files with references in them.</summary>
 		/// <param name="filename">StereoKit still uses the filename of the
@@ -837,11 +839,12 @@ namespace StereoKit
 	{
 		Model _model;
 		/// <summary>This is the total number of nodes with visual data
-		/// attached to them. This will block until the Model's metadata
-		/// has finished loading.</summary>
+		/// attached to them. This will block until the Model has finished
+		/// loading, since visuals arrive with the meshes.</summary>
 		public int Count => NativeAPI.model_node_visual_count(_model._inst);
 		/// <summary>Allows you to retrieve a node from this collection via its
-		/// index.</summary>
+		/// index. This will block until the Model has finished loading.
+		/// </summary>
 		/// <param name="index">This should be in the range of [0, Count).</param>
 		/// <returns>A ModelNode for the given index.</returns>
 		public ModelNode this[int index] => new ModelNode(_model, NativeAPI.model_node_visual_index(_model._inst, index));

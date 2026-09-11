@@ -21,15 +21,12 @@ struct simple_load_t {
 
 ///////////////////////////////////////////
 
-static mesh_t ply_load_mesh(const void *file_data, size_t file_length, const char *filename, int32_t priority) {
-	char id[512];
-	snprintf(id, sizeof(id), "%s/mesh", filename);
-	mesh_t mesh = mesh_find(id);
-	if (mesh) return mesh;
-
+bool modelfmt_ply_build(const void *file_data, size_t file_size, const char *name, mesh_load_t *out_mesh) {
 	ply_file_t file;
-	if (!ply_read(file_data, file_length, &file))
-		return nullptr;
+	if (!ply_read(file_data, file_size, &file)) {
+		log_warnf("Couldn't parse PLY: %s", name);
+		return false;
+	}
 
 	vert_t *verts      = nullptr;
 	vind_t *inds       = nullptr;
@@ -63,19 +60,44 @@ static mesh_t ply_load_mesh(const void *file_data, size_t file_length, const cha
 
 	ply_free(&file);
 
-	vind_t* final_inds = inds;
-	vind_t  ind_tmp[]  = { 0,0,0 };
-	if (ind_count == 0) {
-		final_inds = ind_tmp;
-		ind_count  = 3;
+	if (vert_count == 0) {
+		log_warnf("PLY has no vertices: %s", name);
+		sk_free(verts);
+		sk_free(inds);
+		return false;
 	}
+
+	// Point clouds have no faces, a degenerate triangle keeps the mesh valid.
+	if (ind_count == 0) {
+		inds      = sk_malloc_t(vind_t, 3);
+		inds[0]   = inds[1] = inds[2] = 0;
+		ind_count = 3;
+	}
+
+	out_mesh->verts      = verts;
+	out_mesh->vert_count = vert_count;
+	out_mesh->inds       = inds;
+	out_mesh->ind_count  = ind_count;
+	return true;
+}
+
+///////////////////////////////////////////
+
+static mesh_t ply_load_mesh(const void *file_data, size_t file_length, const char *filename, int32_t priority) {
+	char id[512];
+	snprintf(id, sizeof(id), "%s/mesh", filename);
+	mesh_t mesh = mesh_find(id);
+	if (mesh) return mesh;
+
+	mesh_load_t data = {};
+	if (!modelfmt_ply_build(file_data, file_length, filename, &data))
+		return nullptr;
 
 	mesh = mesh_create();
 	mesh_set_id  (mesh, id);
-	mesh_set_data(mesh, verts, vert_count, final_inds, ind_count, mesh_data_calc_bounds, priority);
-
-	sk_free(verts);
-	sk_free(inds);
+	mesh_set_data(mesh, (vert_t*)data.verts, data.vert_count, data.inds, data.ind_count, mesh_data_calc_bounds, priority);
+	sk_free(data.verts);
+	sk_free(data.inds);
 	return mesh;
 }
 

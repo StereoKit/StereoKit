@@ -12,13 +12,13 @@ class DemoWelcome : ITest
 
 	public void Initialize()
 	{
-		logo = Model.FromFile("StereoKit.glb");
+		logo = Model.FromFile("StereoKitWideLight.svg");
 	}
 
 	public void Step()
 	{
 		Hierarchy.Push(Demo.contentPose);
-		float scale = 1.3f;
+		float scale = 0.26f;
 		Vec3  size  = logo.Bounds.dimensions * scale;
 		logo.Draw(Matrix.TRS(V.XYZ(0, size.y/2.0f + 0.05f, 0), Quat.Identity, scale));
 		Text.Add(message, Matrix.S(1.25f), V.XY(.6f, 0), TextFit.Wrap, Pivot.TopCenter, Align.TopLeft);

@@ -171,30 +171,47 @@ bool modelfmt_stl_text_flat(const void *file_data, size_t, array_t<vert_t> *vert
 
 ///////////////////////////////////////////
 
+bool modelfmt_stl_build(const void *file_data, size_t file_size, const char *name, mesh_load_t *out_mesh) {
+	array_t<vert_t> verts = {};
+	array_t<vind_t> faces = {};
+
+	bool ok = file_size > 5 && memcmp(file_data, "solid", sizeof(char) * 5) == 0
+		? modelfmt_stl_text_flat  (file_data, file_size, &verts, &faces)
+		: modelfmt_stl_binary_flat(file_data, file_size, &verts, &faces);
+	if (!ok || verts.count == 0) {
+		log_warnf("Couldn't parse STL: %s", name);
+		verts.free();
+		faces.free();
+		return false;
+	}
+
+	for (int32_t i = 0; i < verts.count; i++)
+		verts[i].norm = vec3_normalize(verts[i].norm);
+
+	out_mesh->verts      = verts.data;
+	out_mesh->vert_count = verts.count;
+	out_mesh->inds       = faces.data;
+	out_mesh->ind_count  = faces.count;
+	return true;
+}
+
+///////////////////////////////////////////
+
 static mesh_t stl_load_mesh(const void *file_data, size_t file_length, const char *filename, int32_t priority) {
 	char id[512];
 	snprintf(id, sizeof(id), "%s/mesh", filename);
 	mesh_t mesh = mesh_find(id);
 	if (mesh) return mesh;
 
-	array_t<vert_t> verts = {};
-	array_t<vind_t> faces = {};
+	mesh_load_t data = {};
+	if (!modelfmt_stl_build(file_data, file_length, filename, &data))
+		return nullptr;
 
-	bool ok = file_length > 5 && memcmp(file_data, "solid", sizeof(char) * 5) == 0
-		? modelfmt_stl_text_flat  (file_data, file_length, &verts, &faces)
-		: modelfmt_stl_binary_flat(file_data, file_length, &verts, &faces);
-
-	if (ok) {
-		for (int32_t i = 0; i < verts.count; i++)
-			verts[i].norm = vec3_normalize(verts[i].norm);
-
-		mesh = mesh_create();
-		mesh_set_id  (mesh, id);
-		mesh_set_data(mesh, &verts[0], verts.count, &faces[0], faces.count, mesh_data_calc_bounds, priority);
-	}
-
-	verts.free();
-	faces.free();
+	mesh = mesh_create();
+	mesh_set_id  (mesh, id);
+	mesh_set_data(mesh, (vert_t*)data.verts, data.vert_count, data.inds, data.ind_count, mesh_data_calc_bounds, priority);
+	sk_free(data.verts);
+	sk_free(data.inds);
 	return mesh;
 }
 

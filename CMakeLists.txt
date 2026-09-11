@@ -353,11 +353,16 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/asset_types/mesh.h
   StereoKitC/asset_types/mesh_.h
   StereoKitC/asset_types/mesh.cpp
+  StereoKitC/asset_types/mesh_file.h
+  StereoKitC/asset_types/mesh_file.cpp
+  StereoKitC/asset_types/mesh_svg.h
+  StereoKitC/asset_types/mesh_svg.cpp
   StereoKitC/asset_types/model.h
   StereoKitC/asset_types/model.cpp
   StereoKitC/asset_types/model_gltf.cpp
   StereoKitC/asset_types/model_obj.cpp
   StereoKitC/asset_types/model_ply.cpp
+  StereoKitC/asset_types/model_svg.cpp
   StereoKitC/asset_types/model_stl.cpp
   StereoKitC/asset_types/shader.h
   StereoKitC/asset_types/shader.cpp
@@ -380,6 +385,8 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
   StereoKitC/libraries/cgltf.cpp
+  StereoKitC/libraries/nanosvg.h
+  StereoKitC/libraries/nanosvg.cpp
   StereoKitC/libraries/ferr_hash.h
   StereoKitC/libraries/ferr_hash.cpp
   StereoKitC/libraries/gen_ids.h
@@ -408,7 +415,9 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/utils/sdf.h
   StereoKitC/utils/sdf.cpp
   StereoKitC/utils/random.h
-  StereoKitC/utils/random.cpp)
+  StereoKitC/utils/random.cpp
+  StereoKitC/utils/triangulate.h
+  StereoKitC/utils/triangulate.cpp)
 
 # Systems
 target_sources(StereoKitC PRIVATE

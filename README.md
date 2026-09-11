@@ -96,5 +96,6 @@ Just like all software, StereoKit is built on the shoulders of incredible people
 - [zstd](https://github.com/facebook/zstd) - Zstd decompression for supercompressed KTX2 textures.
 - [Sean Barrett's stb libraries](https://github.com/nothings/stb) - Image and font format support.
 - [QOI](https://github.com/phoboslab/qoi) - Image format support.
+- [nanosvg](https://github.com/memononen/nanosvg) - SVG parsing.
 - [miniaudio](https://github.com/dr-soft/miniaudio) - Audio playback.
 - [sokol_time](https://github.com/floooh/sokol) - Cross platform high performance time.

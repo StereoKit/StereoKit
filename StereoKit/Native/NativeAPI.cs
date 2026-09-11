@@ -265,6 +265,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       mesh_gen_rounded_cube(Vec3 dimensions, float edge_radius, int subdivisions);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       mesh_gen_cylinder(float diameter, float depth, Vec3 direction, int subdivisions);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       mesh_gen_cone(float diameter, float depth, Vec3 direction, int subdivisions);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       mesh_create_file([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       mesh_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, IntPtr data, UIntPtr data_size, int priority);
 
 		///////////////////////////////////////////
 

@@ -101,6 +101,10 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern void backend_vulkan_request(in BackendVulkanRequestT request);
 
+		// mesh_create_mem with byte array
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
+		public static extern IntPtr mesh_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, [In] byte[] data, UIntPtr data_size, int priority);
+
 		// tex_create_mem with byte array
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern IntPtr tex_create_mem([In] byte[] data, UIntPtr data_size, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, int priority);
