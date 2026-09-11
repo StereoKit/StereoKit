@@ -143,11 +143,15 @@ bool platform_init() {
 	#endif
 
 	// Build extension array - start with platform-specific surface extensions from sk_app
+	// Offscreen mode never presents to a window, so we skip the surface extensions entirely
+	// to allow init on environments without a Vulkan surface ICD (e.g. CI runners).
 	array_t<const char*> vk_extensions = {};
-	uint32_t     ska_ext_count = 0;
-	const char** ska_exts      = ska_vk_get_instance_extensions(&ska_ext_count);
-	if (ska_exts != nullptr) {
-		vk_extensions.add_range(ska_exts, ska_ext_count);
+	if (settings->mode != app_mode_offscreen) {
+		uint32_t     ska_ext_count = 0;
+		const char** ska_exts      = ska_vk_get_instance_extensions(&ska_ext_count);
+		if (ska_exts != nullptr) {
+			vk_extensions.add_range(ska_exts, ska_ext_count);
+		}
 	}
 
 	// For XR modes, initialize OpenXR early to get Vulkan requirements
@@ -168,6 +172,7 @@ bool platform_init() {
 	vk_extensions.free();
 	if (!skr_result) {
 		log_fail_reason(95, log_error, "Failed to initialize sk_renderer!");
+		ska_shutdown();
 		return false;
 	}
 

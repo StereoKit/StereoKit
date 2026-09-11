@@ -61,6 +61,13 @@ void compute_buffer_get_data(compute_buffer_t buffer, void *out_data, int32_t el
 		log_warnf("compute_buffer_get_data: element_count %d exceeds buffer capacity %d, clamping", element_count, buffer->element_count);
 		element_count = buffer->element_count;
 	}
+
+	// skr_buffer_get performs no GPU sync on its own, so flush and wait for any pending
+	// GPU work (e.g. a compute dispatch writing this buffer) to guarantee up-to-date data,
+	// matching the blocking behavior documented on the C# GetData API
+	skr_future_t future = skr_cmd_flush();
+	skr_future_wait(&future);
+
 	skr_buffer_get(&buffer->gpu_buffer, out_data, (uint32_t)(element_count * buffer->element_size));
 }
 

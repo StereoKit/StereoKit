@@ -20,6 +20,23 @@ static void at_sleep_ms(int32_t ms) { Sleep(ms); }
 static void at_sleep_ms(int32_t ms) { usleep(ms * 1000); }
 #endif
 
+// Big enough for an OS temp directory (Windows' MAX_PATH is 260) plus the
+// longest filename this file builds ("audio_test_ambi_fuma.wav" and friends).
+#define AT_PATH_MAX 320
+
+// Scratch wav files for round-trip tests need an absolute path. A relative
+// name would get resolved through StereoKit's "Assets" folder convention,
+// which these files aren't part of.
+static void at_temp_path(char* out, size_t out_size, const char* name) {
+#if defined(_WIN32)
+	char dir[AT_PATH_MAX];
+	GetTempPathA((DWORD)sizeof(dir), dir);
+	snprintf(out, out_size, "%s%s", dir, name);
+#else
+	snprintf(out, out_size, "/tmp/%s", name);
+#endif
+}
+
 using namespace sk;
 
 ///////////////////////////////////////////
@@ -548,11 +565,8 @@ static sound_t at_load_wav(const char* path) {
 }
 
 static void at_test_file_streaming() {
-#if defined(_WIN32)
-	const char* path = "audio_test_long.wav";
-#else
-	const char* path = "/tmp/audio_test_long.wav";
-#endif
+	char path[AT_PATH_MAX];
+	at_temp_path(path, sizeof(path), "audio_test_long.wav");
 	if (!at_write_wav(path, 12, 0.1f)) {
 		log_warnf("[audio_test] skipping file streaming test, can't write %s", path);
 		return;
@@ -586,12 +600,9 @@ static void at_test_file_streaming() {
 // decode task can run, so playing on the next line always defers. The
 // offline clock only moves on audio_test_step, so elapsed time is exact.
 static void at_test_deferred_play() {
-#if defined(_WIN32)
-	const char* base = "audio_test_defer";
-#else
-	const char* base = "/tmp/audio_test_defer";
-#endif
-	char path[256];
+	char base[AT_PATH_MAX];
+	at_temp_path(base, sizeof(base), "audio_test_defer");
+	char path[AT_PATH_MAX];
 
 	// Loads inside the grace window play from the top, as if nothing
 	// happened. One step is 16ms of clock, well under the grace.
@@ -728,8 +739,8 @@ static void at_test_pitch() {
 
 	// At 2x rate a 0.5s sound is done in 0.25s, the 1x control isn't.
 	at_render(AU_SAMPLE_RATE/4 + AT_BLOCK*2, nullptr, nullptr);
-	AT_CHECK(sound_inst_is_playing(inst_fast) == false, "pitch 2 finishes in half the time");
-	AT_CHECK(sound_inst_is_playing(inst_norm) == true,  "pitch 1 control is still playing");
+	AT_CHECK(!sound_inst_is_playing(inst_fast), "pitch 2 finishes in half the time");
+	AT_CHECK( sound_inst_is_playing(inst_norm), "pitch 1 control is still playing");
 
 	sound_inst_stop(inst_norm);
 	at_render(AT_BLOCK*2, nullptr, nullptr);
@@ -893,13 +904,9 @@ static void at_test_attenuation() {
 ///////////////////////////////////////////
 
 static void at_test_normalization() {
-#if defined(_WIN32)
-	const char* path_a = "audio_test_quiet.wav";
-	const char* path_b = "audio_test_hot.wav";
-#else
-	const char* path_a = "/tmp/audio_test_quiet.wav";
-	const char* path_b = "/tmp/audio_test_hot.wav";
-#endif
+	char path_a[AT_PATH_MAX], path_b[AT_PATH_MAX];
+	at_temp_path(path_a, sizeof(path_a), "audio_test_quiet.wav");
+	at_temp_path(path_b, sizeof(path_b), "audio_test_hot.wav");
 	if (!at_write_wav(path_a, 1, 0.05f) || !at_write_wav(path_b, 1, 0.5f)) {
 		log_warnf("[audio_test] skipping normalization test, can't write files");
 		return;
@@ -1239,16 +1246,11 @@ static void at_test_shapes() {
 ///////////////////////////////////////////
 
 static void at_test_channel_formats() {
-#if defined(_WIN32)
-	const char* dir = "";
-#else
-	const char* dir = "/tmp/";
-#endif
-	char path[128];
+	char path[AT_PATH_MAX];
 
 	// A stereo file with tone on the left only: it plays head-locked with
 	// its image intact, even when "positioned" hard right.
-	snprintf(path, sizeof(path), "%saudio_test_stereo.wav", dir);
+	at_temp_path(path, sizeof(path), "audio_test_stereo.wav");
 	if (at_write_wav_ch(path, 1, 0.25f, 2, 1, 440.0f)) {
 		sound_t stereo = at_load_wav(path);
 		AT_CHECK(stereo != nullptr && sound_get_channels(stereo) == sound_channels_stereo, "stereo wav loads as stereo");
@@ -1262,7 +1264,7 @@ static void at_test_channel_formats() {
 
 	// A 4 channel file loads as an ambisonic bed with no separate loader
 	// call, and a W-only bed is omni: head rotation must not change energy.
-	snprintf(path, sizeof(path), "%saudio_test_ambi_w.wav", dir);
+	at_temp_path(path, sizeof(path), "audio_test_ambi_w.wav");
 	if (at_write_wav_ch(path, 1, 0.25f, 4, 1, 8000.0f)) {
 		sound_t bed = sound_create(path);
 		for (int32_t i = 0; i < 500 && sound_duration(bed) == 0; i++) at_sleep_ms(10);
@@ -1285,7 +1287,7 @@ static void at_test_channel_formats() {
 
 	// W+X together make a forward-facing cardioid field: turning around
 	// pushes its energy through the duller back corners.
-	snprintf(path, sizeof(path), "%saudio_test_ambi_wx.wav", dir);
+	at_temp_path(path, sizeof(path), "audio_test_ambi_wx.wav");
 	if (at_write_wav_ch(path, 1, 0.25f, 4, 1 | 8, 8000.0f)) {
 		sound_t front = sound_create(path);
 		for (int32_t i = 0; i < 500 && sound_duration(front) == 0; i++) at_sleep_ms(10);
@@ -1308,7 +1310,7 @@ static void at_test_channel_formats() {
 	// FuMa slot 1, which would read as ambiX Y (left/right, yaw-symmetric)
 	// without the reorder. Converted, it's the same forward cardioid as the
 	// ambiX W+X case - front-heavy, so a 180 yaw drops energy.
-	snprintf(path, sizeof(path), "%saudio_test_ambi_fuma.wav", dir);
+	at_temp_path(path, sizeof(path), "audio_test_ambi_fuma.wav");
 	if (at_write_wav_fuma(path, 1, 0.177f, 0.25f, 8000.0f)) {
 		sound_t fuma = sound_create(path);
 		for (int32_t i = 0; i < 500 && sound_duration(fuma) == 0; i++) at_sleep_ms(10);
@@ -1332,11 +1334,8 @@ static void at_test_channel_formats() {
 ///////////////////////////////////////////
 
 static void at_test_create_mem() {
-#if defined(_WIN32)
-	const char* path = "audio_test_mem.wav";
-#else
-	const char* path = "/tmp/audio_test_mem.wav";
-#endif
+	char path[AT_PATH_MAX];
+	at_temp_path(path, sizeof(path), "audio_test_mem.wav");
 	if (!at_write_wav(path, 1, 0.25f)) return;
 
 	FILE* file = fopen(path, "rb");
