@@ -58,12 +58,12 @@ class DocFeatureImage : ITest
 		
 		helmet.Draw(helmetPose.ToMatrix(.1f));
 
-		UI.WindowBegin(" Welcome!", ref clipboardPose, V.XY(.26f,0));
-		UI.Image(logoSprite, new Vec2(24, 0) * U.cm);
+		UI.WindowBegin("Welcome!", ref clipboardPose, V.XY(.27f,0));
+		UI.Image(logoSprite, new Vec2(25, 0) * U.cm);
 
 		UI.HSeparator();
 
-		UI.Text("StereoKit is a C#, code-first, lightweight Mixed Reality engine. Welcome back to .NET! :)\n\nBuilt around an intuitive API, an MR friendly UI, MR interaction systems, and more!");
+		UI.Text("StereoKit is a C#, code-first, lightweight Mixed Reality engine. Welcome back to .NET! :)\n\nBuilt around an intuitive API, an XR friendly UI, XR interaction systems, and more!");
 
 		UI.VSpace(UI.LineHeight*0.5f);
 
