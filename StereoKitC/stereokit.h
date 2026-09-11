@@ -13,7 +13,14 @@
 
 #if defined(__GNUC__) || defined(__clang__)
 	#define SK_DEPRECATED __attribute__((deprecated))
-	#define SK_EXIMPORT __attribute__((visibility("default")))
+	#if defined(_WIN32) && defined(SK_BUILD_SHARED)
+		// PE/COFF ignores ELF-style visibility attributes: MinGW/GCC shared
+		// builds need real dllexport markers to export the SK_API surface. 
+		// SK_BUILD_SHARED is passed PRIVATE to StereoKitC by its CMakeLists.
+		#define SK_EXIMPORT __declspec(dllexport)
+	#else
+		#define SK_EXIMPORT __attribute__((visibility("default")))
+	#endif
 	#define SK_CONST static const
 #elif defined(_MSC_VER)
 	#define SK_DEPRECATED __declspec(deprecated)
