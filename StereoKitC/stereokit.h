@@ -15,7 +15,7 @@
 	#define SK_DEPRECATED __attribute__((deprecated))
 	#if defined(_WIN32) && defined(SK_BUILD_SHARED)
 		// PE/COFF ignores ELF-style visibility attributes: MinGW/GCC shared
-		// builds need real dllexport markers to export the SK_API surface.
+		// builds need real dllexport markers to export the SK_API surface. 
 		// SK_BUILD_SHARED is passed PRIVATE to StereoKitC by its CMakeLists.
 		#define SK_EXIMPORT __declspec(dllexport)
 	#else
