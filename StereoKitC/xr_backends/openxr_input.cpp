@@ -293,7 +293,7 @@ xr_system_ oxri_init(void*) {
 	// Suggest all our input profiles
 	local.registration_finished = true;
 	// We can only submit one binding per interaction profile, so here we
-	// combine each uniqu top-level path belonging to the same interaction
+	// combine each unique top-level path belonging to the same interaction
 	// profile.
 
 	// Figure out all the unique interaction profiles
