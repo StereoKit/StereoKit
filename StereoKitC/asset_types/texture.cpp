@@ -923,7 +923,7 @@ void tex_set_zbuffer(tex_t texture, tex_t depth_texture) {
 		log_err(tex_msg_requires_rendertarget);
 		return;
 	}
-	if (depth_texture != nullptr && !(depth_texture->type & tex_type_depth)) {
+	if (depth_texture != nullptr && !(depth_texture->type & (tex_type_depth | tex_type_depthtarget))) {
 		log_err(tex_msg_requires_depth);
 		return;
 	}
