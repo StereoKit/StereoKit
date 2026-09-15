@@ -25,6 +25,7 @@
 #include "../systems/input_keyboard.h"
 #include "../systems/render.h"
 #include "../systems/render_pipeline.h"
+#include "../systems/frame_pacer.h"
 #include "../systems/world.h"
 #include "../ui/interactor_modes.h"
 #include "../asset_types/anchor.h"
@@ -42,6 +43,7 @@ mouse_mode_    sim_mouse_mode_prev; // App's mouse mode, restored when mouse-loo
 
 ska_window_t*       ska_win;
 skr_surface_t       sim_skr_surface;
+frame_pacer_t       sim_pacer;
 pipeline_surface_id sim_surface;
 
 const float    sim_move_speed = 1.4f; // average human walk speed, see: https://en.wikipedia.org/wiki/Preferred_walking_speed;
@@ -124,6 +126,11 @@ bool simulator_init() {
 	if (surface_size.x > 0 && surface_size.y > 0)
 		sim_surface_resize(sim_surface, surface_size.x, surface_size.y);
 
+	// The pacer refines this every frame; this is for the startup log
+	float refresh_hz = ska_window_get_refresh_rate(ska_win);
+	if (refresh_hz > 0.0f) device_data.display_refresh_rate = refresh_hz;
+	frame_pacer_set_main(&sim_pacer);
+
 	interactor_modes_set_default(default_interactors_mouse);
 	platform_set_active_window(ska_win);
 	input_mouse_set_window(ska_win);
@@ -165,7 +172,10 @@ bool sim_skr_surface_create(ska_window_t* window, skr_surface_t* out_surface) {
 	}
 	// Wayland surfaces report no extent of their own, so the swapchain is sized
 	// from this. Ignored where the surface reports a real one.
-	if (skr_surface_create(vk_surface, sim_drawable_size(window), out_surface) != skr_err_success) {
+	skr_surface_info_t info = {};
+	info.native_surface = vk_surface;
+	info.size           = sim_drawable_size(window);
+	if (skr_surface_create(info, out_surface) != skr_err_success) {
 		log_err("Failed to create renderer surface");
 		vkDestroySurfaceKHR(skr_get_vk_instance(), vk_surface, nullptr);
 		return false;
@@ -190,6 +200,8 @@ void simulator_shutdown() {
 
 	// Destroy the renderer surface before the window
 	skr_surface_destroy(&sim_skr_surface);
+	frame_pacer_set_main(nullptr);
+	sim_pacer       = {};
 	sim_skr_surface = {};
 
 	input_mouse_set_window(nullptr);
@@ -217,6 +229,7 @@ void simulator_step_begin() {
 			log_diag("Window hidden - destroying surface");
 			vkDeviceWaitIdle(skr_get_vk_device());
 			skr_surface_destroy(&sim_skr_surface);
+			frame_pacer_reset(&sim_pacer);
 			break;
 		// New native window available — recreate Vulkan surface
 		case ska_event_window_shown: {
@@ -234,6 +247,11 @@ void simulator_step_begin() {
 			break;
 		}
 	}
+
+	// Before input, so the run ahead wait doesn't sit between sampling input
+	// and using it
+	if (skr_surface_is_valid(&sim_skr_surface))
+		frame_pacer_begin(&sim_pacer, &sim_skr_surface, ska_win, window_get_fullscreen(window_get_main()));
 
 	input_step();
 
@@ -342,15 +360,18 @@ void simulator_step_end() {
 	// can't skip it based on sim_surface validity
 	render_pipeline_draw();
 
-	if (skr_surface_is_valid(&sim_skr_surface))
+	if (skr_surface_is_valid(&sim_skr_surface)) {
 		render_pipeline_surface_present_swapchain(sim_surface, &sim_skr_surface);
-	else
+		frame_pacer_end(&sim_pacer, &sim_skr_surface);
+	} else {
 		render_pipeline_skip_present();
+	}
 
 	// Resize AFTER frame_end (not mid-frame) to avoid command buffer ref_count imbalance
 	if (acquire == skr_acquire_surface_lost) {
 		vkDeviceWaitIdle(skr_get_vk_device());
 		skr_surface_destroy(&sim_skr_surface);
+		frame_pacer_reset(&sim_pacer);
 	} else if (skr_surface_is_valid(&sim_skr_surface)) {
 		if (acquire == skr_acquire_needs_resize)
 			skr_surface_resize(&sim_skr_surface, sim_drawable_size(ska_win));

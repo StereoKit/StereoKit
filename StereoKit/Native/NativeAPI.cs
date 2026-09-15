@@ -89,6 +89,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        time_frame();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        time_perf_cpu_us();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        time_perf_gpu_us();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern PresentStats time_perf_present();
 
 		///////////////////////////////////////////
 
