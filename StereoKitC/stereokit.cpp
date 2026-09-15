@@ -12,12 +12,14 @@
 #include "systems/system.h"
 #include "systems/_stereokit_systems.h"
 #include "systems/vert_format.h"
+#include "systems/frame_pacer.h"
 #include "libraries/sokol_time.h"
 #include "libraries/ferr_thread.h"
 #include "libraries/ferr_hash.h"
 #include "libraries/profiler.h"
 #include "utils/random.h"
 #include "platforms/platform.h"
+#include "device.h"
 
 #if defined(SK_XR_OPENXR)
 #include "xr_backends/openxr.h"
@@ -50,12 +52,12 @@ struct sk_state_t {
 	double   timev;
 	float    timevf_us;
 	double   timev_us;
-	double   time_start;
 	double   timev_step;
 	float    timev_stepf;
 	double   timev_step_us;
 	float    timev_stepf_us;
 	uint64_t timev_raw;
+	uint64_t timev_step_display_ns; // handed over by the backend for the next frame, 0 is none
 	uint64_t frame;
 
 	uint64_t  app_init_time;
@@ -141,8 +143,7 @@ bool32_t sk_init(sk_settings_t settings) {
 	log_diagf("Initializing StereoKit v%s...", sk_version_name());
 
 	stm_setup();
-	sk_step_timer();
-	local.frame = 0;
+	local.timev_raw = stm_now();
 	rand_set_seed((uint32_t)stm_now());
 
 	local.initialized = stereokit_systems_register();
@@ -304,23 +305,31 @@ void sk_quit(quit_reason_ quit_reason) {
 
 ///////////////////////////////////////////
 
+// Totals are sums of steps rather than wall clock since start, so a display
+// paced step keeps them consistent with it. The first step is one display
+// refresh rather than the time init took.
 void sk_step_timer() {
-	local.frame    += 1;
-	local.timev_raw = stm_now();
-	double time_curr = stm_sec(local.timev_raw);
+	local.frame += 1;
+	uint64_t now  = stm_now();
+	double   step = local.timev_step_display_ns > 0 ? local.timev_step_display_ns / 1e9
+	              : local.frame > 1                 ? stm_sec(stm_diff(now, local.timev_raw))
+	              :                                   1.0 / device_display_get_refresh_rate();
+	local.timev_raw             = now;
+	local.timev_step_display_ns = 0;
 
-	if (local.time_start == 0)
-		local.time_start = time_curr;
-	double new_time = time_curr - local.time_start;
-	local.timev_step_us  =  new_time - local.timev_us;
-	local.timev_step     = (new_time - local.timev_us) * local.timev_scale;
-	local.timev_us       = new_time;
+	local.timev_step_us  = step;
+	local.timev_step     = step * local.timev_scale;
+	local.timev_us      += local.timev_step_us;
 	local.timev         += local.timev_step;
 	local.timev_stepf_us = (float)local.timev_step_us;
 	local.timev_stepf    = (float)local.timev_step;
 	local.timevf_us      = (float)local.timev_us;
 	local.timevf         = (float)local.timev;
 }
+
+///////////////////////////////////////////
+
+void time_step_next(uint64_t step_ns) { local.timev_step_display_ns = step_ns; }
 
 ///////////////////////////////////////////
 
@@ -497,6 +506,7 @@ uint64_t time_perf_cpu_us() {
 	return cpu_us;
 }
 uint64_t time_perf_gpu_us() { return skr_renderer_get_gpu_time_us(); }
+present_stats_t time_perf_present() { return frame_pacer_stats_main(); }
 
 ///////////////////////////////////////////
 
@@ -504,13 +514,11 @@ void time_set_time(double total_seconds, double frame_elapsed_seconds) {
 	if (frame_elapsed_seconds < 0) {
 		frame_elapsed_seconds = local.timev_step_us;
 		if (frame_elapsed_seconds == 0)
-			frame_elapsed_seconds = 1.f / 90.f;
+			frame_elapsed_seconds = 1.0 / device_display_get_refresh_rate();
 	}
 	total_seconds = fmax(total_seconds, 0);
 
-	local.timev_raw  = stm_now();
-	local.time_start = stm_sec(local.timev_raw) - total_seconds;
-
+	local.timev_raw      = stm_now();
 	local.timev_step_us  = frame_elapsed_seconds;
 	local.timev_step     = frame_elapsed_seconds * local.timev_scale;
 	local.timev_us       = total_seconds;

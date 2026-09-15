@@ -109,6 +109,7 @@ void openxr_step_begin  ();
 void openxr_step_end    ();
 bool openxr_poll_events ();
 bool openxr_render_frame();
+void openxr_step_time_reset();
 
 // CPU dead-time accounting: OpenXR's xrWaitFrame/xrAcquireSwapchainImage/
 // xrWaitSwapchainImage block inside sk_renderer's CPU frame window, so their

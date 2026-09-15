@@ -23,6 +23,7 @@
 #include "../asset_types/texture.h"
 #include "../asset_types/texture_.h"
 #include "../systems/render.h"
+#include "../systems/frame_pacer.h"
 #include "../systems/render_pipeline.h"
 #include "../systems/input.h"
 #include "../systems/system.h"
@@ -382,6 +383,7 @@ bool32_t xr_view_type_valid(XrViewConfigurationType type) {
 ///////////////////////////////////////////
 
 void openxr_views_destroy() {
+	openxr_step_time_reset();
 	// Wait for all GPU work to complete before destroying swapchain resources.
 	// The textures have ImageViews/Framebuffers that may still be referenced
 	// by in-flight command buffers, and OpenXR swapchain images can't be
@@ -765,6 +767,17 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, display_blend_ pr
 
 ///////////////////////////////////////////
 
+// The app step runs before its frame's xrWaitFrame, so the next frame steps
+// by the gap between the last two reported display times, one frame behind
+// the display. A skipped frame shows up as a double step on the frame after.
+static XrTime xr_pace_prev = 0;  // predictedDisplayTime from the report before this one
+
+void openxr_step_time_reset() {
+	xr_pace_prev = 0;
+}
+
+///////////////////////////////////////////
+
 bool openxr_render_frame() {
 	profiler_zone();
 
@@ -834,10 +847,11 @@ bool openxr_render_frame() {
 			"xrBeginFrame");
 	}
 
-	// Timing also needs some work, may be best as some sort of anchor system
 	xr_time = frame_state.predictedDisplayTime;
 	if (frame_state.predictedDisplayPeriod > 0)
 		device_data.display_refresh_rate = 1e9f / (float)frame_state.predictedDisplayPeriod;
+	frame_pacer_step((uint64_t)frame_state.predictedDisplayTime, (uint64_t)xr_pace_prev);
+	xr_pace_prev = frame_state.predictedDisplayTime;
 
 	// Meta's environment depth images are only valid when acquired during a running
 	// OpenXR frame (between xrBeginFrame and xrEndFrame)

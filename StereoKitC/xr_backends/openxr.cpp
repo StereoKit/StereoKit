@@ -690,7 +690,7 @@ void openxr_step_end() {
 	ext_management_evt_step_end();
 
 	if (xr_has_session) { openxr_render_frame(); }
-	else                { render_clear(); render_pipeline_skip_present(); ska_time_sleep(33); }
+	else                { openxr_step_time_reset(); render_clear(); render_pipeline_skip_present(); ska_time_sleep(33); }
 
 	// Both branches above tick sk_renderer's frame counter via
 	// render_pipeline_skip_present (directly or inside openxr_render_frame),

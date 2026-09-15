@@ -1121,20 +1121,36 @@ SK_API void              permission_request       (const permission_type_* in_ar
 
 ///////////////////////////////////////////
 
-SK_API double        time_total_raw        (void);
-SK_API float         time_totalf_unscaled  (void);
-SK_API double        time_total_unscaled   (void);
-SK_API float         time_totalf           (void);
-SK_API double        time_total            (void);
-SK_API float         time_stepf_unscaled   (void);
-SK_API double        time_step_unscaled    (void);
-SK_API float         time_stepf            (void);
-SK_API double        time_step             (void);
-SK_API void          time_scale            (double scale);
-SK_API void          time_set_time         (double total_seconds, double frame_elapsed_seconds sk_default(0));
-SK_API uint64_t      time_frame            (void);
-SK_API uint64_t      time_perf_cpu_us      (void);
-SK_API uint64_t      time_perf_gpu_us      (void);
+/*A snapshot of how frames have been reaching the display recently, for
+  checking performance at runtime. Only the flatscreen app modes present
+  through a surface StereoKit can time; in XR and Offscreen this is all
+  zeros.*/
+typedef struct present_stats_t {
+	/*Microseconds from the most recent present call to its first pixel on
+	  screen, or 0 when the platform gave no display time for it.*/
+	uint64_t        latency_us;
+	/*Presents among the last 128 with a known display time.*/
+	uint32_t        sample_count;
+	/*Of those, how many stayed on screen for two or more refreshes. A
+	  repeated frame is a visible hitch.*/
+	uint32_t        repeat_count;
+} present_stats_t;
+
+SK_API double          time_total_raw        (void);
+SK_API float           time_totalf_unscaled  (void);
+SK_API double          time_total_unscaled   (void);
+SK_API float           time_totalf           (void);
+SK_API double          time_total            (void);
+SK_API float           time_stepf_unscaled   (void);
+SK_API double          time_step_unscaled    (void);
+SK_API float           time_stepf            (void);
+SK_API double          time_step             (void);
+SK_API void            time_scale            (double scale);
+SK_API void            time_set_time         (double total_seconds, double frame_elapsed_seconds sk_default(0));
+SK_API uint64_t        time_frame            (void);
+SK_API uint64_t        time_perf_cpu_us      (void);
+SK_API uint64_t        time_perf_gpu_us      (void);
+SK_API present_stats_t time_perf_present     (void);
 
 ///////////////////////////////////////////
 

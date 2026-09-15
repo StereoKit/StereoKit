@@ -57,6 +57,23 @@ namespace StereoKit
 		public float bottom;
 	}
 
+	/// <summary>A snapshot of how frames have been reaching the display recently, for
+	/// checking performance at runtime. Only the flatscreen app modes present
+	/// through a surface StereoKit can time; in XR and Offscreen this is all
+	/// zeros.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public partial struct PresentStats
+	{
+		/// <summary>Microseconds from the most recent present call to its first pixel on
+		/// screen, or 0 when the platform gave no display time for it.</summary>
+		public ulong latencyUs;
+		/// <summary>Presents among the last 128 with a known display time.</summary>
+		public uint sampleCount;
+		/// <summary>Of those, how many stayed on screen for two or more refreshes. A
+		/// repeated frame is a visible hitch.</summary>
+		public uint repeatCount;
+	}
+
 	/// <summary>Used to represent lines for the line drawing functions! This is
 	/// just a snapshot of information about each individual point on a line.</summary>
 	[StructLayout(LayoutKind.Sequential)]
