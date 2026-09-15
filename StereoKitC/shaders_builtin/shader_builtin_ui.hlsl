@@ -23,10 +23,11 @@ struct psIn {
 
 psIn vs(vsIn input, sk_ids_t ids) {
 	psIn o;
-	float3 normal = normalize(mul(input.norm, (float3x3) sk_inst[ids.inst].world));
-	float4 world  = mul(input.pos, sk_inst[ids.inst].world);
-	o.pos   = mul(world, sk_viewproj[ids.view]);
-	o.world = world.xyz;
+	float3x3 world3x3 = (float3x3)sk_inst[ids.inst].world;
+	float3   normal   = normalize(mul(input.norm, world3x3));
+	float3   world    = mul(input.pos.xyz, world3x3) + sk_inst[ids.inst].world[3].xyz;
+	o.pos   = mul(float4(world, 1), sk_viewproj[ids.view]);
+	o.world = world;
 	o.uv    = input.uv;
 	o.color.rgb = color.rgb * input.color.rgb * sk_inst[ids.inst].color.rgb * sk_lighting(normal);
 	o.color.a   = input.color.a;

@@ -158,8 +158,8 @@ class GuideWorkingWithMaterials : ITest
 /// ![Interesting lighting]({{site.screen_url}}/MaterialDefault.jpg)
 /// 
 /// You can change the environment lighting with a nice cubemap, check out the
-/// [`Renderer.SkyLight`]({{site.url}}/Pages/StereoKit/Renderer/SkyLight.html)
-/// property for a nice example of how to do this!
+/// [`Lighting.SetEnvironment`]({{site.url}}/Pages/StereoKit/Lighting/SetEnvironment.html)
+/// method for a nice example of how to do this!
 /// 
 /// ## Materials and Performance
 /// 

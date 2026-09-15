@@ -34,13 +34,13 @@ static const int   shadow_buffer_slot    = 13;
 
 static tex_t             shadow_map    = {};
 static material_buffer_t shadow_buffer = {};
-static vec3              light_dir     = {0.577f, 0.577f, 0.0f}; // normalized (1,1,0)
 
 static model_t    shadow_model      = {};
 static pose_t     shadow_model_pose = {};
 
-static spherical_harmonics_t old_lighting = {};
-static tex_t                 old_tex      = {};
+static spherical_harmonics_t old_lighting   = {};
+static tex_t                 old_tex        = {};
+static tex_t                 old_reflection = {};
 
 ///////////////////////////////////////////
 
@@ -93,20 +93,15 @@ void demo_shadows_init() {
 	shadow_model_pose.orientation = quat_identity;
 
 	// Save old lighting
-	old_lighting = render_get_skylight();
-	old_tex      = render_get_skytex();
+	old_lighting   = lighting_get_ambient();
+	old_tex        = render_get_skybox_tex();
+	old_reflection = lighting_get_reflection();
 
-	// Load environment map and update lighting when loaded
+	// The environment provides visuals and lighting, the shadow direction
+	// comes from lighting_get_main_light once the cubemap is done loading!
 	tex_t env_tex = tex_create_cubemap_file("old_depot.hdr");
-	render_set_skytex(env_tex);
-	tex_on_load      (env_tex, [](tex_t t, void*) {
-		spherical_harmonics_t lighting = tex_get_cubemap_lighting(t);
-		render_set_skylight(lighting);
-		// Update light direction from dominant light
-		light_dir = sh_dominant_dir(lighting);
-		light_dir = vec3_normalize(light_dir);
-	}, nullptr);
-	tex_release(env_tex); // tex_on_load keeps a reference
+	lighting_set_environment(env_tex, nullptr);
+	tex_release(env_tex);
 
 	// Bind shadow buffer globally
 	render_global_buffer(shadow_buffer_slot, shadow_buffer);
@@ -114,17 +109,19 @@ void demo_shadows_init() {
 
 ///////////////////////////////////////////
 
-static void setup_shadow_map(vec3 light_direction) {
+static void setup_shadow_map() {
 	// Position the center of the shadow map in front of the user
-	pose_t head        = input_head();
+	pose_t     head  = input_head();
+	sh_light_t light = lighting_get_main_light();
+
 	vec3   head_fwd    = head.orientation * vec3_forward;
 	vec3   head_fwd_xz = vec3_normalize(vec3{head_fwd.x, 0, head_fwd.z});
 	vec3   head_pos_xz = vec3{head.position.x, 0, head.position.z};
 	vec3   forward_pos = head_pos_xz + head_fwd_xz * 0.5f * shadow_map_size;
 
-	quat light_orientation = quat_lookat_up(vec3_zero, light_direction, vec3_up);
+	quat light_orientation = quat_lookat_up(vec3_zero, -light.dir_to, vec3_up);
 	vec3 light_pos = quantize_light_pos(
-		forward_pos + light_direction * -10.0f,
+		forward_pos + light.dir_to * 10.0f,
 		light_orientation,
 		shadow_map_size / shadow_map_resolution
 	);
@@ -142,7 +139,7 @@ static void setup_shadow_map(vec3 light_direction) {
 	shadow_buffer_t buffer_data = {};
 	buffer_data.shadowmap_transform = matrix_transpose(matrix_invert(view) * proj);
 	buffer_data.shadowmap_bias      = bias;
-	buffer_data.light_direction     = -light_direction;
+	buffer_data.light_direction     = light.dir_to;
 	buffer_data.light_color         = vec3{1, 1, 1};
 	buffer_data.shadowmap_pixel_size = 1.0f / shadow_map_resolution;
 	material_buffer_set_data(shadow_buffer, &buffer_data);
@@ -164,7 +161,7 @@ static void setup_shadow_map(vec3 light_direction) {
 ///////////////////////////////////////////
 
 void demo_shadows_update() {
-	setup_shadow_map(light_dir);
+	setup_shadow_map();
 
 	// UI handle for the model
 	bounds_t model_bounds = model_get_bounds(shadow_model);
@@ -177,8 +174,9 @@ void demo_shadows_update() {
 
 void demo_shadows_shutdown() {
 	// Restore old lighting
-	render_set_skylight(old_lighting);
-	render_set_skytex  (old_tex);
+	render_set_skybox_tex  (old_tex);
+	lighting_set_reflection(old_reflection);
+	lighting_set_ambient   (old_lighting);
 
 	// Unbind global resources
 	render_global_buffer (shadow_buffer_slot, nullptr);
@@ -189,6 +187,7 @@ void demo_shadows_shutdown() {
 	material_buffer_release(shadow_buffer);
 	model_release          (shadow_model);
 	tex_release            (old_tex);
+	tex_release            (old_reflection);
 }
 
 ///////////////////////////////////////////

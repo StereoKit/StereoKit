@@ -138,9 +138,9 @@ namespace StereoKit.Framework
 		void StartSky()
 		{
 			oldColor = Renderer.ClearColor;
-			oldSky   = Renderer.EnableSky;
-			Renderer.ClearColor = Color.BlackTransparent;
-			Renderer.EnableSky  = false;
+			oldSky   = Renderer.SkyboxVisible;
+			Renderer.ClearColor    = Color.BlackTransparent;
+			Renderer.SkyboxVisible = false;
 		}
 
 		void PausePassthrough()
@@ -159,8 +159,8 @@ namespace StereoKit.Framework
 				return;
 			}
 
-			Renderer.ClearColor = oldColor;
-			Renderer.EnableSky  = oldSky;
+			Renderer.ClearColor    = oldColor;
+			Renderer.SkyboxVisible = oldSky;
 		}
 
 		#region OpenXR native bindings and types

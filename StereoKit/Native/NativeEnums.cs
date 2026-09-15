@@ -739,9 +739,11 @@ namespace StereoKit
 		Flatscreen,
 	}
 
-	/// <summary>A list of permissions that StereoKit knows about. On some platforms (like
-	/// Android), these permissions may need to be explicitly requested before using
-	/// certain features.</summary>
+	/// <summary>A list of permissions that StereoKit knows about, each named for the
+	/// feature it unlocks. On some platforms (like Android), these permissions may
+	/// need to be explicitly requested before using certain features. Runtimes
+	/// group features into system permissions differently, so several of these may
+	/// resolve to the same underlying system permission.</summary>
 	public enum PermissionType {
 		/// <summary>For access to microphone data, this is typically an interactive
 		/// permission that the user will need to explicitly approve.
@@ -767,30 +769,72 @@ namespace StereoKit
 		/// This maps to android.permission.FACE_TRACKING on Android XR, but
 		/// varies per-runtime.</summary>
 		FaceTracking,
-		/// <summary>For access to data in the user's space, this can be for things like
-		/// spatial anchors, plane detection, hit testing, etc. This is typically an
+		/// <summary>For estimating ambient lighting from the user's surroundings, this is
+		/// what the world lighting source feeds into Lighting.Ambient. This is
+		/// typically an interactive permission that the user will need to
+		/// explicitly approve.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+		/// XR, but varies per-runtime.</summary>
+		AmbientEstimation,
+		/// <summary>For estimating an environment cubemap from the user's surroundings,
+		/// this is what the world lighting source feeds into Lighting.Reflection.
+		/// The estimate shows imagery of the user's space, so runtimes may treat
+		/// it more strictly than ambient estimation. This is typically an
 		/// interactive permission that the user will need to explicitly approve.
-		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
+		/// This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
 		/// but varies per-runtime.</summary>
-		Scene,
+		ReflectionEstimation,
+		/// <summary>For reading depth data about the user's surroundings via Sensor.Depth,
+		/// useful for things like occlusion. This is typically an interactive
+		/// permission that the user will need to explicitly approve.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
+		/// but varies per-runtime.</summary>
+		DepthSensing,
+		/// <summary>For creating and persisting spatial anchors in the user's space, via
+		/// StereoKit's Anchor API. Some runtimes grant this automatically from the
+		/// manifest entry, while others treat it as an interactive permission.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+		/// XR and com.oculus.permission.USE_ANCHOR_API on Meta, but varies
+		/// per-runtime.</summary>
+		Anchors,
 		/// <summary>This enum is for tracking the number of value in this enum.</summary>
 		Max,
 	}
 
 	/// <summary>Permissions can be in a variety of states, depending on how users interact
 	/// with them. Sometimes they're automatically granted, user denied, or just
-	/// unknown for the current runtime!</summary>
+	/// unknown for the current runtime! A positive value means you're clear to use
+	/// the feature, zero or negative means you're not.</summary>
 	public enum PermissionState {
-		/// <summary>This permission is known to StereoKit, but not available to request.
-		/// Typically this means the correct permission string is not listed in the
-		/// AndroidManfiest.xml or similar.</summary>
-		Unavailable  = -2,
-		/// <summary>This app is capable of using the permission, but it needs to be
-		/// requested first with Permission.Request.</summary>
+		/// <summary>StereoKit knows this permission, but nothing you do at runtime can get
+		/// it granted. Usually the permission string is missing from the
+		/// AndroidManifest.xml or equivalent, so check there first. Some runtimes
+		/// also report this when an administrator or parental control has locked
+		/// the feature off, which no amount of asking will change. Fix your app's
+		/// manifest, or work without the feature.</summary>
+		Unavailable  = -5,
+		/// <summary>The permission was refused, and the system will not prompt for it
+		/// again. Requesting it is legal, but nothing will happen. Only the user
+		/// can undo this, from the system's settings. Work without the feature,
+		/// and if it matters, tell the user where to turn it back on.</summary>
+		Blocked      = -4,
+		/// <summary>The permission was refused, but the system is still willing to prompt
+		/// for it. Not every platform has this state; where the first refusal is
+		/// final, you'll get blocked instead. You can request it again, ideally at
+		/// a moment where the user understands why you need it.</summary>
+		Denied       = -3,
+		/// <summary>A permission request is in flight: a dialog may be up, or StereoKit is
+		/// waiting to see if the system will answer one. This settles on its own
+		/// once the system answers, or the user dismisses the dialog. Wait, and
+		/// check back later.</summary>
+		Requesting   = -2,
+		/// <summary>This app can use the permission, but hasn't been granted it yet. Ask
+		/// for it with Permission.Request.</summary>
 		Capable      = -1,
 		/// <summary>StereoKit doesn't know about the permission on the current runtime. This
 		/// happens when the runtime has a unique permission string (or not) and
-		/// StereoKit doesn't know what it is to look up its current status.</summary>
+		/// StereoKit doesn't know what it is to look up its current status. There's
+		/// no reliable action here, try the feature and see if it works.</summary>
 		Unknown      = 0,
 		/// <summary>This permission is entirely approved and you can go ahead and use the
 		/// associated features!</summary>
@@ -1349,6 +1393,41 @@ namespace StereoKit
 		/// list is cleared. Useful for per-frame lists that are filled and
 		/// drained inside a single frame.</summary>
 		None         = 1,
+	}
+
+	/// <summary>This determines where lighting data comes from! The default is `Manual`,
+	/// where the application provides all lighting via the `Lighting` functions.
+	/// Devices that can estimate lighting from the user's surroundings also have
+	/// the `World` option.</summary>
+	public enum LightingSource {
+		/// <summary>Lighting values are set manually by the application. Use the
+		/// `Lighting` functions to configure the scene lighting.</summary>
+		Manual,
+		/// <summary>Lighting data is pulled from the world via the device's light estimation
+		/// capabilities. StereoKit will overwrite any data in `Lighting.Ambient`,
+		/// `MainLight`, and `Reflection` when using this source. You can check
+		/// `Lighting.SourceAvailable` to see if this is supported before requesting
+		/// it.</summary>
+		World,
+	}
+
+	/// <summary>This determines what form scene lighting takes: all of it can fold into
+	/// the ambient probe, or the dominant directional light can be separated
+	/// out from it. This shapes lighting derived from an environment: both the
+	/// world source's estimates, and what Lighting.SetEnvironment derives from
+	/// its cubemap. Changing the mode re-delivers the scene's most recent full
+	/// lighting in the new shape, replacing Ambient and MainLight.</summary>
+	public enum LightingMode {
+		/// <summary>All light folds into the Ambient probe. This is the default.
+		/// MainLight still reports the dominant directional light, but as
+		/// information only: its energy remains inside Ambient, so it suits
+		/// things like shadow direction, not additional shading.</summary>
+		Ambient,
+		/// <summary>The dominant directional light is separated out into MainLight, and
+		/// Ambient carries only the remainder. This is for applications that
+		/// render that light themselves, such as for shadow casting, since
+		/// otherwise its energy is counted twice.</summary>
+		MainLight,
 	}
 
 	/// <summary>When used with a hierarchy modifying function that will push/pop items onto a

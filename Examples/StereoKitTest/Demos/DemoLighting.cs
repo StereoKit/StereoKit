@@ -15,6 +15,7 @@ class Light
 }
 enum LightMode
 {
+	World,
 	Lights,
 	Image,
 }
@@ -24,10 +25,9 @@ class DemoLighting : ITest
 	string title       = "Lighting Editor";
 	string description = "";
 
-	static List<Light> lights         = new List<Light>();
-	static Tex         cubemap        = null;
-	static bool        cubelightDirty = false;
-	static string      cubemapFile    = "";
+	static List<Light> lights      = new List<Light>();
+	static string      cubemapFile = "";
+	static float       lightSpot   = 0.3f;
 
 	Pose       windowPose    = (Demo.contentPose * Matrix.T(-0.2f, 0, 0)).Pose;
 	Pose       previewPose   = (Demo.contentPose * Matrix.T(0.2f, -0.1f, 0)).Pose;
@@ -35,15 +35,20 @@ class DemoLighting : ITest
 	LightMode  mode          = LightMode.Lights;
 	Model      previewModel  = Model.FromFile("DamagedHelmet.gltf");
 	Mesh       lightMesh     = Mesh.GenerateSphere(1);
-	Material   lightProbeMat = Default.Material;
+	Material   lightProbeMat;
 	Material   lightSrcMat   = new Material(Default.ShaderUnlit);
 
-	public void Initialize() { }
+	public void Initialize() {
+		lightProbeMat = Material.PBR.Copy();
+		lightProbeMat[MatParamName.RoughnessAmount] = 0.0f;
+		lightProbeMat[MatParamName.MetallicAmount] = 1.0f;
+		lightProbeMat[MatParamName.ColorTint] = new Color(1,1,1,1);
+	}
 	public void Shutdown() => Platform.FilePickerClose();
 	public void Step()
 	{
 		UI.WindowBegin("Lighting Source", ref windowPose);
-		UI.Label("Mode");
+		if (UI.Radio("World", mode == LightMode.World)) mode = LightMode.World;
 		UI.SameLine();
 		if (UI.Radio("Lights", mode == LightMode.Lights)) mode = LightMode.Lights;
 		UI.SameLine();
@@ -51,21 +56,39 @@ class DemoLighting : ITest
 
 		UI.HSeparator();
 
+		if (mode == LightMode.World)
+		{
+			UI.PushEnabled(Lighting.SourceAvailable(LightingSource.World));
+			bool useEstimation = Lighting.Source != LightingSource.Manual;
+			if (UI.Toggle("Use Light Estimation", ref useEstimation)) Lighting.RequestSource(useEstimation ? LightingSource.World : LightingSource.Manual);
+			UI.PopEnabled();
+			// Always present so this tab matches the others' height.
+			UI.Label(Lighting.SourcePending ? "Waiting on permission..." : "");
+		}
+
 		if (mode == LightMode.Lights)
-		{ 
+		{
 			if (UI.Button("Add"))
 			{
-				lights.Add(new Light { 
-					pose  = new Pose(Vec3.Up*25*U.cm, Quat.LookDir(-Vec3.Forward)), 
-					color = Vec3.One });
+				lights.Add(new Light
+				{
+					pose = new Pose(Vec3.Up * 25 * U.cm, Quat.LookDir(-Vec3.Forward)),
+					color = Vec3.One
+				});
 				UpdateLights();
 			}
 
+			UI.SameLine();
 			if (UI.Button("Remove") && lights.Count > 1)
-			{ 
-				lights.RemoveAt(lights.Count-1);
+			{
+				lights.RemoveAt(lights.Count - 1);
 				UpdateLights();
 			}
+
+			UI.Label("Spot Size");
+			UI.SameLine();
+			if (UI.HSlider("SpotSize", ref lightSpot, 0, 1))
+				UpdateLights();
 		}
 
 		if (mode == LightMode.Image)
@@ -77,14 +100,24 @@ class DemoLighting : ITest
 
 		UI.HSeparator();
 
+		// Mode shapes any environment derived lighting, not just estimates!
+		bool splitMain = Lighting.Mode == LightingMode.MainLight;
+		if (UI.Toggle("Separate Main Light", ref splitMain)) Lighting.Mode = splitMain ? LightingMode.MainLight : LightingMode.Ambient;
+		UI.SameLine();
+		if (UI.Button("Reset")) Lighting.SetEnvironment(null);
+
+		UI.HSeparator();
+
 		if (UI.Button("Print Lighting Code"))
 		{
-			Vec3[] c = Renderer.SkyLight.ToArray();
-			string shStr = "new SphericalHarmonics(new Vec3[]{";
+			Vec3[] c = Lighting.Ambient.ToArray();
+			string shStr = "SphericalHarmonics lighting = new SphericalHarmonics(new Vec3[]{";
 			for (int i = 0; i < c.Length; i++)
 				shStr += $"new Vec3({c[i].x:F2}f, {c[i].y:F2}f, {c[i].z:F2}f),";
 			shStr += "});";
 			Log.Info(shStr);
+			Log.Info($"Lighting.SetEnvironment(Tex.GenCubemap(lighting, 16, lightSpotSizePct: {lightSpot:F2}f));");
+			Log.Info("Lighting.Ambient = lighting;");
 		}
 
 		UI.WindowEnd();
@@ -96,7 +129,13 @@ class DemoLighting : ITest
 		UI.Handle("Light Tool", ref lightToolPose, new Bounds(Vec3.One * 0.12f));
 		Hierarchy.Push(Matrix.T(lightToolPose.position));
 		lightMesh.Draw(lightProbeMat, Matrix.S(0.04f));
-		DrawSH(Renderer.SkyLight, 0.02f, 0.06f);
+
+		// A line pointing at the scene's main light. The color is HDR, so
+		// saturate it before it crushes to Color32.
+		Vec3    lightDir   = Lighting.MainLight.directionTo;
+		Color32 lightColor = Lighting.MainLight.color.ToColor32Sat();
+		Lines.Add(lightDir * 0.02f, lightDir * 0.06f, lightColor, lightColor, 0.005f);
+		DrawSH(Lighting.Ambient, 0.02f, 0.06f);
 		if (mode == LightMode.Lights)
 		{ 
 			bool needsUpdate = false;
@@ -107,11 +146,6 @@ class DemoLighting : ITest
 				UpdateLights();
 		}
 		Hierarchy.Pop();
-
-		if (cubelightDirty && cubemap.AssetState == AssetState.Loaded) {
-			Renderer.SkyLight = cubemap.CubemapLighting;
-			cubelightDirty = false;
-		}
 
 		Demo.ShowSummary(title, description, new Bounds(V.XY0(0, -0.08f), V.XYZ(.7f, .3f, 0.1f)));
 	}
@@ -170,10 +204,9 @@ class DemoLighting : ITest
 	void LoadSkyImage(string file)
 	{
 		cubemapFile = Path.GetFileName(file);
-		cubemap     = Tex.FromCubemap(file);
 
-		Renderer.SkyTex = cubemap;
-		cubelightDirty  = true;
+		// Skybox, reflection, and ambient all chain off the async file load.
+		Lighting.SetEnvironment(Tex.FromCubemap(file));
 	}
 
 	void UpdateLights()
@@ -184,8 +217,10 @@ class DemoLighting : ITest
 				color       = Color.HSV(a.color) * LightIntensity(a.pose.position) })
 			.ToArray());
 
-		Renderer.SkyTex   = Tex.GenCubemap(lighting);
-		Renderer.SkyLight = lighting;
+		// The exact SH is already known here, so it overrides the ambient the
+		// environment would derive. Overrides come after SetEnvironment.
+		Lighting.SetEnvironment(Tex.GenCubemap(lighting, 16, lightSpot));
+		Lighting.Ambient = lighting;
 	}
 
 	float LightIntensity(Vec3 pos)

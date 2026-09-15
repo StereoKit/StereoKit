@@ -33,14 +33,14 @@ psIn vs(vsIn input, sk_ids_t ids) {
 	float3 row2 = float3(world_mat._31, world_mat._32, world_mat._33);
 	world_mat[2] *= rsqrt(dot(row2, row2));
 
-	float4 sized_pos = input.pos;
-	sized_pos.xyz += input.norm * sk_inst[ids.inst].color.a * 0.002;
+	float3 sized_pos = input.pos.xyz + input.norm * sk_inst[ids.inst].color.a * 0.002;
 
-	float4 world  = mul(sized_pos, world_mat);
-	world.xyz    += quadrant_offset;
-	float3 normal = normalize(mul(input.norm, (float3x3)world_mat));
-	o.pos   = mul(world, sk_viewproj[ids.view]);
-	o.world = world.xyz;
+	float3 world  = mul(sized_pos, (float3x3)world_mat) + world_mat[3].xyz + quadrant_offset;
+	// All three rows are unit now, so this is a rotation and the transformed
+	// normal comes out unit already.
+	float3 normal = mul(input.norm, (float3x3)world_mat);
+	o.pos   = mul(float4(world, 1), sk_viewproj[ids.view]);
+	o.world = world;
 	o.color = lerp(color.rgb, sk_inst[ids.inst].color.rgb, input.color.a) * sk_lighting(normal);
 	return o;
 }

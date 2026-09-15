@@ -57,9 +57,12 @@ namespace StereoKit.Framework
 
 		public static void ApplyLighting()
 		{
-			var light = Renderer.SkyLight;
+			var light = Lighting.Ambient;
 			light.Brightness(0.02f);
-			Renderer.SkyTex = Tex.GenCubemap(light);
+			// Not SetEnvironment, that would also overwrite Ambient.
+			Tex sky = Tex.GenCubemap(light);
+			Renderer.SkyboxTex  = sky;
+			Lighting.Reflection = Tex.GenCubemapReflection(sky);
 		}
 
 		public static void ApplyMeshesOnly()

@@ -33,8 +33,6 @@ class DemoRenderScaling : ITest
 		UI.SameLine();
 		UI.HSlider("scaling", ref scaling, 0.1f, 2, 0.05f);
 
-		UI.HSeparator();
-
 		UI.Label("MSAA");
 		UI.Label($"{(int)multisample}", V.XY(0.04f, 0));
 		UI.SameLine();

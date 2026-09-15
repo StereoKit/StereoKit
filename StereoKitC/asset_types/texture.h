@@ -31,9 +31,16 @@ struct _tex_t {
 	int32_t          anisotropy;
 	skr_tex_t        gpu_tex;
 	tex_t            depth_buffer;
-	spherical_harmonics_t *light_info;
+	spherical_harmonics_t *light_info; // owned lighting cache, texture.cpp only
+	skr_buffer_t     sh_buffer;  // SH projection result, GPU side
+	skr_future_t     sh_future;  // completes when sh_buffer is readable
+	bool32_t         sh_pending; // readback pending, resolved lazily on query
+	bool32_t         sh_dirty;   // content changed; queries kick a refresh
 };
 
-void tex_destroy(tex_t texture);
+void tex_destroy       (tex_t texture);
+// GPU writes bypass the upload path, so systems that render into a texture
+// call this to flag a cubemap's cached lighting for a background refresh.
+void tex_lighting_dirty(tex_t texture);
 
 } // namespace sk

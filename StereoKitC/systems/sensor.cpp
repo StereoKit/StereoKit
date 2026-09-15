@@ -113,7 +113,7 @@ void sensor_readback_update(tex_t gpu_tex, int32_t width, int32_t height, int32_
 	// Create readback texture lazily, deriving format from the GPU texture
 	if (readback.readback_tex == nullptr) {
 		readback.readback_tex = tex_create(tex_type_image_nomips, gpu_tex->format);
-		tex_set_color_arr(readback.readback_tex, width, height, nullptr, array_count, 1, nullptr);
+		tex_set_color_arr(readback.readback_tex, width, height, nullptr, array_count, 1);
 	}
 
 	// Start new readback if none in-flight and source has new data

@@ -185,12 +185,13 @@ void material_alloc_resources(material_t material) {
 // Returns a default texture for a shader resource value string. Does NOT
 // add a reference - caller must addref if storing.
 static tex_t _material_default_tex_for(const char *value) {
-	if      (string_eq(value, "white")) return sk_default_tex;
-	else if (string_eq(value, "black")) return sk_default_tex_black;
-	else if (string_eq(value, "gray" )) return sk_default_tex_gray;
-	else if (string_eq(value, "flat" )) return sk_default_tex_flat;
-	else if (string_eq(value, "rough")) return sk_default_tex_rough;
-	else                                return sk_default_tex;
+	if      (string_eq(value, "white"  )) return sk_default_tex;
+	else if (string_eq(value, "black"  )) return sk_default_tex_black;
+	else if (string_eq(value, "gray"   )) return sk_default_tex_gray;
+	else if (string_eq(value, "flat"   )) return sk_default_tex_flat;
+	else if (string_eq(value, "rough"  )) return sk_default_tex_rough;
+	else if (string_eq(value, "cubemap")) return sk_default_cubemap;
+	else                                  return sk_default_tex;
 }
 
 ///////////////////////////////////////////

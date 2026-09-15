@@ -2,6 +2,12 @@
 
 //--name = sk/cubemap
 
+// The sky is a material texture, not a global. sk_cubemap holds the specular
+// reflection cubemap, which is convolved lighting data rather than raw sky.
+//--source = cubemap
+TextureCube  source   : register(t0);
+SamplerState source_s : register(s0);
+
 struct vsIn {
 	float4 pos : SV_Position;
 };
@@ -27,5 +33,5 @@ min16float4 ps(psIn input) : SV_TARGET {
 	// Sample directly from mip 0 here, this bypasses any trilinear sampling or
 	// derivative calculations for improved performance. This does require a
 	// cubemap texture that is the correct size for the screen!
-	return sk_cubemap.SampleLevel(sk_cubemap_s, input.norm, 0);
+	return source.SampleLevel(source_s, input.norm, 0);
 }

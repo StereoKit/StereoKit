@@ -27,49 +27,89 @@ namespace StereoKit
 			return native;
 		}
 
-		/// <summary>Set a cubemap skybox texture for rendering a background! This is only visible on Opaque
-		/// displays, since transparent displays have the real world behind them already! StereoKit has a
-		/// a default procedurally generated skybox. You can load one with `Tex.FromEquirectangular`, 
-		/// `Tex.GenCubemap`. If you're trying to affect the lighting, see `Renderer.SkyLight`.</summary>
+		/// <summary>The cubemap texture the skybox backdrop draws! This is
+		/// only visible on Opaque displays, since transparent displays have
+		/// the real world behind them already. It's shorthand for the skybox
+		/// material's 'source' texture parameter, and survives material
+		/// swaps.
+		///
+		/// This is purely visual, and does not affect scene lighting. The
+		/// typical way to set up a sky is `Lighting.SetEnvironment`, which
+		/// assigns this along with the lighting it derives from the same
+		/// cubemap. Assign this directly to draw a different sky than the
+		/// one you're lighting with. Assigning null restores StereoKit's
+		/// built-in default sky.</summary>
+		public static Tex SkyboxTex
+		{
+			get  { IntPtr ptr = NativeAPI.render_get_skybox_tex(); return ptr == IntPtr.Zero ? null : new Tex(ptr); }
+			set => NativeAPI.render_set_skybox_tex(value == null ? IntPtr.Zero : value._inst);
+		}
+
+		/// <summary>Deprecated with the skybox/lighting split! Assigning this
+		/// still behaves like the old API: it routes through
+		/// `Lighting.SetEnvironment`, so the cubemap drives reflections and
+		/// ambient light as well as the backdrop. Call that directly, or use
+		/// `SkyboxTex` for just the backdrop.</summary>
+		[Obsolete("Assigning routes through Lighting.SetEnvironment for the old sky + lighting behavior. Call that directly, or use SkyboxTex for just the backdrop.")]
 		public static Tex SkyTex
 		{
-			get  { IntPtr ptr = NativeAPI.render_get_skytex(); return ptr == IntPtr.Zero ? null : new Tex(ptr); }
-			set => NativeAPI.render_set_skytex(value == null ? IntPtr.Zero : value._inst);
+			get => SkyboxTex;
+			set => Lighting.SetEnvironment(value);
 		}
 
 		/// <summary>This is the Material that StereoKit is currently using to
 		/// draw the skybox! It needs a special shader that's tuned for a
 		/// full-screen quad. If you just want to change the skybox image, try
-		/// setting `Renderer.SkyTex` instead.
-		/// 
+		/// setting `Renderer.SkyboxTex` instead.
+		///
 		/// This value will never be null! If you try setting this to null, it
 		/// will assign SK's built-in default sky material. If you want to turn
-		/// off the skybox, see `Renderer.EnableSky` instead.
-		/// 
+		/// off the skybox, see `Renderer.SkyboxVisible` instead.
+		///
 		/// Recommended Material settings would be:
 		/// - DepthWrite: false
 		/// - DepthTest: LessOrEq
 		/// - QueueOffset: 100</summary>
-		public static Material SkyMaterial {
-			get { return new Material(NativeAPI.render_get_skymaterial()); }
-			set => NativeAPI.render_set_skymaterial(value == null ? IntPtr.Zero : value._inst);
+		public static Material SkyboxMaterial {
+			get { return new Material(NativeAPI.render_get_skybox_material()); }
+			set => NativeAPI.render_set_skybox_material(value == null ? IntPtr.Zero : value._inst);
 		}
 
-		/// <summary>Sets the lighting information for the scene! You can
-		/// build one through `SphericalHarmonics.FromLights`, or grab one
-		/// from `Tex.FromEquirectangular` or `Tex.GenCubemap`</summary>
+		/// <summary>Renamed alongside the skybox/lighting split, the material
+		/// behaves the same as before.</summary>
+		[Obsolete("Use SkyboxMaterial")]
+		public static Material SkyMaterial {
+			get => SkyboxMaterial;
+			set => SkyboxMaterial = value;
+		}
+
+		/// <summary>Scene lighting moved to its own class with the
+		/// skybox/lighting split, this is `Lighting.Ambient` now. You can
+		/// still build one through `SphericalHarmonics.FromLights`, or let
+		/// `Lighting.SetEnvironment` derive one from a cubemap.</summary>
+		[Obsolete("Use Lighting.Ambient")]
 		public static SphericalHarmonics SkyLight
 		{
-			set => NativeAPI.render_set_skylight(value);
-			get => NativeAPI.render_get_skylight();
+			get => Lighting.Ambient;
+			set => Lighting.Ambient = value;
 		}
 
-		/// <summary>Enables or disables rendering of the skybox texture! It's enabled by default on Opaque
-		/// displays, and completely unavailable for transparent displays.</summary>
+		/// <summary>Is the skybox backdrop drawn? On by default on Opaque
+		/// displays, and never drawn on transparent displays, where the real
+		/// world is the backdrop. This only affects the visual, leaving
+		/// scene lighting from `Lighting` untouched.</summary>
+		public static bool SkyboxVisible
+		{
+			get => NativeAPI.render_get_skybox_visible();
+			set => NativeAPI.render_set_skybox_visible(value);
+		}
+
+		/// <summary>Enables or disables rendering of the skybox.</summary>
+		[Obsolete("Use SkyboxVisible")]
 		public static bool EnableSky
 		{
-			get => NativeAPI.render_enabled_skytex();
-			set => NativeAPI.render_enable_skytex(value);
+			get => SkyboxVisible;
+			set => SkyboxVisible = value;
 		}
 
 		/// <summary>By default, StereoKit renders all first-person layers.
@@ -571,9 +611,9 @@ namespace StereoKit
 		/// <summary>Sets the main display's post-process chain! The
 		/// Materials apply in array order, at most 2 per pass, and calling
 		/// this with no arguments clears the chain. Post-processing here is
-		/// tile-renderer friendly: effects run as subpasses that stay in
+		/// tile-renderer friendly! Effects run as subpasses that stay in
 		/// tile memory on mobile GPUs, and they apply to the main display
-		/// and to screenshots - what you see is what you shoot.
+		/// and to screenshots.
 		///
 		/// A post-process Material's shader reads the scene through a
 		/// pixel-local input attachment named 'color' (in HLSL,

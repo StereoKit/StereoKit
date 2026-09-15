@@ -47,10 +47,10 @@ void demo_lighting_init() {
 	world_set_occlusion(occlusion_caps_mesh);
 
 	// Set the environment to be a little dimmer, so the lights stand out.
-	old_light = render_get_skylight();
+	old_light = lighting_get_ambient();
 	spherical_harmonics_t new_light = old_light;
-	sh_brightness      (new_light, 0.5f);
-	render_set_skylight(new_light);
+	sh_brightness       (new_light, 0.5f);
+	lighting_set_ambient(new_light);
 }
 
 void demo_lighting_update() {
@@ -69,7 +69,7 @@ void demo_lighting_update() {
 }
 
 void demo_lighting_shutdown() {
-	render_set_skylight(old_light);
+	lighting_set_ambient(old_light);
 	skt_lighting_shutdown();
 
 	// Restore the original shader on the occlusion material
