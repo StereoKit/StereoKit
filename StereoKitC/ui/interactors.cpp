@@ -962,7 +962,8 @@ bool32_t interactor_is_preoccupied(const _interactor_t* interactor, id_hash_t fo
 	// else.
 	if ((interactor->events & event_mask) == 0 ||
 		(include_focused && interactor->focused_prev != 0 && interactor->focused_prev != for_el_id) ||
-		(interactor->active_prev != 0 && interactor->active_prev != for_el_id))
+		(interactor->active_prev != 0 && interactor->active_prev != for_el_id) ||
+		(interactor->active      != 0 && interactor->active      != for_el_id))
 		return true;
 
 	// Check if another interactor sharing this source is already busy. A
