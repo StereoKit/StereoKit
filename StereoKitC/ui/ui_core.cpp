@@ -75,6 +75,12 @@ button_state_ ui_volume_at_16(const char16_t *id, bounds_t bounds, ui_confirm_ i
 
 ///////////////////////////////////////////
 
+void ui_block_at(bounds_t bounds) {
+	interaction_block(bounds, 0);
+}
+
+///////////////////////////////////////////
+
 // A pinch/ray button activation cancels (ends without firing) once the
 // interactor moves more than this far from the button.
 static const float skui_button_cancel_dist = 15 * cm2m;

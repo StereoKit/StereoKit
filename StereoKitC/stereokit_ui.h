@@ -414,6 +414,7 @@ SK_API void     ui_slider_behavior      (vec3 window_relative_pos, vec2 size, id
 
 SK_API button_state_ ui_volume_at        (const char     *id, bounds_t bounds, ui_confirm_ interact_type, interactor_t *out_opt_interactor sk_default(nullptr), button_state_ *out_opt_focus_state sk_default(nullptr));
 SK_API button_state_ ui_volume_at_16     (const char16_t *id, bounds_t bounds, ui_confirm_ interact_type, interactor_t *out_opt_interactor sk_default(nullptr), button_state_ *out_opt_focus_state sk_default(nullptr));
+SK_API void          ui_block_at         (bounds_t bounds);
 
 SK_API void     ui_label             (const char*     text, vec2 size sk_default(vec2{}), bool32_t use_padding sk_default(true), align_ text_align sk_default(align_none));
 SK_API void     ui_label_16          (const char16_t* text, vec2 size sk_default(vec2{}), bool32_t use_padding sk_default(true), align_ text_align sk_default(align_none));
