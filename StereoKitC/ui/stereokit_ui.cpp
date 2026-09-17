@@ -39,7 +39,7 @@ const color128 skui_color_border   = { 1,1,1,1 };
 const float    skui_aura_radius    = 0.02f;
 const float    skui_img_text_gap   = 0.75f; // button image<->label gap, fraction of text size
 const float    skui_img_optic_size = 0.2f;  // button image optical oversize, fraction of text size
-const float    skui_caret_height   = 1.2f;  // input caret/selection height, fraction of the text line height
+const float    skui_caret_gap_fill = 0.5f;  // input caret height past cap height, fraction of the gap between lines
 
 ///////////////////////////////////////////
 
@@ -650,26 +650,26 @@ bool32_t ui_input_at_g(const C* id, C* buffer, int32_t buffer_size, vec3 window_
 		skui_input_target_confirmed = true;
 
 		// Advance the displayed text if it's off the right side of the input
-		text_style_t style     = ui_get_text_style();
-		float        baseline  = text_style_get_baseline (style);
-		float        ascender  = text_style_get_ascender (style);
-		float        descender = text_style_get_descender(style);
-		float        line_h    = (ascender + descender) * skui_caret_height;
-		float        caret_sz  = baseline * 0.1f;
+		text_style_t style      = ui_get_text_style();
+		float        cap_h      = text_style_get_layout_height(style);
+		float        total_h    = text_style_get_total_height (style);
+		float        line_pitch = text_style_get_line_height_pct(style) * total_h;
+		float        line_h     = cap_h + (line_pitch - cap_h) * skui_caret_gap_fill;
+		float        caret_sz   = cap_h * 0.1f;
 
 		int32_t caret_at      = skui_input_caret;
 		vec2    caret_pos     = text_char_at_o(draw_text, style, caret_at, &text_bounds, text_fit_clip, pivot_top_left, align_center_left);
-		float   scroll_margin = text_bounds.x - baseline;
+		float   scroll_margin = text_bounds.x - cap_h;
 		while (caret_pos.x < -scroll_margin && *draw_text != '\0' && caret_at >= 0) {
 			draw_text += 1;
 			caret_at  -= 1;
 			caret_pos = text_char_at_o(draw_text, style, caret_at, &text_bounds, text_fit_clip, pivot_top_left, align_center_left);
 		}
 
-		// Center the box on the glyph run (text_char_at_o reports a point above
-		// the baseline), then lift to a top-edge anchor since ui_draw_* extends down.
-		float center_y = caret_pos.y - baseline - descender + (ascender - descender) * 0.5f;
-		float top_y    = center_y + line_h * 0.5f;
+		// text_char_at_o reports total_h above the baseline. Center the box on
+		// the cap height, then lift to a top-edge anchor since ui_draw_* extends down.
+		float baseline_y = caret_pos.y - total_h;
+		float top_y      = baseline_y + cap_h + (line_h - cap_h) * 0.5f;
 
 		// Display a selection box for highlighted text
 		if (skui_input_caret != skui_input_caret_end) {
