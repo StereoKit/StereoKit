@@ -127,6 +127,29 @@ inline bounds_t size_box(vec3 top_left, vec3 dimensions) {
 
 ///////////////////////////////////////////
 
+// Claims the focus distance without taking focus, so nothing behind this
+// volume can win it. Blocks every event type, this is geometry, not a control.
+void interaction_block(bounds_t bounds, int32_t priority) {
+	const interactor_event_ any_event = (interactor_event_)(interactor_event_poke | interactor_event_grip | interactor_event_pinch);
+	for (int32_t i = 0; i < local.interactors.count; i++) {
+		_interactor_t* actor = &local.interactors[i];
+		if (interactor_is_preoccupied(actor, 0, any_event, false))
+			continue;
+
+		vec3  at;
+		float distance;
+		if (!interactor_check_box(actor, bounds, &at, &distance))
+			continue;
+		if (distance <= actor->focus_distance || (distance <= actor->capsule_radius && priority >= actor->focus_priority)) {
+			actor->focused        = 0;
+			actor->focus_priority = priority;
+			actor->focus_distance = distance;
+		}
+	}
+}
+
+///////////////////////////////////////////
+
 void interaction_1h_plate(id_hash_t id, interactor_event_ event_mask, int32_t priority, vec3 plate_start, vec3 plate_size, button_state_ *out_focus_candidacy, interactor_t* out_interactor, vec3 *out_interaction_at_local, float* out_cancel_dist) {
 	*out_interactor           = -1;
 	*out_focus_candidacy      = button_state_inactive;
@@ -134,7 +157,11 @@ void interaction_1h_plate(id_hash_t id, interactor_event_ event_mask, int32_t pr
 	*out_cancel_dist          = 0;
 
 	local.last_element = id;
-	if (!ui_is_enabled()) return;
+	if (!ui_is_enabled()) {
+		// The plate's own physical volume, from its face back to the surface.
+		interaction_block(size_box({ plate_start.x, plate_start.y, plate_start.z + plate_size.z }, plate_size), priority);
+		return;
+	}
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		_interactor_t *actor = &local.interactors[i];
@@ -191,7 +218,10 @@ void interaction_1h_box(id_hash_t id, interactor_event_ event_mask, int32_t prio
 	*out_focus_candidacy = button_state_inactive;
 	
 	local.last_element = id;
-	if (!ui_is_enabled()) return;
+	if (!ui_is_enabled()) {
+		interaction_block(size_box(box_unfocused_start, box_unfocused_size), priority);
+		return;
+	}
 
 	for (int32_t i = 0; i < local.interactors.count; i++) {
 		_interactor_t* actor = &local.interactors[i];
@@ -285,7 +315,12 @@ bool32_t interaction_handle(id_hash_t id, int32_t priority, pose_t* ref_handle_p
 	bool result = false;
 
 	local.last_element = id;
-	if (!ui_is_enabled() || move_type == ui_move_none) return false;
+	if (!ui_is_enabled() || move_type == ui_move_none) {
+		hierarchy_push_pose(*ref_handle_pose);
+		interaction_block(handle_bounds, priority);
+		hierarchy_pop();
+		return false;
+	}
 
 	// Scaling (only with multiple interactors) is on whenever a scale pointer is
 	// given; ui_move_exact_noscale and ui_move_pos_only opt out.
@@ -927,7 +962,8 @@ bool32_t interactor_is_preoccupied(const _interactor_t* interactor, id_hash_t fo
 	// else.
 	if ((interactor->events & event_mask) == 0 ||
 		(include_focused && interactor->focused_prev != 0 && interactor->focused_prev != for_el_id) ||
-		(interactor->active_prev != 0 && interactor->active_prev != for_el_id))
+		(interactor->active_prev != 0 && interactor->active_prev != for_el_id) ||
+		(interactor->active      != 0 && interactor->active      != for_el_id))
 		return true;
 
 	// Check if another interactor sharing this source is already busy. A

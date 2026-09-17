@@ -350,6 +350,16 @@ namespace StereoKit
 		public static void HSpace(float horizontalSpace)
 			=> NativeAPI.ui_hspace(horizontalSpace);
 
+		/// <summary>A volume that catches interactors without reacting to
+		/// them, so UI elements behind it can't be focused or activated
+		/// through it. Useful for modal overlays, or for custom visuals that
+		/// should occlude the UI behind them. Interactors already active on
+		/// an element are not interrupted.</summary>
+		/// <param name="bounds">Size and position of the volume, relative to
+		/// the current Hierarchy.</param>
+		public static void BlockAt(Bounds bounds)
+			=> NativeAPI.ui_block_at(bounds);
+
 		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
 		/// <param name="interactor">The `Interactor` that is interacting with
 		/// the volume. If nothing is interacting, this will be

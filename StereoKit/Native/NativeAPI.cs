@@ -1142,6 +1142,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_slider_behavior(Vec3 window_relative_pos, Vec2 size, IdHash id, ref Vec2 ref_value, Vec2 min, Vec2 max, Vec2 button_size_visual, Vec2 button_size_interact, UIConfirm confirm_method, out UISliderData out_slider_data);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     ui_volume_at([MarshalAs(UnmanagedType.LPUTF8Str)] string id, Bounds bounds, UIConfirm interact_type, IntPtr out_opt_interactor, IntPtr out_opt_focus_state);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern BtnState     ui_volume_at_16([MarshalAs(UnmanagedType.LPWStr)] string id, Bounds bounds, UIConfirm interact_type, IntPtr out_opt_interactor, IntPtr out_opt_focus_state);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_block_at(Bounds bounds);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         ui_label([MarshalAs(UnmanagedType.LPUTF8Str)] string text, Vec2 size, [MarshalAs(UnmanagedType.Bool)] bool use_padding, Align text_align);
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)] public static extern void         ui_label_16([MarshalAs(UnmanagedType.LPWStr)] string text, Vec2 size, [MarshalAs(UnmanagedType.Bool)] bool use_padding, Align text_align);
 		[return: MarshalAs(UnmanagedType.Bool)]
