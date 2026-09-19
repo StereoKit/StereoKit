@@ -28,19 +28,20 @@ class TestTextInput : ITest
 		ray    = Interactor.Create(InteractorType.Line, InteractorEvent.Pinch | InteractorEvent.Poke, InteractorActivation.State, InteractorSource.Unique, 0.01f, 0);
 		target = windowPose.position + V.XYZ(0, -0.04f, 0); // a guess at the field, refined once focused
 
-		Tests.RunForFrames(11);
+		Tests.RunForFrames(12);
 	}
 
 	public void Step()
 	{
-		bool scripted = Tests.IsTesting && frame < 11;
+		bool scripted = Tests.IsTesting && frame < 12;
 		if (scripted)
 		{
-			// Frames 0-2 click the field to focus it: hover, press, release.
+			// Frames 0-3 click the field to focus it: warm-up, hover, press, release.
 			BtnState pinch = frame switch {
 				0 => BtnState.Inactive,
-				1 => BtnState.Active | BtnState.JustActive,
-				2 => BtnState.JustInactive,
+				1 => BtnState.Inactive,
+				2 => BtnState.Active | BtnState.JustActive,
+				3 => BtnState.JustInactive,
 				_ => BtnState.Inactive };
 			Vec3 dir = (target - rayOrigin).Normalized;
 			ray.Update(rayOrigin, rayOrigin + dir * 100, new Pose(rayOrigin, Quat.LookDir(dir)), rayOrigin, Vec3.Zero, pinch, BtnState.Active);
@@ -57,23 +58,23 @@ class TestTextInput : ITest
 			// next one.
 			switch (frame)
 			{
-				case 2: Input.TextInject("abc"); break;
-				case 3: afterType      = text; Input.KeyInjectPress  (Key.Backspace); break;
-				case 4: afterBackspace = text; Input.KeyInjectRelease(Key.Backspace); Input.KeyInjectPress(Key.Left); break;
-				case 5:                        Input.KeyInjectRelease(Key.Left);      Input.KeyInjectPress(Key.Del);  break;
-				case 6: afterDelete    = text; Input.KeyInjectRelease(Key.Del); break;
+				case 3: Input.TextInject("abc"); break;
+				case 4: afterType      = text; Input.KeyInjectPress  (Key.Backspace); break;
+				case 5: afterBackspace = text; Input.KeyInjectRelease(Key.Backspace); Input.KeyInjectPress(Key.Left); break;
+				case 6:                        Input.KeyInjectRelease(Key.Left);      Input.KeyInjectPress(Key.Del);  break;
+				case 7: afterDelete    = text; Input.KeyInjectRelease(Key.Del); break;
 				// A control code injected as text is not text, so it must not
 				// delete and must not land in the buffer.
-				case 7: Input.TextInject("\b"); break;
-				case 8: afterInjectedControl = text; Input.KeyInjectPress(Key.Return); break;
-				case 9: submitted = changed;   Input.KeyInjectRelease(Key.Return); break;
+				case 8: Input.TextInject("\b"); break;
+				case 9: afterInjectedControl = text; Input.KeyInjectPress(Key.Return); break;
+				case 10: submitted = changed;  Input.KeyInjectRelease(Key.Return); break;
 			}
 			Log.Info($"frame {frame}: text=\"{text}\" changed={changed}");
 
 			if (frame < 2 && ray.TryGetFocusBounds(out Pose p, out Bounds b, out _))
 				target = p.ToMatrix().Transform(b.center);
 
-			if (frame == 10)
+			if (frame == 11)
 			{
 				Tests.Test(TextInserts);
 				Tests.Test(BackspaceDeletesBack);

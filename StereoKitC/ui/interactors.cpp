@@ -857,7 +857,12 @@ button_state_ interactor_set_active(_interactor_t* interactor, id_hash_t for_el_
 	bool was_active = interactor->active_prev == for_el_id;
 	bool is_active  = false;
 
-	if (active && (was_active || interactor->focused_prev == for_el_id || interactor->focused == for_el_id)) {
+	// Focus settles at the end of the frame, a claim made this frame can still
+	// lose to something closer. A finger already inside the element is a sure
+	// thing though, and a fast poke can pass all the way through in one frame.
+	bool focus_ok = was_active || interactor->focused_prev == for_el_id ||
+		(interactor->focused == for_el_id && interactor->activation_type == interactor_activation_position);
+	if (active && focus_ok) {
 		is_active = active;
 		interactor->active = for_el_id;
 

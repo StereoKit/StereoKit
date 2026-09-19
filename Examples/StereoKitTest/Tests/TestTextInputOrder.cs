@@ -25,18 +25,20 @@ class TestTextInputOrder : ITest
 		ray    = Interactor.Create(InteractorType.Line, InteractorEvent.Pinch | InteractorEvent.Poke, InteractorActivation.State, InteractorSource.Unique, 0.01f, 0);
 		target = windowPose.position + V.XYZ(0, -0.04f, 0);
 
-		Tests.RunForFrames(10);
+		Tests.RunForFrames(11);
 	}
 
 	public void Step()
 	{
-		bool scripted = Tests.IsTesting && frame < 10;
+		bool scripted = Tests.IsTesting && frame < 11;
 		if (scripted)
 		{
+			// Frames 0-3 click the field to focus it: warm-up, hover, press, release.
 			BtnState pinch = frame switch {
 				0 => BtnState.Inactive,
-				1 => BtnState.Active | BtnState.JustActive,
-				2 => BtnState.JustInactive,
+				1 => BtnState.Inactive,
+				2 => BtnState.Active | BtnState.JustActive,
+				3 => BtnState.JustInactive,
 				_ => BtnState.Inactive };
 			Vec3 dir = (target - rayOrigin).Normalized;
 			ray.Update(rayOrigin, rayOrigin + dir * 100, new Pose(rayOrigin, Quat.LookDir(dir)), rayOrigin, Vec3.Zero, pinch, BtnState.Active);
@@ -51,10 +53,10 @@ class TestTextInputOrder : ITest
 		{
 			switch (frame)
 			{
-				case 2: Input.TextInject("abc"); break;
+				case 3: Input.TextInject("abc"); break;
 				// Type, delete, type, all inside one frame. Applied in order
 				// this is "abcy"; applied text-first it would be "abcx".
-				case 3:
+				case 4:
 					afterSeed = text;
 					Input.TextInject      ("x");
 					Input.KeyInjectPress  (Key.Backspace);
@@ -62,7 +64,7 @@ class TestTextInputOrder : ITest
 					Input.KeyInjectRelease(Key.Backspace);
 					break;
 				// Two backspaces in one frame must delete two characters.
-				case 4:
+				case 5:
 					afterInterleave = text;
 					Input.KeyInjectPress  (Key.Backspace);
 					Input.KeyInjectRelease(Key.Backspace);
@@ -71,15 +73,15 @@ class TestTextInputOrder : ITest
 					break;
 				// Shift pressed and released around Return in one frame. Only
 				// the per-event modifier snapshot gets this right.
-				case 5:
+				case 6:
 					afterRepeat = text;
 					Input.KeyInjectPress  (Key.Shift);
 					Input.KeyInjectPress  (Key.Return);
 					Input.KeyInjectRelease(Key.Return);
 					Input.KeyInjectRelease(Key.Shift);
 					break;
-				case 6: afterShiftEnter = text; break;
-				case 8:
+				case 7: afterShiftEnter = text; break;
+				case 9:
 					Tests.Test(Seeded);
 					Tests.Test(InterleaveInOrder);
 					Tests.Test(SameFrameRepeatDeletesTwice);
