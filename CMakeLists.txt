@@ -184,7 +184,7 @@ if (SK_BUILD_OPENXR_LOADER)
   CPMAddPackage(
     NAME openxr_loader
     GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG release-1.1.60
+    GIT_TAG release-1.1.63
     GIT_SHALLOW 1
     OPTIONS
     "BUILD_ALL_EXTENSIONS OFF" # Only need Vulkan, not Metal/OpenGL
