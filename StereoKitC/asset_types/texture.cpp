@@ -111,11 +111,12 @@ skr_tex_flags_ tex_type_to_skr_flags(tex_type_ type) {
 		return (skr_tex_flags_)(skr_tex_flags_writeable | skr_tex_flags_input_attachment);
 	}
 
-	// Most textures are sampled, transient attachments never are. Both halves
-	// matter here, sk_renderer tests in_tile_msaa && !readable.
-	skr_tex_flags_ flags = (type & tex_type_transient_internal)
-		? skr_tex_flags_in_tile_msaa
-		: skr_tex_flags_readable;
+	// Most textures are sampled, transient attachments and swapchain images
+	// never are. Both halves matter here, sk_renderer tests in_tile_msaa &&
+	// !readable.
+	skr_tex_flags_ flags = (type & tex_type_transient_internal) ? skr_tex_flags_in_tile_msaa
+	                     : (type & tex_type_attachment_internal) ? skr_tex_flags_none
+	                     : skr_tex_flags_readable;
 	if (type & tex_type_cubemap)      flags = (skr_tex_flags_)(flags | skr_tex_flags_cubemap);
 	if (type & tex_type_dynamic)      flags = (skr_tex_flags_)(flags | skr_tex_flags_dynamic);
 	if (type & tex_type_mips)         flags = (skr_tex_flags_)(flags | skr_tex_flags_gen_mips);
@@ -966,6 +967,14 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 		info.multisample   = multisample;
 		info.array_layers  = surface_count;
 		info.owns_image    = owned;
+
+		// Swapchain images arrive in, and must be handed back in, the
+		// attachment layout. They're not readable, so render passes end there.
+		if (type & tex_type_attachment_internal) {
+			info.current_layout = (type & tex_type_zbuffer)
+				? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		}
 
 		skr_tex_create_external_vk(info, &texture->gpu_tex);
 	} else {

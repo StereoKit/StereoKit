@@ -81,6 +81,7 @@ class TestTextInput : ITest
 				Tests.Test(DeleteDeletesForward);
 				Tests.Test(InjectedControlCodeIgnored);
 				Tests.Test(EnterSubmits);
+				Tests.Test(FieldReleased);
 			}
 		}
 
@@ -95,10 +96,14 @@ class TestTextInput : ITest
 	bool InjectedControlCodeIgnored()=> afterInjectedControl == "a";
 	// Enter reports a change and closes the field out.
 	bool EnterSubmits()              => submitted;
+	// Leaving a field focused keeps the XR fallback keyboard open into the
+	// tests that follow.
+	bool FieldReleased()             => !UI.HasKeyboardFocus && !Platform.KeyboardVisible;
 
 	public void Shutdown()
 	{
 		if (Tests.IsTesting) ray.Destroy();
 		Interaction.DefaultInteractors = oldInteractors;
+		Platform.KeyboardShow(false);
 	}
 }
