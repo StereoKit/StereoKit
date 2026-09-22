@@ -81,12 +81,17 @@ class TestTextInputOrder : ITest
 					Input.KeyInjectRelease(Key.Shift);
 					break;
 				case 7: afterShiftEnter = text; break;
+				// A plain Enter submits, which releases focus and closes the
+				// fallback keyboard that XR opened for this field.
+				case 8: Input.KeyInjectPress(Key.Return); break;
 				case 9:
+					Input.KeyInjectRelease(Key.Return);
 					Tests.Test(Seeded);
 					Tests.Test(InterleaveInOrder);
 					Tests.Test(SameFrameRepeatDeletesTwice);
 					Tests.Test(SameFrameShiftEnterAddsLine);
 					break;
+				case 10: Tests.Test(FieldReleased); break;
 			}
 			Log.Info($"frame {frame}: text=\"{text.Replace("\n", "\\n")}\"");
 
@@ -102,10 +107,14 @@ class TestTextInputOrder : ITest
 	bool SameFrameRepeatDeletesTwice()  => afterRepeat     == "ab";
 	// Shift+Enter adds a line rather than submitting, so the field stays open.
 	bool SameFrameShiftEnterAddsLine()  => afterShiftEnter == "ab\n";
+	// Leaving a field focused keeps the XR fallback keyboard open into the
+	// tests that follow.
+	bool FieldReleased()                => !UI.HasKeyboardFocus && !Platform.KeyboardVisible;
 
 	public void Shutdown()
 	{
 		if (Tests.IsTesting) ray.Destroy();
 		Interaction.DefaultInteractors = oldInteractors;
+		Platform.KeyboardShow(false);
 	}
 }
