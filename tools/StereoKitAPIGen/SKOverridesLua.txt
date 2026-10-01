@@ -1,0 +1,28 @@
+# Lua name overrides for StereoKit bindings
+
+# Keyboard keys: Lua identifiers cannot start with a digit.
+key_0 n0
+key_1 n1
+key_2 n2
+key_3 n3
+key_4 n4
+key_5 n5
+key_6 n6
+key_7 n7
+key_8 n8
+key_9 n9
+
+# Common acronym casing.
+key_lcmd lcmd
+key_rcmd rcmd
+backend_xr_type_webxr webxr
+backend_xr_type_openxr openxr
+backend_graphics_d3d11 d3d11
+backend_graphics_opengl_glx opengl_glx
+backend_graphics_opengl_wgl opengl_wgl
+backend_graphics_opengles_egl opengles_egl
+backend_graphics_webgl webgl
+
+# Avoid shadowing Lua vocabulary in generated parameter names.
+type kind
+function callback
