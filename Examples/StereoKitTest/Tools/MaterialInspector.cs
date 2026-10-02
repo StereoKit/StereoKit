@@ -3,15 +3,17 @@
 // Copyright (c) 2026 Nick Klingensmith
 // Copyright (c) 2026 Qualcomm Technologies, Inc.
 
+using System.Collections.Generic;
+
 namespace StereoKit.Framework
 {
 	public class MaterialInspector : IStepper
 	{
 		static MaterialInspector _inst;
 
-		Material   material;
-		Material[] texPreviews;
-		bool       visible;
+		Material                     material;
+		Dictionary<string, Material> texPreviews = new Dictionary<string, Material>();
+		bool                         visible;
 
 		public Pose pose;
 
@@ -29,22 +31,21 @@ namespace StereoKit.Framework
 
 		public bool Initialize() => true;
 
+		// Engine-provided resources, not something a material sets
+		static bool IsBuiltin(string name) => name == "sk_inst" || name == "sk_cubemap";
+
 		void BuildTexPreviews()
 		{
-			int texCount = 0;
-			foreach (MatParamInfo p in material.GetAllParamInfo())
-				if (p.type == MaterialParam.Texture) texCount++;
-
-			texPreviews = new Material[texCount];
-			int idx = 0;
+			texPreviews.Clear();
 			foreach (MatParamInfo p in material.GetAllParamInfo())
 			{
-				if (p.type != MaterialParam.Texture) continue;
-				texPreviews[idx] = Material.Unlit.Copy();
+				if (p.type != MaterialParam.Texture || IsBuiltin(p.name)) continue;
 				Tex tex = material.GetTexture(p.name);
-				if (tex != null)
-					texPreviews[idx].SetTexture("diffuse", tex);
-				idx++;
+				if (tex == null) continue;
+
+				Material preview = Material.Unlit.Copy();
+				preview.SetTexture("diffuse", tex);
+				texPreviews[p.name] = preview;
 			}
 		}
 		public void Shutdown() { if (_inst == this) _inst = null; }
@@ -122,10 +123,9 @@ namespace StereoKit.Framework
 			UI.PanelBegin();
 			UI.Label($"Shader ({material.Shader?.Name ?? "(none)"})", new Vec2(UI.LayoutRemaining.x,0));
 			UI.PanelEnd();
-			int texIdx = 0;
 			foreach (MatParamInfo p in material.GetAllParamInfo())
 			{
-				if (p.name == "sk_inst" || p.name == "sk_cubemap") continue;
+				if (IsBuiltin(p.name)) continue;
 
 				switch (p.type)
 				{
@@ -177,8 +177,7 @@ namespace StereoKit.Framework
 					UI.Label("(matrix)", false);
 					break;
 				case MaterialParam.Texture:
-					DrawTextureParam(p.name, texIdx);
-					texIdx++;
+					DrawTextureParam(p.name);
 					break;
 				default:
 					UI.Label(p.name, labelSize);
@@ -200,15 +199,15 @@ namespace StereoKit.Framework
 			UI.Label($"{name}: ({c.r:F2}, {c.g:F2}, {c.b:F2}, {c.a:F2})", false);
 		}
 
-		void DrawTextureParam(string name, int texIdx)
+		void DrawTextureParam(string name)
 		{
 			Tex tex = material.GetTexture(name);
 
 			float thumbSize = UI.LineHeight * 3;
 			Bounds b = UI.LayoutReserve(V.XY(thumbSize, thumbSize));
 			b.center.z -= 0.005f;
-			if (tex != null && texIdx < texPreviews.Length)
-				Mesh.Quad.Draw(texPreviews[texIdx], Matrix.TS(b.center, thumbSize ));
+			if (texPreviews.TryGetValue(name, out Material preview))
+				Mesh.Quad.Draw(preview, Matrix.TS(b.center, thumbSize));
 
 			UI.SameLine();
 			if (tex != null)

@@ -90,4 +90,9 @@ char  *platform_pop_path_new      (const char *path);
 bool32_t platform_read_file_direct(const char *filename, void **out_data, size_t *out_size);
 size_t   platform_file_size       (const char *filename);
 
+typedef void (*platform_read_callback_t)(bool32_t success, void *data, size_t size, void *context);
+// Reads a file without blocking the caller; the callback owns `data`. Off the
+// web the callback runs before this returns.
+void platform_read_file_async(const char *filename, platform_read_callback_t callback, void *context);
+
 } // namespace sk

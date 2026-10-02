@@ -447,19 +447,21 @@ namespace StereoKit
 		/// which the Asset Id will be the same as the filename.</summary>
 		/// <param name="imageFileData">The binary data of an image file,
 		/// this is NOT a raw RGB color array!</param>
-		/// <param name="sRGBData">Is this image color data in sRGB format,
-		/// or is it normal/metal/rough/data that's not for direct display?
-		/// sRGB colors get converted to linear color space on the graphics
-		/// card, so getting this right can have a big impact on visuals.
-		/// </param>
+		/// <param name="hints">What this image holds, and how StereoKit should
+		/// store it. TexHint.Srgb suits most color images, while
+		/// normal/metal/rough/data images want TexHint.None. Add a
+		/// compression hint to override the default compression.</param>
 		/// <param name="blocking">Will this method wait for the image 
 		/// to load. By default, we try to load it asynchronously.</param>
 		/// <param name="priority">The priority sort order for this asset in
 		/// the async loading system. Lower values mean loading sooner.</param>
-		public void SetMemory(in byte[] imageFileData, bool sRGBData = true, bool blocking = false, int priority = 10)
+		public void SetMemory(in byte[] imageFileData, TexHint hints = TexHint.Srgb, bool blocking = false, int priority = 10)
 		{
-			NativeAPI.tex_set_mem(_inst, imageFileData, (UIntPtr)imageFileData.Length, sRGBData, blocking, priority);
+			NativeAPI.tex_set_mem(_inst, imageFileData, (UIntPtr)imageFileData.Length, hints, blocking, priority);
 		}
+		[Obsolete("Use the TexHint overload. A sRGBData of true is TexHint.Srgb, false is TexHint.None.")]
+		public void SetMemory(in byte[] imageFileData, bool sRGBData, bool blocking = false, int priority = 10)
+			=> SetMemory(imageFileData, (sRGBData ? TexHint.Srgb : TexHint.None), blocking, priority);
 
 		/// <summary>This function is dependent on the graphics backend! It
 		/// will take a texture resource for the current graphics backend (D3D
@@ -672,7 +674,7 @@ namespace StereoKit
 		/// <returns>A Cubemap texture asset!</returns>
 		[Obsolete("Use FromCubemap instead")]
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, bool sRGBData = true, int loadPriority = 10)
-			=> FromCubemap(equirectangularCubemap, sRGBData, loadPriority);
+			=> FromCubemap(equirectangularCubemap, sRGBData ? TexHint.Srgb : TexHint.None, loadPriority);
 
 		/// <summary>Creates a cubemap texture from a single file! This will
 		/// load KTX2 files with 6 surfaces, or convert equirectangular images
@@ -681,20 +683,22 @@ namespace StereoKit
 		/// Equirectangular images look like an unwrapped globe with the poles
 		/// all stretched out, and are sometimes referred to as HDRIs.</summary>
 		/// <param name="cubemapFile">Filename of the cubemap image.</param>
-		/// <param name="sRGBData">Is this image color data in sRGB format,
-		/// or is it normal/metal/rough/data that's not for direct display?
-		/// sRGB colors get converted to linear color space on the graphics
-		/// card, so getting this right can have a big impact on visuals.
-		/// </param>
+		/// <param name="hints">What this image holds, and how StereoKit should
+		/// store it. TexHint.Srgb suits most color images, while
+		/// normal/metal/rough/data images want TexHint.None. Add a
+		/// compression hint to override the default compression.</param>
 		/// <param name="loadPriority">The priority sort order for this asset
 		/// in the async loading system. Lower values mean loading sooner.
 		/// </param>
 		/// <returns>A Cubemap texture asset!</returns>
-		public static Tex FromCubemap(string cubemapFile, bool sRGBData = true, int loadPriority = 10)
+		public static Tex FromCubemap(string cubemapFile, TexHint hints = TexHint.Srgb, int loadPriority = 10)
 		{
-			IntPtr tex = NativeAPI.tex_create_cubemap_file(cubemapFile, sRGBData, loadPriority);
+			IntPtr tex = NativeAPI.tex_create_cubemap_file(cubemapFile, hints, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
+		[Obsolete("Use the TexHint overload. A sRGBData of true is TexHint.Srgb, false is TexHint.None.")]
+		public static Tex FromCubemap(string cubemapFile, bool sRGBData, int loadPriority = 10)
+			=> FromCubemap(cubemapFile, (sRGBData ? TexHint.Srgb : TexHint.None), loadPriority);
 
 		/// <summary>Creates a cubemap texture from a single equirectangular
 		/// image! You know, the ones that look like an unwrapped globe with
@@ -718,7 +722,7 @@ namespace StereoKit
 		[Obsolete("Use overload without lightingInfo. Lighting data comes from a reflection now: Tex.GenCubemapReflection(cubemap).CubemapLighting, or let Lighting.SetEnvironment set up lighting from the cubemap for you.")]
 		public static Tex FromCubemapEquirectangular(string equirectangularCubemap, out SphericalHarmonics lightingInfo, bool sRGBData = true, int loadPriority = 10)
 		{
-			IntPtr tex    = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData, loadPriority);
+			IntPtr tex    = NativeAPI.tex_create_cubemap_file(equirectangularCubemap, sRGBData ? TexHint.Srgb : TexHint.None, loadPriority);
 			Tex    result = tex == IntPtr.Zero ? null : new Tex(tex);
 			lightingInfo = result == null ? default : result.CubemapLighting;
 			return result;
@@ -730,21 +734,23 @@ namespace StereoKit
 		/// <param name="file">An absolute filename, or a filename relative
 		/// to the assets folder. Supports jpg, png, tga, bmp, psd, gif, hdr,
 		/// pic, ktx2.</param>
-		/// <param name="sRGBData">Is this image color data in sRGB format,
-		/// or is it normal/metal/rough/data that's not for direct display?
-		/// sRGB colors get converted to linear color space on the graphics
-		/// card, so getting this right can have a big impact on visuals.
-		/// </param>
+		/// <param name="hints">What this image holds, and how StereoKit should
+		/// store it. TexHint.Srgb suits most color images, while
+		/// normal/metal/rough/data images want TexHint.None. Add a
+		/// compression hint to override the default compression.</param>
 		/// <param name="loadPriority">The priority sort order for this asset
 		/// in the async loading system. Lower values mean loading sooner.
 		/// </param>
 		/// <returns>A Tex asset from the given file, or null if it failed to
 		/// load.</returns>
-		public static Tex FromFile(string file, bool sRGBData = true, int loadPriority = 10)
+		public static Tex FromFile(string file, TexHint hints = TexHint.Srgb, int loadPriority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_file(file, sRGBData, loadPriority);
+			IntPtr inst = NativeAPI.tex_create_file(file, hints, loadPriority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+		[Obsolete("Use the TexHint overload. A sRGBData of true is TexHint.Srgb, false is TexHint.None.")]
+		public static Tex FromFile(string file, bool sRGBData, int loadPriority = 10)
+			=> FromFile(file, (sRGBData ? TexHint.Srgb : TexHint.None), loadPriority);
 
 		/// <summary>Loads an array of image files directly into a single
 		/// array texture! Array textures are often useful for shader
@@ -755,20 +761,22 @@ namespace StereoKit
 		/// <param name="files">Absolute filenames, or a filenames relative
 		/// to the assets folder. Supports jpg, png, tga, bmp, psd, gif, hdr,
 		/// pic, ktx2.</param>
-		/// <param name="sRGBData">Is this image color data in sRGB format,
-		/// or is it normal/metal/rough/data that's not for direct display?
-		/// sRGB colors get converted to linear color space on the graphics
-		/// card, so getting this right can have a big impact on visuals.
-		/// </param>
+		/// <param name="hints">What this image holds, and how StereoKit should
+		/// store it. TexHint.Srgb suits most color images, while
+		/// normal/metal/rough/data images want TexHint.None. Add a
+		/// compression hint to override the default compression.</param>
 		/// <param name="priority">The priority sort order for this asset in
 		/// the async loading system. Lower values mean loading sooner.</param>
 		/// <returns>A Tex asset from the given files, or null if it failed
 		/// to load.</returns>
-		public static Tex FromFiles(string[] files, bool sRGBData = true, int priority = 10)
+		public static Tex FromFiles(string[] files, TexHint hints = TexHint.Srgb, int priority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, sRGBData, priority);
+			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, hints, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+		[Obsolete("Use the TexHint overload. A sRGBData of true is TexHint.Srgb, false is TexHint.None.")]
+		public static Tex FromFiles(string[] files, bool sRGBData, int priority = 10)
+			=> FromFiles(files, (sRGBData ? TexHint.Srgb : TexHint.None), priority);
 
 		/// <summary>Loads an image file stored in memory directly into a
 		/// texture! Supported formats are: jpg, png, tga, bmp, psd, gif,
@@ -776,45 +784,49 @@ namespace StereoKit
 		/// </summary>
 		/// <param name="imageFileData">The binary data of an image file,
 		/// this is NOT a raw RGB color array!</param>
-		/// <param name="sRGBData">Is this image color data in sRGB format,
-		/// or is it normal/metal/rough/data that's not for direct display?
-		/// sRGB colors get converted to linear color space on the graphics
-		/// card, so getting this right can have a big impact on visuals.
-		/// </param>
+		/// <param name="hints">What this image holds, and how StereoKit should
+		/// store it. TexHint.Srgb suits most color images, while
+		/// normal/metal/rough/data images want TexHint.None. Add a
+		/// compression hint to override the default compression.</param>
 		/// <param name="priority">The priority sort order for this asset in
 		/// the async loading system. Lower values mean loading sooner.</param>
 		/// <returns>A Tex asset from the given file, or null if it failed to
 		/// load.</returns>
-		public static Tex FromMemory(in byte[] imageFileData, bool sRGBData = true, int priority = 10)
+		public static Tex FromMemory(in byte[] imageFileData, TexHint hints = TexHint.Srgb, int priority = 10)
 		{
-			IntPtr inst = NativeAPI.tex_create_mem(imageFileData, (UIntPtr)imageFileData.Length, sRGBData, priority);
+			IntPtr inst = NativeAPI.tex_create_mem(imageFileData, (UIntPtr)imageFileData.Length, hints, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+		[Obsolete("Use the TexHint overload. A sRGBData of true is TexHint.Srgb, false is TexHint.None.")]
+		public static Tex FromMemory(in byte[] imageFileData, bool sRGBData, int priority = 10)
+			=> FromMemory(imageFileData, (sRGBData ? TexHint.Srgb : TexHint.None), priority);
 
 		/// <summary>Creates a texture and sets the texture's pixels using a
 		/// color array! This will be an image of type `TexType.Image`, and
 		/// a format of `TexFormat.Rgba32` or `TexFormat.Rgba32Linear`
-		/// depending on the value of the sRGBData parameter.</summary>
+		/// depending on whether the hints include TexHint.Srgb.</summary>
 		/// <param name="colors">An array of 32 bit colors, should be a
 		/// length of `width*height`.</param>
 		/// <param name="width">Width in pixels of the texture. Powers of two
 		/// are generally best!</param>
 		/// <param name="height">Height in pixels of the texture. Powers of
 		/// two are generally best!</param>
-		/// <param name="sRGBData">Is this image color data in sRGB format,
-		/// or is it normal/metal/rough/data that's not for direct display?
-		/// sRGB colors get converted to linear color space on the graphics
-		/// card, so getting this right can have a big impact on visuals.
-		/// </param>
+		/// <param name="hints">What this image holds, and how StereoKit should
+		/// store it. TexHint.Srgb suits most color images, while
+		/// normal/metal/rough/data images want TexHint.None. Add a
+		/// compression hint to override the default compression.</param>
 		/// <returns>A Tex asset with TexType.Image and TexFormat.Rgba32 from
 		/// the given array of colors.</returns>
-		public static Tex FromColors(in Color32[] colors, int width, int height, bool sRGBData = true)
+		public static Tex FromColors(in Color32[] colors, int width, int height, TexHint hints = TexHint.Srgb)
 		{
 			if (colors.Length < width*height) throw new ArgumentException("colors.Length < width*height");
 
-			IntPtr inst = NativeAPI.tex_create_color32(colors, width, height, sRGBData);
+			IntPtr inst = NativeAPI.tex_create_color32(colors, width, height, hints);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+		[Obsolete("Use the TexHint overload. A sRGBData of true is TexHint.Srgb, false is TexHint.None.")]
+		public static Tex FromColors(in Color32[] colors, int width, int height, bool sRGBData)
+			=> FromColors(colors, width, height, (sRGBData ? TexHint.Srgb : TexHint.None));
 
 		/// <summary>Creates a texture and sets the texture's pixels using a
 		/// color array! Color values are converted to 32 bit colors, so this
@@ -822,28 +834,30 @@ namespace StereoKit
 		/// overload for performance, or create an empty Texture and use
 		/// SetColors for more flexibility. This will be an image of type
 		/// `TexType.Image`, and a format of `TexFormat.Rgba32` or
-		/// `TexFormat.Rgba32Linear` depending on the value of the sRGBData
-		/// parameter.</summary>
+		/// `TexFormat.Rgba32Linear` depending on whether the hints include
+		/// TexHint.Srgb.</summary>
 		/// <param name="colors">An array of 128 bit colors, should be a
 		/// length of `width*height`.</param>
 		/// <param name="width">Width in pixels of the texture. Powers of two
 		/// are generally best!</param>
 		/// <param name="height">Height in pixels of the texture. Powers of
 		/// two are generally best!</param>
-		/// <param name="sRGBData">Is this image color data in sRGB format,
-		/// or is it normal/metal/rough/data that's not for direct display?
-		/// sRGB colors get converted to linear color space on the graphics
-		/// card, so getting this right can have a big impact on visuals.
-		/// </param>
+		/// <param name="hints">What this image holds, and how StereoKit should
+		/// store it. TexHint.Srgb suits most color images, while
+		/// normal/metal/rough/data images want TexHint.None. Add a
+		/// compression hint to override the default compression.</param>
 		/// <returns>A Tex asset with TexType.Image and TexFormat.Rgba32 from
 		/// the given array of colors.</returns>
-		public static Tex FromColors(in Color[] colors, int width, int height, bool sRGBData = true)
+		public static Tex FromColors(in Color[] colors, int width, int height, TexHint hints = TexHint.Srgb)
 		{
 			if (colors.Length < width*height) throw new ArgumentException("colors.Length < width*height");
 
-			IntPtr inst = NativeAPI.tex_create_color128(colors, width, height, sRGBData);
+			IntPtr inst = NativeAPI.tex_create_color128(colors, width, height, hints);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+		[Obsolete("Use the TexHint overload. A sRGBData of true is TexHint.Srgb, false is TexHint.None.")]
+		public static Tex FromColors(in Color[] colors, int width, int height, bool sRGBData)
+			=> FromColors(colors, width, height, (sRGBData ? TexHint.Srgb : TexHint.None));
 
 
 		/// <summary>Creates a cubemap texture from 6 different image files!
@@ -852,22 +866,24 @@ namespace StereoKit
 		/// filename.</summary>
 		/// <param name="cubeFaceFiles_xxyyzz">6 image filenames, in order of
 		/// +X, -X, +Y, -Y, +Z, -Z.</param>
-		/// <param name="sRGBData">Is this image color data in sRGB format,
-		/// or is it normal/metal/rough/data that's not for direct display?
-		/// sRGB colors get converted to linear color space on the graphics
-		/// card, so getting this right can have a big impact on visuals.
-		/// </param>
+		/// <param name="hints">What this image holds, and how StereoKit should
+		/// store it. TexHint.Srgb suits most color images, while
+		/// normal/metal/rough/data images want TexHint.None. Add a
+		/// compression hint to override the default compression.</param>
 		/// <param name="priority">The priority sort order for this asset in
 		/// the async loading system. Lower values mean loading sooner.</param>
 		/// <returns>A Tex asset from the given files, or null if any failed 
 		/// to load.</returns>
-		public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, bool sRGBData = true, int priority = 10)
+		public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, TexHint hints = TexHint.Srgb, int priority = 10)
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, priority);
+			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, hints, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+		[Obsolete("Use the TexHint overload. A sRGBData of true is TexHint.Srgb, false is TexHint.None.")]
+		public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, bool sRGBData, int priority = 10)
+			=> FromCubemapFile(cubeFaceFiles_xxyyzz, (sRGBData ? TexHint.Srgb : TexHint.None), priority);
 
 		/// <summary>Creates a cubemap texture from 6 different image files!
 		/// If you have a single equirectangular image, use
@@ -892,7 +908,7 @@ namespace StereoKit
 		{
 			if (cubeFaceFiles_xxyyzz.Length != 6)
 				Log.Err("To create a cubemap, you must have exactly 6 images!");
-			IntPtr inst   = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData, priority);
+			IntPtr inst   = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, sRGBData ? TexHint.Srgb : TexHint.None, priority);
 			Tex    result = inst == IntPtr.Zero ? null : new Tex(inst);
 			lightingInfo = result == null ? default : result.CubemapLighting;
 			return result;
@@ -1064,6 +1080,14 @@ namespace StereoKit
 		#endregion
 
 		#region Static Properties
+		/// <summary>The compression that loaded textures use when their
+		/// TexHint doesn't include one. Only the compression hints
+		/// (Uncompressed, Quality, Small) are kept. This starts as
+		/// TexHint.Quality.</summary>
+		public static TexHint DefaultCompression {
+			get => NativeAPI.tex_get_compression_default();
+			set => NativeAPI.tex_set_compression_default(value); }
+
 		/// <inheritdoc cref="Default.Tex" />
 		public static Tex White => Default.Tex;
 		/// <inheritdoc cref="Default.TexBlack" />

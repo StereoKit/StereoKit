@@ -981,6 +981,36 @@ namespace StereoKit
 		Image        = ImageNomips | Mips,
 	}
 
+	/// <summary>Hints that describe what a texture holds, and how StereoKit should store it
+	/// on the GPU. Content hints say what the pixels mean, and compression hints
+	/// pick between quality and size. With no compression hint, the texture uses
+	/// the app wide default compression, which starts as quality.</summary>
+	[Flags]
+	public enum TexHint {
+		/// <summary>Linear data, like roughness, metalness, or a mask. Compression follows
+		/// the default.</summary>
+		None         = 0,
+		/// <summary>Color data stored in sRGB, which is what most color images are. This
+		/// has the same value `true` had for the older sRGB bool parameter.</summary>
+		Srgb         = 1 << 0,
+		/// <summary>A tangent space normal map. This is reserved for dedicated normal map
+		/// compression, and is treated like linear data for now.</summary>
+		Normal       = 1 << 1,
+		/// <summary>The alpha channel is unused, so StereoKit may pick a format without
+		/// one.</summary>
+		Opaque       = 1 << 2,
+		/// <summary>Alpha is only a cutout mask, so 1 bit of alpha is enough.</summary>
+		Cutout       = 1 << 3,
+		/// <summary>Never compress this texture. Use this for textures you read back on
+		/// the CPU, or small images that need to stay pixel exact.</summary>
+		Uncompressed = 1 << 8,
+		/// <summary>Compress this texture, preferring quality over size. This wins over
+		/// small, and uncompressed wins over this.</summary>
+		Quality      = 1 << 9,
+		/// <summary>Compress this texture, preferring a small size over quality.</summary>
+		Small        = 1 << 10,
+	}
+
 	/// <summary>How does the shader grab pixels from the texture? Or more
 	/// specifically, how does the shader grab colors between the provided
 	/// pixels? If you'd like an in-depth explanation of these topics, check

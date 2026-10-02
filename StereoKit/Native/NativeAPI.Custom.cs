@@ -107,11 +107,11 @@ namespace StereoKit
 
 		// tex_create_mem with byte array
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern IntPtr tex_create_mem([In] byte[] data, UIntPtr data_size, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, int priority);
+		public static extern IntPtr tex_create_mem([In] byte[] data, UIntPtr data_size, TexHint hints, int priority);
 
 		// tex_set_mem overload with byte[] data
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_mem(IntPtr texture, [In] byte[] data, UIntPtr data_size, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, [MarshalAs(UnmanagedType.Bool)] bool blocking, int priority);
+		public static extern void tex_set_mem(IntPtr texture, [In] byte[] data, UIntPtr data_size, TexHint hints, [MarshalAs(UnmanagedType.Bool)] bool blocking, int priority);
 
 
 		// tex_add_zbuffer with byte array
@@ -128,7 +128,7 @@ namespace StereoKit
 
 		// model_create_mem with byte array data
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern IntPtr model_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, [In] byte[] data, UIntPtr data_size, IntPtr shader, int priority);
+		public static extern IntPtr model_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, [In] byte[] data, UIntPtr data_size, IntPtr shader, int priority, TexHint tex_hints);
 
 		// sound_write_samples with IntPtr (for native buffers)
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]

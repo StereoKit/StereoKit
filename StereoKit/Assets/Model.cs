@@ -395,12 +395,16 @@ namespace StereoKit
 		/// <param name="shader">The shader to use for the model's materials!
 		/// If null, this will
 		/// automatically determine the best shader available to use.</param>
+		/// <param name="texHints">Compression for the model's textures. Only
+		/// the compression hints are used here, since the model already knows
+		/// which textures are color, data, or normals. TexHint.None uses the
+		/// default compression.</param>
 		/// <returns>Always returns a valid Model created from the file, check
 		/// the AssetState to see if a failure occurred.</returns>
-		public static Model FromFile(string file, Shader shader = null, int loadPriority = 10)
+		public static Model FromFile(string file, Shader shader = null, int loadPriority = 10, TexHint texHints = TexHint.None)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_file(file, final, loadPriority);
+			IntPtr inst = NativeAPI.model_create_file(file, final, loadPriority, texHints);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 
@@ -417,12 +421,16 @@ namespace StereoKit
 		/// <param name="shader">The shader to use for the model's materials!
 		/// If null, this will automatically determine the best shader 
 		/// available to use.</param>
+		/// <param name="texHints">Compression for the model's textures. Only
+		/// the compression hints are used here, since the model already knows
+		/// which textures are color, data, or normals. TexHint.None uses the
+		/// default compression.</param>
 		/// <returns>Always returns a valid Model created from the file, check
 		/// the AssetState to see if a failure occurred.</returns>
-		public static Model FromMemory(string filename, in byte[] data, Shader shader = null, int loadPriority = 10)
+		public static Model FromMemory(string filename, in byte[] data, Shader shader = null, int loadPriority = 10, TexHint texHints = TexHint.None)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final, loadPriority);
+			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final, loadPriority, texHints);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
 

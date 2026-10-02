@@ -46,6 +46,7 @@
 
 #endif
 #include "../asset_types/assets.h"
+#include "../asset_types/texture_compression.h"
 
 ///////////////////////////////////////////
 
@@ -189,6 +190,7 @@ bool platform_init() {
 		log_fail_reason(95, log_error, "Failed to initialize vertex formats!");
 		return false;
 	}
+	texture_compression_gpu_init();
 
 	// Get GPU name from Vulkan physical device properties
 	VkPhysicalDeviceProperties props;
@@ -611,6 +613,15 @@ bool32_t platform_read_file(const char* filename, void** out_data, size_t* out_s
 	bool32_t read_file_result = platform_read_file_direct(asset_filename, out_data, out_size);
 	sk_free(asset_filename);
 	return read_file_result;
+}
+
+///////////////////////////////////////////
+
+void platform_read_file_async(const char* filename, platform_read_callback_t callback, void* context) {
+	void*    data    = nullptr;
+	size_t   size    = 0;
+	bool32_t success = platform_read_file(filename, &data, &size);
+	callback(success, data, size, context);
 }
 
 ///////////////////////////////////////////

@@ -151,7 +151,7 @@ static float sound_norm_gain(const float* samples, uint64_t frames, int32_t chan
 	return fmaxf(0.3f, fminf(300.f, norm));
 }
 
-static bool32_t sound_load_decode(asset_task_t*, asset_header_t* asset, void* job_data) {
+static asset_action_result_ sound_load_decode(asset_task_t*, asset_header_t* asset, void* job_data) {
 	sound_t       sound = (sound_t)asset;
 	sound_load_t* data  = (sound_load_t*)job_data;
 
@@ -163,7 +163,7 @@ static bool32_t sound_load_decode(asset_task_t*, asset_header_t* asset, void* jo
 	if (ma_decoder_init_memory(data->file_data, data->file_size, &config, &decoder) != MA_SUCCESS) {
 		log_errf("Failed to parse sound '%s'.", sound->header.id_text);
 		atomic_store_i32_rel((int32_t*)&sound->header.state, asset_state_error_unsupported);
-		return false;
+		return asset_action_fail;
 	}
 	ma_uint32 file_ch = decoder.outputChannels;
 	bool      fuma    = false;
@@ -179,7 +179,7 @@ static bool32_t sound_load_decode(asset_task_t*, asset_header_t* asset, void* jo
 		config = ma_decoder_config_init(AU_SAMPLE_FORMAT, 2, AU_SAMPLE_RATE);
 		if (ma_decoder_init_memory(data->file_data, data->file_size, &config, &decoder) != MA_SUCCESS) {
 			atomic_store_i32_rel((int32_t*)&sound->header.state, asset_state_error_unsupported);
-			return false;
+			return asset_action_fail;
 		}
 		sound->channels = sound_channels_stereo;
 	} else if (file_ch == 2) {
@@ -219,7 +219,7 @@ static bool32_t sound_load_decode(asset_task_t*, asset_header_t* asset, void* jo
 		atomic_store_i32_rel((int32_t*)&sound->data_type, sound_data_stream_file);
 	}
 	atomic_store_i32_rel((int32_t*)&sound->header.state, asset_state_loaded);
-	return true;
+	return asset_action_done;
 }
 
 // The loading task publishes these fields from an asset thread, so readers
@@ -239,8 +239,8 @@ static void sound_load_failure(asset_header_t* asset, void*) {
 		atomic_store_i32_rel((int32_t*)&asset->state, asset_state_error);
 }
 
-static asset_load_action_t sound_load_actions[] = {
-	sound_load_decode,
+static asset_action_t sound_load_actions[] = {
+	{ sound_load_decode, asset_affinity_heavy },
 };
 
 ///////////////////////////////////////////

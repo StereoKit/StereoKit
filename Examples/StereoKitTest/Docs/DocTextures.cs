@@ -14,9 +14,10 @@ internal class DocTextures : ITest
 
 		// Reading colors can be as simple as this! Remember to select a color
 		// format that matches the data stored in the texture, as StereoKit
-		// will not convert the data for you. Most images from file are 32 bit
-		// RGBA images!
-		Tex texture = Tex.FromFile("floor.png");
+		// will not convert the data for you. Images from file are compressed
+		// by default, so ask for an uncompressed one to read 32 bit RGBA
+		// pixels back!
+		Tex texture = Tex.FromFile("floor.png", TexHint.Srgb | TexHint.Uncompressed);
 		Color32[] colors = texture.GetColorData<Color32>();
 
 		// For a more complex texture, such as this generated texture with 32

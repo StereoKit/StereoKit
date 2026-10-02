@@ -149,8 +149,8 @@ class DemoMaterial : ITest
 		/// Metal texture.
 		matPBR = Material.PBR.Copy();
 		matPBR[MatParamName.DiffuseTex  ] = Tex.FromFile("metal_plate_diff.jpg");
-		matPBR[MatParamName.MetalTex    ] = Tex.FromFile("metal_plate_metal.jpg", false);
-		matPBR[MatParamName.OcclusionTex] = Tex.FromFile("metal_plate_metal.jpg", false);
+		matPBR[MatParamName.MetalTex    ] = Tex.FromFile("metal_plate_metal.jpg", TexHint.None);
+		matPBR[MatParamName.OcclusionTex] = Tex.FromFile("metal_plate_metal.jpg", TexHint.None);
 		/// ![PBR material example]({{site.screen_url}}/MaterialPBR.jpg)
 		/// :End:
 

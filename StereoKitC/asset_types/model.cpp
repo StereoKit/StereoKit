@@ -35,17 +35,19 @@ enum model_format_ {
 };
 
 struct model_load_t {
-	char*          filename;
-	shader_t       shader;
-	void*          file_data;
-	size_t         file_size;
-	int32_t        priority;
-	model_format_  format;
-	void*          format_data;
+	char*             filename;
+	shader_t          shader;
+	void*             file_data;
+	size_t            file_size;
+	asset_file_read_t file_read;
+	int32_t           priority;
+	tex_hint_         tex_hints;
+	model_format_     format;
+	void*             format_data;
 };
 
-typedef bool (*modelfmt_metadata_fn)(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, void **out_format_data);
-typedef bool (*modelfmt_meshes_fn)  (model_t model, const char *filename, shader_t shader, int32_t priority, void *format_data);
+typedef bool (*modelfmt_metadata_fn)(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_hint_ tex_hints, void **out_format_data);
+typedef bool (*modelfmt_meshes_fn)  (model_t model, const char *filename, shader_t shader, int32_t priority, tex_hint_ tex_hints, void *format_data);
 typedef void (*modelfmt_free_fn)    (void *format_data);
 
 struct model_fmt_t {
@@ -77,43 +79,49 @@ static model_format_ model_get_format(const char *filename) {
 
 ///////////////////////////////////////////
 
-static bool32_t model_load_file(asset_task_t *, asset_header_t *, void *data) {
+static asset_action_result_ model_load_file(asset_task_t *task, asset_header_t *, void *data) {
 	profiler_zone();
-	model_load_t *load   = (model_load_t *)data;
-	bool32_t      loaded = platform_read_file(load->filename, &load->file_data, &load->file_size);
-	if (!loaded) {
+	model_load_t *load = (model_load_t *)data;
+
+	asset_read_ read = assets_task_read_file(task, load->filename, &load->file_read);
+	if (read == asset_read_in_flight)
+		return asset_action_wait;
+	if (read == asset_read_failed) {
 		log_warnf("Model file failed to load: %s", load->filename);
-		return false;
+		return asset_action_fail;
 	}
-	return true;
+	load->file_data = load->file_read.data;
+	load->file_size = load->file_read.size;
+	load->file_read = {};
+	return asset_action_done;
 }
 
 ///////////////////////////////////////////
 
-static bool32_t model_load_metadata(asset_task_t *, asset_header_t *asset, void *data) {
+static asset_action_result_ model_load_metadata(asset_task_t *, asset_header_t *asset, void *data) {
 	profiler_zone();
 	model_t       model = (model_t)asset;
 	model_load_t *load  = (model_load_t *)data;
 
-	if (!model_format_fns[load->format].metadata(model, load->filename, load->file_data, load->file_size, load->shader, load->priority, &load->format_data)) {
+	if (!model_format_fns[load->format].metadata(model, load->filename, load->file_data, load->file_size, load->shader, load->priority, load->tex_hints, &load->format_data)) {
 		log_errf("Issue loading metadata for: %s", load->filename);
-		return false;
+		return asset_action_fail;
 	}
 
 	model->header.state = asset_state_loaded_meta;
-	return true;
+	return asset_action_done;
 }
 
 ///////////////////////////////////////////
 
-static bool32_t model_load_meshes(asset_task_t *, asset_header_t *asset, void *data) {
+static asset_action_result_ model_load_meshes(asset_task_t *, asset_header_t *asset, void *data) {
 	profiler_zone();
 	model_t       model = (model_t)asset;
 	model_load_t *load  = (model_load_t *)data;
 
-	if (!model_format_fns[load->format].meshes(model, load->filename, load->shader, load->priority, load->format_data)) {
+	if (!model_format_fns[load->format].meshes(model, load->filename, load->shader, load->priority, load->tex_hints, load->format_data)) {
 		log_errf("Issue loading mesh data for: %s", load->filename);
-		return false;
+		return asset_action_fail;
 	}
 	
 	model_format_fns[load->format].free(load->format_data);
@@ -122,7 +130,7 @@ static bool32_t model_load_meshes(asset_task_t *, asset_header_t *asset, void *d
 	load->format_data = nullptr;
 
 	model->header.state = asset_state_loaded;
-	return true;
+	return asset_action_done;
 }
 
 ///////////////////////////////////////////
@@ -133,6 +141,7 @@ static void model_load_free(asset_header_t *, void *data) {
 	model_format_fns[load->format].free(load->format_data);
 	sk_free                            (load->filename);
 	sk_free                            (load->file_data);
+	sk_free                            (load->file_read.data);
 	shader_release                     (load->shader);
 	sk_free                            (load);
 }
@@ -230,7 +239,7 @@ model_t model_create_mesh(mesh_t mesh, material_t material) {
 
 ///////////////////////////////////////////
 
-model_t model_create_mem(const char *filename, const void *data, size_t data_size, shader_t shader, int32_t priority) {
+model_t model_create_mem(const char *filename, const void *data, size_t data_size, shader_t shader, int32_t priority, tex_hint_ tex_hints) {
 	profiler_zone();
 
 	model_format_ format = model_get_format(filename);
@@ -246,6 +255,7 @@ model_t model_create_mem(const char *filename, const void *data, size_t data_siz
 	load->filename  = string_copy(filename);
 	load->shader    = shader;
 	load->priority  = priority;
+	load->tex_hints = tex_hints;
 	load->format    = format;
 	if (shader) shader_addref(shader);
 
@@ -253,15 +263,15 @@ model_t model_create_mem(const char *filename, const void *data, size_t data_siz
 	load->file_data = sk_malloc(data_size);
 	memcpy(load->file_data, data, data_size);
 
-	static const asset_load_action_t actions[] = {
-		model_load_metadata,
-		model_load_meshes,
+	static const asset_action_t actions[] = {
+		{ model_load_metadata, asset_affinity_heavy },
+		{ model_load_meshes,   asset_affinity_heavy },
 	};
 
 	asset_task_t task = {};
 	task.asset        = &result->header;
 	task.load_data    = load;
-	task.actions      = (asset_load_action_t *)actions;
+	task.actions      = (asset_action_t *)actions;
 	task.action_count = _countof(actions);
 	task.free_data    = model_load_free;
 	task.on_failure   = model_load_on_failure;
@@ -274,7 +284,7 @@ model_t model_create_mem(const char *filename, const void *data, size_t data_siz
 
 ///////////////////////////////////////////
 
-model_t model_create_file(const char *filename, shader_t shader, int32_t priority) {
+model_t model_create_file(const char *filename, shader_t shader, int32_t priority, tex_hint_ tex_hints) {
 	profiler_zone();
 
 	model_t result = model_find(filename);
@@ -292,22 +302,23 @@ model_t model_create_file(const char *filename, shader_t shader, int32_t priorit
 	result->header.state = asset_state_loading;
 
 	model_load_t *load = sk_malloc_zero_t(model_load_t, 1);
-	load->filename = string_copy(filename);
-	load->shader   = shader;
-	load->priority = priority;
-	load->format   = format;
+	load->filename  = string_copy(filename);
+	load->shader    = shader;
+	load->priority  = priority;
+	load->tex_hints = tex_hints;
+	load->format    = format;
 	if (shader) shader_addref(shader);
 
-	static const asset_load_action_t actions[] = {
-		model_load_file,
-		model_load_metadata,
-		model_load_meshes,
+	static const asset_action_t actions[] = {
+		{ model_load_file },
+		{ model_load_metadata, asset_affinity_heavy },
+		{ model_load_meshes,   asset_affinity_heavy },
 	};
 
 	asset_task_t task = {};
 	task.asset        = &result->header;
 	task.load_data    = load;
-	task.actions      = (asset_load_action_t *)actions;
+	task.actions      = (asset_action_t *)actions;
 	task.action_count = _countof(actions);
 	task.free_data    = model_load_free;
 	task.on_failure   = model_load_on_failure;

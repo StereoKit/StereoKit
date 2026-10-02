@@ -9,7 +9,7 @@ class TestAnimations : ITest
 
 	public void Initialize()
 	{
-		_srcModel = Model.FromFile("Cosmonaut.glb");
+		_srcModel = Model.FromFile("Cosmonaut.glb", texHints: TexHint.Uncompressed);
 		_anim1 = _srcModel.Copy();
 		_anim1.PlayAnim("Idle", AnimMode.Manual);
 		_anim2 = _anim1.Copy();

@@ -59,7 +59,7 @@ class TestModel : ITest
 		Tests.Test(TestCopyWhileLoadingState);
 
 		// -- Animated model --
-		animModel = Model.FromFile("Cosmonaut.glb");
+		animModel = Model.FromFile("Cosmonaut.glb", texHints: TexHint.Uncompressed);
 		animModel.OnLoaded += m => animOnLoadedFired = true;
 
 		// -- Node manipulation on a procedural model --

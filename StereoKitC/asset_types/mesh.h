@@ -53,9 +53,9 @@ struct mesh_load_t {
 	int32_t  vert_format;
 	bool32_t calc_bounds;
 };
-bool32_t mesh_load_process   (asset_task_t* task, asset_header_t* asset, void* data);
-bool32_t mesh_load_upload    (asset_task_t* task, asset_header_t* asset, void* data);
-void     mesh_load_free      (asset_header_t* asset, void* data);
-void     mesh_load_on_failure(asset_header_t* asset, void* data);
+asset_action_result_ mesh_load_process(asset_task_t* task, asset_header_t* asset, void* data);
+asset_action_result_ mesh_load_upload (asset_task_t* task, asset_header_t* asset, void* data);
+void                 mesh_load_free   (asset_header_t* asset, void* data);
+void                 mesh_load_on_failure(asset_header_t* asset, void* data);
 
 } // namespace sk

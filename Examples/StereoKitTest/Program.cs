@@ -100,6 +100,7 @@ class Program
 			WindowDemoShow = true;
 			SK.AddStepper<DebugToolWindow>();
 		}
+		Tex.DefaultCompression = TexHint.Small;
 	}
 
 	//////////////////////

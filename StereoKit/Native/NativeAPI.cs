@@ -274,13 +274,13 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_find([MarshalAs(UnmanagedType.LPUTF8Str)] string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create(TexType type, TexFormat format);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_rendertarget(int width, int height, int msaa, TexFormat color_format, TexFormat depth_format);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_color32([In] Color32[] in_arr_data, int width, int height, [MarshalAs(UnmanagedType.Bool)] bool srgb_data);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_color128([In] Color[] in_arr_data, int width, int height, [MarshalAs(UnmanagedType.Bool)] bool srgb_data);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_mem(IntPtr data, UIntPtr data_size, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, int priority);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_file([MarshalAs(UnmanagedType.LPUTF8Str)] string file_utf8, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, int priority);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_file_arr([In] string[] in_arr_files, int file_count, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, int priority);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_cubemap_file([MarshalAs(UnmanagedType.LPUTF8Str)] string cubemap_file_utf8, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, int priority);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_cubemap_files([In] string[] in_arr_cube_face_file_xxyyzz, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_color32([In] Color32[] in_arr_data, int width, int height, TexHint hints);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_color128([In] Color[] in_arr_data, int width, int height, TexHint hints);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_mem(IntPtr data, UIntPtr data_size, TexHint hints, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_file([MarshalAs(UnmanagedType.LPUTF8Str)] string file_utf8, TexHint hints, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_file_arr([In] string[] in_arr_files, int file_count, TexHint hints, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_cubemap_file([MarshalAs(UnmanagedType.LPUTF8Str)] string cubemap_file_utf8, TexHint hints, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_create_cubemap_files([In] string[] in_arr_cube_face_file_xxyyzz, TexHint hints, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_copy(IntPtr texture, TexType type, TexFormat format);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         tex_gen_mips(IntPtr texture);
@@ -300,7 +300,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_color_arr(IntPtr texture, int width, int height, IntPtr array_data, int array_count, int multisample);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_color_arr_mips(IntPtr texture, int width, int height, IntPtr array_data, int array_count, int mip_count, int multisample);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_colors_3d(IntPtr texture, int width, int height, int depth, IntPtr data);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_mem(IntPtr texture, IntPtr data, UIntPtr data_size, [MarshalAs(UnmanagedType.Bool)] bool srgb_data, [MarshalAs(UnmanagedType.Bool)] bool blocking, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_mem(IntPtr texture, IntPtr data, UIntPtr data_size, TexHint hints, [MarshalAs(UnmanagedType.Bool)] bool blocking, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_add_zbuffer(IntPtr texture, TexFormat format);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_zbuffer(IntPtr texture, IntPtr depth_texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_get_zbuffer(IntPtr texture);
@@ -325,6 +325,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_mips(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_loading_fallback(IntPtr loading_texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_error_fallback(IntPtr error_texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_compression_default(TexHint compression);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexHint      tex_get_compression_default();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SphericalHarmonics tex_get_cubemap_lighting(IntPtr cubemap_texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_cubemap_lighting(IntPtr cubemap_texture, in SphericalHarmonics lighting_info);
 
@@ -526,8 +528,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_copy(IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create_mesh(IntPtr mesh, IntPtr material);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, IntPtr data, UIntPtr data_size, IntPtr shader, int priority);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create_file([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, IntPtr shader, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, IntPtr data, UIntPtr data_size, IntPtr shader, int priority, TexHint tex_hints);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_create_file([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, IntPtr shader, int priority, TexHint tex_hints);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_set_id(IntPtr model, [MarshalAs(UnmanagedType.LPUTF8Str)] string id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       model_get_id(IntPtr model);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         model_addref(IntPtr model);

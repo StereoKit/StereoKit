@@ -14,7 +14,7 @@ typedef struct svg_model_load_t {
 
 ///////////////////////////////////////////
 
-bool modelfmt_svg_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t, void **out_format_data) {
+bool modelfmt_svg_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t, tex_hint_, void **out_format_data) {
 	// Flat vector art reads best unlit, unless the caller has other plans.
 	material_t material = shader == nullptr
 		? material_copy_id(default_id_material_unlit)
@@ -31,7 +31,7 @@ bool modelfmt_svg_metadata(model_t model, const char *filename, const void *file
 
 ///////////////////////////////////////////
 
-bool modelfmt_svg_meshes(model_t model, const char *filename, shader_t, int32_t priority, void *format_data) {
+bool modelfmt_svg_meshes(model_t model, const char *filename, shader_t, int32_t priority, tex_hint_, void *format_data) {
 	svg_model_load_t *load = (svg_model_load_t *)format_data;
 
 	// Parsing still happens when the mesh already exists from Mesh.FromFile,

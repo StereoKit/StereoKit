@@ -4,6 +4,7 @@
 // Copyright (c) 2023 Qualcomm Technologies, Inc.
 
 using StereoKit;
+using StereoKit.Framework;
 using System;
 using System.Collections.Generic;
 
@@ -118,6 +119,9 @@ class DemoAssets : ITest
 		Bounds b = UI.LayoutReserve(V.XX(UI.LineHeight), false, UI.LineHeight);
 		Mesh.Sphere.Draw(item, Matrix.TS(b.center, b.dimensions));
 
+		UI.SameLine();
+		if (UI.ButtonImg("inspect", Sprite.ArrowRight, UIBtnLayout.CenterNoText, V.XX(UI.LineHeight)))
+			MaterialInspector.Show(item);
 		UI.SameLine();
 	}
 
