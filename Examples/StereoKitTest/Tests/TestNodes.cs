@@ -159,7 +159,7 @@ class TestNodes : ITest
 			visualCount + 2 == model.Visuals.Count;
 	}
 
-	/// :CodeSample: Model Model.RootNode Model.Child Model.Sibling Model.Parent
+	/// :CodeSample: Model Model.RootNode ModelNode.Child ModelNode.Sibling ModelNode.Parent
 	/// ### Non-recursive depth first node traversal
 	/// If you need to walk through a Model's node hierarchy, this is a method
 	/// of doing this without recursion! You essentially do this by walking the
@@ -192,7 +192,7 @@ class TestNodes : ITest
 	}
 	/// :End:
 
-	/// :CodeSample: Model Model.Child Model.Sibling Model.Parent
+	/// :CodeSample: Model ModelNode.Child ModelNode.Sibling ModelNode.Parent
 	/// ### Recursive depth first node traversal
 	/// Recursive depth first traversal is a little simpler to implement as
 	/// long as you don't mind some recursion :)

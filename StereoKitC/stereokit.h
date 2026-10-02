@@ -13,7 +13,14 @@
 
 #if defined(__GNUC__) || defined(__clang__)
 	#define SK_DEPRECATED __attribute__((deprecated))
-	#define SK_EXIMPORT __attribute__((visibility("default")))
+	#if defined(_WIN32) && defined(SK_BUILD_SHARED)
+		// PE/COFF ignores ELF-style visibility attributes: MinGW/GCC shared
+		// builds need real dllexport markers to export the SK_API surface. 
+		// SK_BUILD_SHARED is passed PRIVATE to StereoKitC by its CMakeLists.
+		#define SK_EXIMPORT __declspec(dllexport)
+	#else
+		#define SK_EXIMPORT __attribute__((visibility("default")))
+	#endif
 	#define SK_CONST static const
 #elif defined(_MSC_VER)
 	#define SK_DEPRECATED __declspec(deprecated)
@@ -502,6 +509,10 @@ typedef enum tex_format_ {
 	  diffuse color but it's been superseded - prefer Etc2 or Astc
 	  on newer hardware!*/
 	tex_format_etc1_rgb,
+	/*ETC1 sRGB RGB, no alpha, 4 bpp. The sRGB counterpart to
+	  Etc1Rgb - the GPU converts to linear on sample, so this is
+	  the correct choice for color textures.*/
+	tex_format_etc1_rgb_srgb,
 	/*ETC2 sRGB color with full alpha, 8 bpp. The standard
 	  compressed RGBA format on OpenGL ES 3.0+ mobile devices, and
 	  mandatory in the spec - so it's widely available. A great
@@ -550,6 +561,18 @@ typedef enum tex_format_ {
 	/*ASTC 4x4 linear color with full alpha, 8 bpp. High-quality
 	  compressed format for data textures on modern mobile GPUs.*/
 	tex_format_astc4x4_rgba,
+	/*ASTC 6x6 sRGB color with full alpha, ~3.56 bpp. Larger blocks
+	  than Astc4x4 for less than half the memory, at some cost to
+	  quality - a good trade for large or low-frequency textures.*/
+	tex_format_astc6x6_rgba_srgb,
+	/*ASTC 6x6 linear color with full alpha, ~3.56 bpp. The linear
+	  counterpart to Astc6x6RgbaSrgb, for data textures.*/
+	tex_format_astc6x6_rgba,
+	/*ASTC 8x8 HDR color with full alpha, 2 bpp. Compressed HDR on
+	  mobile GPUs, and much cheaper than an uncompressed float
+	  format. Requires the ASTC HDR extension, which is separate
+	  from baseline ASTC support!*/
+	tex_format_astc8x8_rgba_hdr,
 	/*ATC RGB on Qualcomm Adreno GPUs, 4 bpp. Historical
 	  Qualcomm-specific format - prefer Astc or Etc2 on newer
 	  Adreno hardware.*/
@@ -823,6 +846,7 @@ typedef struct sk_settings_t {
 	int32_t        flatscreen_pos_y;
 	int32_t        flatscreen_width;
 	int32_t        flatscreen_height;
+	bool32_t       fullscreen;
 	bool32_t       disable_desktop_input_window;
 	bool32_t       disable_unfocused_sleep;
 	float          render_scaling;
@@ -907,6 +931,15 @@ SK_API quit_reason_  sk_get_quit_reason    (void);
 
 ///////////////////////////////////////////
 
+SK_DeclarePrivateType(window_t);
+
+SK_API window_t      window_get_main          (void);
+SK_API bool32_t      window_get_fullscreen    (const window_t window);
+SK_API void          window_request_fullscreen(window_t window, bool32_t fullscreen);
+SK_API void          window_get_size          (const window_t window, int32_t* out_width_px, int32_t* out_height_px);
+
+///////////////////////////////////////////
+
 /*What type of user motion is the device capable of tracking? For the normal
   fully capable XR headset, this should be 6dof (rotation and translation), but
   more limited headsets may be restricted to 3dof (rotation) and flatscreen
@@ -970,9 +1003,11 @@ SK_API bool32_t         device_has_hand_tracking  (void);
 
 ///////////////////////////////////////////
 
-/*A list of permissions that StereoKit knows about. On some platforms (like
-  Android), these permissions may need to be explicitly requested before using
-  certain features.*/
+/*A list of permissions that StereoKit knows about, each named for the
+  feature it unlocks. On some platforms (like Android), these permissions may
+  need to be explicitly requested before using certain features. Runtimes
+  group features into system permissions differently, so several of these may
+  resolve to the same underlying system permission.*/
 typedef enum permission_type_ {
 	/*For access to microphone data, this is typically an interactive
 	  permission that the user will need to explicitly approve.
@@ -1003,41 +1038,91 @@ typedef enum permission_type_ {
 	  This maps to android.permission.FACE_TRACKING on Android XR, but
 	  varies per-runtime.*/
 	permission_type_face_tracking,
-	/*For access to data in the user's space, this can be for things like
-	  spatial anchors, plane detection, hit testing, etc. This is typically an
+	/*For estimating ambient lighting from the user's surroundings, this is
+	  what the world lighting source feeds into Lighting.Ambient. This is
+	  typically an interactive permission that the user will need to
+	  explicitly approve.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+	  XR, but varies per-runtime.*/
+	permission_type_ambient_estimation,
+	/*For estimating an environment cubemap from the user's surroundings,
+	  this is what the world lighting source feeds into Lighting.Reflection.
+	  The estimate shows imagery of the user's space, so runtimes may treat
+	  it more strictly than ambient estimation. This is typically an
 	  interactive permission that the user will need to explicitly approve.
 
-	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
+	  This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
 	  but varies per-runtime.*/
-	permission_type_scene,
-	/*For creating and persisting spatial anchors. On some runtimes this is a
-	  soft permission that just needs to be present in the manifest, while
-	  others treat anchors as user-approved scene data, so this can vary from
-	  invisible to interactive per-runtime.
+	permission_type_reflection_estimation,
+	/*For reading depth data about the user's surroundings via Sensor.Depth,
+	  useful for things like occlusion. This is typically an interactive
+	  permission that the user will need to explicitly approve.
 
-	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
-	  and horizonos.permission.USE_ANCHOR_API on Meta, where it must be in the
-	  manifest for spatial entity features to be present at all.*/
+	  This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
+	  but varies per-runtime.*/
+	permission_type_depth_sensing,
+	/*For creating and persisting spatial anchors in the user's space, via
+	  StereoKit's Anchor API. Some runtimes grant this automatically from the
+	  manifest entry, while others treat it as an interactive permission.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+	  XR and com.oculus.permission.USE_ANCHOR_API on Meta, but varies
+	  per-runtime.*/
 	permission_type_anchors,
+	/*For detecting walls, floors, tables and other surfaces in the user's
+	  space, via spatial_capability_plane_tracking. This is typically an
+	  interactive permission that the user will need to explicitly approve.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+	  XR, but varies per-runtime.*/
+	permission_type_plane_tracking,
+	/*For detecting QR codes, ArUco markers and AprilTags in the user's
+	  space, via the spatial marker capabilities. This is typically an
+	  interactive permission that the user will need to explicitly approve.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+	  XR, but varies per-runtime.*/
+	permission_type_marker_tracking,
 	/*This enum is for tracking the number of value in this enum.*/
 	permission_type_max,
 } permission_type_;
 
 /*Permissions can be in a variety of states, depending on how users interact
   with them. Sometimes they're automatically granted, user denied, or just
-  unknown for the current runtime!*/
+  unknown for the current runtime! A positive value means you're clear to use
+  the feature, zero or negative means you're not.*/
 typedef enum permission_state_ {
-	/*This permission is known to StereoKit, but not available to request.
-	  Typically this means the correct permission string is not listed in the
-	  AndroidManfiest.xml or similar.*/
-	permission_state_unavailable = -2,
-	/*This app is capable of using the permission, but it needs to be
-	  requested first with Permission.Request.*/
+	/*StereoKit knows this permission, but nothing you do at runtime can get
+	  it granted. Usually the permission string is missing from the
+	  AndroidManifest.xml or equivalent, so check there first. Some runtimes
+	  also report this when an administrator or parental control has locked
+	  the feature off, which no amount of asking will change. Fix your app's
+	  manifest, or work without the feature.*/
+	permission_state_unavailable = -5,
+	/*The permission was refused, and the system will not prompt for it
+	  again. Requesting it is legal, but nothing will happen. Only the user
+	  can undo this, from the system's settings. Work without the feature,
+	  and if it matters, tell the user where to turn it back on.*/
+	permission_state_blocked     = -4,
+	/*The permission was refused, but the system is still willing to prompt
+	  for it. Not every platform has this state; where the first refusal is
+	  final, you'll get blocked instead. You can request it again, ideally at
+	  a moment where the user understands why you need it.*/
+	permission_state_denied      = -3,
+	/*A permission request is in flight: a dialog may be up, or StereoKit is
+	  waiting to see if the system will answer one. This settles on its own
+	  once the system answers, or the user dismisses the dialog. Wait, and
+	  check back later.*/
+	permission_state_requesting  = -2,
+	/*This app can use the permission, but hasn't been granted it yet. Ask
+	  for it with Permission.Request.*/
 	permission_state_capable     = -1,
 
 	/*StereoKit doesn't know about the permission on the current runtime. This
 	  happens when the runtime has a unique permission string (or not) and
-	  StereoKit doesn't know what it is to look up its current status.*/
+	  StereoKit doesn't know what it is to look up its current status. There's
+	  no reliable action here, try the feature and see if it works.*/
 	permission_state_unknown     =  0,
 	/*This permission is entirely approved and you can go ahead and use the
 	  associated features!*/
@@ -1050,20 +1135,36 @@ SK_API void              permission_request       (const permission_type_* in_ar
 
 ///////////////////////////////////////////
 
-SK_API double        time_total_raw        (void);
-SK_API float         time_totalf_unscaled  (void);
-SK_API double        time_total_unscaled   (void);
-SK_API float         time_totalf           (void);
-SK_API double        time_total            (void);
-SK_API float         time_stepf_unscaled   (void);
-SK_API double        time_step_unscaled    (void);
-SK_API float         time_stepf            (void);
-SK_API double        time_step             (void);
-SK_API void          time_scale            (double scale);
-SK_API void          time_set_time         (double total_seconds, double frame_elapsed_seconds sk_default(0));
-SK_API uint64_t      time_frame            (void);
-SK_API uint64_t      time_perf_cpu_us      (void);
-SK_API uint64_t      time_perf_gpu_us      (void);
+/*A snapshot of how frames have been reaching the display recently, for
+  checking performance at runtime. Only the flatscreen app modes present
+  through a surface StereoKit can time; in XR and Offscreen this is all
+  zeros.*/
+typedef struct present_stats_t {
+	/*Microseconds from the most recent present call to its first pixel on
+	  screen, or 0 when the platform gave no display time for it.*/
+	uint64_t        latency_us;
+	/*Presents among the last 128 with a known display time.*/
+	uint32_t        sample_count;
+	/*Of those, how many stayed on screen for two or more refreshes. A
+	  repeated frame is a visible hitch.*/
+	uint32_t        repeat_count;
+} present_stats_t;
+
+SK_API double          time_total_raw        (void);
+SK_API float           time_totalf_unscaled  (void);
+SK_API double          time_total_unscaled   (void);
+SK_API float           time_totalf           (void);
+SK_API double          time_total            (void);
+SK_API float           time_stepf_unscaled   (void);
+SK_API double          time_step_unscaled    (void);
+SK_API float           time_stepf            (void);
+SK_API double          time_step             (void);
+SK_API void            time_scale            (double scale);
+SK_API void            time_set_time         (double total_seconds, double frame_elapsed_seconds sk_default(0));
+SK_API uint64_t        time_frame            (void);
+SK_API uint64_t        time_perf_cpu_us      (void);
+SK_API uint64_t        time_perf_gpu_us      (void);
+SK_API present_stats_t time_perf_present     (void);
 
 ///////////////////////////////////////////
 
@@ -1254,6 +1355,7 @@ SK_API        color128 color_to_gamma (color128 srgb_linear);
 
 static inline color128 color_lerp     (color128 a, color128 b, float t) { color128 result = {a.r + (b.r - a.r)*t, a.g + (b.g - a.g)*t, a.b + (b.b - a.b)*t, a.a + (b.a - a.a)*t}; return result; }
 static inline color32  color_to_32    (color128 a)                      { color32  result = {(uint8_t)(a.r * 255.f), (uint8_t)(a.g * 255.f), (uint8_t)(a.b * 255.f), (uint8_t)(a.a * 255.f)}; return result; }
+static inline color32  color_to_32_sat(color128 a)                      { color32  result = {(uint8_t)((a.r<0?0:a.r>1?1:a.r) * 255.f), (uint8_t)((a.g<0?0:a.g>1?1:a.g) * 255.f), (uint8_t)((a.b<0?0:a.b>1?1:a.b) * 255.f), (uint8_t)((a.a<0?0:a.a>1?1:a.a) * 255.f)}; return result; }
 
 static inline color128 color32_to_128 (color32 color) { color128 result = { color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f }; return result; }
 static inline color32  color32_hex    (uint32_t hex)  { color32  result = {(uint8_t)(hex>>24), (uint8_t)((hex>>16)&0x000000FF), (uint8_t)((hex>>8)&0x000000FF), (uint8_t)(hex&0x000000FF)}; return result; };
@@ -1300,20 +1402,45 @@ SK_API void       gradient_destroy    (gradient_t gradient);
 
 ///////////////////////////////////////////
 
+/*RGB spherical harmonic coefficients up through the 2nd band, a compact
+  approximation of environment lighting.
+
+  Coefficient convention: band 0 [0]=constant; band 1 [1]=y, [2]=z, [3]=x;
+  band 2 [4]=xy, [5]=yz, [6]=3z^2-1, [7]=xz, [8]=x^2-y^2. All basis signs
+  are positive (no Condon-Shortley phase), so a light from above lands as
+  a _positive_ [1], and the linear band ([3], [1], [2]) points _toward_
+  the brightest region.
+
+  Values are radiance in the orthonormal real SH basis: basis constants
+  are applied at evaluation rather than baked into the coefficients, and
+  no cosine lobe is applied. Convolution to irradiance happens when this
+  bakes down into StereoKit's shader constants.
+
+  Watch out when importing coefficients from elsewhere: SH sign
+  conventions vary (Condon-Shortley phase), and many libraries (ARCore,
+  DirectXMath) flip the odd terms [1],[3],[5],[7] relative to this. If
+  imported lighting shows up rotated 180 degrees (up reads as down),
+  negate those four coefficients.*/
 typedef struct spherical_harmonics_t {
 	vec3     coefficients[9];
 } spherical_harmonics_t;
 
+/*A directional light source for building spherical_harmonics_t data, see
+  sh_create.*/
 typedef struct sh_light_t {
+	/*Direction _toward_ the light source.*/
 	vec3     dir_to;
+	/*Color of the light in linear space! Values here can exceed 1.*/
 	color128 color;
 } sh_light_t;
 
-SK_API spherical_harmonics_t sh_create      (const sh_light_t* in_arr_lights, int32_t light_count);
-SK_API void                  sh_brightness  (      sk_ref(spherical_harmonics_t) ref_harmonics, float scale);
-SK_API void                  sh_add         (      sk_ref(spherical_harmonics_t) ref_harmonics, vec3 light_dir, vec3 light_color);
-SK_API color128              sh_lookup      (const sk_ref(spherical_harmonics_t) harmonics, vec3 normal);
-SK_API vec3                  sh_dominant_dir(const sk_ref(spherical_harmonics_t) harmonics);
+SK_API spherical_harmonics_t sh_create         (const sh_light_t* in_arr_lights, int32_t light_count);
+SK_API void                  sh_brightness     (      sk_ref(spherical_harmonics_t) ref_harmonics, float scale);
+SK_API void                  sh_add            (      sk_ref(spherical_harmonics_t) ref_harmonics, vec3 light_dir, vec3 light_color);
+SK_API color128              sh_lookup         (const sk_ref(spherical_harmonics_t) harmonics, vec3 normal);
+SK_API vec3                  sh_dominant_dir_to(const sk_ref(spherical_harmonics_t) harmonics);
+SK_API sh_light_t            sh_dominant_light (const sk_ref(spherical_harmonics_t) harmonics);
+SK_API sh_light_t            sh_subtract_light (      sk_ref(spherical_harmonics_t) ref_harmonics, sh_light_t light);
 
 ///////////////////////////////////////////
 
@@ -1337,6 +1464,86 @@ typedef struct vert_t {
 } vert_t;
 
 static inline vert_t vert_create(vec3 position, vec3 normal sk_default({ 0,1,0 }), vec2 texture_coordinates sk_default({ 0,0 }), color32 vertex_color sk_default({ 255,255,255,255 })) { vert_t v = { position, normal, texture_coordinates, vertex_color }; return v;  }
+
+/*The data format of a single element of a vertex component. Normalized
+  formats map their integer range onto 0-1 (unsigned) or -1-1 (signed)
+  when read by the GPU, other integer formats arrive as integers.*/
+typedef enum vert_fmt_ {
+	/*Invalid format, this is not a valid value for a component.*/
+	vert_fmt_none = 0,
+	/*32 bit float.*/
+	vert_fmt_f32,
+	/*16 bit half float.*/
+	vert_fmt_f16,
+	/*32 bit signed integer.*/
+	vert_fmt_i32,
+	/*16 bit signed integer.*/
+	vert_fmt_i16,
+	/*8 bit signed integer.*/
+	vert_fmt_i8,
+	/*16 bit signed integer, normalized to -1-1 on the GPU.*/
+	vert_fmt_i16_normalized,
+	/*8 bit signed integer, normalized to -1-1 on the GPU.*/
+	vert_fmt_i8_normalized,
+	/*32 bit unsigned integer.*/
+	vert_fmt_u32,
+	/*16 bit unsigned integer.*/
+	vert_fmt_u16,
+	/*8 bit unsigned integer.*/
+	vert_fmt_u8,
+	/*16 bit unsigned integer, normalized to 0-1 on the GPU.*/
+	vert_fmt_u16_normalized,
+	/*8 bit unsigned integer, normalized to 0-1 on the GPU. A color32 is
+	  4 of these.*/
+	vert_fmt_u8_normalized,
+} vert_fmt_;
+
+/*What a vertex component means! This is matched against the semantics
+  the shader's vertex inputs declare, so component order in a format
+  doesn't need to match the shader's input order.*/
+typedef enum vert_semantic_ {
+	/*Invalid semantic, this is not a valid value for a component.*/
+	vert_semantic_none = 0,
+	/*Vertex position, in model space coordinates.*/
+	vert_semantic_position,
+	/*Direction the vertex is facing.*/
+	vert_semantic_normal,
+	/*Texture coordinates.*/
+	vert_semantic_texcoord,
+	/*Vertex color.*/
+	vert_semantic_color,
+	/*Tangent direction for normal mapping.*/
+	vert_semantic_tangent,
+	/*Binormal/bitangent direction for normal mapping.*/
+	vert_semantic_binormal,
+	/*Bone weights for skinning.*/
+	vert_semantic_blendweight,
+	/*Bone indices for skinning.*/
+	vert_semantic_blendindices,
+	/*Point size for point rendering.*/
+	vert_semantic_psize,
+} vert_semantic_;
+
+/*A single component of a custom vertex layout, such as a position or a
+  UV coordinate. A vertex format is described by an array of these, in
+  the same order the fields appear in the vertex struct. Data is always
+  tightly packed, aligned to nothing, so the format fully describes the
+  vertex layout.*/
+typedef struct vert_component_t {
+	/*The data format of a single element, of type vert_fmt_.*/
+	uint8_t format;
+	/*How many format elements this component has, 1-4. A float3
+	  position would be 3.*/
+	uint8_t count;
+	/*What this component means, of type vert_semantic_. This is matched
+	  with the shader's vertex input semantics.*/
+	uint8_t semantic;
+	/*Distinguishes multiple components with the same semantic, like
+	  TEXCOORD0 vs TEXCOORD1. Usually 0.*/
+	uint8_t semantic_slot;
+} vert_component_t;
+
+static inline vert_component_t vert_component(vert_semantic_ semantic, vert_fmt_ format, int32_t count, int32_t semantic_slot sk_default(0)) { vert_component_t c = { (uint8_t)format, (uint8_t)count, (uint8_t)semantic, (uint8_t)semantic_slot }; return c; }
 
 typedef uint32_t vind_t;
 
@@ -1386,8 +1593,12 @@ SK_API void         mesh_draw            (mesh_t mesh, material_t material, matr
 SK_API void         mesh_set_keep_data   (mesh_t mesh, bool32_t keep_data);
 SK_API bool32_t     mesh_get_keep_data   (mesh_t mesh);
 SK_API void         mesh_set_data        (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, const vind_t *in_arr_indices, int32_t index_count, mesh_data_ flags sk_default(mesh_data_calc_bounds), int32_t priority sk_default(0));
+SK_API void         mesh_set_data_fmt    (mesh_t mesh, const vert_component_t *in_arr_format, int32_t component_count, const void *vertex_data, int32_t vertex_count, const vind_t *in_arr_indices, int32_t index_count, mesh_data_ flags sk_default(mesh_data_calc_bounds), int32_t priority sk_default(0));
 SK_API void         mesh_set_verts       (mesh_t mesh, const vert_t *in_arr_vertices, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
 SK_API void         mesh_get_verts       (mesh_t mesh, sk_ref_arr(vert_t) out_arr_vertices, sk_ref(int32_t) out_vertex_count, memory_ reference_mode);
+SK_API void         mesh_set_verts_fmt   (mesh_t mesh, const vert_component_t *in_arr_format, int32_t component_count, const void *vertex_data, int32_t vertex_count, bool32_t calculate_bounds sk_default(true));
+SK_API void         mesh_get_verts_fmt   (mesh_t mesh, vert_component_t **out_arr_format, int32_t *out_component_count, void **out_vertex_data, int32_t *out_vertex_count, memory_ reference_mode);
+SK_API int32_t      mesh_fmt_stride      (const vert_component_t *in_arr_format, int32_t component_count);
 SK_API int32_t      mesh_get_vert_count  (mesh_t mesh);
 SK_API void         mesh_set_inds        (mesh_t mesh, const vind_t *in_arr_indices, int32_t index_count);
 SK_API void         mesh_get_inds        (mesh_t mesh, sk_ref_arr(vind_t) out_arr_indices,  sk_ref(int32_t) out_index_count, memory_ reference_mode);
@@ -1409,6 +1620,8 @@ SK_API mesh_t       mesh_gen_sphere      (float diameter,  int32_t subdivisions 
 SK_API mesh_t       mesh_gen_rounded_cube(vec3 dimensions, float edge_radius, int32_t subdivisions);
 SK_API mesh_t       mesh_gen_cylinder    (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
 SK_API mesh_t       mesh_gen_cone        (float diameter,  float depth, vec3 direction, int32_t subdivisions sk_default(16));
+SK_API mesh_t       mesh_create_file     (const char *filename_utf8, int32_t priority sk_default(10));
+SK_API mesh_t       mesh_create_mem      (const char *filename_utf8, const void *data, size_t data_size, int32_t priority sk_default(10));
 
 ///////////////////////////////////////////
 
@@ -1549,14 +1762,16 @@ SK_API const char*  tex_get_id              (const tex_t texture);
 SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
 SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample sk_default(1), bool32_t owned sk_default(true));
 SK_API void*        tex_get_surface         (tex_t texture);
+SK_API tex_t        tex_create_from_hardware_buffer(void *hardware_buffer, bool32_t owns_buffer sk_default(false));
+SK_API void*        tex_get_hardware_buffer (tex_t texture);
 SK_API void         tex_addref              (tex_t texture);
 SK_API void         tex_release             (tex_t texture);
 SK_API asset_state_ tex_asset_state         (const tex_t texture);
 SK_API void         tex_on_load             (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
 SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context));
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
-SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), spherical_harmonics_t* out_sh_lighting_info sk_default(nullptr));
+SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1));
+SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1));
 SK_API void         tex_set_colors_3d       (tex_t texture, int32_t width, int32_t height, int32_t depth, void *data);
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
@@ -1565,8 +1780,9 @@ SK_API tex_t        tex_get_zbuffer         (tex_t texture);
 SK_API void         tex_get_data            (tex_t texture, void *out_data, size_t data_size, int32_t mip_level sk_default(0));
 SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int32_t height, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_gen_particle        (int32_t width, int32_t height, float roundness sk_default(1), gradient_t gradient_linear sk_default(nullptr));
-SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution, spherical_harmonics_t *out_sh_lighting_info sk_default(nullptr));
+SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution);
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
+SK_API tex_t        tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into sk_default(nullptr), int32_t max_resolution sk_default(64));
 SK_API tex_format_  tex_get_format          (tex_t texture);
 SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
@@ -1583,6 +1799,7 @@ SK_API int32_t      tex_get_mips            (tex_t texture);
 SK_API void         tex_set_loading_fallback(tex_t loading_texture);
 SK_API void         tex_set_error_fallback  (tex_t error_texture);
 SK_API spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture);
+SK_API void                  tex_set_cubemap_lighting(tex_t cubemap_texture, const sk_ref(spherical_harmonics_t) lighting_info);
 
 ///////////////////////////////////////////
 
@@ -2190,16 +2407,46 @@ SK_API void line_add_listv(const line_point_t *in_arr_points, int32_t count);
   everything on the first image draw, but not clear on subsequent
   draws.*/
 typedef enum render_clear_ {
-	/*Don't clear anything, leave it as it is.*/
-	render_clear_none  = 0,
 	/*Clear the rendertarget's color data.*/
 	render_clear_color = 1 << 0,
 	/*Clear the rendertarget's depth data, if present.*/
 	render_clear_depth = 1 << 1,
-	/*Clear both color and depth data.*/
+	/*Don't clear anything, draw on top of what's already there.*/
+	render_clear_keep  = 1 << 3,
+	/*Deprecated, use render_clear_keep.*/
+	render_clear_none  = render_clear_keep,
+	/*Clear both color and depth data. A zero value also means this -
+	  it's the default, so zero-initialized settings clear everything.*/
 	render_clear_all   = render_clear_color | render_clear_depth,
 } render_clear_;
 SK_MakeFlag(render_clear_)
+
+/*Optional settings for rendering a camera viewpoint to a rendertarget,
+  used by render_to and render_list_draw_now. This is a plain struct where
+  zero means 'default' - a zero-initialized struct gives you: all layers,
+  the default material variant, clear everything to transparent black, a
+  full-target viewport, and no post-processing.*/
+typedef struct render_settings_t {
+	/*Layer filter for what to draw, 0 defaults to render_layer_all.*/
+	render_layer_          layer_filter;
+	/*Material variant index, 0 is the default variant.*/
+	int32_t                material_variant;
+	/*What to clear before drawing, 0 defaults to render_clear_all. Use
+	  render_clear_keep to draw on top of the target's existing content.*/
+	render_clear_          clear;
+	/*Color to clear the target with, in linear space. Defaults to
+	  transparent black.*/
+	color128               clear_color;
+	/*Percentage-based viewport rect, a zero-sized rect defaults to the
+	  full target.*/
+	rect_t                 viewport;
+	/*Optional array of post-process materials for this pass, applied in
+	  array order. These are tile-friendly subpass effects, see
+	  render_set_post_process for the shader requirements.*/
+	const material_t*      post_process;
+	/*Number of materials in post_process.*/
+	int32_t                post_process_count;
+} render_settings_t;
 
 /*The projection mode used by StereoKit for the main camera! You
   can use this with Renderer.Projection. These options are only
@@ -2228,12 +2475,12 @@ SK_API void                  render_set_projection (projection_ proj);
 SK_API projection_           render_get_projection (void);
 SK_API matrix                render_get_cam_root   (void);
 SK_API void                  render_set_cam_root   (const sk_ref(matrix) cam_root);
-SK_API void                  render_set_skytex     (tex_t sky_texture);
-SK_API tex_t                 render_get_skytex     (void);
-SK_API void                  render_set_skymaterial(material_t sky_material);
-SK_API material_t            render_get_skymaterial(void);
-SK_API void                  render_set_skylight   (const sk_ref(spherical_harmonics_t) light_info);
-SK_API spherical_harmonics_t render_get_skylight   (void);
+SK_API void                  render_set_skybox_tex     (tex_t skybox_texture);
+SK_API tex_t                 render_get_skybox_tex     (void);
+SK_API void                  render_set_skybox_visible (bool32_t visible);
+SK_API bool32_t              render_get_skybox_visible (void);
+SK_API void                  render_set_skybox_material(material_t skybox_material);
+SK_API material_t            render_get_skybox_material(void);
 SK_API void                  render_set_filter     (render_layer_ layer_filter);
 SK_API render_layer_         render_get_filter     (void);
 SK_API void                  render_set_scaling    (float display_tex_scale);
@@ -2247,8 +2494,6 @@ SK_API render_layer_         render_get_capture_filter     (void);
 SK_API bool32_t              render_has_capture_filter     (void);
 SK_API void                  render_set_clear_color(color128 color_gamma);
 SK_API color128              render_get_clear_color(void);
-SK_API void                  render_enable_skytex  (bool32_t show_sky);
-SK_API bool32_t              render_enabled_skytex (void);
 SK_API void                  render_global_texture     (int32_t register_slot, tex_t texture);
 SK_API tex_t                 render_get_global_texture (int32_t register_slot);
 SK_API void                  render_global_buffer      (int32_t register_slot, material_buffer_t buffer);
@@ -2256,12 +2501,12 @@ SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t ma
 SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_blit           (tex_t to_rendertarget, material_t material);
+SK_API void                  render_set_post_process(const material_t* in_arr_materials, int32_t material_count);
 SK_API void                  render_screenshot     (const char *file_utf8, int32_t file_quality_100, pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees);
 //TODO: for v0.4, reorder parameters, context in particular should be next to callback
-SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
-SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(color32* color_buffer, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
-SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, const matrix* in_arr_cameras, const matrix* in_arr_projections, int32_t view_count, render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default({}));
-SK_API void                  render_get_device     (void **device, void **context);
+SK_API void                  render_screenshot_capture  (void (*render_on_screenshot_callback)(void* data, tex_format_ format, int32_t width, int32_t height, void* context), pose_t viewpoint, int32_t width, int32_t height, float field_of_view_degrees, tex_format_ tex_format sk_default(tex_format_rgba32), void *context sk_default(nullptr));
+SK_API void                  render_screenshot_viewpoint(void (*render_on_screenshot_callback)(void* data, tex_format_ format, int32_t width, int32_t height, void* context), matrix camera, matrix projection, int32_t width, int32_t height, render_layer_ layer_filter sk_default(render_layer_all), render_clear_ clear sk_default(render_clear_all), rect_t viewport sk_default(rect_t{}), tex_format_ tex_format sk_default(tex_format_rgba32), void* context sk_default(nullptr));
+SK_API void                  render_to             (tex_t to_rendertarget, int32_t to_target_index, const matrix* in_arr_cameras, const matrix* in_arr_projections, int32_t view_count, const render_settings_t* opt_settings sk_default(nullptr));
 SK_API render_list_t         render_get_primary_list(void);
 
 ///////////////////////////////////////////
@@ -2294,10 +2539,61 @@ SK_API int32_t               render_list_prev_count   (const render_list_t list)
 SK_API void                  render_list_add_mesh     (      render_list_t list, mesh_t  mesh,  material_t material,          matrix world_transform, color128 color_linear, render_layer_ layer);
 SK_API void                  render_list_add_model    (      render_list_t list, model_t model,                               matrix world_transform, color128 color_linear, render_layer_ layer);
 SK_API void                  render_list_add_model_mat(      render_list_t list, model_t model, material_t material_override, matrix world_transform, color128 color_linear, render_layer_ layer);
-SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, const matrix* in_arr_cameras, const matrix* in_arr_projections, int32_t view_count, color128 clear_color sk_default({ 0,0,0,0 }), render_clear_ clear sk_default(render_clear_all), rect_t viewport_pct sk_default({}), render_layer_ layer_filter sk_default(render_layer_all), int32_t material_variant sk_default(0));
+SK_API void                  render_list_draw_now     (      render_list_t list, tex_t to_rendertarget, const matrix* in_arr_cameras, const matrix* in_arr_projections, int32_t view_count, const render_settings_t* opt_settings sk_default(nullptr));
 
 SK_API void                  render_list_push         (      render_list_t list);
 SK_API void                  render_list_pop          (void);
+
+///////////////////////////////////////////
+
+/*This determines where lighting data comes from! The default is `Manual`,
+  where the application provides all lighting via the `Lighting` functions.
+  Devices that can estimate lighting from the user's surroundings also have
+  the `World` option.*/
+typedef enum lighting_source_ {
+	/*Lighting values are set manually by the application. Use the
+	  `Lighting` functions to configure the scene lighting.*/
+	lighting_source_manual,
+	/*Lighting data is pulled from the world via the device's light estimation
+	  capabilities. StereoKit will overwrite any data in `Lighting.Ambient`,
+	  `MainLight`, and `Reflection` when using this source. You can check
+	  `Lighting.SourceAvailable` to see if this is supported before requesting
+	  it.*/
+	lighting_source_world,
+} lighting_source_;
+
+/*This determines what form scene lighting takes: all of it can fold into
+  the ambient probe, or the dominant directional light can be separated
+  out from it. This shapes lighting derived from an environment: both the
+  world source's estimates, and what Lighting.SetEnvironment derives from
+  its cubemap. Changing the mode re-delivers the scene's most recent full
+  lighting in the new shape, replacing Ambient and MainLight.*/
+typedef enum lighting_mode_ {
+	/*All light folds into the Ambient probe. This is the default.
+	  MainLight still reports the dominant directional light, but as
+	  information only: its energy remains inside Ambient, so it suits
+	  things like shadow direction, not additional shading.*/
+	lighting_mode_ambient,
+	/*The dominant directional light is separated out into MainLight, and
+	  Ambient carries only the remainder. This is for applications that
+	  render that light themselves, such as for shadow casting, since
+	  otherwise its energy is counted twice.*/
+	lighting_mode_main_light,
+} lighting_mode_;
+
+SK_API bool32_t              lighting_source_available (lighting_source_ source);
+SK_API void                  lighting_request_source   (lighting_source_ source);
+SK_API lighting_source_      lighting_get_source       (void);
+SK_API bool32_t              lighting_source_pending   (void);
+SK_API void                  lighting_set_mode         (lighting_mode_ mode);
+SK_API lighting_mode_        lighting_get_mode         (void);
+SK_API void                  lighting_set_main_light   (const sk_ref(sh_light_t) light);
+SK_API sh_light_t            lighting_get_main_light   (void);
+SK_API void                  lighting_set_environment  (tex_t sky_cubemap, tex_t* out_reflection sk_default(nullptr));
+SK_API void                  lighting_set_ambient      (const sk_ref(spherical_harmonics_t) ambient_lighting);
+SK_API spherical_harmonics_t lighting_get_ambient      (void);
+SK_API void                  lighting_set_reflection   (tex_t ibl_cubemap);
+SK_API tex_t                 lighting_get_reflection   (void);
 
 ///////////////////////////////////////////
 
@@ -2339,13 +2635,134 @@ typedef struct sound_inst_t {
 	int16_t  _slot;
 } sound_inst_t;
 
+/*Option flags for playing a sound, see sound_play_t.*/
+typedef enum sound_flags_ {
+	/*No special behavior, the default.*/
+	sound_flags_none              = 0,
+	/*The sound restarts from the beginning when it reaches the end of its
+	  data, and plays until stopped. Live streams ignore this, they already
+	  wait for data forever.*/
+	sound_flags_loop              = 1 << 0,
+	/*Skip spatialization entirely: no distance attenuation, panning, or
+	  filtering. The sound follows the head, good for music, UI, or
+	  pre-rendered binaural content.*/
+	sound_flags_head_locked       = 1 << 1,
+	/*Delay the sound's onset by its distance from the listener divided by
+	  the speed of sound (343m/s), computed once when playback starts. Great
+	  for thunder, explosions, and other far away events.*/
+	sound_flags_propagation_delay = 1 << 2,
+} sound_flags_;
+SK_MakeFlag(sound_flags_);
+
+/*A category a playing sound belongs to. Each bus is just a volume control
+  that affects every sound tagged with it, handy for separate sfx/music/ui
+  volume sliders, or ducking categories wholesale.*/
+typedef enum sound_bus_ {
+	/*General sound effects, the default bus.*/
+	sound_bus_sfx = 0,
+	/*Background music and ambience.*/
+	sound_bus_music,
+	/*Interface feedback sounds. StereoKit's own UI sounds use this bus.*/
+	sound_bus_ui,
+	/*Dialogue, voice-over, and voice comms.*/
+	sound_bus_voice,
+} sound_bus_;
+
+/*The channel format of a Sound's data. Only mono sounds spatialize -
+  playing a non-mono sound ignores its position entirely.*/
+typedef enum sound_channels_ {
+	/*One channel. Spatializes as a point or shaped source, the default
+	  and by far the most common format for game audio.*/
+	sound_channels_mono = 0,
+	/*Two interleaved channels, played back head-locked and untouched.
+	  Music, and pre-rendered binaural content.*/
+	sound_channels_stereo,
+	/*Four interleaved first order (1) ambisonic channels in the ambiX
+	  convention (ACN order W,Y,Z,X with SN3D normalization). The sound
+	  field stays world-fixed, counter-rotating against the head - the
+	  head-tracked generalization of a binaural render. Great for
+	  recorded or simulated environmental beds.*/
+	sound_channels_ambisonic1,
+} sound_channels_;
+
+/*Optional settings for sound_play. A zero initialized struct is a valid
+  default state: fields where zero must mean "default" treat it that way
+  explicitly, so volume 0 plays at full trim, and pitch 0 plays at normal
+  speed.*/
+typedef struct sound_play_t {
+	/*A 0-1 volume trim on top of the sound's decibel loudness. 0 is treated
+	  as the default full trim of 1. For real silence, use a tiny value.
+	  Values above 1 amplify, negatives clamp to 0.*/
+	float        volume;
+	/*Playback rate multiplier, clamped to 0.25-4. 1 is normal speed, 2 is
+	  twice as fast and an octave up. 0 is treated as 1.*/
+	float        pitch;
+	/*Apparent size of the source, 0-1. 0 is a point in space, 1 fills the
+	  whole sound field evenly. Great for wind, rivers, and rumble - but
+	  keep transients like impacts at 0, width smears their attack.*/
+	float        spread;
+	/*Seconds before the sound actually starts playing, sample accurate.
+	  sound_flags_propagation_delay adds distance/343m/s on top of this.*/
+	float        delay;
+	/*Low-pass filter cutoff override in Hz for this voice. 0 uses the
+	  automatic distance/direction model.*/
+	float        cutoff;
+	/*The volume category this sound belongs to, sound_bus_sfx when zeroed.*/
+	sound_bus_   bus;
+	/*See sound_flags_.*/
+	sound_flags_ flags;
+	/*Optional emitter shape: 1 point is a sphere, 2+ a rounded polyline.
+	  The emitter follows the listener along the shape - position becomes
+	  the closest point, and apparent size grows as the shape fills more of
+	  the view, going fully diffuse inside it. Points are copied at play,
+	  max 32. Null means a point source at the play position.*/
+	const vec3*  shape_points;
+	int32_t      shape_point_count;
+	/*Radius of the shape's sphere or polyline tube, in meters.*/
+	float        shape_radius;
+} sound_play_t;
+
+/*Common audio sample rates, in Hz, for sound streams and microphone capture.
+  The enum value _is_ the rate in Hz, so you can cast any integer rate to this
+  type - these are just the well-supported ones, tagged with where each is
+  typically used. StereoKit mixes everything at 48kHz and resamples to and from
+  other rates as needed, so any positive rate works, but a rate a device
+  captures or plays natively avoids an extra resample.*/
+typedef enum sound_sample_rate_ {
+	/*Use StereoKit's native mix rate, 48kHz. No resampling in the mixer, and
+	  the best default unless you have a specific reason otherwise.*/
+	sound_sample_rate_default   = 0,
+	/*8kHz narrowband telephony, classic Bluetooth headset (HFP/SCO) quality.
+	  Tiny data rate, intelligible speech only.*/
+	sound_sample_rate_telephony = 8000,
+	/*16kHz wideband speech - the rate that speech-to-text, wake-word, and
+	  VoIP pipelines typically expect. A good low-bandwidth choice for voice.*/
+	sound_sample_rate_speech    = 16000,
+	/*32kHz, seen in some broadcast audio and Bluetooth wideband (mSBC).*/
+	sound_sample_rate_broadcast = 32000,
+	/*44.1kHz, the CD-audio standard and a common consumer device default.*/
+	sound_sample_rate_cd        = 44100,
+	/*48kHz, the AV/pro standard and StereoKit's native mix rate. The modern
+	  default for most capture hardware.*/
+	sound_sample_rate_standard  = 48000,
+	/*96kHz high-resolution pro audio. Rare for a microphone, and resampled
+	  down to 48kHz for mixing anyway.*/
+	sound_sample_rate_studio    = 96000,
+	/*192kHz, the extreme end of pro audio interfaces. Almost never a real
+	  microphone rate, and heavily oversampled for StereoKit's purposes.*/
+	sound_sample_rate_ultra     = 192000,
+} sound_sample_rate_;
+
 SK_API sound_t      sound_find           (const char *id);
 SK_API void         sound_set_id         (sound_t sound, const char *id);
 SK_API const char*  sound_get_id         (const sound_t sound);
 SK_API sound_t      sound_create         (const char *filename_utf8);
-SK_API sound_t      sound_create_stream  (float buffer_duration);
-SK_API sound_t      sound_create_samples (const float *in_arr_samples_at_48000s, uint64_t sample_count);
-SK_API sound_t      sound_generate       (float (*audio_generator)(float sample_time), float duration);
+SK_API sound_t      sound_create_mem     (const char *id, const void *in_arr_data, size_t data_size);
+SK_API sound_t      sound_create_stream  (float buffer_duration, sound_channels_ channels sk_default(sound_channels_mono), sound_sample_rate_ sample_rate sk_default(sound_sample_rate_default));
+SK_API sound_t      sound_create_samples (const float *in_arr_samples_at_48000s, uint64_t sample_count, sound_channels_ channels sk_default(sound_channels_mono));
+SK_API sound_channels_ sound_get_channels(sound_t sound);
+SK_API asset_state_ sound_asset_state    (const sound_t sound);
+SK_API sound_t      sound_generate       (void (*audio_generator)(float *out_arr_samples, uint64_t frame_start, uint64_t frame_count), float duration, sound_channels_ channels sk_default(sound_channels_mono));
 SK_API void         sound_write_samples  (sound_t sound, const float *in_arr_samples,  uint64_t sample_count);
 SK_API uint64_t     sound_read_samples   (sound_t sound, float       *out_arr_samples, uint64_t sample_count);
 SK_API uint64_t     sound_unread_samples (sound_t sound);
@@ -2353,7 +2770,7 @@ SK_API uint64_t     sound_total_samples  (sound_t sound);
 SK_API uint64_t     sound_cursor_samples (sound_t sound);
 SK_API float        sound_get_decibels   (sound_t sound);
 SK_API void         sound_set_decibels   (sound_t sound, float decibels);
-SK_API sound_inst_t sound_play           (sound_t sound, vec3 at, float volume);
+SK_API sound_inst_t sound_play           (sound_t sound, vec3 at, const sound_play_t *opt_settings sk_default(nullptr));
 SK_API float        sound_duration       (sound_t sound);
 SK_API void         sound_addref         (sound_t sound);
 SK_API void         sound_release        (sound_t sound);
@@ -2362,15 +2779,66 @@ SK_API void         sound_inst_stop         (sound_inst_t sound_inst);
 SK_API bool32_t     sound_inst_is_playing   (sound_inst_t sound_inst);
 SK_API void         sound_inst_set_pos      (sound_inst_t sound_inst, vec3 pos);
 SK_API vec3         sound_inst_get_pos      (sound_inst_t sound_inst);
-SK_API void         sound_inst_set_volume   (sound_inst_t sound_inst, float volume);
+SK_API void         sound_inst_set_volume   (sound_inst_t sound_inst, float volume_pct);
 SK_API float        sound_inst_get_volume   (sound_inst_t sound_inst);
+SK_API void         sound_inst_set_pitch    (sound_inst_t sound_inst, float pitch_mult);
+SK_API float        sound_inst_get_pitch    (sound_inst_t sound_inst);
+SK_API void         sound_inst_set_spread   (sound_inst_t sound_inst, float spread_pct);
+SK_API float        sound_inst_get_spread   (sound_inst_t sound_inst);
+SK_API void         sound_inst_set_cutoff   (sound_inst_t sound_inst, float cutoff_hz);
+SK_API void         sound_inst_set_paused   (sound_inst_t sound_inst, bool32_t paused);
+SK_API bool32_t     sound_inst_get_paused   (sound_inst_t sound_inst);
+SK_API void         sound_inst_seek         (sound_inst_t sound_inst, uint64_t sample);
+SK_API uint64_t     sound_inst_get_cursor   (sound_inst_t sound_inst);
+SK_API void         sound_inst_set_shape    (sound_inst_t sound_inst, const vec3 *in_arr_points, int32_t point_count, float radius);
 SK_API float        sound_inst_get_intensity(sound_inst_t sound_inst);
+
+/*A perceptual description of the acoustic space sounds play in - an
+  environment rather than a literal room, so it covers halls through
+  forests. Spatial sounds feed a shared reverb whose level stays constant
+  with distance, so the direct-to-reverb balance naturally carries how far
+  away a sound is. A wet of 0 disables the system entirely at zero cost,
+  and a zeroed struct is the off state. Language bindings provide preset
+  values for common spaces as starting points.*/
+typedef struct audio_env_t {
+	/*Reverb level, 0-1. 0 turns environmental acoustics off completely,
+	  and is the default.*/
+	float wet;
+	/*Decay time in seconds - how long the tail takes to fall 60dB at mid
+	  frequencies. Rooms are ~0.4s, cathedrals a few seconds. Clamped to
+	  0.05-10.*/
+	float decay;
+	/*0-1, extra high frequency decay. Soft or leafy spaces are high,
+	  tiled rooms are low.*/
+	float damp;
+	/*Size of the space in meters, clamped to 2-40. Drives the spacing of
+	  the echoes that build the tail. Changing this restarts the tail,
+	  where the other fields all glide smoothly.*/
+	float size;
+	/*0-1, how quickly discrete echoes blur into a dense wash. Scattered
+	  spaces like forests are high, bare rooms lower.*/
+	float scatter;
+	/*0-1, level of the distinct early reflections off the space's
+	  surfaces - the first bounces that glue a sound to the room. The
+	  ground bounce keeps a minimum presence; walls and ceiling scale
+	  fully with this, so outdoor spaces sit near 0.*/
+	float reflect;
+} audio_env_t;
+
+SK_API void         audio_set_volume        (float volume);
+SK_API float        audio_get_volume        (void);
+SK_API void         audio_set_bus_volume    (sound_bus_ bus, float volume);
+SK_API float        audio_get_bus_volume    (sound_bus_ bus);
+SK_API void         audio_set_listener      (const pose_t *opt_pose);
+SK_API float        audio_get_output_decibels(void);
+SK_API void         audio_set_env           (audio_env_t environment);
+SK_API audio_env_t  audio_get_env           (void);
 
 ///////////////////////////////////////////
 
 SK_API int32_t      mic_device_count     (void);
 SK_API const char*  mic_device_name      (int32_t index);
-SK_API bool32_t     mic_start            (const char *device_name sk_default(nullptr));
+SK_API bool32_t     mic_start            (const char *device_name sk_default(nullptr), sound_sample_rate_ sample_rate sk_default(sound_sample_rate_default));
 SK_API void         mic_stop             (void);
 SK_API sound_t      mic_get_stream       (void);
 SK_API bool32_t     mic_is_recording     (void);
@@ -2761,14 +3229,34 @@ typedef struct mouse_t {
 	/*Position of the mouse relative to the window it's in! This is the number
 	of pixels from the top left corner of the screen.*/
 	vec2          pos;
-	/*How much has the mouse's position changed in the current frame? Measured
-	in pixels.*/
+	/*How much has the mouse moved during this frame? This is normally just the
+	change in `pos`, measured in pixels. In relative mouse mode `pos` is frozen
+	and this becomes the only source of motion, in the mouse's raw device units
+	rather than pixels.*/
 	vec2          pos_change;
 	/*What's the current scroll value for the mouse's scroll wheel?*/
 	float         scroll;
 	/*How much has the scroll wheel value changed during this frame?*/
 	float         scroll_change;
 } mouse_t;
+
+/*How should the mouse cursor behave? This is only relevant on backends with a
+  real cursor to control, the Simulator and Window backends. Elsewhere, the
+  mode is remembered, but has nothing to act on.*/
+typedef enum mouse_mode_ {
+	/*The cursor is visible, and free to move anywhere, including outside the
+	  window. This is the default.*/
+	mouse_mode_normal = 0,
+	/*The cursor is invisible, but behaves exactly as it does in normal mode.
+	  The mouse's position is still valid, and it can still leave the window.*/
+	mouse_mode_hidden,
+	/*The cursor is invisible and locked in place, which is what you want for
+	  mouse-look style camera control. The mouse's position stops moving, and
+	  its position change becomes the only source of motion - reported in
+	  pixel-equivalent units, free of pointer acceleration, and never running
+	  out of room at the edge of the screen.*/
+	mouse_mode_relative,
+} mouse_mode_;
 
 /*A collection of system key codes, representing keyboard
   characters and mouse buttons. Based on VK codes.*/
@@ -2988,6 +3476,52 @@ typedef enum key_ {
 	/*Maximum value for key codes.*/
 	key_MAX = 0xFF,
 } key_;
+
+/*Describes what kind of keyboard input event this is.*/
+typedef enum keyboard_event_type_ {
+	/*Not an event. Consuming returns this once no events remain in this
+	  frame's queue, and reading by index returns it for an index outside the
+	  queue.*/
+	keyboard_event_type_none = 0,
+	/*A key was pressed. Auto-repeats arrive as additional press events with no
+	  release between them, one per repeat.*/
+	keyboard_event_type_key_press,
+	/*A key was released.*/
+	keyboard_event_type_key_release,
+	/*A single codepoint of insertable text.*/
+	keyboard_event_type_text,
+} keyboard_event_type_;
+
+/*A bit flag describing which of the keyboard's modifier keys are held.*/
+typedef enum key_mod_ {
+	/*No modifier keys are held.*/
+	key_mod_none = 0,
+	/*Either shift key.*/
+	key_mod_shift = 1 << 0,
+	/*Either ctrl key.*/
+	key_mod_ctrl = 1 << 1,
+	/*Either alt key.*/
+	key_mod_alt = 1 << 2,
+	/*Either Windows/Mac Command key.*/
+	key_mod_cmd = 1 << 3,
+} key_mod_;
+SK_MakeFlag(key_mod_);
+
+/*A single keyboard input event, either a key press, a key release, or one
+  codepoint of insertable text. Events preserve the exact order they were
+  produced in, including how text and keys interleave.*/
+typedef struct keyboard_event_t {
+	/*What kind of event this is, and which of the fields below apply.*/
+	keyboard_event_type_ type;
+	/*The key for press and release events, and none for text events. Mouse
+	  buttons arrive here too, as the mouse key values.*/
+	key_                 key;
+	/*The modifier keys held when this event was produced. A modifier's own
+	  press event includes itself, its release event does not.*/
+	key_mod_             modifiers;
+	/*The UTF-32 codepoint for text events, 0 for key events.*/
+	char32_t             character;
+} keyboard_event_t;
 
 /*Represents an input from an XR headset's controller!*/
 typedef enum controller_key_ {
@@ -3237,11 +3771,14 @@ SK_API pose_t                input_head                      (void);
 SK_API pose_t                input_eyes                      (void);
 SK_API button_state_         input_eyes_tracked              (void);
 SK_API const mouse_t*        input_mouse                     (void);
+SK_API void                  input_mouse_mode_set            (mouse_mode_ mode);
+SK_API mouse_mode_           input_mouse_mode_get            (void);
 SK_API void                  input_key_inject_press          (key_ key);
 SK_API void                  input_key_inject_release        (key_ key);
-SK_API char32_t              input_text_consume              (void);
-SK_API void                  input_text_reset                (void);
-SK_API void                  input_text_inject_char          (char32_t character);
+SK_API keyboard_event_t      input_keyboard_consume          (void);
+SK_API int32_t               input_keyboard_event_count      (void);
+SK_API keyboard_event_t      input_keyboard_event_at         (int32_t index);
+SK_API void                  input_text_inject               (const char* text_utf8);
 SK_API void                  input_hand_visible              (handed_ hand, bool32_t visible);
 SK_API bool32_t              input_hand_get_visible          (handed_ hand);
 SK_API void                  input_hand_material             (handed_ hand, material_t material);
@@ -3266,6 +3803,9 @@ SK_API hand_sim_id_t         input_hand_sim_pose_add         (const pose_t* in_a
 SK_API void                  input_hand_sim_pose_remove      (hand_sim_id_t id);
 SK_API void                  input_hand_sim_pose_clear       (void);
 
+SK_API SK_DEPRECATED char32_t input_text_consume             (void);
+SK_API SK_DEPRECATED void    input_text_reset                (void);
+SK_API SK_DEPRECATED void    input_text_inject_char          (char32_t character);
 SK_API SK_DEPRECATED int32_t input_pointer_count             (input_source_ filter sk_default(input_source_any));
 SK_API SK_DEPRECATED pointer_t input_pointer                 (int32_t index, input_source_ filter sk_default(input_source_any));
 SK_API SK_DEPRECATED void    input_subscribe                 (input_source_ source, button_state_ input_event, void (*input_event_callback)(input_source_ source, button_state_ input_event, const sk_ref(pointer_t) in_pointer));
@@ -3731,27 +4271,84 @@ typedef enum backend_graphics_ {
 	/*An invalid default value.*/
 	backend_graphics_none,
 	/*DirectX's Direct3D11 is used for rendering! This is used by default on
-	  Windows. (No longer supported)*/
+	  Windows. (No longer supported)
+	  Obsolete: StereoKit is now Vulkan-only; the D3D11 backend is no longer supported.*/
 	backend_graphics_d3d11,
 	/*OpenGL is used for rendering, using GLX (OpenGL Extension to the X Window
-	  System) for loading. This is used by default on Linux. (No longer supported)*/
+	  System) for loading. This is used by default on Linux. (No longer supported)
+	  Obsolete: StereoKit is now Vulkan-only; the OpenGL/GLX backend is no longer supported.*/
 	backend_graphics_opengl_glx,
 	/*OpenGL is used for rendering, using WGL (Windows Extensions to OpenGL)
 	  for loading. Native developers can configure SK to use this on Windows.
-	  (No longer supported)*/
+	  (No longer supported)
+	  Obsolete: StereoKit is now Vulkan-only; the OpenGL/WGL backend is no longer supported.*/
 	backend_graphics_opengl_wgl,
 	/*OpenGL ES is used for rendering, using EGL (EGL Native Platform Graphics
 	  Interface) for loading. This is used by default on Android, and native
-	  developers can configure SK to use this on Linux. (No longer supported)*/
+	  developers can configure SK to use this on Linux. (No longer supported)
+	  Obsolete: StereoKit is now Vulkan-only; the OpenGL ES/EGL backend is no longer supported.*/
 	backend_graphics_opengles_egl,
-	/*WebGL is used for rendering. This is used by default on Web.*/
+	/*WebGL is used for rendering. This is used by default on Web.
+	  (No longer supported)
+	  Obsolete: StereoKit is now Vulkan-only; the WebGL backend is no longer supported.*/
 	backend_graphics_webgl,
 	/*Vulkan is used for rendering, this works basically on every platform, and
 	  is the only backend StereoKit currently supports!*/
 	backend_graphics_vulkan,
 } backend_graphics_;
 
+/*Identifies a Vulkan queue family that StereoKit's Vulkan backend interacts
+  with. Use this with the queue accessors on Backend.Vulkan.*/
+typedef enum backend_vulkan_queue_ {
+	/*The primary graphics queue. This is the queue StereoKit submits all of
+	  its rendering work to, and the only queue with a handle currently
+	  available via backend_vulkan_get_queue.*/
+	backend_vulkan_queue_graphics,
+	/*A queue family suitable for transfer operations. StereoKit does not yet
+	  use a dedicated transfer queue, so no queue handle is available here yet,
+	  but the family index is provided for advanced interop.*/
+	backend_vulkan_queue_transfer,
+	/*A queue family suitable for Vulkan video decode. Not present on all
+	  devices, in which case the family index will be UINT32_MAX.*/
+	backend_vulkan_queue_video_decode,
+} backend_vulkan_queue_;
+
 typedef uint64_t openxr_handle_t;
+
+/*A single Vulkan feature struct to request as part of a
+  backend_vulkan_request_t. See backend_vulkan_request for details.*/
+typedef struct backend_vulkan_feature_t {
+	/*A pointer to a VkPhysicalDevice*Features struct with its sType set, and
+	  the feature bits you want enabled set to VK_TRUE. This must NOT be a
+	  VkPhysicalDeviceFeatures2, the core features chain is handled separately.*/
+	const void* vk_struct;
+	/*The size of the struct vk_struct points at, in bytes.*/
+	int32_t     size;
+} backend_vulkan_feature_t;
+
+/*A request for Vulkan instance/device extensions and device features.
+  Register it with backend_vulkan_request before StereoKit initializes. A
+  request enables atomically: only when all of its extensions are present and
+  every requested feature bit is supported. See backend_vulkan_request.*/
+typedef struct backend_vulkan_request_t {
+	/*An optional name used as a handle for backend_vulkan_request_enabled.
+	  null makes the request anonymous, it still contributes its extensions and
+	  features, but can't be queried by name.*/
+	const char*                     name;
+	/*If true, StereoKit initialization will fail should this request go
+	  unsatisfied. If false, an unmet request is simply left disabled.*/
+	bool32_t                        required;
+	/*An array of Vulkan instance extension names this request needs.*/
+	const char**                    instance_extensions;
+	int32_t                         instance_extension_count;
+	/*An array of Vulkan device extension names this request needs.*/
+	const char**                    device_extensions;
+	int32_t                         device_extension_count;
+	/*An array of Vulkan device features this request needs. Their bits are
+	  queried for support before being enabled.*/
+	const backend_vulkan_feature_t* features;
+	int32_t                         feature_count;
+} backend_vulkan_request_t;
 
 SK_API backend_xr_type_  backend_xr_get_type                (void);
 SK_API openxr_handle_t   backend_openxr_get_instance        (void);
@@ -3780,19 +4377,18 @@ SK_API void*             backend_android_get_activity (void);
 SK_API void*             backend_android_get_jni_env  (void);
 
 SK_API backend_graphics_ backend_graphics_get                  (void);
-SK_API void             *backend_d3d11_get_d3d_device          (void);
-SK_API void             *backend_d3d11_get_d3d_context         (void);
-SK_API void             *backend_d3d11_get_deferred_d3d_context(void);
-SK_API void             *backend_d3d11_get_deferred_mtx        (void);
-SK_API uint32_t          backend_d3d11_get_main_thread_id      (void);
-SK_API void             *backend_opengl_wgl_get_hdc            (void);
-SK_API void             *backend_opengl_wgl_get_hglrc          (void);
-SK_API void             *backend_opengl_glx_get_context        (void);
-SK_API void             *backend_opengl_glx_get_display        (void);
-SK_API void             *backend_opengl_glx_get_drawable       (void);
-SK_API void             *backend_opengl_egl_get_context        (void);
-SK_API void             *backend_opengl_egl_get_config         (void);
-SK_API void             *backend_opengl_egl_get_display        (void);
+SK_API int32_t           backend_vulkan_get_frame_fence_fd     (void);
+SK_API void             *backend_vulkan_get_instance           (void);
+SK_API void             *backend_vulkan_get_physical_device    (void);
+SK_API void             *backend_vulkan_get_device             (void);
+SK_API void             *backend_vulkan_get_queue              (backend_vulkan_queue_ queue);
+SK_API uint32_t          backend_vulkan_get_queue_family_index (backend_vulkan_queue_ queue);
+SK_API void              backend_vulkan_queue_lock             (backend_vulkan_queue_ queue);
+SK_API void              backend_vulkan_queue_unlock           (backend_vulkan_queue_ queue);
+SK_API void              backend_vulkan_request                (const backend_vulkan_request_t *request);
+SK_API bool32_t          backend_vulkan_request_enabled        (const char *name);
+SK_API bool32_t          backend_vulkan_ext_enabled            (const char *extension_name);
+SK_API void             *backend_vulkan_get_function           (const char *function_name);
 
 ///////////////////////////////////////////
 
@@ -3800,7 +4396,11 @@ SK_API void             *backend_opengl_egl_get_display        (void);
   colors, which helps with readability, but isn't always supported.
   These are the options available for configuring those colors.*/
 typedef enum log_colors_ {
-	/*Use console coloring annotations.*/
+	/*Use console coloring annotations, when the console supports them!
+	  StereoKit checks the terminal for ANSI support, whether output has
+	  been redirected to a file or pipe, and the NO_COLOR environment
+	  variable. If any of those say no, colors are scraped out and logs
+	  fall back to plain text.*/
 	log_colors_ansi = 0,
 	/*Scrape out any color annotations, so logs are all completely
 	  plain text.*/
@@ -3884,6 +4484,7 @@ SK_CONST char *default_id_material_pbr_clip    = "default/material_pbr_clip";
 SK_CONST char *default_id_material_unlit       = "default/material_unlit";
 SK_CONST char *default_id_material_unlit_clip  = "default/material_unlit_clip";
 SK_CONST char *default_id_material_equirect    = "default/equirect_convert";
+SK_CONST char *default_id_material_cubemap_downsample = "default/cubemap_downsample";
 SK_CONST char *default_id_material_font        = "default/material_font";
 SK_CONST char *default_id_material_hand        = "default/material_hand";
 SK_CONST char *default_id_material_ui          = "default/material_ui";
@@ -3924,6 +4525,8 @@ SK_CONST char *default_id_shader_sky           = "default/shader_sky";
 SK_CONST char *default_id_shader_lines         = "default/shader_lines";
 SK_CONST char *default_id_shader_sh_compute    = "default/shader_sh_compute";
 SK_CONST char *default_id_shader_depth_prepass = "default/shader_depth_prepass";
+SK_CONST char *default_id_shader_cubemap_ggx   = "default/shader_cubemap_ggx";
+SK_CONST char *default_id_shader_cubemap_downsample = "default/shader_cubemap_downsample";
 SK_CONST char *default_id_sound_click          = "default/sound_click";
 SK_CONST char *default_id_sound_unclick        = "default/sound_unclick";
 SK_CONST char *default_id_sound_grab           = "default/sound_grab";

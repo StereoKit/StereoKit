@@ -57,24 +57,21 @@ namespace StereoKit
 		public float bottom;
 	}
 
-	/// <summary>This represents a single vertex in a Mesh, all StereoKit Meshes
-	/// currently use this exact layout!
-	/// It's good to fill out all values of a Vertex explicitly, as default
-	/// values for the normal (0,0,0) and color (0,0,0,0) will cause your
-	/// mesh to appear completely black, or even transparent in most shaders!</summary>
+	/// <summary>A snapshot of how frames have been reaching the display recently, for
+	/// checking performance at runtime. Only the flatscreen app modes present
+	/// through a surface StereoKit can time; in XR and Offscreen this is all
+	/// zeros.</summary>
 	[StructLayout(LayoutKind.Sequential)]
-	public partial struct Vertex
+	public partial struct PresentStats
 	{
-		/// <summary>Position of the vertex, in model space coordinates.</summary>
-		public Vec3 pos;
-		/// <summary>The normal of this vertex, or the direction the vertex is
-		/// facing. Preferably normalized.</summary>
-		public Vec3 norm;
-		/// <summary>The texture coordinates at this vertex.</summary>
-		public Vec2 uv;
-		/// <summary>The color of the vertex. If you aren't using it, set it to
-		/// white.</summary>
-		public Color32 col;
+		/// <summary>Microseconds from the most recent present call to its first pixel on
+		/// screen, or 0 when the platform gave no display time for it.</summary>
+		public ulong latencyUs;
+		/// <summary>Presents among the last 128 with a known display time.</summary>
+		public uint sampleCount;
+		/// <summary>Of those, how many stayed on screen for two or more refreshes. A
+		/// repeated frame is a visible hitch.</summary>
+		public uint repeatCount;
 	}
 
 	/// <summary>Used to represent lines for the line drawing functions! This is
@@ -88,6 +85,40 @@ namespace StereoKit
 		public float thickness;
 		/// <summary>The vertex color for the line at this position.</summary>
 		public Color32 color;
+	}
+
+	/// <summary>A perceptual description of the acoustic space sounds play in - an
+	/// environment rather than a literal room, so it covers halls through
+	/// forests. Spatial sounds feed a shared reverb whose level stays constant
+	/// with distance, so the direct-to-reverb balance naturally carries how far
+	/// away a sound is. A wet of 0 disables the system entirely at zero cost,
+	/// and a zeroed struct is the off state. Language bindings provide preset
+	/// values for common spaces as starting points.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public partial struct AudioEnvironment
+	{
+		/// <summary>Reverb level, 0-1. 0 turns environmental acoustics off completely,
+		/// and is the default.</summary>
+		public float wet;
+		/// <summary>Decay time in seconds - how long the tail takes to fall 60dB at mid
+		/// frequencies. Rooms are ~0.4s, cathedrals a few seconds. Clamped to
+		/// 0.05-10.</summary>
+		public float decay;
+		/// <summary>0-1, extra high frequency decay. Soft or leafy spaces are high,
+		/// tiled rooms are low.</summary>
+		public float damp;
+		/// <summary>Size of the space in meters, clamped to 2-40. Drives the spacing of
+		/// the echoes that build the tail. Changing this restarts the tail,
+		/// where the other fields all glide smoothly.</summary>
+		public float size;
+		/// <summary>0-1, how quickly discrete echoes blur into a dense wash. Scattered
+		/// spaces like forests are high, bare rooms lower.</summary>
+		public float scatter;
+		/// <summary>0-1, level of the distinct early reflections off the space's
+		/// surfaces - the first bounces that glue a sound to the room. The
+		/// ground bounce keeps a minimum presence; walls and ceiling scale
+		/// fully with this, so outdoor spaces sit near 0.</summary>
+		public float reflect;
 	}
 
 	/// <summary>Pointer is an abstraction of a number of different input sources,
@@ -119,8 +150,10 @@ namespace StereoKit
 		/// <summary>Position of the mouse relative to the window it's in! This is the number
 		/// of pixels from the top left corner of the screen.</summary>
 		public Vec2 pos;
-		/// <summary>How much has the mouse's position changed in the current frame? Measured
-		/// in pixels.</summary>
+		/// <summary>How much has the mouse moved during this frame? This is normally just the
+		/// change in `pos`, measured in pixels. In relative mouse mode `pos` is frozen
+		/// and this becomes the only source of motion, in the mouse's raw device units
+		/// rather than pixels.</summary>
 		public Vec2 posChange;
 		/// <summary>What's the current scroll value for the mouse's scroll wheel?</summary>
 		public float scroll;

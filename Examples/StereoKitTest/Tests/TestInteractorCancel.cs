@@ -12,7 +12,6 @@ class TestInteractorCancel : ITest
 
 	DefaultInteractors oldInteractors;
 	Interactor         rayClick, rayCancel;
-	Vec3               rayOrigin = V.XYZ(0.05f, -0.2f, -0.35f);
 	Vec3               clickTarget, cancelTarget;
 	int                frame = 0;
 
@@ -28,8 +27,8 @@ class TestInteractorCancel : ITest
 		// Unique sources so the two interactors never preoccupy each other.
 		rayClick     = Interactor.Create(InteractorType.Line, InteractorEvent.Pinch | InteractorEvent.Poke, InteractorActivation.State, InteractorSource.Unique, 0.01f, 0);
 		rayCancel    = Interactor.Create(InteractorType.Line, InteractorEvent.Pinch | InteractorEvent.Poke, InteractorActivation.State, InteractorSource.Unique, 0.01f, 0);
-		clickTarget  = windowPose.position + V.XYZ(0, -0.04f, 0); // guesses at each button, refined once focused
-		cancelTarget = windowPose.position + V.XYZ(0, -0.08f, 0);
+		clickTarget  = windowPose.position + V.XYZ(0, -0.03f, 0); // guesses at each button, refined once focused
+		cancelTarget = windowPose.position + V.XYZ(0, -0.07f, 0);
 
 		Tests.RunForFrames(5);
 	}
@@ -49,8 +48,8 @@ class TestInteractorCancel : ITest
 			// The click ray stays on its button; the cancel ray runs the same
 			// press, then on frame 3 jumps ~1m aside pointing away, so by release
 			// it's well past the cancel distance.
-			Aim(rayClick, rayOrigin, clickTarget, pinch);
-			if (frame < 3) Aim(rayCancel, rayOrigin, cancelTarget, pinch);
+			Aim(rayClick, clickTarget, pinch);
+			if (frame < 3) Aim(rayCancel, cancelTarget, pinch);
 			else           Aim(rayCancel, V.XYZ(1, 0, -0.35f), V.XYZ(2, 0, -0.35f), pinch);
 		}
 
@@ -81,7 +80,12 @@ class TestInteractorCancel : ITest
 		frame++;
 	}
 
-	void Aim(Interactor ray, Vec3 origin, Vec3 target, BtnState pinch)
+	// Straight along the view axis. A ray angled up from below grazes the
+	// Cancel button's plate within the capsule radius on its way to Click.
+	static void Aim(Interactor ray, Vec3 target, BtnState pinch)
+		=> Aim(ray, target + V.XYZ(0, 0, 0.25f), target, pinch);
+
+	static void Aim(Interactor ray, Vec3 origin, Vec3 target, BtnState pinch)
 	{
 		Vec3 dir = (target - origin).Normalized;
 		ray.Update(origin, origin + dir * 100, new Pose(origin, Quat.LookDir(dir)), origin, Vec3.Zero, pinch, BtnState.Active);

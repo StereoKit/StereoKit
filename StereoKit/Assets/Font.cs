@@ -65,8 +65,9 @@ namespace StereoKit {
 		/// <summary>Loads font from a specified list of font family names</summary>
 		/// <param name="fontFamily">List of font family names separated by comma(,)
 		/// similar to a list of names css allows.</param>
-		/// <returns>A font from the given font family names, Most of the OS provide 
-		/// fallback fonts, hence there will always be a set of fonts.</returns>
+		/// <returns>A font from the given font family names. If none of them
+		/// match a usable font, this falls back to StereoKit's builtin font,
+		/// so this will always be a valid asset.</returns>
 		public static Font FromFamily(string fontFamily)
 		{
 			IntPtr inst = NativeAPI.font_create_family(fontFamily);

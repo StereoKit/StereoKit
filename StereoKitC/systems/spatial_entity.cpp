@@ -8,6 +8,7 @@
 #include "../sk_memory.h"
 #include "../libraries/array.h"
 #include "../asset_types/mesh_.h"
+#include "vert_format.h"
 
 #include <string.h>
 
@@ -324,7 +325,7 @@ static bool32_t fill_mesh(mesh_t ref_mesh, const vec3* verts, int32_t vert_count
 	vert_t* mesh_verts = sk_malloc_t(vert_t, vert_count);
 	for (int32_t i = 0; i < vert_count; i++)
 		mesh_verts[i] = { verts[i], {0,1,0}, {0,0}, {255,255,255,255} };
-	mesh_calculate_normals(mesh_verts, vert_count, (const vind_t*)inds, ind_count);
+	mesh_calculate_normals(VERT_FORMAT_DEFAULT, mesh_verts, vert_count, (const vind_t*)inds, ind_count);
 	mesh_set_data(ref_mesh, mesh_verts, vert_count, (const vind_t*)inds, ind_count);
 
 	sk_free(mesh_verts);

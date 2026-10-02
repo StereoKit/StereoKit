@@ -381,6 +381,7 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
     if (bvh->collision_data == nullptr)
     {
         log_err("mesh_bvh_t::build(): no mesh collision data available");
+        sk_free(bvh);
         return nullptr;
     }
 
@@ -399,15 +400,14 @@ mesh_bvh_create(const mesh_t mesh, int acc_leaf_size, bool show_stats)
     }
 
 #ifdef VERBOSE_BUILD
-    const vert_t* vertices = mesh->verts;
-    const vind_t* indices  = mesh->inds;
+    const vind_t* indices = mesh->inds;
 
     printf("%d triangles:\n", num_triangles);
     for (int t = 0; t < num_triangles; t++)
     {
         printf("[tri %d] %d %d %d\n", t, indices[3*t+0], indices[3*t+1], indices[3*t+2]);
         for (int i = 0; i < 3; i++)
-            printf("... %.6f %.6f %.6f\n", vertices[indices[3*t+i]].pos.x, vertices[indices[3*t+i]].pos.y, vertices[indices[3*t+i]].pos.z);
+            printf("... %.6f %.6f %.6f\n", triangle_vertices[3*t+i].x, triangle_vertices[3*t+i].y, triangle_vertices[3*t+i].z);
         printf("... centroid %.6f, %.6f, %.6f\n", triangle_centroids[t].x, triangle_centroids[t].y, triangle_centroids[t].z);
     }
 #endif

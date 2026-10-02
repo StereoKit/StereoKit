@@ -56,6 +56,11 @@ struct evt_xy_t {
 
 struct input_state_t {
 	mouse_t               mouse_data;
+	mouse_mode_           mouse_mode;        // What the app asked for
+	mouse_mode_           mouse_mode_active; // What the cursor is actually doing
+	bool                  mouse_captured;    // Relative mode asked for, and granted
+	vec2                  mouse_lock_pos;    // The stationary position relative mode reports
+	ska_window_t*         mouse_window;
 	controller_t          controllers[2];
 	bool                  controller_hand[2];
 	button_state_         controller_menubtn;
@@ -101,9 +106,11 @@ bool input_init() {
 	profiler_zone();
 
 	// Preserve values that may have been set before init, such as palm
-	// offsets from OpenXR interaction profile events.
-	pose_t palm_offset[2]     = { local.palm_offset[0],     local.palm_offset[1]     };
-	bool   controller_hand[2] = { local.controller_hand[0], local.controller_hand[1] };
+	// offsets from OpenXR interaction profile events, or the window the
+	// backend handed us - Platform initializes before Input.
+	pose_t        palm_offset[2]     = { local.palm_offset[0],     local.palm_offset[1]     };
+	bool          controller_hand[2] = { local.controller_hand[0], local.controller_hand[1] };
+	ska_window_t* mouse_window       = local.mouse_window;
 
 	local = {};
 	input_head_pose_local    = pose_identity;
@@ -112,6 +119,7 @@ bool input_init() {
 	local.palm_offset[1]     = palm_offset[1];
 	local.controller_hand[0] = controller_hand[0];
 	local.controller_hand[1] = controller_hand[1];
+	local.mouse_window       = mouse_window;
 
 	local.mtx_poses   = ft_mutex_create();
 	local.mtx_floats  = ft_mutex_create();
@@ -130,6 +138,13 @@ bool input_init() {
 ///////////////////////////////////////////
 
 void input_shutdown() {
+	if (local.mouse_mode_active != mouse_mode_normal) {
+		// Capture is a pointer grab, not just a hidden cursor, so it outlives
+		// the window if nobody releases it.
+		ska_mouse_set_relative_mode(false);
+		ska_cursor_show(true);
+	}
+
 	ft_mutex_destroy(&local.mtx_poses);
 	ft_mutex_destroy(&local.mtx_floats);
 	ft_mutex_destroy(&local.mtx_buttons);
@@ -482,11 +497,23 @@ pose_t input_controller_detached(handed_ hand) {
 
 ///////////////////////////////////////////
 
+// sk_app reports the mouse in screen coordinates while StereoKit works in render
+// pixels, and on a scaled display those differ by the drawable ratio.
+static float input_mouse_pixel_scale() {
+	if (local.mouse_window == nullptr) return 1.0f;
+
+	int32_t content_w = 0, content_h = 0, drawable_w = 0, drawable_h = 0;
+	ska_window_get_content_size (local.mouse_window, &content_w, &content_h);
+	ska_window_get_drawable_size(local.mouse_window, &drawable_w, &drawable_h);
+	return content_w > 0 ? (float)drawable_w / (float)content_w : 1.0f;
+}
+
 void input_mouse_update() {
 	// Get mouse position from sk_app
 	int32_t  mouse_x = 0, mouse_y = 0;
 	uint32_t button_state = ska_mouse_get_state(&mouse_x, &mouse_y);
-	vec2     mouse_pos    = { (float)mouse_x, (float)mouse_y };
+	float    pixel_scale  = input_mouse_pixel_scale();
+	vec2     mouse_pos    = { mouse_x * pixel_scale, mouse_y * pixel_scale };
 
 	// Mouse is available if we have focus (button_state is non-zero or we have position data)
 	local.mouse_data.available = sk_app_focus() == app_focus_active;
@@ -497,17 +524,68 @@ void input_mouse_update() {
 		local.mouse_data.scroll        = ska_scroll_accumulator;
 	}
 
+	// Losing focus always restores the cursor, so alt-tabbing out of a window
+	// that captured the mouse doesn't strand the user without one. Backends
+	// with no window of their own just remember the mode.
+	mouse_mode_ mode = local.mouse_data.available && local.mouse_window != nullptr
+		? local.mouse_mode
+		: mouse_mode_normal;
+	if (mode != local.mouse_mode_active) {
+		// Relative mode hides the cursor and delivers unaccelerated deltas with
+		// the pointer pinned. Warping back by hand cannot work on Wayland, which
+		// has no pointer warp at all.
+		// Not every platform can capture the pointer; where it can't, position
+		// deltas stand in for the motion capture would have reported.
+		bool want_relative      = mode == mouse_mode_relative;
+		bool captured           = ska_mouse_set_relative_mode(want_relative);
+		local.mouse_captured    = want_relative && captured;
+		ska_cursor_show(mode == mouse_mode_normal);
+		local.mouse_lock_pos    = mouse_pos;
+		local.mouse_mode_active = mode;
+	}
+
 	// Mouse position and on-screen
 	if (local.mouse_data.available) {
-		local.mouse_data.pos_change = mouse_pos - local.mouse_data.pos;
-		local.mouse_data.pos        = mouse_pos;
+		if (local.mouse_captured) {
+			// The pointer does not move in relative mode, so accumulated motion
+			// is the only source, and the app sees a stationary pos.
+			int32_t rel_x = 0, rel_y = 0;
+			ska_mouse_get_delta(&rel_x, &rel_y);
+			// Deltas are device units, not pixels, so they deliberately do not get
+			// the display scale: the same hand movement should turn the view the
+			// same amount on any monitor.
+			local.mouse_data.pos_change = { (float)rel_x, (float)rel_y };
+			local.mouse_data.pos        = local.mouse_lock_pos;
+		} else {
+			local.mouse_data.pos_change = mouse_pos - local.mouse_data.pos;
+			local.mouse_data.pos        = mouse_pos;
+		}
 	}
 }
 
 ///////////////////////////////////////////
 
-void input_mouse_override_pos(vec2 override_pos) {
-	local.mouse_data.pos = { override_pos.x, override_pos.y };
+void input_mouse_set_window(ska_window_t* window) {
+	// Restore now, while the window that captured the mouse is still around.
+	if (window == nullptr && local.mouse_mode_active != mouse_mode_normal) {
+		ska_mouse_set_relative_mode(false);
+		ska_cursor_show(true);
+		local.mouse_captured    = false;
+		local.mouse_mode_active = mouse_mode_normal;
+	}
+	local.mouse_window = window;
+}
+
+///////////////////////////////////////////
+
+void input_mouse_mode_set(mouse_mode_ mode) {
+	local.mouse_mode = mode;
+}
+
+///////////////////////////////////////////
+
+mouse_mode_ input_mouse_mode_get(void) {
+	return local.mouse_mode;
 }
 
 ///////////////////////////////////////////

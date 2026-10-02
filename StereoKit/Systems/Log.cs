@@ -40,9 +40,6 @@ namespace StereoKit
 		static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
 		internal static void SetupConsoleWin32()
 		{
-			if (!Environment.OSVersion.Platform.ToString().ToLower().Contains("win"))
-				return;
-
 			IntPtr handle = GetStdHandle(STD_OUTPUT_HANDLE);
 			uint mode;
 			GetConsoleMode(handle, out mode);

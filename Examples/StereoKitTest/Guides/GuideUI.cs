@@ -358,7 +358,7 @@ class GuideUI : ITest
 	/// ## What's Next?
 	/// 
 	/// And there you go! That's how UI works in StereoKit, pretty reasonable,
-	/// huh? For further reference, and more UI methods, checkout the [UI class documentation]({{site.url}}/Pages/Reference/UI.html).
+	/// huh? For further reference, and more UI methods, checkout the [UI class documentation]({{site.url}}/Pages/StereoKit/UI.html).
 	/// 
 	/// If you'd like to see the complete code for this sample,
 	/// [check it out on Github](https://github.com/StereoKit/StereoKit/blob/master/Examples/StereoKitTest/Guides/GuideUI.cs)!

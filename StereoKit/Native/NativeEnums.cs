@@ -375,6 +375,10 @@ namespace StereoKit
 		/// diffuse color but it's been superseded - prefer Etc2 or Astc
 		/// on newer hardware!</summary>
 		Etc1Rgb,
+		/// <summary>ETC1 sRGB RGB, no alpha, 4 bpp. The sRGB counterpart to
+		/// Etc1Rgb - the GPU converts to linear on sample, so this is
+		/// the correct choice for color textures.</summary>
+		Etc1RgbSrgb,
 		/// <summary>ETC2 sRGB color with full alpha, 8 bpp. The standard
 		/// compressed RGBA format on OpenGL ES 3.0+ mobile devices, and
 		/// mandatory in the spec - so it's widely available. A great
@@ -423,6 +427,18 @@ namespace StereoKit
 		/// <summary>ASTC 4x4 linear color with full alpha, 8 bpp. High-quality
 		/// compressed format for data textures on modern mobile GPUs.</summary>
 		Astc4x4Rgba,
+		/// <summary>ASTC 6x6 sRGB color with full alpha, ~3.56 bpp. Larger blocks
+		/// than Astc4x4 for less than half the memory, at some cost to
+		/// quality - a good trade for large or low-frequency textures.</summary>
+		Astc6x6RgbaSrgb,
+		/// <summary>ASTC 6x6 linear color with full alpha, ~3.56 bpp. The linear
+		/// counterpart to Astc6x6RgbaSrgb, for data textures.</summary>
+		Astc6x6Rgba,
+		/// <summary>ASTC 8x8 HDR color with full alpha, 2 bpp. Compressed HDR on
+		/// mobile GPUs, and much cheaper than an uncompressed float
+		/// format. Requires the ASTC HDR extension, which is separate
+		/// from baseline ASTC support!</summary>
+		Astc8x8RgbaHdr,
 		/// <summary>ATC RGB on Qualcomm Adreno GPUs, 4 bpp. Historical
 		/// Qualcomm-specific format - prefer Astc or Etc2 on newer
 		/// Adreno hardware.</summary>
@@ -723,9 +739,11 @@ namespace StereoKit
 		Flatscreen,
 	}
 
-	/// <summary>A list of permissions that StereoKit knows about. On some platforms (like
-	/// Android), these permissions may need to be explicitly requested before using
-	/// certain features.</summary>
+	/// <summary>A list of permissions that StereoKit knows about, each named for the
+	/// feature it unlocks. On some platforms (like Android), these permissions may
+	/// need to be explicitly requested before using certain features. Runtimes
+	/// group features into system permissions differently, so several of these may
+	/// resolve to the same underlying system permission.</summary>
 	public enum PermissionType {
 		/// <summary>For access to microphone data, this is typically an interactive
 		/// permission that the user will need to explicitly approve.
@@ -751,42 +769,147 @@ namespace StereoKit
 		/// This maps to android.permission.FACE_TRACKING on Android XR, but
 		/// varies per-runtime.</summary>
 		FaceTracking,
-		/// <summary>For access to data in the user's space, this can be for things like
-		/// spatial anchors, plane detection, hit testing, etc. This is typically an
+		/// <summary>For estimating ambient lighting from the user's surroundings, this is
+		/// what the world lighting source feeds into Lighting.Ambient. This is
+		/// typically an interactive permission that the user will need to
+		/// explicitly approve.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+		/// XR, but varies per-runtime.</summary>
+		AmbientEstimation,
+		/// <summary>For estimating an environment cubemap from the user's surroundings,
+		/// this is what the world lighting source feeds into Lighting.Reflection.
+		/// The estimate shows imagery of the user's space, so runtimes may treat
+		/// it more strictly than ambient estimation. This is typically an
 		/// interactive permission that the user will need to explicitly approve.
-		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
+		/// This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
 		/// but varies per-runtime.</summary>
-		Scene,
-		/// <summary>For creating and persisting spatial anchors. On some runtimes this is a
-		/// soft permission that just needs to be present in the manifest, while
-		/// others treat anchors as user-approved scene data, so this can vary from
-		/// invisible to interactive per-runtime.
-		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android XR,
-		/// and horizonos.permission.USE_ANCHOR_API on Meta, where it must be in the
-		/// manifest for spatial entity features to be present at all.</summary>
+		ReflectionEstimation,
+		/// <summary>For reading depth data about the user's surroundings via Sensor.Depth,
+		/// useful for things like occlusion. This is typically an interactive
+		/// permission that the user will need to explicitly approve.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_FINE on Android XR,
+		/// but varies per-runtime.</summary>
+		DepthSensing,
+		/// <summary>For creating and persisting spatial anchors in the user's space, via
+		/// StereoKit's Anchor API. Some runtimes grant this automatically from the
+		/// manifest entry, while others treat it as an interactive permission.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+		/// XR and com.oculus.permission.USE_ANCHOR_API on Meta, but varies
+		/// per-runtime.</summary>
 		Anchors,
+		/// <summary>For detecting walls, floors, tables and other surfaces in the user's
+		/// space, via spatial_capability_plane_tracking. This is typically an
+		/// interactive permission that the user will need to explicitly approve.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+		/// XR, but varies per-runtime.</summary>
+		PlaneTracking,
+		/// <summary>For detecting QR codes, ArUco markers and AprilTags in the user's
+		/// space, via the spatial marker capabilities. This is typically an
+		/// interactive permission that the user will need to explicitly approve.
+		/// This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+		/// XR, but varies per-runtime.</summary>
+		MarkerTracking,
 		/// <summary>This enum is for tracking the number of value in this enum.</summary>
 		Max,
 	}
 
 	/// <summary>Permissions can be in a variety of states, depending on how users interact
 	/// with them. Sometimes they're automatically granted, user denied, or just
-	/// unknown for the current runtime!</summary>
+	/// unknown for the current runtime! A positive value means you're clear to use
+	/// the feature, zero or negative means you're not.</summary>
 	public enum PermissionState {
-		/// <summary>This permission is known to StereoKit, but not available to request.
-		/// Typically this means the correct permission string is not listed in the
-		/// AndroidManfiest.xml or similar.</summary>
-		Unavailable  = -2,
-		/// <summary>This app is capable of using the permission, but it needs to be
-		/// requested first with Permission.Request.</summary>
+		/// <summary>StereoKit knows this permission, but nothing you do at runtime can get
+		/// it granted. Usually the permission string is missing from the
+		/// AndroidManifest.xml or equivalent, so check there first. Some runtimes
+		/// also report this when an administrator or parental control has locked
+		/// the feature off, which no amount of asking will change. Fix your app's
+		/// manifest, or work without the feature.</summary>
+		Unavailable  = -5,
+		/// <summary>The permission was refused, and the system will not prompt for it
+		/// again. Requesting it is legal, but nothing will happen. Only the user
+		/// can undo this, from the system's settings. Work without the feature,
+		/// and if it matters, tell the user where to turn it back on.</summary>
+		Blocked      = -4,
+		/// <summary>The permission was refused, but the system is still willing to prompt
+		/// for it. Not every platform has this state; where the first refusal is
+		/// final, you'll get blocked instead. You can request it again, ideally at
+		/// a moment where the user understands why you need it.</summary>
+		Denied       = -3,
+		/// <summary>A permission request is in flight: a dialog may be up, or StereoKit is
+		/// waiting to see if the system will answer one. This settles on its own
+		/// once the system answers, or the user dismisses the dialog. Wait, and
+		/// check back later.</summary>
+		Requesting   = -2,
+		/// <summary>This app can use the permission, but hasn't been granted it yet. Ask
+		/// for it with Permission.Request.</summary>
 		Capable      = -1,
 		/// <summary>StereoKit doesn't know about the permission on the current runtime. This
 		/// happens when the runtime has a unique permission string (or not) and
-		/// StereoKit doesn't know what it is to look up its current status.</summary>
+		/// StereoKit doesn't know what it is to look up its current status. There's
+		/// no reliable action here, try the feature and see if it works.</summary>
 		Unknown      = 0,
 		/// <summary>This permission is entirely approved and you can go ahead and use the
 		/// associated features!</summary>
 		Granted      = 1,
+	}
+
+	/// <summary>The data format of a single element of a vertex component. Normalized
+	/// formats map their integer range onto 0-1 (unsigned) or -1-1 (signed)
+	/// when read by the GPU, other integer formats arrive as integers.</summary>
+	public enum VertFmt {
+		/// <summary>Invalid format, this is not a valid value for a component.</summary>
+		None         = 0,
+		/// <summary>32 bit float.</summary>
+		F32,
+		/// <summary>16 bit half float.</summary>
+		F16,
+		/// <summary>32 bit signed integer.</summary>
+		I32,
+		/// <summary>16 bit signed integer.</summary>
+		I16,
+		/// <summary>8 bit signed integer.</summary>
+		I8,
+		/// <summary>16 bit signed integer, normalized to -1-1 on the GPU.</summary>
+		I16Normalized,
+		/// <summary>8 bit signed integer, normalized to -1-1 on the GPU.</summary>
+		I8Normalized,
+		/// <summary>32 bit unsigned integer.</summary>
+		U32,
+		/// <summary>16 bit unsigned integer.</summary>
+		U16,
+		/// <summary>8 bit unsigned integer.</summary>
+		U8,
+		/// <summary>16 bit unsigned integer, normalized to 0-1 on the GPU.</summary>
+		U16Normalized,
+		/// <summary>8 bit unsigned integer, normalized to 0-1 on the GPU. A color32 is
+		/// 4 of these.</summary>
+		U8Normalized,
+	}
+
+	/// <summary>What a vertex component means! This is matched against the semantics
+	/// the shader's vertex inputs declare, so component order in a format
+	/// doesn't need to match the shader's input order.</summary>
+	public enum VertSemantic {
+		/// <summary>Invalid semantic, this is not a valid value for a component.</summary>
+		None         = 0,
+		/// <summary>Vertex position, in model space coordinates.</summary>
+		Position,
+		/// <summary>Direction the vertex is facing.</summary>
+		Normal,
+		/// <summary>Texture coordinates.</summary>
+		Texcoord,
+		/// <summary>Vertex color.</summary>
+		Color,
+		/// <summary>Tangent direction for normal mapping.</summary>
+		Tangent,
+		/// <summary>Binormal/bitangent direction for normal mapping.</summary>
+		Binormal,
+		/// <summary>Bone weights for skinning.</summary>
+		Blendweight,
+		/// <summary>Bone indices for skinning.</summary>
+		Blendindices,
+		/// <summary>Point size for point rendering.</summary>
+		Psize,
 	}
 
 	/// <summary>Culling is discarding an object from the render pipeline!
@@ -1241,13 +1364,16 @@ namespace StereoKit
 	/// draws.</summary>
 	[Flags]
 	public enum RenderClear {
-		/// <summary>Don't clear anything, leave it as it is.</summary>
-		None         = 0,
 		/// <summary>Clear the rendertarget's color data.</summary>
 		Color        = 1 << 0,
 		/// <summary>Clear the rendertarget's depth data, if present.</summary>
 		Depth        = 1 << 1,
-		/// <summary>Clear both color and depth data.</summary>
+		/// <summary>Don't clear anything, draw on top of what's already there.</summary>
+		Keep         = 1 << 3,
+		/// <summary>Deprecated, use render_clear_keep.</summary>
+		None         = Keep,
+		/// <summary>Clear both color and depth data. A zero value also means this -
+		/// it's the default, so zero-initialized settings clear everything.</summary>
 		All          = Color | Depth,
 	}
 
@@ -1281,6 +1407,41 @@ namespace StereoKit
 		None         = 1,
 	}
 
+	/// <summary>This determines where lighting data comes from! The default is `Manual`,
+	/// where the application provides all lighting via the `Lighting` functions.
+	/// Devices that can estimate lighting from the user's surroundings also have
+	/// the `World` option.</summary>
+	public enum LightingSource {
+		/// <summary>Lighting values are set manually by the application. Use the
+		/// `Lighting` functions to configure the scene lighting.</summary>
+		Manual,
+		/// <summary>Lighting data is pulled from the world via the device's light estimation
+		/// capabilities. StereoKit will overwrite any data in `Lighting.Ambient`,
+		/// `MainLight`, and `Reflection` when using this source. You can check
+		/// `Lighting.SourceAvailable` to see if this is supported before requesting
+		/// it.</summary>
+		World,
+	}
+
+	/// <summary>This determines what form scene lighting takes: all of it can fold into
+	/// the ambient probe, or the dominant directional light can be separated
+	/// out from it. This shapes lighting derived from an environment: both the
+	/// world source's estimates, and what Lighting.SetEnvironment derives from
+	/// its cubemap. Changing the mode re-delivers the scene's most recent full
+	/// lighting in the new shape, replacing Ambient and MainLight.</summary>
+	public enum LightingMode {
+		/// <summary>All light folds into the Ambient probe. This is the default.
+		/// MainLight still reports the dominant directional light, but as
+		/// information only: its energy remains inside Ambient, so it suits
+		/// things like shadow direction, not additional shading.</summary>
+		Ambient,
+		/// <summary>The dominant directional light is separated out into MainLight, and
+		/// Ambient carries only the remainder. This is for applications that
+		/// render that light themselves, such as for shadow casting, since
+		/// otherwise its energy is counted twice.</summary>
+		MainLight,
+	}
+
 	/// <summary>When used with a hierarchy modifying function that will push/pop items onto a
 	/// stack, this can be used to change the behavior of how parent hierarchy items
 	/// will affect the item being added to the top of the stack.</summary>
@@ -1292,6 +1453,87 @@ namespace StereoKit
 		/// <summary>Ignoring the parent hierarchy stack item will let you skip inheriting
 		/// anything from the parent item. The new item remains exactly as provided.</summary>
 		Ignore,
+	}
+
+	/// <summary>Option flags for playing a sound, see sound_play_t.</summary>
+	[Flags]
+	public enum SoundFlags {
+		/// <summary>No special behavior, the default.</summary>
+		None         = 0,
+		/// <summary>The sound restarts from the beginning when it reaches the end of its
+		/// data, and plays until stopped. Live streams ignore this, they already
+		/// wait for data forever.</summary>
+		Loop         = 1 << 0,
+		/// <summary>Skip spatialization entirely: no distance attenuation, panning, or
+		/// filtering. The sound follows the head, good for music, UI, or
+		/// pre-rendered binaural content.</summary>
+		HeadLocked   = 1 << 1,
+		/// <summary>Delay the sound's onset by its distance from the listener divided by
+		/// the speed of sound (343m/s), computed once when playback starts. Great
+		/// for thunder, explosions, and other far away events.</summary>
+		PropagationDelay = 1 << 2,
+	}
+
+	/// <summary>A category a playing sound belongs to. Each bus is just a volume control
+	/// that affects every sound tagged with it, handy for separate sfx/music/ui
+	/// volume sliders, or ducking categories wholesale.</summary>
+	public enum SoundBus {
+		/// <summary>General sound effects, the default bus.</summary>
+		Sfx          = 0,
+		/// <summary>Background music and ambience.</summary>
+		Music,
+		/// <summary>Interface feedback sounds. StereoKit's own UI sounds use this bus.</summary>
+		Ui,
+		/// <summary>Dialogue, voice-over, and voice comms.</summary>
+		Voice,
+	}
+
+	/// <summary>The channel format of a Sound's data. Only mono sounds spatialize -
+	/// playing a non-mono sound ignores its position entirely.</summary>
+	public enum SoundChannels {
+		/// <summary>One channel. Spatializes as a point or shaped source, the default
+		/// and by far the most common format for game audio.</summary>
+		Mono         = 0,
+		/// <summary>Two interleaved channels, played back head-locked and untouched.
+		/// Music, and pre-rendered binaural content.</summary>
+		Stereo,
+		/// <summary>Four interleaved first order (1) ambisonic channels in the ambiX
+		/// convention (ACN order W,Y,Z,X with SN3D normalization). The sound
+		/// field stays world-fixed, counter-rotating against the head - the
+		/// head-tracked generalization of a binaural render. Great for
+		/// recorded or simulated environmental beds.</summary>
+		Ambisonic1,
+	}
+
+	/// <summary>Common audio sample rates, in Hz, for sound streams and microphone capture.
+	/// The enum value _is_ the rate in Hz, so you can cast any integer rate to this
+	/// type - these are just the well-supported ones, tagged with where each is
+	/// typically used. StereoKit mixes everything at 48kHz and resamples to and from
+	/// other rates as needed, so any positive rate works, but a rate a device
+	/// captures or plays natively avoids an extra resample.</summary>
+	public enum SoundSampleRate {
+		/// <summary>Use StereoKit's native mix rate, 48kHz. No resampling in the mixer, and
+		/// the best default unless you have a specific reason otherwise.</summary>
+		Default      = 0,
+		/// <summary>8kHz narrowband telephony, classic Bluetooth headset (HFP/SCO) quality.
+		/// Tiny data rate, intelligible speech only.</summary>
+		Telephony    = 8000,
+		/// <summary>16kHz wideband speech - the rate that speech-to-text, wake-word, and
+		/// VoIP pipelines typically expect. A good low-bandwidth choice for voice.</summary>
+		Speech       = 16000,
+		/// <summary>32kHz, seen in some broadcast audio and Bluetooth wideband (mSBC).</summary>
+		Broadcast    = 32000,
+		/// <summary>44.1kHz, the CD-audio standard and a common consumer device default.</summary>
+		Cd           = 44100,
+		/// <summary>48kHz, the AV/pro standard and StereoKit's native mix rate. The modern
+		/// default for most capture hardware.</summary>
+		Standard     = 48000,
+		/// <summary>96kHz high-resolution pro audio. Rare for a microphone, and resampled
+		/// down to 48kHz for mixing anyway.</summary>
+		Studio       = 96000,
+		/// <summary>192kHz, the extreme end of pro audio interfaces. Almost never a real
+		/// microphone rate, and heavily oversampled for StereoKit's purposes.</summary>
+		Ultra        = 192000,
 	}
 
 	/// <summary>When opening the Platform.FilePicker, this enum describes
@@ -1561,6 +1803,24 @@ namespace StereoKit
 		Tip          = 4,
 	}
 
+	/// <summary>How should the mouse cursor behave? This is only relevant on backends with a
+	/// real cursor to control, the Simulator and Window backends. Elsewhere, the
+	/// mode is remembered, but has nothing to act on.</summary>
+	public enum MouseMode {
+		/// <summary>The cursor is visible, and free to move anywhere, including outside the
+		/// window. This is the default.</summary>
+		Normal       = 0,
+		/// <summary>The cursor is invisible, but behaves exactly as it does in normal mode.
+		/// The mouse's position is still valid, and it can still leave the window.</summary>
+		Hidden,
+		/// <summary>The cursor is invisible and locked in place, which is what you want for
+		/// mouse-look style camera control. The mouse's position stops moving, and
+		/// its position change becomes the only source of motion - reported in
+		/// pixel-equivalent units, free of pointer acceleration, and never running
+		/// out of room at the edge of the screen.</summary>
+		Relative,
+	}
+
 	/// <summary>A collection of system key codes, representing keyboard
 	/// characters and mouse buttons. Based on VK codes.</summary>
 	public enum Key {
@@ -1772,6 +2032,36 @@ namespace StereoKit
 		Divide       = 0x6F,
 		/// <summary>Maximum value for key codes.</summary>
 		MAX          = 0xFF,
+	}
+
+	/// <summary>Describes what kind of keyboard input event this is.</summary>
+	public enum KeyboardEventType {
+		/// <summary>Not an event. Consuming returns this once no events remain in this
+		/// frame's queue, and reading by index returns it for an index outside the
+		/// queue.</summary>
+		None         = 0,
+		/// <summary>A key was pressed. Auto-repeats arrive as additional press events with no
+		/// release between them, one per repeat.</summary>
+		KeyPress,
+		/// <summary>A key was released.</summary>
+		KeyRelease,
+		/// <summary>A single codepoint of insertable text.</summary>
+		Text,
+	}
+
+	/// <summary>A bit flag describing which of the keyboard's modifier keys are held.</summary>
+	[Flags]
+	public enum KeyMod {
+		/// <summary>No modifier keys are held.</summary>
+		None         = 0,
+		/// <summary>Either shift key.</summary>
+		Shift        = 1 << 0,
+		/// <summary>Either ctrl key.</summary>
+		Ctrl         = 1 << 1,
+		/// <summary>Either alt key.</summary>
+		Alt          = 1 << 2,
+		/// <summary>Either Windows/Mac Command key.</summary>
+		Cmd          = 1 << 3,
 	}
 
 	/// <summary>Represents an input from an XR headset's controller!</summary>
@@ -2278,30 +2568,56 @@ namespace StereoKit
 		None,
 		/// <summary>DirectX's Direct3D11 is used for rendering! This is used by default on
 		/// Windows. (No longer supported)</summary>
+		[Obsolete("StereoKit is now Vulkan-only; the D3D11 backend is no longer supported.")]
 		D3D11,
 		/// <summary>OpenGL is used for rendering, using GLX (OpenGL Extension to the X Window
 		/// System) for loading. This is used by default on Linux. (No longer supported)</summary>
+		[Obsolete("StereoKit is now Vulkan-only; the OpenGL/GLX backend is no longer supported.")]
 		OpenGL_GLX,
 		/// <summary>OpenGL is used for rendering, using WGL (Windows Extensions to OpenGL)
 		/// for loading. Native developers can configure SK to use this on Windows.
 		/// (No longer supported)</summary>
+		[Obsolete("StereoKit is now Vulkan-only; the OpenGL/WGL backend is no longer supported.")]
 		OpenGL_WGL,
 		/// <summary>OpenGL ES is used for rendering, using EGL (EGL Native Platform Graphics
 		/// Interface) for loading. This is used by default on Android, and native
 		/// developers can configure SK to use this on Linux. (No longer supported)</summary>
+		[Obsolete("StereoKit is now Vulkan-only; the OpenGL ES/EGL backend is no longer supported.")]
 		OpenGLES_EGL,
-		/// <summary>WebGL is used for rendering. This is used by default on Web.</summary>
+		/// <summary>WebGL is used for rendering. This is used by default on Web.
+		/// (No longer supported)</summary>
+		[Obsolete("StereoKit is now Vulkan-only; the WebGL backend is no longer supported.")]
 		WebGL,
 		/// <summary>Vulkan is used for rendering, this works basically on every platform, and
 		/// is the only backend StereoKit currently supports!</summary>
 		Vulkan,
 	}
 
+	/// <summary>Identifies a Vulkan queue family that StereoKit's Vulkan backend interacts
+	/// with. Use this with the queue accessors on Backend.Vulkan.</summary>
+	public enum BackendVulkanQueue {
+		/// <summary>The primary graphics queue. This is the queue StereoKit submits all of
+		/// its rendering work to, and the only queue with a handle currently
+		/// available via backend_vulkan_get_queue.</summary>
+		Graphics,
+		/// <summary>A queue family suitable for transfer operations. StereoKit does not yet
+		/// use a dedicated transfer queue, so no queue handle is available here yet,
+		/// but the family index is provided for advanced interop.</summary>
+		Transfer,
+		/// <summary>A queue family suitable for Vulkan video decode. Not present on all
+		/// devices, in which case the family index will be UINT32_MAX.</summary>
+		VideoDecode,
+	}
+
 	/// <summary>The log tool will write to the console with annotations for console
 	/// colors, which helps with readability, but isn't always supported.
 	/// These are the options available for configuring those colors.</summary>
 	public enum LogColors {
-		/// <summary>Use console coloring annotations.</summary>
+		/// <summary>Use console coloring annotations, when the console supports them!
+		/// StereoKit checks the terminal for ANSI support, whether output has
+		/// been redirected to a file or pipe, and the NO_COLOR environment
+		/// variable. If any of those say no, colors are scraped out and logs
+		/// fall back to plain text.</summary>
 		Ansi         = 0,
 		/// <summary>Scrape out any color annotations, so logs are all completely
 		/// plain text.</summary>

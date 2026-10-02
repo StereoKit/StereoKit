@@ -83,7 +83,9 @@ psIn vs(vsIn input, sk_ids_t ids) {
 	o.pos = mul(view, sk_proj[ids.view]);
 
 	if (screen_size > 0.1) {
-		float aspect = sk_proj[ids.view]._m11 / sk_proj[ids.view]._m00;
+		// sk_aspect_ratio, not manual element access: Adreno's multiview
+		// linker fails when ViewIndex isn't terminal in an access chain.
+		float aspect = sk_aspect_ratio(ids.view);
 		o.pos.xy = (point_size * input.off / float2(aspect, 1)) * o.pos.w + o.pos.xy;
 	}
 

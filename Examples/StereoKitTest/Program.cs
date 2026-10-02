@@ -44,6 +44,7 @@ class Program
 		Tests.GltfScreenshotRoot =  ParamVal    (args, "-gltfscreenfolder", null);
 		Tests.TestSingle         =  ParamPresent(args, "-start");
 		startTest                =  ParamVal    (args, "-start",            startTest);
+		settings.fullscreen      =  ParamPresent(args, "-fullscreen");
 
 		if (Tests.IsTesting)
 		{
@@ -58,6 +59,12 @@ class Program
 		SK.AddStepper(new XrRefreshRate(120));
 		WindowLog = SK.AddStepper<LogWindow>();
 		WindowLog.Enabled = false;
+
+		// Vulkan backend requests also need registered before SK.Initialize.
+		// This empty request enables vacuously, so TestBackendVulkan can verify
+		// the request round-trip after initialization.
+		if (Tests.IsTesting)
+			Backend.Vulkan.Request(new BackendVulkanRequest { name = "sk_test_request" });
 
 		// Initialize StereoKit
 		if (!SK.Initialize(settings))
@@ -102,11 +109,17 @@ class Program
 		if (Input.Key(Key.Esc).IsJustActive())
 			SK.Quit();
 
+		// Alt+Enter is the customary desktop fullscreen chord.
+		AppWindow window = AppWindow.Main;
+		if (window != null &&
+			Input.Key(Key.Alt).IsActive() && Input.Key(Key.Return).IsJustActive())
+			window.RequestFullscreen(!window.Fullscreen);
+
 		/// :CodeSample: Projection Renderer.Projection
 		/// ### Toggling the projection mode
 		/// Only in flatscreen apps, there is the option to change the main
 		/// camera's projection mode between perspective and orthographic.
-		if (SK.ActiveDisplayMode == DisplayMode.Flatscreen &&
+		if (Device.DisplayType == DisplayType.Flatscreen &&
 			Input.Key(Key.P).IsJustActive())
 		{
 			Renderer.Projection = Renderer.Projection == Projection.Perspective

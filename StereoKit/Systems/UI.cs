@@ -231,6 +231,13 @@ namespace StereoKit
 		public static bool IsInteracting(Handed hand)
 			=> NativeAPI.interactor_is_interacting(HandToSource(hand));
 
+		/// <summary>Is a `UI.Input` currently focused and taking keyboard
+		/// input? A focused Input reads the whole keyboard event queue, so
+		/// this is how you tell whether your own keyboard handling should
+		/// stand down for the frame.</summary>
+		public static bool HasKeyboardFocus
+			=> NativeAPI.ui_has_keyboard_focus();
+
 		/// <summary>This allows you to explicitly set a theme color, for finer
 		/// grained control over the UI appearance. Each theme type is still
 		/// used by many different UI elements. This will automatically
@@ -342,6 +349,16 @@ namespace StereoKit
 		/// by.</param>
 		public static void HSpace(float horizontalSpace)
 			=> NativeAPI.ui_hspace(horizontalSpace);
+
+		/// <summary>A volume that catches interactors without reacting to
+		/// them, so UI elements behind it can't be focused or activated
+		/// through it. Useful for modal overlays, or for custom visuals that
+		/// should occlude the UI behind them. Interactors already active on
+		/// an element are not interrupted.</summary>
+		/// <param name="bounds">Size and position of the volume, relative to
+		/// the current Hierarchy.</param>
+		public static void BlockAt(Bounds bounds)
+			=> NativeAPI.ui_block_at(bounds);
 
 		/// <inheritdoc cref="VolumeAt(string, Bounds, UIConfirm)"/>
 		/// <param name="interactor">The `Interactor` that is interacting with
@@ -1059,7 +1076,8 @@ namespace StereoKit
 		/// <summary>This is an input field where users can input text to the
 		/// app! Selecting it will spawn a virtual keyboard, or act as the
 		/// keyboard focus. Hitting escape or enter, or focusing another UI
-		/// element will remove focus from this Input.</summary>
+		/// element will remove focus from this Input. Shift+Enter adds a
+		/// newline instead, and tab adds a tab.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
 		/// <param name="value">The string that will store the Input's 
@@ -1087,7 +1105,8 @@ namespace StereoKit
 		/// <summary>This is an input field where users can input text to the
 		/// app! Selecting it will spawn a virtual keyboard, or act as the
 		/// keyboard focus. Hitting escape or enter, or focusing another UI
-		/// element will remove focus from this Input.</summary>
+		/// element will remove focus from this Input. Shift+Enter adds a
+		/// newline instead, and tab adds a tab.</summary>
 		/// <param name="id">An id for tracking element state. MUST be unique
 		/// within current hierarchy.</param>
 		/// <param name="value">The string that will store the Input's

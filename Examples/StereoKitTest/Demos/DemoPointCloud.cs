@@ -6,12 +6,26 @@
 using StereoKit;
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 public class PointCloud
 {
-	Material mat;
-	Vertex[] verts;
-	Mesh     mesh;
+	// Each point becomes a camera-facing quad, so per-vertex cost is x4!
+	// 16 bytes to Vertex's 36, the shader derives corners from vertex id.
+	[StructLayout(LayoutKind.Sequential, Pack = 1)]
+	struct PointVert
+	{
+		[VertComponent(VertSemantic.Position, VertFmt.F32,          3)]
+		public Vec3    pos;
+		[VertComponent(VertSemantic.Color,    VertFmt.U8Normalized, 4)]
+		public Color32 col;
+
+		public PointVert(Vec3 position, Color32 color) { pos = position; col = color; }
+	}
+
+	Material    mat;
+	PointVert[] verts;
+	Mesh        mesh;
 
 	bool  distanceIndependant;
 	float pointSize;
@@ -36,7 +50,7 @@ public class PointCloud
 	public void SetPoints(Vertex[] points)
 	{
 		if (verts == null)
-			verts = new Vertex[points.Length*4];
+			verts = new PointVert[points.Length*4];
 		if (verts.Length != points.Length * 4)
 		{
 			Log.Err("You can re-use a point cloud, but the number of points should stay the same!");
@@ -45,16 +59,16 @@ public class PointCloud
 
 		for (int i = 0; i < points.Length; i++)
 		{
-			Vertex p = points[i];
-			int idx = i*4;
-			verts[idx  ] = new Vertex(p.pos, p.norm, V.XY(-.5f, .5f), p.col);
-			verts[idx+1] = new Vertex(p.pos, p.norm, V.XY( .5f, .5f), p.col);
-			verts[idx+2] = new Vertex(p.pos, p.norm, V.XY( .5f,-.5f), p.col);
-			verts[idx+3] = new Vertex(p.pos, p.norm, V.XY(-.5f,-.5f), p.col);
+			Vertex    p    = points[i];
+			PointVert vert = new PointVert(p.pos, p.col);
+			int       idx  = i*4;
+			verts[idx  ] = vert;
+			verts[idx+1] = vert;
+			verts[idx+2] = vert;
+			verts[idx+3] = vert;
 		}
-		uint[] inds = null;
 		if (mesh == null) {
-			inds = new uint[points.Length*6];
+			uint[] inds = new uint[points.Length*6];
 			for (uint i = 0; i < points.Length; i++)
 			{
 				uint ind  = i*6;
@@ -67,7 +81,9 @@ public class PointCloud
 				inds[ind+4] = vert+2;
 				inds[ind+5] = vert+0;
 			}
-			mesh = new Mesh(verts, inds);
+			mesh = new Mesh();
+			mesh.SetVerts(verts);
+			mesh.SetInds (inds);
 		}
 		else
 		{
@@ -92,7 +108,7 @@ public class PointCloud
 class DemoPointCloud : ITest
 {
 	string title       = "Point Clouds";
-	string description = "Point clouds are not a built-in feature of StereoKit, but it's not hard to do this yourself! Check out the code for this demo for a class that'll help you do this directly from data, or from a Model.";
+	string description = "Point clouds are not a built-in feature of StereoKit, but it's not hard to do this yourself! Check out the code for this demo for a class that'll help you do this directly from data, or from a Model. It's also a nice example of pairing a custom vertex format with a custom shader, point clouds only need a fraction of the data regular meshes use!";
 
 	Pose       cloudPose    = (Matrix.T(0.2f,-0.1f,0) * Demo.contentPose).Pose;
 	float      cloudScale   = 1;
@@ -103,10 +119,8 @@ class DemoPointCloud : ITest
 
 	public void Initialize()
 	{
-		// Generate colored points in the shape of a UV sphere! This tool
-		// re-uses the Vertex type, but doesn't particularly need the
-		// normals, and will replace the UVs. You could pretty easily add
-		// lighting to the points using the normals if you wanted to :)
+		// Generate colored points in the shape of a UV sphere! Vertex is
+		// just a convenient carrier here, see PointCloud.SetPoints.
 		const int xCount = 24;
 		const int yCount = 16;
 		Vertex[] points = new Vertex[xCount*yCount];

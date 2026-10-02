@@ -63,12 +63,19 @@ namespace StereoKit
 		/// <param name="deviceName">The name of the microphone device to
 		/// use, as seen in the GetDevices list. null will use the system's
 		/// default device preference.</param>
-		/// <returns>True if recording started successfully, false for 
+		/// <param name="sampleRate">Requested capture rate. SoundSampleRate
+		/// names the common, well-supported rates with notes on each - Default
+		/// uses StereoKit's native 48,000, and speech pipelines often want
+		/// Speech (16,000). The enum value is the rate in Hz, so cast any
+		/// integer rate to it for something off this list; miniaudio resamples
+		/// the device as needed. The mic's Sound stream is created at this rate
+		/// the first time recording starts, and keeps it from then on.</param>
+		/// <returns>True if recording started successfully, false for
 		/// failure. This could fail if the app does not have mic permissions,
 		/// or if the deviceName is for a mic that has since been unplugged.
 		/// </returns>
-		public static bool Start(string deviceName = null)
-			=> NativeAPI.mic_start(deviceName);
+		public static bool Start(string deviceName = null, SoundSampleRate sampleRate = SoundSampleRate.Default)
+			=> NativeAPI.mic_start(deviceName, sampleRate);
 
 		/// <summary>If the Microphone is recording, this will stop it.
 		/// </summary>

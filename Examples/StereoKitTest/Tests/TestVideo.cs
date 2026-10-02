@@ -9,7 +9,12 @@
 // spatialized audio for the videos. This makes MediaPlayer fine for testing
 // external textures, but not really robust enough for general video playing.
 
-#if ANDROID
+// TODO: This test needs a Vulkan port and is disabled until then. It relies on
+// OpenGL ES OES external textures (SurfaceTexture + samplerExternalOES), which
+// no longer exist now that StereoKit is Vulkan-only. Porting means switching to
+// AHardwareBuffer via VK_ANDROID_external_memory_android_hardware_buffer plus a
+// VkSamplerYcbcrConversion, and a Ycbcr-aware shader. (Android-only.)
+#if false
 
 using Android.Graphics;
 using Android.Media;

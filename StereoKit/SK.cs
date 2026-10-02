@@ -26,9 +26,10 @@ namespace StereoKit
 		/// initialization was attempted and failed, this value will be 
 		/// false.</summary>
 		public static bool IsInitialized { get; private set; }
-		/// <summary>Since we can fallback to a different DisplayMode, this 
+		/// <summary>Since we can fallback to a different DisplayMode, this
 		/// lets you check to see which Runtime was successfully initialized.
 		/// </summary>
+		[Obsolete("Use Device.DisplayType instead.")]
 		public static DisplayMode ActiveDisplayMode => NativeAPI.sk_active_display_mode();
 		/// <summary>This structure contains information about the current 
 		/// system and its capabilities. There's a lot of different MR devices,
@@ -51,7 +52,7 @@ namespace StereoKit
 		/// visible behind the app that _does_ have focus. </summary>
 		public static AppFocus AppFocus => NativeAPI.sk_app_focus();
 
-		/// <summary> This tells the reason why StereoKit has quit and 
+		/// <summary> This tells the reason why StereoKit has quit and
 		/// developer can take appropriate action to debug.</summary>
 		public static QuitReason QuitReason => NativeAPI.sk_get_quit_reason();
 

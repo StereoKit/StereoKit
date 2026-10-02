@@ -36,6 +36,7 @@
 #include <openxr/openxr_reflection.h>
 
 #include <sk_app.h>
+#include <sk_renderer.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -422,8 +423,13 @@ bool openxr_blank_frame() {
 	// up-to-date even on blank frames during init is helpful.
 	xr_time = frame_state.predictedDisplayTime;
 
+	uint32_t queue_family = skr_get_vk_graphics_queue_family();
+
 	XrFrameBeginInfo begin_info = { XR_TYPE_FRAME_BEGIN_INFO };
-	xr_check(xrBeginFrame(xr_session, &begin_info),
+	skr_vk_queue_lock(queue_family);
+	XrResult begin_result = xrBeginFrame(xr_session, &begin_info);
+	skr_vk_queue_unlock(queue_family);
+	xr_check(begin_result,
 		"blank xrBeginFrame");
 
 	XrFrameEndInfo end_info = { XR_TYPE_FRAME_END_INFO };
@@ -431,7 +437,11 @@ bool openxr_blank_frame() {
 	if      (xr_blend_valid(display_blend_opaque  )) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
 	else if (xr_blend_valid(display_blend_additive)) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ADDITIVE;
 	else if (xr_blend_valid(display_blend_blend   )) end_info.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_ALPHA_BLEND;
-	xr_check(xrEndFrame(xr_session, &end_info),
+
+	skr_vk_queue_lock(queue_family);
+	XrResult end_result = xrEndFrame(xr_session, &end_info);
+	skr_vk_queue_unlock(queue_family);
+	xr_check(end_result,
 		"blank xrEndFrame");
 
 	return true;
@@ -680,7 +690,7 @@ void openxr_step_end() {
 	ext_management_evt_step_end();
 
 	if (xr_has_session) { openxr_render_frame(); }
-	else                { render_clear(); render_pipeline_skip_present(); ska_time_sleep(33); }
+	else                { openxr_step_time_reset(); render_clear(); render_pipeline_skip_present(); ska_time_sleep(33); }
 
 	// Both branches above tick sk_renderer's frame counter via
 	// render_pipeline_skip_present (directly or inside openxr_render_frame),
@@ -806,16 +816,23 @@ bool openxr_poll_events() {
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING         : sk_quit(quit_reason_session_lost); result = false; break;
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
 			XrEventDataReferenceSpaceChangePending *pending   = (XrEventDataReferenceSpaceChangePending*)&event_buffer;
-
-			// Update the main app space. In particular, some fallback spaces
-			// may require recalculation.
-			XrSpace new_space = {};
-			if (openxr_try_get_app_space(xr_session, sk_get_settings_ref()->origin, pending->changeTime, &xr_app_space_type, &world_origin_offset, &new_space)) {
-				if (xr_app_space) xrDestroySpace(xr_app_space);
-				xr_app_space = new_space;
+			XrReferenceSpaceType moved         = pending->referenceSpaceType;
+			origin_mode_         origin        = sk_get_settings_ref()->origin;
+			bool                 recentered    = moved == XR_REFERENCE_SPACE_TYPE_LOCAL;
+			bool                 head_relative = origin == origin_mode_local || origin == origin_mode_floor;
+			// Head-relative modes sample the head into their offset, so a recenter must
+			// re-sample even when our base space didn't move. #715
+			bool resample_origin = moved == xr_app_space_type || (recentered && head_relative);
+			if (resample_origin) {
+				XrSpace new_space = {};
+				if (openxr_try_get_app_space(xr_session, origin, pending->changeTime, &xr_app_space_type, &world_origin_offset, &new_space)) {
+					if (xr_app_space) xrDestroySpace(xr_app_space);
+					xr_app_space = new_space;
+				}
 			}
-
-			xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
+			// Bounds are reported in app space, so they shift with either one.
+			if (resample_origin || moved == XR_REFERENCE_SPACE_TYPE_STAGE)
+				xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
 		} break;
 		default: break;
 		}

@@ -319,13 +319,24 @@ void xr_ext_hand_tracking_update_joints() {
 		// Update the aim values
 		inp_hand->aim.position = local.hand_joints[h][XR_HAND_JOINT_INDEX_PROXIMAL_EXT].position;
 
-		// Blend the wrist orientation into the pointing ray
-		quat wrist_orientation = quat_normalize(quat_from_angles(-50, h == handed_left ? 20 : -20, 0)*inp_hand->wrist.orientation);
+		// This constructs a hand orientation from joints that are more stable
+		// than others during a pinch. Previously we used the raw wrist joint,
+		// but observed unstable behavior on Quest 2.
+		const hand_joint_t* idx  = inp_hand->fingers[finger_id_index ];
+		const hand_joint_t* ring = inp_hand->fingers[finger_id_ring  ];
+		const hand_joint_t* lit  = inp_hand->fingers[finger_id_little];
+		float side    = h == handed_left ? -1.0f : 1.0f;
+		vec3  lateral = (lit[joint_id_knuckle_major].position - idx[joint_id_knuckle_major].position) * side;
+		vec3  ulnar   = (lit[joint_id_knuckle_major].position + ring[joint_id_knuckle_major].position)
+		              - (lit[joint_id_root         ].position + ring[joint_id_root         ].position);
+		vec3  dorsal  = vec3_cross(lateral, ulnar);
+		quat  hand_orientation  = quat_lookat_up(vec3_zero, ulnar, dorsal);
+		quat  point_orientation = quat_normalize(quat_from_angles(-50, h == handed_left ? 20 : -20, 0)*hand_orientation);
 
 		vec3 dir   = inp_hand->aim.position - shoulders[h];
-		vec3 right = wrist_orientation * vec3_right;
+		vec3 right = point_orientation * vec3_right;
 		quat shoulder_orientation = quat_lookat_up(vec3_zero, dir, vec3_cross(right, dir));
-		inp_hand->aim.orientation = quat_slerp(wrist_orientation, shoulder_orientation, 0.5f);
+		inp_hand->aim.orientation = quat_slerp(point_orientation, shoulder_orientation, 0.5f);
 	}
 
 	if (!hands_active) {

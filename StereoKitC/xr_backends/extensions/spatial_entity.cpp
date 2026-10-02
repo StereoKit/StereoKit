@@ -538,12 +538,12 @@ static void xr_spatial_event_poll(void*, XrEventDataBuffer* event_data) {
 // Slot lifecycle                        //
 ///////////////////////////////////////////
 
-// Anchors ride their own permission, everything else exposes data about
-// the user's environment, and rides the scene permission.
 static permission_type_ cap_permission(spatial_capability_ cap) {
-	return cap == spatial_capability_anchor
-		? permission_type_anchors
-		: permission_type_scene;
+	switch (cap) {
+	case spatial_capability_anchor:         return permission_type_anchors;
+	case spatial_capability_plane_tracking: return permission_type_plane_tracking;
+	default:                                return permission_type_marker_tracking;
+	}
 }
 
 // Moves a slot toward creation, parking it in slot_state_permission

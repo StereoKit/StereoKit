@@ -21,11 +21,6 @@ struct asset_job_t {
 	bool32_t(*asset_job)(void *data);
 };
 
-typedef enum asset_thread_ {
-	asset_thread_asset,
-	asset_thread_gpu,
-} asset_thread_;
-
 typedef enum asset_find_ {
 	asset_find_found,
 	asset_find_created,
@@ -33,10 +28,7 @@ typedef enum asset_find_ {
 
 struct asset_task_t;
 
-struct asset_load_action_t {
-	bool32_t    (*action)(asset_task_t *task, asset_header_t *asset, void *data);
-	asset_thread_ thread_affinity;
-};
+typedef bool32_t (*asset_load_action_t)(asset_task_t *task, asset_header_t *asset, void *data);
 
 struct asset_task_t {
 	asset_header_t      *asset;
@@ -48,8 +40,9 @@ struct asset_task_t {
 	int32_t              action_curr;
 	int32_t              priority;
 	int64_t              sort;
-	asset_job_t          gpu_job;
-	bool32_t             gpu_started;
+	asset_header_t      *depends_on;    // optional: task is gated until this
+	asset_state_         depends_state; // asset reaches depends_state, or fails
+	bool32_t             dep_failed;    // stamped at acquire when depends_on failed
 };
 
 void*       assets_find               (const char* id, asset_type_ type);
@@ -72,11 +65,15 @@ void        assets_on_load            (asset_header_t *asset, void (*on_load)(as
 void        assets_on_load_remove     (asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context));
 void        assets_on_load_remove_all (asset_header_t *asset);
 
-// This function will block execution until `asset_job` is finished, but will
-// ensure it is run on the GPU thread.
+// Runs the job inline on skr-initialized threads (main, asset). Foreign
+// threads queue the job to the asset threads and block until it finishes.
 bool32_t    assets_execute_blocking   (bool32_t (*asset_job)(void *data), void *data);
-void        assets_add_task           (asset_task_t task);
+// SK_API so the SKTests harness can drive the scheduler with synthetic tasks.
+SK_API void assets_add_task           (asset_task_t task);
 inline int64_t asset_sort(int32_t priority, int32_t complexity) { return ((int64_t)priority << 32) | ((int64_t)complexity); }
+
+// The priority the public tex/model/font create functions default to.
+static const int32_t asset_priority_default = 10;
 
 // Converts a byte size into the `complexity` metric used by asset_sort. The
 // metric is kilobytes (rounded down), which keeps the sort within int32_t

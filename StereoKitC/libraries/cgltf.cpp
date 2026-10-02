@@ -1,4 +1,5 @@
 #include "../sk_memory.h"
+#include "stref.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -10,6 +11,10 @@
 #define CGLTF_IMPLEMENTATION
 #define CGLTF_MALLOC sk::sk_malloc
 #define CGLTF_FREE sk::_sk_free
+// Parse floats with our own locale-independent parser. cgltf otherwise uses
+// atof, which honors the locale's decimal separator and misparses the '.' in
+// glTF/JSON numbers under locales like fr_FR.UTF-8 (see string_to_float).
+#define CGLTF_ATOF(str) string_to_float(str)
 #include "../libraries/cgltf.h"
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -17,7 +22,6 @@
 #pragma clang diagnostic pop
 #endif
 
-#include "stref.h"
 #include "../stereokit.h"
 
 namespace sk {

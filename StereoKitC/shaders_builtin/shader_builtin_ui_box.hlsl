@@ -35,9 +35,9 @@ psIn vs(vsIn input, sk_ids_t ids) {
 	else if (abs(input.norm.x) > 0.75) o.scale = scale.zy;
 	else                               o.scale = scale.xy;
 
-	float4 world = mul(input .pos, sk_inst    [ids.inst].world);
-	o.pos        = mul(world,      sk_viewproj[ids.view]);
-	o.world      = world.xyz;
+	float3 world = mul(input.pos.xyz, (float3x3)world_mat) + world_mat[3].xyz;
+	o.pos        = mul(float4(world, 1), sk_viewproj[ids.view]);
+	o.world      = world;
 
 	o.uv    = input.uv-0.5;
 	o.color = color * input.col * sk_inst[ids.inst].color;

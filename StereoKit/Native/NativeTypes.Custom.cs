@@ -71,6 +71,14 @@ namespace StereoKit
 		/// <summary>If using Runtime.Flatscreen, the pixel size of the
 		/// window on the screen.</summary>
 		public int flatscreenHeight;
+		/// <summary>In the Simulator and Window app modes, ask for the
+		/// desktop window to start out fullscreen! Like
+		/// `AppWindow.RequestFullscreen`, this is only ever a request: window
+		/// managers can refuse it, and browsers wait for a user gesture, so
+		/// check `AppWindow.Main.Fullscreen` for the window's real state.
+		/// Default is false.</summary>
+		public  bool fullscreen { get { return _fullscreen > 0; } set { _fullscreen = value ? 1 : 0; } }
+		private int _fullscreen;
 		/// <summary>By default, StereoKit will open a desktop window for
 		/// keyboard input due to lack of XR-native keyboard APIs on many
 		/// platforms. If you don't want this, you can disable it with
@@ -95,7 +103,8 @@ namespace StereoKit
 		/// <summary>If you know in advance that you need this feature, this
 		/// setting allows you to set `Renderer.Multisample` before
 		/// initialization. This avoids creating and discarding a large and
-		/// unnecessary swapchain object. Default value is 1.</summary>
+		/// unnecessary swapchain object. Leave this at 0 to use the default,
+		/// which is 4.</summary>
 		public int renderMultisample;
 
 		/// <summary>Set the behavior of StereoKit's initial origin. Default
@@ -196,8 +205,58 @@ namespace StereoKit
 		public DisplayBlend displayType { get => DisplayBlend.None;  set { } }
 	}
 
+	public partial struct AudioEnvironment
+	{
+		// Built-in presets: starting points in the environment parameter
+		// space, from enclosed halls to open outdoor spaces. Grab one, tweak
+		// a field or two, and assign it to Audio.Environment.
+
+		/// <summary>No environmental acoustics at all, sounds play dry. This
+		/// is the default, and costs nothing - the right choice for AR, where
+		/// synthetic reverb would fight the real room's acoustics.</summary>
+		public static readonly AudioEnvironment Off    = new AudioEnvironment { wet = 0,     decay = 0.4f,  damp = 0.55f, size = 7,  scatter = 0.6f, reflect = 0.55f };
+		/// <summary>A small furnished room: a short, balanced tail.</summary>
+		public static readonly AudioEnvironment Room   = new AudioEnvironment { wet = 0.17f, decay = 0.4f,  damp = 0.55f, size = 7,  scatter = 0.6f, reflect = 0.55f };
+		/// <summary>A large hall: a long, bright, spacious tail.</summary>
+		public static readonly AudioEnvironment Hall   = new AudioEnvironment { wet = 0.22f, decay = 1.4f,  damp = 0.45f, size = 16, scatter = 0.7f, reflect = 0.55f };
+		/// <summary>A cavern: a very long, dense tail with hard
+		/// surfaces.</summary>
+		public static readonly AudioEnvironment Cave   = new AudioEnvironment { wet = 0.3f,  decay = 2.6f,  damp = 0.2f,  size = 22, scatter = 0.8f, reflect = 0.7f  };
+		/// <summary>A forest: no walls, just a short dark scatter off trunks
+		/// and foliage - quiet, but unmistakably
+		/// outdoors-with-presence.</summary>
+		public static readonly AudioEnvironment Forest = new AudioEnvironment { wet = 0.11f, decay = 0.5f,  damp = 0.9f,  size = 12, scatter = 0.9f, reflect = 0.12f };
+		/// <summary>An open field: nearly dry, the faintest hint of ground
+		/// scatter. Openness itself is the cue.</summary>
+		public static readonly AudioEnvironment Field  = new AudioEnvironment { wet = 0.05f, decay = 0.25f, damp = 0.9f,  size = 8,  scatter = 0.7f, reflect = 0.06f };
+	}
+
+	// Hand-written mirror of the C header's vert_t (@noimpl in APIGen) so
+	// the fields can carry VertComponent attributes. The doc comments here
+	// are duplicated from stereokit.h, keep them in sync!
+	/// <summary>This represents a single vertex in a Mesh, all StereoKit Meshes
+	/// currently use this exact layout!
+	/// It's good to fill out all values of a Vertex explicitly, as default
+	/// values for the normal (0,0,0) and color (0,0,0,0) will cause your
+	/// mesh to appear completely black, or even transparent in most shaders!</summary>
+	[StructLayout(LayoutKind.Sequential)]
 	public partial struct Vertex
 	{
+		/// <summary>Position of the vertex, in model space coordinates.</summary>
+		[VertComponent(VertSemantic.Position, VertFmt.F32, 3)]
+		public Vec3 pos;
+		/// <summary>The normal of this vertex, or the direction the vertex is
+		/// facing. Preferably normalized.</summary>
+		[VertComponent(VertSemantic.Normal, VertFmt.F32, 3)]
+		public Vec3 norm;
+		/// <summary>The texture coordinates at this vertex.</summary>
+		[VertComponent(VertSemantic.Texcoord, VertFmt.F32, 2)]
+		public Vec2 uv;
+		/// <summary>The color of the vertex. If you aren't using it, set it to
+		/// white.</summary>
+		[VertComponent(VertSemantic.Color, VertFmt.U8Normalized, 4)]
+		public Color32 col;
+
 		/// <summary>Create a new Vertex, use the overloads to take advantage
 		/// of default values. Vertex color defaults to White. UV defaults to
 		/// (0,0).</summary>
@@ -396,20 +455,23 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	internal delegate void XRPollEventCallback(IntPtr context, IntPtr XrEventDataBuffer);
 
-	/// <summary>A callback for receiving the color data of a screenshot, instead
+	/// <summary>A callback for receiving the pixel data of a screenshot, instead
 	/// of saving it directly to a file.</summary>
-	/// <param name="data">The pointer to the color data. A fare warning that the
-	/// memory *will* be freed once this callback completes, so if you need to
-	/// reference this data elsewhere, be sure to store a copy of it!</param>
+	/// <param name="data">The pointer to the pixel data, laid out according to
+	/// format. A fare warning that the memory *will* be freed once this callback
+	/// completes, so if you need to reference this data elsewhere, be sure to
+	/// store a copy of it!</param>
+	/// <param name="format">The pixel format of the data, matching the texFormat
+	/// requested when the screenshot was scheduled.</param>
 	/// <param name="width">The width of the image.</param>
 	/// <param name="height">The height of the image.</param>
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	public delegate void ScreenshotCallback(IntPtr data, int width, int height);
+	public delegate void ScreenshotCallback(IntPtr data, TexFormat format, int width, int height);
 
 	// Internal callback delegate for render_screenshot_capture/viewpoint
-	// Takes IntPtr for color buffer (color32*) since it's a pointer to array data
+	// Takes IntPtr for the pixel buffer since it's a pointer to array data
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-	internal delegate void RenderOnScreenshotCallback(IntPtr color_buffer, int width, int height, IntPtr context);
+	internal delegate void RenderOnScreenshotCallback(IntPtr data, TexFormat format, int width, int height, IntPtr context);
 
 	// Callback for platform_file_picker - uses IntPtr for confirmed and filename
 	// because the wrapper handles manual string conversion from pointer+length
@@ -438,11 +500,97 @@ namespace StereoKit
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate void AssetOnLoadCallback(IntPtr asset, IntPtr context);
 
-	/// <summary>A callback for generating audio samples procedurally.</summary>
+	/// <summary>A callback for generating audio samples procedurally, one
+	/// sample at a time. Convenient, but crosses the interop boundary per
+	/// sample - for long generations, prefer the buffer overload of
+	/// Sound.Generate.</summary>
 	/// <param name="sampleTime">The time of the sample being generated.</param>
 	/// <returns>The audio sample value, typically in the range of -1 to 1.</returns>
-	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	public delegate float AudioGenerator(float sampleTime);
+
+	/// <summary>A callback for generating a whole buffer of audio samples
+	/// at once! Fill the provided buffer completely with values in the -1
+	/// to +1 range. frameStart / 48,000 is the time of the buffer's first
+	/// frame. For multi-channel sounds the buffer holds frames-x-channels
+	/// interleaved samples - for mono, frames and samples are the same
+	/// thing.</summary>
+	/// <param name="samples">Fill this entire buffer with your audio
+	/// samples, interleaved when multi-channel.</param>
+	/// <param name="frameStart">Index of the buffer's first frame within
+	/// the overall sound, at 48,000 frames per second.</param>
+	public delegate void AudioBufferGenerator(float[] samples, ulong frameStart);
+
+	/// <summary>The raw native callback shape backing both public generator
+	/// delegates, where samples land directly in StereoKit's own buffer.
+	/// This is a low-level interop type - prefer AudioBufferGenerator or
+	/// AudioGenerator with Sound.Generate.</summary>
+	/// <param name="outSamples">Native pointer to the buffer to fill with
+	/// interleaved float samples, frames x channels floats.</param>
+	/// <param name="frameStart">Index of the buffer's first frame, at 48,000
+	/// frames per second.</param>
+	/// <param name="frameCount">Number of frames to fill.</param>
+	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+	public delegate void AudioGeneratorBatch(IntPtr outSamples, ulong frameStart, ulong frameCount);
+
+	/// <summary>Extra parameters for playing a sound with sound_play,
+	/// this is the raw native layout - the public API is SoundPlay.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	internal struct sound_play_t
+	{
+		public float      volume;
+		public float      pitch;
+		public float      spread;
+		public float      delay;
+		public float      cutoff;
+		public SoundBus   bus;
+		public SoundFlags flags;
+		public IntPtr     shape_points;
+		public int        shape_point_count;
+		public float      shape_radius;
+	}
+
+	/// <summary>Optional settings for Sound.Play! The default struct plays
+	/// a plain point source: full volume trim, normal pitch, no delay, on
+	/// the Sfx bus.</summary>
+	public struct SoundPlay
+	{
+		/// <summary>A 0-1 volume trim on top of the Sound's Decibels
+		/// loudness. 0 is treated as the default full trim of 1, use a tiny
+		/// value for real silence. Values above 1 amplify, negatives clamp
+		/// to 0.</summary>
+		public float volume;
+		/// <summary>Playback rate multiplier, clamped to 0.25-4. 1 is
+		/// normal speed, 2 is twice as fast and an octave up. 0 is treated
+		/// as 1.</summary>
+		public float pitch;
+		/// <summary>Apparent size of the source, 0-1. 0 is a point in
+		/// space, 1 fills the whole sound field evenly. Great for wind,
+		/// rivers and rumble, but keep transients like impacts at 0 - width
+		/// smears their attack.</summary>
+		public float spread;
+		/// <summary>Seconds before the sound actually starts playing,
+		/// sample accurate. SoundFlags.PropagationDelay adds
+		/// distance/343m/s on top of this.</summary>
+		public float delay;
+		/// <summary>Low-pass filter cutoff override in Hz for this voice.
+		/// 0 uses the automatic distance model.</summary>
+		public float cutoff;
+		/// <summary>The volume category this sound belongs to,
+		/// SoundBus.Sfx when zeroed.</summary>
+		public SoundBus bus;
+		/// <summary>See SoundFlags!</summary>
+		public SoundFlags flags;
+		/// <summary>Optional emitter shape: 1 point is a sphere, 2+ a
+		/// rounded polyline. The emitter follows the listener along the
+		/// shape - position becomes the closest point, and apparent size
+		/// grows as the shape fills more of the view, going fully diffuse
+		/// inside it. Points are copied at play, max 32. Null means a point
+		/// source at the play position.</summary>
+		public Vec3[] shape;
+		/// <summary>Radius of the shape's sphere or polyline tube, in
+		/// meters.</summary>
+		public float shapeRadius;
+	}
 
 	/// <summary>A callback for when input events occur.</summary>
 	/// <param name="source">The source of the input event.</param>
@@ -619,6 +767,83 @@ namespace StereoKit
 		/// <returns>An equivalent Pivot.</returns>
 		[Obsolete("Use Pivot instead")]
 		public static implicit operator Pivot(TextAlign a) => (Pivot)a.value;
+	}
+
+	/// <summary>A single component of a custom vertex layout, such as a
+	/// position or a UV coordinate. A vertex format is described by an array
+	/// of these, in the same order the components appear in the vertex data.
+	/// Data is always tightly packed, aligned to nothing, so the format
+	/// fully describes the vertex layout.
+	///
+	/// This maps to a compact 4 byte native representation, the properties
+	/// here disguise that byte packing.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct VertComponent
+	{
+		private byte _format;
+		private byte _count;
+		private byte _semantic;
+		private byte _semanticSlot;
+
+		/// <summary>The data format of a single element of this component.
+		/// </summary>
+		public VertFmt      Format       { get => (VertFmt)_format;        set => _format       = (byte)value; }
+		/// <summary>How many format elements this component has, 1-4. A
+		/// float3 position would be 3.</summary>
+		public int          Count        { get => _count;                  set => _count        = (byte)value; }
+		/// <summary>What this component means, this is matched with the
+		/// shader's vertex input semantics.</summary>
+		public VertSemantic Semantic     { get => (VertSemantic)_semantic; set => _semantic     = (byte)value; }
+		/// <summary>Distinguishes multiple components with the same semantic,
+		/// like TEXCOORD0 vs TEXCOORD1. Usually 0.</summary>
+		public int          SemanticSlot { get => _semanticSlot;           set => _semanticSlot = (byte)value; }
+
+		/// <summary>Describes a single vertex component.</summary>
+		/// <param name="semantic">What this component means, this is matched
+		/// with the shader's vertex input semantics.</param>
+		/// <param name="format">The data format of a single element of this
+		/// component.</param>
+		/// <param name="count">How many format elements this component has,
+		/// 1-4. A float3 position would be 3.</param>
+		/// <param name="semanticSlot">Distinguishes multiple components with
+		/// the same semantic, like TEXCOORD0 vs TEXCOORD1.</param>
+		public VertComponent(VertSemantic semantic, VertFmt format, int count, int semanticSlot = 0)
+		{
+			_format       = (byte)format;
+			_count        = (byte)count;
+			_semantic     = (byte)semantic;
+			_semanticSlot = (byte)semanticSlot;
+		}
+	}
+
+	/// <summary>A single keyboard input event, either a key press, a key
+	/// release, or one codepoint of insertable text. Events preserve the exact
+	/// order they were produced in, including how text and keys interleave.
+	/// </summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct KeyboardEvent
+	{
+		/// <summary>What kind of event this is, and which of the fields below
+		/// apply.</summary>
+		public KeyboardEventType type;
+		/// <summary>The key for press and release events, and none for text
+		/// events. Mouse buttons arrive here too, as the mouse key values.
+		/// </summary>
+		public Key key;
+		/// <summary>The modifier keys held when this event was produced. A
+		/// modifier's own press event includes itself, its release event does
+		/// not.</summary>
+		public KeyMod modifiers;
+		// The raw UTF-32 codepoint stays private so readers go through Text,
+		// where a (char) cast can't truncate codepoints past the BMP.
+		private uint character;
+
+		/// <summary>This event's text, as a string. Emoji and other codepoints
+		/// outside the Basic Multilingual Plane don't fit in a single C# char,
+		/// so this is the safe way to read one. Empty for key events.</summary>
+		public string Text => type == KeyboardEventType.Text
+			? char.ConvertFromUtf32((int)character)
+			: "";
 	}
 
 }

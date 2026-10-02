@@ -7,6 +7,13 @@
 
 namespace sk {
 
+// Internal only, an attachment resolved in-pass and never read. Drops every
+// usage bit but COLOR_ATTACHMENT, and reading one is a validation error.
+const tex_type_ tex_type_transient_internal = (tex_type_)(1 << 30);
+// Internal only, an attachment that's never sampled, so it stays in its
+// ATTACHMENT_OPTIMAL layout between passes. XR swapchain images need this.
+const tex_type_ tex_type_attachment_internal = (tex_type_)(1 << 29);
+
 struct _tex_t {
 	asset_header_t   header;
 	tex_t            fallback;
@@ -27,9 +34,16 @@ struct _tex_t {
 	int32_t          anisotropy;
 	skr_tex_t        gpu_tex;
 	tex_t            depth_buffer;
-	spherical_harmonics_t *light_info;
+	spherical_harmonics_t *light_info; // owned lighting cache, texture.cpp only
+	skr_buffer_t     sh_buffer;  // SH projection result, GPU side
+	skr_future_t     sh_future;  // completes when sh_buffer is readable
+	bool32_t         sh_pending; // readback pending, resolved lazily on query
+	bool32_t         sh_dirty;   // content changed; queries kick a refresh
 };
 
-void tex_destroy(tex_t texture);
+void tex_destroy       (tex_t texture);
+// GPU writes bypass the upload path, so systems that render into a texture
+// call this to flag a cubemap's cached lighting for a background refresh.
+void tex_lighting_dirty(tex_t texture);
 
 } // namespace sk

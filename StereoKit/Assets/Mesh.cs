@@ -174,6 +174,51 @@ namespace StereoKit
 		public void SetData(Vertex[] vertices, uint[] indices, MeshData flags, int priority = 0)
 			=> NativeAPI.mesh_set_data(_inst, vertices, vertices?.Length ?? 0, indices, indices.Length, flags, priority);
 
+		/// <summary>Assigns vertices with a custom vertex format along with
+		/// face indices for this Mesh in a single call! The format is derived
+		/// from T's [VertComponent] tagged fields, see SetVerts for details.
+		///
+		/// Calling SetData is slightly more efficient than calling SetVerts
+		/// and SetInds separately.</summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
+		/// </param>
+		/// <param name="indices">A list of face indices, must be a multiple of
+		/// 3. Each index represents a vertex from the provided vertex array.
+		/// </param>
+		/// <param name="calculateBounds">If true, this will also update the
+		/// Mesh's bounds based on the vertices provided. This requires the
+		/// format to contain a float3 position component.</param>
+		public void SetData<T>(T[] vertices, uint[] indices, bool calculateBounds = true) where T : unmanaged
+			=> SetData(vertices, indices, calculateBounds ? MeshData.CalcBounds : MeshData.None, 0);
+
+		/// <summary>Assigns vertices with a custom vertex format along with
+		/// face indices for this Mesh in a single call, with control over
+		/// upload behavior via flags! Upload is synchronous by default — pass
+		/// MeshData.Async for background upload. The format is derived from
+		/// T's [VertComponent] tagged fields, see SetVerts for details.
+		/// </summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
+		/// </param>
+		/// <param name="indices">A list of face indices, must be a multiple of
+		/// 3. Each index represents a vertex from the provided vertex array.
+		/// </param>
+		/// <param name="flags">Flags controlling upload behavior. See
+		/// MeshData for options.</param>
+		/// <param name="priority">Loading priority for async upload. Lower
+		/// values load sooner.</param>
+		public void SetData<T>(T[] vertices, uint[] indices, MeshData flags, int priority = 0) where T : unmanaged
+		{
+			VertComponent[] format = VertLayout<T>.Components;
+			if (vertices == null)
+			{
+				NativeAPI.mesh_set_data_fmt(_inst, format, format.Length, IntPtr.Zero, 0, indices, indices.Length, flags, priority);
+				return;
+			}
+			GCHandle pin = GCHandle.Alloc(vertices, GCHandleType.Pinned);
+			try     { NativeAPI.mesh_set_data_fmt(_inst, format, format.Length, pin.AddrOfPinnedObject(), vertices.Length, indices, indices.Length, flags, priority); }
+			finally { pin.Free(); }
+		}
+
 		/// <summary>Assigns the vertices for this Mesh! This will create a
 		/// vertex buffer object on the graphics card. If you're
 		/// calling this a second time, the buffer will be marked as dynamic
@@ -200,7 +245,7 @@ namespace StereoKit
 		/// <summary>This marshalls the Mesh's vertex data into an array. If
 		/// KeepData is false, then the Mesh is _not_ storing verts on the CPU,
 		/// and this information will _not_ be available.
-		/// 
+		///
 		/// Due to the way marshalling works, this is _not_ a cheap function!
 		/// </summary>
 		/// <returns>An array of vertices representing the Mesh, or null if
@@ -216,6 +261,67 @@ namespace StereoKit
 			// AHHHHHH
 			for (uint i = 0; i < size; i++)
 				result[i] = Marshal.PtrToStructure<Vertex>(new IntPtr(ptr.ToInt64() + (szStruct * i)));
+			return result;
+		}
+
+		/// <summary>Assigns vertices with a custom vertex format to this Mesh!
+		/// The format is derived from T's fields, each of which must be tagged
+		/// with a [VertComponent] attribute describing what it is. The shader
+		/// this Mesh is drawn with must be one that works with the components
+		/// this format provides, StereoKit's built-in shaders all expect
+		/// position, normal, texcoord and color.
+		///
+		/// A T that doesn't exactly describe its own memory layout will throw
+		/// an ArgumentException here, see [VertComponent] docs for the rules.
+		/// </summary>
+		/// <param name="vertices">An array of vertices to add to the mesh.
+		/// </param>
+		/// <param name="calculateBounds">If true, this will also update the
+		/// Mesh's bounds based on the vertices provided. This requires the
+		/// format to contain a float3 position component.</param>
+		public void SetVerts<T>(T[] vertices, bool calculateBounds = true) where T : unmanaged
+		{
+			VertComponent[] format = VertLayout<T>.Components;
+			GCHandle        pin    = GCHandle.Alloc(vertices, GCHandleType.Pinned);
+			try     { NativeAPI.mesh_set_verts_fmt(_inst, format, format.Length, pin.AddrOfPinnedObject(), vertices.Length, calculateBounds); }
+			finally { pin.Free(); }
+		}
+
+		/// <summary>This marshalls the vertex data of a custom format Mesh
+		/// into an array of T. T's [VertComponent] derived format must exactly
+		/// match the format the Mesh was created with, and KeepData must be
+		/// true for vertex data to be available.
+		///
+		/// Due to the way marshalling works, this is _not_ a cheap function!
+		/// </summary>
+		/// <returns>An array of vertices representing the Mesh, or null if
+		/// KeepData is false.</returns>
+		public T[] GetVerts<T>() where T : unmanaged
+		{
+			NativeAPI.mesh_get_verts_fmt(_inst, out IntPtr fmtPtr, out int fmtCount, out IntPtr dataPtr, out int count, Memory.Reference);
+			if (dataPtr == IntPtr.Zero)
+				return null;
+
+			VertComponent[] expected = VertLayout<T>.Components;
+			if (fmtCount != expected.Length)
+				throw new InvalidOperationException($"This Mesh's vertex format has {fmtCount} components, but {typeof(T).Name} describes {expected.Length}!");
+			int szComp = Marshal.SizeOf(typeof(VertComponent));
+			for (int i = 0; i < fmtCount; i++)
+			{
+				VertComponent comp = Marshal.PtrToStructure<VertComponent>(new IntPtr(fmtPtr.ToInt64() + (szComp * i)));
+				if (comp.Format   != expected[i].Format   || comp.Count        != expected[i].Count ||
+					comp.Semantic != expected[i].Semantic || comp.SemanticSlot != expected[i].SemanticSlot)
+					throw new InvalidOperationException($"This Mesh's vertex format doesn't match component {i} of {typeof(T).Name}!");
+			}
+
+			// Bulk copy the raw bytes across via a pinned destination array.
+			T[]      result = new T[count];
+			int      bytes  = count * Marshal.SizeOf<T>();
+			byte[]   buffer = new byte[bytes];
+			Marshal.Copy(dataPtr, buffer, 0, bytes);
+			GCHandle pin    = GCHandle.Alloc(result, GCHandleType.Pinned);
+			try     { Marshal.Copy(buffer, 0, pin.AddrOfPinnedObject(), bytes); }
+			finally { pin.Free(); }
 			return result;
 		}
 
@@ -423,6 +529,48 @@ namespace StereoKit
 		/// from Model Space into the current Hierarchy Space.</param>
 		public void Draw(Material material, Matrix transform)
 			=> NativeAPI.render_add_mesh(_inst, material._inst, transform, Color.White, RenderLayer.Layer0);
+
+		/// <summary>Loads a single Mesh from a .stl, .ply (ASCII), or .svg
+		/// file. These are formats that hold one mesh and no materials, so
+		/// unlike Model there's no scene to unpack. Anything richer, like
+		/// .obj or .gltf, needs to come in through Model.FromFile. Loading
+		/// happens asynchronously, so the Mesh returns right away and draws
+		/// nothing until it finishes. Check AssetState or OnLoaded if you
+		/// need to know when, and note that Bounds stays empty until then.
+		/// 
+		/// SVG files become flat, vertex colored geometry, see the "Working
+		/// with 3D Assets" guide for what's supported and how they're sized.
+		/// </summary>
+		/// <param name="file">A mesh file, an absolute filename, or a
+		/// filename relative to the assets folder.</param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading sooner.
+		/// </param>
+		/// <returns>A Mesh asset, or null if the file type is unrecognized!
+		/// A file that exists but fails to load returns a Mesh in an error
+		/// AssetState instead.</returns>
+		public static Mesh FromFile(string file, int loadPriority = 10)
+		{
+			IntPtr inst = NativeAPI.mesh_create_file(file, loadPriority);
+			return inst == IntPtr.Zero ? null : new Mesh(inst);
+		}
+
+		/// <summary>Loads a single Mesh from the contents of a .stl, .ply
+		/// (ASCII), or .svg file already in memory. This behaves
+		/// exactly like Mesh.FromFile.</summary>
+		/// <param name="filename">A filename or extension used to pick the
+		/// format, like "logo.svg" or ".stl".</param>
+		/// <param name="data">The contents of the mesh file.</param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading sooner.
+		/// </param>
+		/// <returns>A Mesh asset, or null if the file type is unrecognized!
+		/// </returns>
+		public static Mesh FromMemory(string filename, in byte[] data, int loadPriority = 10)
+		{
+			IntPtr inst = NativeAPI.mesh_create_mem(filename, data, (UIntPtr)data.Length, loadPriority);
+			return inst == IntPtr.Zero ? null : new Mesh(inst);
+		}
 
 		/// <summary>Generates a plane on the XZ axis facing up that is
 		/// optionally subdivided, pre-sized to the given dimensions. UV

@@ -8,6 +8,8 @@
 
 #include "../stereokit.h"
 
+typedef struct ska_window_t ska_window_t;
+
 namespace sk {
 
 bool          input_init               ();
@@ -16,7 +18,7 @@ void          input_step               ();
 void          input_step_late          ();
 
 void          input_update_poses       ();
-void          input_mouse_override_pos (vec2 override_pos);
+void          input_mouse_set_window   (ska_window_t* window);
 controller_t* input_controller_ref     (handed_ handed);
 void          input_controller_menu_set(button_state_ state);
 bool          input_controller_key     (handed_ hand, controller_key_ key, float* out_amount);

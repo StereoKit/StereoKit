@@ -12,6 +12,7 @@
 #include "../../_stereokit.h"
 #include "../../systems/render.h"
 #include "../../asset_types/mesh_.h"
+#include "../../systems/vert_format.h"
 #include <float.h>
 
 #define XR_EXT_FUNCTIONS( X )              \
@@ -330,7 +331,7 @@ void oxr_su_update_meshes(array_t<scene_mesh_t> *mesh_list) {
 		for (uint32_t v = 0; v < v_count; v++) {
 			local.verts_tmp[v] = { *(vec3 *)&v_buffer.vertices[v], {0,1,0}, {}, {255,255,255,255} };
 		}
-		mesh_calculate_normals(local.verts_tmp.data, v_count, i_buffer.indices, i_count);
+		mesh_calculate_normals(VERT_FORMAT_DEFAULT, local.verts_tmp.data, v_count, i_buffer.indices, i_count);
 		mesh_set_keep_data(mesh.mesh, local.scene_last_req.raycast);
 		mesh_set_data     (mesh.mesh, local.verts_tmp.data, v_count, i_buffer.indices, i_count);
 	}

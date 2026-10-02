@@ -111,10 +111,23 @@ bool font_is_valid_extension(const char *filename) {
 int32_t font_source_add_internal(const char *name, id_hash_t hash, void *file_data) {
 	int32_t id = font_sources.index_where(&font_source_t::name_hash, hash);
 
-	// Already loaded and valid
 	if (id != -1) {
-		font_sources[id].references += 1;
-		sk_free(file_data);
+		font_source_t *src = &font_sources[id];
+		if (src->references > 0) {
+			// Already loaded and live, share it.
+			src->references += 1;
+			sk_free(file_data);
+			return id;
+		}
+		// A released slot keeps its hash but freed its data. Revive it in
+		// place so ids stay stable across load/release (and re-init).
+		src->name       = string_copy(name);
+		src->file       = file_data;
+		src->references  = 1;
+		if (!font_source_load_data(src)) {
+			font_source_release(id);
+			return -1;
+		}
 		return id;
 	}
 
@@ -220,7 +233,9 @@ void font_source_release(int32_t id) {
 		sk_free(font_sources[id].file);
 		sk_free(font_sources[id].name);
 		font_sources[id].file = nullptr;
+		font_sources[id].name = nullptr;
 		font_sources[id].info = {};
+		// name_hash lingers so the slot's id stays reusable; revive reloads it.
 	}
 }
 
@@ -752,6 +767,14 @@ font_t font_create_family(const char* font_family) {
 
 	free(info);
 	tokens.free();
+
+	// A family asks for _a_ font rather than a specific file, so nothing
+	// resolving is a reason to fall back to the builtin, not to fail.
+	if (result->font_ids.count == 0) {
+		log_infof("Font family '%s' matched no valid fonts, using the builtin font.", font_family);
+		int32_t id = font_source_add_token({ {}, fam_kind_builtin });
+		if (id >= 0) result->font_ids.add(id);
+	}
 
 	if (!font_setup(result)) {
 		font_release(result);

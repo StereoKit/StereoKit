@@ -9,7 +9,6 @@
 #include "../stereokit_ui.h"
 #include "../sk_math.h"
 #include "../libraries/array.h"
-#include "../libraries/unicode.h"
 #include "../libraries/stref.h"
 #include "../platforms/platform.h"
 
@@ -81,15 +80,15 @@ void virtualkeyboard_initialize() {
 
 	////// Text keyboard //////
 	layouts[0] =
-R"(`-`-192|1-1-49|2-2-50|3-3-51|4-4-52|5-5-53|6-6-54|7-7-55|8-8-56|9-9-57|0-0-48|\--\--189|=-=-187|spr:sk/ui/backspace-\b-8-3|spr:sk/ui/close----close
-Tab-\t-9-3|q-q-81|w-w-87|e-e-69|r-r-82|t-t-84|y-y-89|u-u-85|i-i-73|o-o-79|p-p-80|[-[-219|]-]-221|\\-\\-220
-Enter-\n-13-4|a-a-65|s-s-83|d-d-68|f-f-70|g-g-71|h-h-72|j-j-74|k-k-75|l-l-76|;-;-186|'-'-222|Enter-\r-13-3
+R"(`-`-192|1-1-49|2-2-50|3-3-51|4-4-52|5-5-53|6-6-54|7-7-55|8-8-56|9-9-57|0-0-48|\--\--189|=-=-187|spr:sk/ui/backspace--8-3|spr:sk/ui/close----close
+Tab--9-3|q-q-81|w-w-87|e-e-69|r-r-82|t-t-84|y-y-89|u-u-85|i-i-73|o-o-79|p-p-80|[-[-219|]-]-221|\\-\\-220
+Enter-\n--4|a-a-65|s-s-83|d-d-68|f-f-70|g-g-71|h-h-72|j-j-74|k-k-75|l-l-76|;-;-186|'-'-222|Enter--13-3
 spr:sk/ui/shift--16-5-visit_1|z-z-90|x-x-88|c-c-67|v-v-86|b-b-66|n-n-78|m-m-77|,-,-188|.-.-190|/-/-191|spr:sk/ui/shift--16-2-visit_1|spr:sk/ui/arrow_up--38
 Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	layouts[1] =
-R"(~-~-192|!-!-49|@-@-50|#-#-51|$-$-52|%-%-53|^-^-54|&-&-55|*-*-56|(-(-57|)-)-48|_-_-189|+-+-187|spr:sk/ui/backspace-\b-8-3|spr:sk/ui/close----close
-Tab-\t-9-3|Q-Q-81|W-W-87|E-E-69|R-R-82|T-T-84|Y-Y-89|U-U-85|I-I-73|O-O-79|P-P-80|{-{-219|}-}-221|\|-\|-220
-Enter-\n-13-4|A-A-65|S-S-83|D-D-68|F-F-70|G-G-71|H-H-72|J-J-74|K-K-75|L-L-76|:-:-186|"-"-222|Enter-\r-13-3
+R"(~-~-192|!-!-49|@-@-50|#-#-51|$-$-52|%-%-53|^-^-54|&-&-55|*-*-56|(-(-57|)-)-48|_-_-189|+-+-187|spr:sk/ui/backspace--8-3|spr:sk/ui/close----close
+Tab--9-3|Q-Q-81|W-W-87|E-E-69|R-R-82|T-T-84|Y-Y-89|U-U-85|I-I-73|O-O-79|P-P-80|{-{-219|}-}-221|\|-\|-220
+Enter-\n--4|A-A-65|S-S-83|D-D-68|F-F-70|G-G-71|H-H-72|J-J-74|K-K-75|L-L-76|:-:-186|"-"-222|Enter--13-3
 spr:sk/ui/shift--16-5-go_0|Z-Z-90|X-X-88|C-C-67|V-V-86|B-B-66|N-N-78|M-M-77|<-<-188|>->-190|?-?-191|spr:sk/ui/shift--16-2-go_0|spr:sk/ui/arrow_up--38
 Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	platform_keyboard_set_layout(text_context_text,     layouts, 2);
@@ -97,25 +96,25 @@ Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr
 
 	////// URI keyboard //////
 	layouts[0] =
-R"(`-`-192|1-1-49|2-2-50|3-3-51|4-4-52|5-5-53|6-6-54|7-7-55|8-8-56|9-9-57|0-0-48|\--\--189|=-=-187|spr:sk/ui/backspace-\b-8-3|---2|spr:sk/ui/close----close
-Tab-\t-9-3|q-q-81|w-w-87|e-e-69|r-r-82|t-t-84|y-y-89|u-u-85|i-i-73|o-o-79|p-p-80|[-[-219|]-]-221|\\-\\-220|.com-.com--4
-Enter-\n-13-4|a-a-65|s-s-83|d-d-68|f-f-70|g-g-71|h-h-72|j-j-74|k-k-75|l-l-76|;-;-186|'-'-222|Enter-\r-13-3|.net-.net--4
+R"(`-`-192|1-1-49|2-2-50|3-3-51|4-4-52|5-5-53|6-6-54|7-7-55|8-8-56|9-9-57|0-0-48|\--\--189|=-=-187|spr:sk/ui/backspace--8-3|---2|spr:sk/ui/close----close
+Tab--9-3|q-q-81|w-w-87|e-e-69|r-r-82|t-t-84|y-y-89|u-u-85|i-i-73|o-o-79|p-p-80|[-[-219|]-]-221|\\-\\-220|.com-.com--4
+Enter-\n--4|a-a-65|s-s-83|d-d-68|f-f-70|g-g-71|h-h-72|j-j-74|k-k-75|l-l-76|;-;-186|'-'-222|Enter--13-3|.net-.net--4
 spr:sk/ui/shift--16-5-visit_1|z-z-90|x-x-88|c-c-67|v-v-86|b-b-66|n-n-78|m-m-77|,-,-188|.-.-190|/-/-191|spr:sk/ui/shift--16-2-visit_1|spr:sk/ui/arrow_up--38|https://-https://--4
 Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	layouts[1] =
-R"(~-~-192|!-!-49|@-@-50|#-#-51|$-$-52|%-%-53|^-^-54|&-&-55|*-*-56|(-(-57|)-)-48|_-_-189|+-+-187|spr:sk/ui/backspace-\b-8-3|---2|spr:sk/ui/close----close
-Tab-\t-9-3|Q-Q-81|W-W-87|E-E-69|R-R-82|T-T-84|Y-Y-89|U-U-85|I-I-73|O-O-79|P-P-80|{-{-219|}-}-221|\|-\|-220|.com-.com--4
-Enter-\n-13-4|A-A-65|S-S-83|D-D-68|F-F-70|G-G-71|H-H-72|J-J-74|K-K-75|L-L-76|:-:-186|"-"-222|Enter-\r-13-3|.net-.net--4
+R"(~-~-192|!-!-49|@-@-50|#-#-51|$-$-52|%-%-53|^-^-54|&-&-55|*-*-56|(-(-57|)-)-48|_-_-189|+-+-187|spr:sk/ui/backspace--8-3|---2|spr:sk/ui/close----close
+Tab--9-3|Q-Q-81|W-W-87|E-E-69|R-R-82|T-T-84|Y-Y-89|U-U-85|I-I-73|O-O-79|P-P-80|{-{-219|}-}-221|\|-\|-220|.com-.com--4
+Enter-\n--4|A-A-65|S-S-83|D-D-68|F-F-70|G-G-71|H-H-72|J-J-74|K-K-75|L-L-76|:-:-186|"-"-222|Enter--13-3|.net-.net--4
 spr:sk/ui/shift--16-5-go_0|Z-Z-90|X-X-88|C-C-67|V-V-86|B-B-66|N-N-78|M-M-77|<-<-188|>->-190|?-?-191|spr:sk/ui/shift--16-2-go_0|spr:sk/ui/arrow_up--38|https://-https://--4
 Ctrl--17-4-mod|Cmd--91-3|Alt--18-3-mod| - -32-9|Alt--18-3-mod|Ctrl--17-3-mod|spr:sk/ui/arrow_left--37|spr:sk/ui/arrow_down--40|spr:sk/ui/arrow_right--39|)";
 	platform_keyboard_set_layout(text_context_uri, layouts, 2);
 
 	////// Numeric keyboard //////
 	layouts[0] =
-R"(7|8|9|spr:sk/ui/backspace-\b
+R"(7|8|9|spr:sk/ui/backspace--8
 4|5|6|\-
 1|2|3
-0|.|Return-\r--4-close|)";
+0|.|Return--13-4-close|)";
 	layouts[1] = nullptr;
 	platform_keyboard_set_layout(text_context_number, layouts, 1);
 
@@ -124,20 +123,20 @@ R"(7|8|9|spr:sk/ui/backspace-\b
 	/*layout =
 R"(q|w|e|r|t|y|u|i|o|p
 ---1|a|s|d|f|g|h|j|k|l
-spr:sk/ui/shift---3-go_1|z|x|c|v|b|n|m|spr:sk/ui/backspace-\b--3
-spr:sk/ui/close----close|123---3-go_2|,| - --7|.|Return-\r--4|)";
+spr:sk/ui/shift---3-go_1|z|x|c|v|b|n|m|spr:sk/ui/backspace--8-3
+spr:sk/ui/close----close|123---3-go_2|,| - --7|.|Return--13-4|)";
 	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_ctx_root_text = keyboard_layers.add(layer);
 	layout =
 R"(Q|W|E|R|T|Y|U|I|O|P
 ---1|A|S|D|F|G|H|J|K|L
-spr:sk/ui/shift---3-go_0|Z|X|C|V|B|N|M|spr:sk/ui/backspace-\b--3
-spr:sk/ui/close----close|123---3-go_2|!| - --7|?|Return-\r--4|)";
+spr:sk/ui/shift---3-go_0|Z|X|C|V|B|N|M|spr:sk/ui/backspace--8-3
+spr:sk/ui/close----close|123---3-go_2|!| - --7|?|Return--13-4|)";
 	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);
 	layout =
 R"(1|2|3|4|5|6|7|8|9|0
 ---1|\-|/|:|;|(|)|$|&|@
-spr:sk/ui/shift---3-go_0|*|=|+|#|%|'|"|spr:sk/ui/backspace-\b--3
-spr:sk/ui/close----close|123---3-go_0|!| - --7|?|Return-\r--4|)";
+spr:sk/ui/shift---3-go_0|*|=|+|#|%|'|"|spr:sk/ui/backspace--8-3
+spr:sk/ui/close----close|123---3-go_0|!| - --7|?|Return--13-4|)";
 	if (virtualkeyboard_parse_layout(layout, strlen(layout), &layer)) keyboard_layers.add(layer);*/
 }
 
@@ -246,24 +245,13 @@ void virtualkeyboard_release_keys() {
 
 ///////////////////////////////////////////
 
-void submit_chars(const char *utf8) {
-	if (utf8 == nullptr) return;
-
-	char32_t c = 0;
-	while (utf8_decode_fast_b(utf8, &utf8, &c)) {
-		input_text_inject_char(c);
-	}
-}
-
-///////////////////////////////////////////
-
 void virtualkeyboard_keypress(keylayout_key_t key) {
 	if (key.key_event_type != key_none) {
 		local.pressed_keys.add((key_)key.key_event_type);
 		input_key_inject_press((key_)key.key_event_type);
 	}
 	if (local.modifier_keys.count == 0)
-		submit_chars(key.clicked_text);
+		input_text_inject(key.clicked_text);
 	virtualkeyboard_reset_modifiers();
 
 	if (local.visit_return_idx != -1) {
@@ -288,7 +276,7 @@ void virtualkeyboard_keymodifier(keylayout_key_t key, bool32_t modifier_state) {
 		if (modifier_state) input_key_inject_press  ((key_)key.key_event_type);
 		else                input_key_inject_release((key_)key.key_event_type);
 	}
-	if (modifier_state) submit_chars(key.clicked_text);
+	if (modifier_state) input_text_inject(key.clicked_text);
 }
 
 ///////////////////////////////////////////
@@ -410,6 +398,26 @@ bool next_separator(const char* start, int32_t start_len, const char **out_next,
 
 ///////////////////////////////////////////
 
+// Layouts from before the unified event queue put editing keys in the text
+// field, like "\b" for backspace. Text is insertable-only now, so translate
+// those to the key events they meant.
+static void virtualkeyboard_legacy_key(keylayout_key_t* key) {
+	if (key->clicked_text == nullptr || key->clicked_text[0] == '\0' || key->clicked_text[1] != '\0') return;
+
+	char c = key->clicked_text[0];
+	if (c == '\b' || c == '\r' || c == '\t') {
+		if (key->key_event_type == key_none)
+			key->key_event_type = (uint8_t)(c == '\b' ? key_backspace : c == '\r' ? key_return : key_tab);
+		if (key->clicked_text != key->display_text) sk_free(key->clicked_text);
+		key->clicked_text = nullptr;
+	} else if (c == '\n' && key->key_event_type == key_return) {
+		// The old UI ignored the key and inserted the newline, so text wins
+		key->key_event_type = key_none;
+	}
+}
+
+///////////////////////////////////////////
+
 bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, keylayout_info_t *out_layout) {
 	// File format is:
 	// '|' separates keys on a row
@@ -418,11 +426,16 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 	// KeyDisplay-KeySend-KeyPress-Width-Behavior
 	// KeyDisplay - The text displayed on the button, or parentheses for indicating
 	//              a sprite, eg: '(ui/sprite_close)'
-	// KeySend    - The text injected when the key is pressed. If not present, this
-	//              will be the same as the KeyDisplay, and if empty, this will not
-	//              submit any text
-	// KeyPress   - The key code to inject into the input system. This is none by
-	//              default.
+	// KeySend    - Insertable text injected when the key is pressed, and can be
+	//              more than one character, like '.com'. If not present, this
+	//              will be the same as the KeyDisplay, and if empty, this will
+	//              not submit any text. Editing keys like backspace and enter
+	//              belong in KeyPress instead, though a lone legacy control
+	//              character here is translated to its key code for
+	//              compatibility.
+	// KeyPress   - The key code to inject into the input system, which is how
+	//              editing keys like backspace (8) or enter (13) act on a text
+	//              field. This is none by default.
 	// Width      - The width of the key, in keyboard cells. 1 is half a cell, 2 is
 	//              a whole cell. This defaults to 2 if not specified.
 	// Behavior   - Special behavior for the key. 'close' will close the keyboard,
@@ -436,8 +449,8 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 	// 
 	// q|w|e|r|t|y|u|i|o|p
 	// ---1|a|s|d|f|g|h|j|k|l
-	// Shift---3-go_1|z|x|c|v|b|n|m|<\--\b--3
-	// X----close|123----go_2|,|- --7|.|Return-\n--4
+	// Shift---3-go_1|z|x|c|v|b|n|m|<\---8-3
+	// X----close|123----go_2|,|- --7|.|Return--13-4
 
 	// Fix escape characters, and transform our syntax characters into chars that
 	// won't get into our way. Count how many keys while we're at it :)
@@ -518,6 +531,7 @@ bool virtualkeyboard_parse_layout(const char* text_start, int32_t text_length, k
 				}
 				arg_idx++;
 			}
+			virtualkeyboard_legacy_key(&result[key_idx]);
 			key_idx += 1;
 		}
 		result[key_idx].special_key = skey_nextline;

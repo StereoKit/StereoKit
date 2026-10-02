@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<Target Name="StereoKit_BuildNative">
+		<Message Condition="!Exists('$(SKSDKCacheFile)')" Importance="high" Text="[StereoKit SDK] Configuring StereoKitC"/>
+		<Exec Condition="!Exists('$(SKSDKCacheFile)')" WorkingDirectory="$(SKSDKFolder)" Command="cmake --preset $(SKSDKPreset) -DSK_BUILD_TESTS=OFF" />
+		<Exec WorkingDirectory="$(SKSDKFolder)" Command="cmake --build --preset $(SKSDKPreset)" />
+	</Target>
+
+	<Target Name="StereoKit_CleanNative" Condition="Exists('$(SKSDKIntermediateDir)')">
+		<Message Importance="high" Text="[StereoKit SDK] Removing $(SKSDKIntermediateDir)"/>
+		<Exec Command="cmake -E rm -rf &quot;$(SKSDKIntermediateDir)&quot;" />
+	</Target>
+</Project>

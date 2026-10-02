@@ -21,6 +21,8 @@ bool  string_eq        (const char *a, const char *b);
 bool  string_eq_nocase (const char *a, const char *b);
 bool  string_endswith  (const char *a, const char *end, bool case_sensitive = true);
 bool  string_startswith(const char *a, const char *is);
+float string_to_float  (const char *str);
+char *string_from_float(float value, char *out_str, int32_t out_size, int32_t precision);
 
 bool     stref_equals  (const stref_t &ref, const char *is);
 bool     stref_equals  (const stref_t &a, const stref_t &b);

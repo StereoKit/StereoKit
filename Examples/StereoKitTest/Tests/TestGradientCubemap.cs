@@ -9,24 +9,25 @@ class TestGradientCubemap : ITest
 
 	public void Initialize()
 	{
-		oldSkyTex   = Renderer.SkyTex;
-		oldSkyLight = Renderer.SkyLight;
+		oldSkyTex   = Renderer.SkyboxTex;
+		oldSkyLight = Lighting.Ambient;
 
 		Gradient gradient = new Gradient(
 			new GradientKey(new Color(0.1f, 0.1f, 0.2f), 0.0f),
 			new GradientKey(new Color(0.4f, 0.6f, 0.9f), 0.5f),
 			new GradientKey(new Color(1.0f, 0.9f, 0.7f), 1.0f));
 
-		cubemap = Tex.GenCubemap(gradient, out lighting, Vec3.Up, 64);
+		cubemap  = Tex.GenCubemap(gradient, Vec3.Up, 64);
+		lighting = cubemap.CubemapLighting;
 
-		Renderer.SkyTex   = cubemap;
-		Renderer.SkyLight = lighting;
+		Renderer.SkyboxTex = cubemap;
+		Lighting.Ambient   = lighting;
 	}
 
 	public void Shutdown()
 	{
-		Renderer.SkyTex   = oldSkyTex;
-		Renderer.SkyLight = oldSkyLight;
+		Renderer.SkyboxTex = oldSkyTex;
+		Lighting.Ambient   = oldSkyLight;
 	}
 
 	public void Step()

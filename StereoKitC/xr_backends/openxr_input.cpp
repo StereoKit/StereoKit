@@ -293,7 +293,7 @@ xr_system_ oxri_init(void*) {
 	// Suggest all our input profiles
 	local.registration_finished = true;
 	// We can only submit one binding per interaction profile, so here we
-	// combine each uniqu top-level path belonging to the same interaction
+	// combine each unique top-level path belonging to the same interaction
 	// profile.
 
 	// Figure out all the unique interaction profiles
@@ -539,8 +539,15 @@ void oxri_update_poses() {
 		pose_t       pose   = input_pose_get_local((input_pose_)i);
 		// Orientation is updated before position so the poke offset below can
 		// use this frame's orientation.
-		if (tr_rot != track_state_lost)
+		if (tr_rot != track_state_lost) {
 			memcpy(&pose.orientation, &space_location.pose.orientation, sizeof(quat));
+
+			// Meta's grip_surface pose appears wrong compared to other runtimes!
+			if (openxr_get_known_runtime() == xr_runtime_meta) {
+				if      (i == input_pose_l_palm && input_controller_is_hand(handed_left )) pose.orientation = quat_from_angles(0, -90, 90) * pose.orientation;
+				else if (i == input_pose_r_palm && input_controller_is_hand(handed_right)) pose.orientation = quat_from_angles(0,  90, 90) * pose.orientation;
+			}
+		}
 		if (tr_pos != track_state_lost) {
 			memcpy(&pose.position, &space_location.pose.position, sizeof(vec3));
 

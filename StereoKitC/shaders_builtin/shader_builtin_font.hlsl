@@ -38,11 +38,14 @@ min16float4 ps(psIn input) : SV_TARGET {
 	float2 dy = ddy(input.uv); // manually calculate the per axis mip level, clamp to 0 to 1
 
 	// supersampled using 2x2 rotated grid
+	// The four taps are +-two vectors, which the compiler doesn't spot on its own.
 	const float2 uvOffsets = float2(0.125, 0.375);
-	min16float a = diffuse.SampleBias(diffuse_s, input.uv.xy + uvOffsets.x * dx + uvOffsets.y * dy, -1).r;
-	min16float b = diffuse.SampleBias(diffuse_s, input.uv.xy - uvOffsets.x * dx - uvOffsets.y * dy, -1).r;
-	min16float c = diffuse.SampleBias(diffuse_s, input.uv.xy + uvOffsets.y * dx - uvOffsets.x * dy, -1).r;
-	min16float d = diffuse.SampleBias(diffuse_s, input.uv.xy - uvOffsets.y * dx + uvOffsets.x * dy, -1).r;
+	float2 ofs_a = uvOffsets.x * dx + uvOffsets.y * dy;
+	float2 ofs_b = uvOffsets.y * dx - uvOffsets.x * dy;
+	min16float a = diffuse.SampleBias(diffuse_s, input.uv.xy + ofs_a, -1).r;
+	min16float b = diffuse.SampleBias(diffuse_s, input.uv.xy - ofs_a, -1).r;
+	min16float c = diffuse.SampleBias(diffuse_s, input.uv.xy + ofs_b, -1).r;
+	min16float d = diffuse.SampleBias(diffuse_s, input.uv.xy - ofs_b, -1).r;
 
 	min16float text_value = (a + b + c + d) * 0.25 * input.color.a;
 	clip(text_value-0.004); // .004 is 1/255, or one 8bit pixel value!

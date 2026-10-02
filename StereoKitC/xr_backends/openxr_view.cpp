@@ -23,6 +23,7 @@
 #include "../asset_types/texture.h"
 #include "../asset_types/texture_.h"
 #include "../systems/render.h"
+#include "../systems/frame_pacer.h"
 #include "../systems/render_pipeline.h"
 #include "../systems/input.h"
 #include "../systems/system.h"
@@ -382,6 +383,7 @@ bool32_t xr_view_type_valid(XrViewConfigurationType type) {
 ///////////////////////////////////////////
 
 void openxr_views_destroy() {
+	openxr_step_time_reset();
 	// Wait for all GPU work to complete before destroying swapchain resources.
 	// The textures have ImageViews/Framebuffers that may still be referenced
 	// by in-flight command buffers, and OpenXR swapchain images can't be
@@ -527,11 +529,11 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 			// application - they get destroyed when xrDestroySwapchain is
 			// called, so we pass owned=false here.
 			void *native_surface_col = (void*)sc_color->backbuffers[back].image;
-			tex_set_surface(sc_color->textures[back], native_surface_col, tex_type_rendertarget, xr_preferred_color_format, sc_color->width, sc_color->height, array_count, 1, false);
+			tex_set_surface(sc_color->textures[back], native_surface_col, (tex_type_)(tex_type_rendertarget | tex_type_attachment_internal), xr_preferred_color_format, sc_color->width, sc_color->height, array_count, 1, false);
 
 			if (has_depth_sc) {
 				void *native_surface_depth = (void*)sc_depth->backbuffers[back].image;
-				tex_set_surface(sc_depth->textures[back], native_surface_depth, tex_type_zbuffer, xr_preferred_depth_format, sc_depth->width, sc_depth->height, array_count, 1, false);
+				tex_set_surface(sc_depth->textures[back], native_surface_depth, (tex_type_)(tex_type_zbuffer | tex_type_attachment_internal), xr_preferred_depth_format, sc_depth->width, sc_depth->height, array_count, 1, false);
 				tex_set_zbuffer(sc_color->textures[back], sc_depth->textures[back]);
 			} else {
 				// Provide a write-only depth buffer for z-testing when
@@ -765,6 +767,17 @@ bool openxr_preferred_blend(XrViewConfigurationType view_type, display_blend_ pr
 
 ///////////////////////////////////////////
 
+// The app step runs before its frame's xrWaitFrame, so the next frame steps
+// by the gap between the last two reported display times, one frame behind
+// the display. A skipped frame shows up as a double step on the frame after.
+static XrTime xr_pace_prev = 0;  // predictedDisplayTime from the report before this one
+
+void openxr_step_time_reset() {
+	xr_pace_prev = 0;
+}
+
+///////////////////////////////////////////
+
 bool openxr_render_frame() {
 	profiler_zone();
 
@@ -826,14 +839,19 @@ bool openxr_render_frame() {
 	{
 		profiler_zone_name("xrBeginFrame");
 
-		xr_check(xrBeginFrame(xr_session, &begin_info),
+		uint32_t queue_family = skr_get_vk_graphics_queue_family();
+		skr_vk_queue_lock(queue_family);
+		XrResult begin_result = xrBeginFrame(xr_session, &begin_info);
+		skr_vk_queue_unlock(queue_family);
+		xr_check(begin_result,
 			"xrBeginFrame");
 	}
 
-	// Timing also needs some work, may be best as some sort of anchor system
 	xr_time = frame_state.predictedDisplayTime;
 	if (frame_state.predictedDisplayPeriod > 0)
 		device_data.display_refresh_rate = 1e9f / (float)frame_state.predictedDisplayPeriod;
+	frame_pacer_step((uint64_t)frame_state.predictedDisplayTime, (uint64_t)xr_pace_prev);
+	xr_pace_prev = frame_state.predictedDisplayTime;
 
 	// Meta's environment depth images are only valid when acquired during a running
 	// OpenXR frame (between xrBeginFrame and xrEndFrame)
@@ -946,7 +964,11 @@ bool openxr_render_frame() {
 	{
 		profiler_zone_name("xrEndFrame");
 
-		xr_check(xrEndFrame(xr_session, &end_info),
+		uint32_t queue_family = skr_get_vk_graphics_queue_family();
+		skr_vk_queue_lock(queue_family);
+		XrResult end_result = xrEndFrame(xr_session, &end_info);
+		skr_vk_queue_unlock(queue_family);
+		xr_check(end_result,
 			"xrEndFrame");
 	}
 	return true;
@@ -1048,13 +1070,21 @@ bool openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 	uint64_t                    dead_start   = stm_now();
 	uint32_t                    color_id;
 	XrSwapchainImageAcquireInfo acquire_info = { XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
-	if (XR_FAILED(xrAcquireSwapchainImage(display->swapchain_color.handle, &acquire_info, &color_id))) return false;
-	display->swapchain_color.acquired = true;
-	if (display->swapchain_depth.handle) {
-		uint32_t depth_id;
-		if (XR_FAILED(xrAcquireSwapchainImage(display->swapchain_depth.handle, &acquire_info, &depth_id))) return false;
-		display->swapchain_depth.acquired = true;
+
+	uint32_t queue_family = skr_get_vk_graphics_queue_family();
+	skr_vk_queue_lock(queue_family);
+	XrResult acquire_result = xrAcquireSwapchainImage(display->swapchain_color.handle, &acquire_info, &color_id);
+	if (XR_SUCCEEDED(acquire_result)) {
+		display->swapchain_color.acquired = true;
+		if (display->swapchain_depth.handle) {
+			uint32_t depth_id;
+			acquire_result = xrAcquireSwapchainImage(display->swapchain_depth.handle, &acquire_info, &depth_id);
+			if (XR_SUCCEEDED(acquire_result))
+				display->swapchain_depth.acquired = true;
+		}
 	}
+	skr_vk_queue_unlock(queue_family);
+	if (XR_FAILED(acquire_result)) return false;
 
 	// Wait until the image is available to render to. The compositor could
 	// still be reading from it.
@@ -1075,7 +1105,7 @@ bool openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 		render_pipeline_surface_set_resolve_target(display->render_surface, &display->swapchain_color.textures[color_id]->gpu_tex);
 	}
 	display->render_surface_tex = color_id;
-	render_pipeline_surface_set_clear(display->render_surface, color);
+	render_pipeline_surface_set_clear(display->render_surface, color, render_sky_covers(render_filter));
 	render_pipeline_surface_set_layer(display->render_surface, render_filter);
 
 	return true;
@@ -1086,8 +1116,11 @@ bool openxr_display_swapchain_acquire(device_display_t* display, color128 color,
 void openxr_display_swapchain_release(device_display_t *display) {
 	// And tell OpenXR we're done with rendering to this one!
 	XrSwapchainImageReleaseInfo release_info = { XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
+	uint32_t queue_family = skr_get_vk_graphics_queue_family();
+	skr_vk_queue_lock(queue_family);
 	if (display->swapchain_color.acquired) xrReleaseSwapchainImage(display->swapchain_color.handle, &release_info);
 	if (display->swapchain_depth.acquired) xrReleaseSwapchainImage(display->swapchain_depth.handle, &release_info);
+	skr_vk_queue_unlock(queue_family);
 	display->swapchain_color.acquired = false;
 	display->swapchain_depth.acquired = false;
 

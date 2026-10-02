@@ -5,8 +5,10 @@
 	    otherwise VS may add 'Remove' items when users add items to their
 		Assets folder.-->
 	<Target Name="StereoKit_ContentFind" AfterTargets="StereoKit_Properties" BeforeTargets="AssignTargetPaths">
+		<!--Excluding the shader output keeps scripting mode, which compiles into
+		    the asset folder, from adding those shaders twice.-->
 		<ItemGroup Condition="'$(SKCopyAssets)'=='True'">
-			<SKContent Include="$(SKAssetFolder)/**" />
+			<SKContent Include="$(SKAssetFolder)/**" Exclude="$(SKAssetShaderExclude)" />
 		</ItemGroup>
 	</Target>
 

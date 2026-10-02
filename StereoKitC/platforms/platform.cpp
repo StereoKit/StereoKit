@@ -12,6 +12,8 @@
 #include "../device.h"
 #include "../_stereokit.h"
 #include "../sk_memory.h"
+#include "../systems/vert_format.h"
+#include "../systems/render.h"
 #include "../sk_math.h"
 #include "../log.h"
 #include "../libraries/stref.h"
@@ -50,8 +52,9 @@
 using namespace sk;
 
 struct platform_state_t {
-	app_mode_ mode;
-	bool32_t  force_fallback_keyboard;
+	app_mode_     mode;
+	bool32_t      force_fallback_keyboard;
+	ska_window_t* window; // Null outside the windowed backends
 };
 static platform_state_t* local = {};
 
@@ -92,6 +95,14 @@ bool platform_init() {
 	local = sk_malloc_zero_t(platform_state_t, 1);
 	const sk_settings_t* settings = sk_get_settings_ref();
 
+	ska_callback_log([](ska_log_ level, const char* text, void*) {
+		switch (level) {
+		case ska_log_info:  log_diagf("[<~cyn>ska<~clr>] %s", text); break;
+		case ska_log_warn:  log_warnf("[<~cyn>ska<~clr>] %s", text); break;
+		case ska_log_error: log_errf ("[<~cyn>ska<~clr>] %s", text); break;
+		}
+	}, nullptr);
+
 	// Initialize sk_app for platform abstraction (file I/O, windowing, etc.)
 	// sk_app handles cross-platform window management and input for non-XR modes
 	ska_settings_t ska_settings = {};
@@ -120,9 +131,9 @@ bool platform_init() {
 	// Initialize graphics with sk_renderer
 	skr_callback_log([](skr_log_ level, const char *text) {
 		switch (level) {
-		case skr_log_info:     log_diagf("[<~ylw>sk_renderer<~clr>] %s", text); break;
-		case skr_log_warning:  log_warnf("[<~ylw>sk_renderer<~clr>] %s", text); break;
-		case skr_log_critical: log_errf ("[<~ylw>sk_renderer<~clr>] %s", text); break;
+		case skr_log_info:     log_diagf("[<~ylw>skr<~clr>] %s", text); break;
+		case skr_log_warning:  log_warnf("[<~ylw>skr<~clr>] %s", text); break;
+		case skr_log_critical: log_errf ("[<~ylw>skr<~clr>] %s", text); break;
 		}
 	});
 
@@ -165,6 +176,17 @@ bool platform_init() {
 	vk_extensions.free();
 	if (!skr_result) {
 		log_fail_reason(95, log_error, "Failed to initialize sk_renderer!");
+		return false;
+	}
+
+	// The app's multisample request is unvalidated until now, since snapping
+	// it to a real sample count needs the GPU's limits.
+	render_set_multisample(render_get_multisample());
+
+	// The vertex format registry wraps skr vertex types, and travels with
+	// skr's lifecycle — its shutdown pairs with skr_shutdown.
+	if (!vert_format_sys_init()) {
+		log_fail_reason(95, log_error, "Failed to initialize vertex formats!");
 		return false;
 	}
 
@@ -298,6 +320,44 @@ void platform_set_window_xam(void *window) {
 
 ///////////////////////////////////////////
 
+void platform_set_active_window(ska_window_t *window) {
+	local->window = window;
+}
+
+///////////////////////////////////////////
+
+// window_t is a borrowed ska_window_t*, and sk_app's functions tolerate null,
+// so a null handle from window_get_main flows through as a no-op.
+
+window_t window_get_main() {
+	return (window_t)local->window;
+}
+
+///////////////////////////////////////////
+
+// Only ever a request. X11 asks the window manager, web waits for a user
+// gesture, and Windows/macOS don't implement it yet, so window_get_fullscreen
+// reports what actually happened.
+void window_request_fullscreen(window_t window, bool32_t fullscreen) {
+	ska_window_set_fullscreen((ska_window_t*)window, fullscreen);
+}
+
+///////////////////////////////////////////
+
+bool32_t window_get_fullscreen(const window_t window) {
+	return window != nullptr && ska_window_get_fullscreen((ska_window_t*)window);
+}
+
+///////////////////////////////////////////
+
+void window_get_size(const window_t window, int32_t* out_width_px, int32_t* out_height_px) {
+	// sk_app skips the outputs on a null window, so zero them first.
+	*out_width_px  = 0;
+	*out_height_px = 0;
+	ska_window_get_drawable_size((ska_window_t*)window, out_width_px, out_height_px);
+}
+
+///////////////////////////////////////////
 
 bool32_t platform_keyboard_get_force_fallback() {
 	return local->force_fallback_keyboard;

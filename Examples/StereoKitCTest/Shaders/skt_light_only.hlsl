@@ -14,7 +14,7 @@ struct vsIn {
 	float4 pos  : SV_POSITION;
 	float3 norm : NORMAL;
 };
-struct psIn : sk_ps_input_t {
+struct psIn {
 	float4 pos   : SV_POSITION;
 	float3 world : TEXCOORD0;
 	float3 normal: NORMAL;

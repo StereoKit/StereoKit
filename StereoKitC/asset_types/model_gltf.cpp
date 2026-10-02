@@ -11,6 +11,7 @@
 #include "model.h"
 #include "material.h"
 #include "mesh_.h"
+#include "../systems/vert_format.h"
 #include "texture_.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
@@ -481,7 +482,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	}
 
 	if (!has_normals) {
-		mesh_calculate_normals(verts, vert_count, inds, (int32_t)ind_count);
+		mesh_calculate_normals(VERT_FORMAT_DEFAULT, verts, vert_count, inds, (int32_t)ind_count);
 	}
 
 	/*uint32_t* remap = sk_malloc_t(uint32_t, vert_count);

@@ -5,17 +5,21 @@
 		class Theme
 		{
 			public UISettings settings;
+			public float      fontSize;
 			public Color[]    colors;
 
 			public Theme Clone() => new Theme
 			{
 				settings = settings,
-				colors = (Color[])colors.Clone()
+				fontSize = fontSize,
+				colors   = (Color[])colors.Clone()
 			};
 
 			public void Apply()
 			{
 				UI.Settings = settings;
+				TextStyle style = UI.TextStyle;
+				style.LayoutHeight = fontSize;
 				for (int i = 0; i < colors.Length; i++)
 					UI.SetThemeColor((UIColor)i, colors[i]);
 			}
@@ -49,6 +53,8 @@ UI.Settings = new UISettings
 	depth    = {settings.depth:0.000}f,
 	rounding = {settings.rounding:0.000}f
 }};
+TextStyle uiStyle = UI.TextStyle;
+uiStyle.LayoutHeight = {fontSize:0.0000}f;
 UI.SetThemeColor(UIColor.Primary,    new Color({primary.r   :0.000}f,{primary.g   :0.000}f,{primary.b   :0.000}f));
 UI.SetThemeColor(UIColor.Background, new Color({background.r:0.000}f,{background.g:0.000}f,{background.b:0.000}f));
 UI.SetThemeColor(UIColor.Common,     new Color({common.r    :0.000}f,{common.g    :0.000}f,{common.b    :0.000}f));
@@ -61,6 +67,7 @@ UI.SetThemeColor(UIColor.Text,       new Color({text.r      :0.000}f,{text.g    
 			{
 				Theme result = new Theme();
 				result.settings = UI.Settings;
+				result.fontSize = UI.TextStyle.LayoutHeight;
 				result.colors   = new Color[(int)UIColor.Max];
 				for (int i = 0; i < result.colors.Length; i++)
 					result.colors[i] = UI.GetThemeColor((UIColor)i);
@@ -110,6 +117,8 @@ UI.SetThemeColor(UIColor.Text,       new Color({text.r      :0.000}f,{text.g    
 			UI.HSlider("sl_depth",    ref active.settings.depth,    0, 40 * U.mm, 0.001f);
 			UI.Label("Rounding", size); UI.SameLine();
 			UI.HSlider("sl_rounding", ref active.settings.rounding, 0, 40 * U.mm, 0.001f);
+			UI.Label("Font Size", size); UI.SameLine();
+			UI.HSlider("sl_font",     ref active.fontSize,          2 * U.mm, 40 * U.mm, 0.0005f);
 			UI.PanelEnd();
 
 			if (UI.Button("Log Theme Code")) Log.Info(active.ToCode());

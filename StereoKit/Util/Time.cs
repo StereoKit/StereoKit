@@ -3,7 +3,9 @@
 namespace StereoKit
 {
 	/// <summary>This class contains time information for the current session
-	/// and frame!</summary>
+	/// and frame! Where StereoKit can see the display's timing, steps and
+	/// totals follow when frames reach the screen rather than when their
+	/// code ran, so animation lands where the display shows it.</summary>
 	public static class Time
 	{
 		/// <summary> How many seconds have elapsed since StereoKit was
@@ -29,7 +31,10 @@ namespace StereoKit
 		public static ulong  Frame => NativeAPI.time_frame();
 
 		/// <summary> How many seconds have elapsed since the last frame? 64
-		/// bit time precision, calculated at the start of the frame.</summary>
+		/// bit time precision, calculated at the start of the frame. Where
+		/// StereoKit can see the display's timing, this is the gap between
+		/// when the previous frame and this one reach the screen, rather
+		/// than between when their code ran.</summary>
 		public static double Step => NativeAPI.time_step();
 		/// <summary> How many seconds have elapsed since the last frame? 32
 		/// bit time precision, calculated at the start of the frame.</summary>
@@ -55,7 +60,7 @@ namespace StereoKit
 		/// <param name="frameElapsedSeconds">How long was the previous frame?
 		/// This is a number often used in motion calculations. If left to
 		/// zero, it'll use the previous frame's time, and if the previous
-		/// frame's time was also zero, it'll use 1/90.</param>
+		/// frame's time was also zero, it'll use one display refresh.</param>
 		public static void SetTime(double totalSeconds, double frameElapsedSeconds = 0)
 			=> NativeAPI.time_set_time(totalSeconds, frameElapsedSeconds);
 
@@ -77,5 +82,13 @@ namespace StereoKit
 		/// Returns 0 if timing data is not yet available (first few
 		/// frames).</summary>
 		public static ulong PerfGPUus => NativeAPI.time_perf_gpu_us();
+
+		/// <summary>How frames have been reaching the display recently: the
+		/// latency from the last present call to its pixels, and how many
+		/// recent frames were shown twice. StereoKit paces itself against
+		/// the display in the Simulator and Window app modes, and this is
+		/// the readout of that. In XR the runtime owns presentation, and
+		/// Offscreen has no display, so both report zeros.</summary>
+		public static PresentStats PerfPresent => NativeAPI.time_perf_present();
 	}
 }

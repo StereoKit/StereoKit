@@ -22,12 +22,15 @@ static const float SH_C2_1 = 0.315391565252520050f;
 static const float SH_C2_2 = 1.092548430592079200f;
 static const float SH_C2_3 = 0.546274215296039590f;
 
-// CosWtInt normalization factor
-static const float PI = 3.14159265358979323846f;
-static const float fRet = PI / (0.25f + 0.5f);
+// Projection normalization: uniform radiance-1 environment reads exactly 1
+// from sh_lookup. Must match SH_PROJECT_NORM in spherical_harmonics.cpp.
+static const float PI   = 3.14159265358979323846f;
+static const float fRet = 4.0f;
 
-// Windowing factor to prevent SH ringing
-static const float WINDOW_WIDTH = 0.01f;
+// Irradiance convolution kernel, matching sh_lookup's CosineA constants.
+static const float COS_A0 = PI;
+static const float COS_A1 = (2.0f * PI) / 3.0f;
+static const float COS_A2 = PI * 0.25f;
 
 // Convert UV to cubemap direction for a face
 float3 uv_to_direction(float2 uv, uint face) {
@@ -65,19 +68,55 @@ void sh_add(inout float3 coeffs[9], float3 dir, float3 color) {
 	coeffs[8] += color * (SH_C2_3 * c2);
 }
 
-// Apply windowing to prevent ringing
-void sh_windowing(inout float3 coeffs[9]) {
+// Attenuate higher bands to suppress ringing
+void sh_windowing(inout float3 coeffs[9], float width) {
 	uint idx = 0;
 	for (int band = 0; band <= 2; band++) {
-		float s = 1.0f / (1.0f + WINDOW_WIDTH * band * band * (band + 1.0f) * (band + 1.0f));
+		float s = 1.0f / (1.0f + width * band * band * (band + 1.0f) * (band + 1.0f));
 		for (int m = -band; m <= band; m++) {
 			coeffs[idx++] *= s;
 		}
 	}
 }
 
-// Shared memory for reduction (9 coefficients * 64 threads)
+// Minimum of the irradiance reconstruction over 26 probe directions,
+// mirroring sh_lookup in spherical_harmonics.cpp.
+float sh_min_lookup(float3 c[9]) {
+	float lowest = 1e30;
+	for (int i = 0; i < 27; i++) {
+		int3 v = int3(i % 3, (i / 3) % 3, i / 9) - 1;
+		if (all(v == 0)) continue;
+		float3 n   = normalize(float3(v));
+		float3 val = c[0] * (0.282095f * COS_A0)
+			+ (c[1] * n.y + c[2] * n.z + c[3] * n.x)                    * (0.488603f * COS_A1)
+			+ (c[4] * n.x * n.y + c[5] * n.y * n.z + c[7] * n.x * n.z) * (1.092548f * COS_A2)
+			+  c[6] * (0.315392f * (3.0f * n.z * n.z - 1.0f) * COS_A2)
+			+  c[8] * (0.546274f * (n.x * n.x - n.y * n.y)   * COS_A2);
+		lowest = min(lowest, min(val.r, min(val.g, val.b)));
+	}
+	return lowest;
+}
+
+// Dering adaptively: widen the window only until the irradiance
+// reconstruction stops going negative, so well-behaved environments keep
+// their full directionality. Window scale is monotonic, bisection is valid.
+void sh_window_fit(inout float3 coeffs[9]) {
+	if (sh_min_lookup(coeffs) >= 0) return;
+	float lo = 0, hi = 4.0f;
+	for (int i = 0; i < 10; i++) {
+		float  mid = (lo + hi) * 0.5f;
+		float3 test[9];
+		for (uint j = 0; j < 9; j++) test[j] = coeffs[j];
+		sh_windowing(test, mid);
+		if (sh_min_lookup(test) >= 0) hi = mid;
+		else                          lo = mid;
+	}
+	sh_windowing(coeffs, hi);
+}
+
+// Shared memory for reduction (9 coefficients + weight sum, 64 threads)
 groupshared float3 sh_shared[9][64];
+groupshared float  w_shared[64];
 
 [numthreads(64, 1, 1)]
 void cs(uint local_idx : SV_GroupIndex) {
@@ -90,6 +129,7 @@ void cs(uint local_idx : SV_GroupIndex) {
 	for (uint i = 0; i < 9; i++) {
 		local_coeffs[i] = float3(0, 0, 0);
 	}
+	float local_weight = 0;
 
 	float half_px = 0.5f / (float)face_size;
 
@@ -106,16 +146,23 @@ void cs(uint local_idx : SV_GroupIndex) {
 		float u = (float)x / (float)face_size + half_px;
 		float v = (float)y / (float)face_size + half_px;
 
+		// Cube texels shrink in solid angle toward face corners; without this
+		// weight, corner directions count up to (sqrt(3))^3 = 5.2x too much.
+		float2 ndc    = float2(u, v) * 2.0 - 1.0;
+		float  weight = pow(1.0 + dot(ndc, ndc), -1.5);
+
 		float3 dir = uv_to_direction(float2(u, v), face);
 		float3 color = source.SampleLevel(source_s, dir, mip_level).rgb;
 
-		sh_add(local_coeffs, dir, color);
+		sh_add(local_coeffs, dir, color * weight);
+		local_weight += weight;
 	}
 
 	// Store to shared memory
 	for (uint i = 0; i < 9; i++) {
 		sh_shared[i][local_idx] = local_coeffs[i];
 	}
+	w_shared[local_idx] = local_weight;
 	GroupMemoryBarrierWithGroupSync();
 
 	// Parallel reduction
@@ -124,6 +171,7 @@ void cs(uint local_idx : SV_GroupIndex) {
 			for (uint i = 0; i < 9; i++) {
 				sh_shared[i][local_idx] += sh_shared[i][local_idx + stride];
 			}
+			w_shared[local_idx] += w_shared[local_idx + stride];
 		}
 		GroupMemoryBarrierWithGroupSync();
 	}
@@ -131,15 +179,14 @@ void cs(uint local_idx : SV_GroupIndex) {
 	// Thread 0 writes final result
 	if (local_idx == 0) {
 		float3 result[9];
-		float count = (float)total_pixels;
 
-		// Copy and normalize
+		// Copy and normalize by total solid-angle weight
 		for (uint i = 0; i < 9; i++) {
-			result[i] = sh_shared[i][0] / count;
+			result[i] = sh_shared[i][0] / w_shared[0];
 		}
 
 		// Apply windowing
-		sh_windowing(result);
+		sh_window_fit(result);
 
 		// Write output
 		for (uint i = 0; i < 9; i++) {

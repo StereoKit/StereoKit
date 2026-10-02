@@ -9,6 +9,7 @@
 #include "../sk_memory.h"
 #include "model.h"
 #include "mesh.h"
+#include "../systems/vert_format.h"
 #include "../libraries/stref.h"
 #include "../platforms/platform.h"
 
@@ -29,6 +30,7 @@ enum model_format_ {
 	model_format_obj,
 	model_format_stl,
 	model_format_ply,
+	model_format_svg,
 	model_format_none,
 };
 
@@ -59,6 +61,7 @@ static const model_fmt_t model_format_fns[] = {
 	{ modelfmt_obj_metadata,  modelfmt_obj_meshes,  modelfmt_obj_free  },
 	{ modelfmt_stl_metadata,  modelfmt_stl_meshes,  modelfmt_stl_free  },
 	{ modelfmt_ply_metadata,  modelfmt_ply_meshes,  modelfmt_ply_free  },
+	{ modelfmt_svg_metadata,  modelfmt_svg_meshes,  modelfmt_svg_free  },
 };
 
 static model_format_ model_get_format(const char *filename) {
@@ -68,6 +71,7 @@ static model_format_ model_get_format(const char *filename) {
 	else if (string_endswith(filename, ".obj",  false)) return model_format_obj;
 	else if (string_endswith(filename, ".stl",  false)) return model_format_stl;
 	else if (string_endswith(filename, ".ply",  false)) return model_format_ply;
+	else if (string_endswith(filename, ".svg",  false)) return model_format_svg;
 	return model_format_none;
 }
 
@@ -250,8 +254,8 @@ model_t model_create_mem(const char *filename, const void *data, size_t data_siz
 	memcpy(load->file_data, data, data_size);
 
 	static const asset_load_action_t actions[] = {
-		asset_load_action_t {model_load_metadata, asset_thread_asset},
-		asset_load_action_t {model_load_meshes,   asset_thread_asset},
+		model_load_metadata,
+		model_load_meshes,
 	};
 
 	asset_task_t task = {};
@@ -295,9 +299,9 @@ model_t model_create_file(const char *filename, shader_t shader, int32_t priorit
 	if (shader) shader_addref(shader);
 
 	static const asset_load_action_t actions[] = {
-		asset_load_action_t {model_load_file,     asset_thread_asset},
-		asset_load_action_t {model_load_metadata, asset_thread_asset},
-		asset_load_action_t {model_load_meshes,   asset_thread_asset},
+		model_load_file,
+		model_load_metadata,
+		model_load_meshes,
 	};
 
 	asset_task_t task = {};
@@ -368,11 +372,24 @@ void model_recalculate_bounds_exact(model_t model) {
 
 		XMMATRIX      transform_model = XMLoadFloat4x4((XMFLOAT4X4*)&vis->transform_model.row);
 		const mesh_t  mesh            = vis->mesh;
-		const vert_t* verts           = mesh->verts;
 
-		if (verts != nullptr) {
+		// Positions read through the vertex format, so custom formats get
+		// exact bounds too. No readable position falls back to the mesh's
+		// precalculated bounds.
+		const uint8_t* pos_at = nullptr;
+		if (mesh->verts != nullptr) {
+			vert_fmt_ pos_fmt   = vert_fmt_none;
+			int32_t   pos_count = 0;
+			int32_t   pos_off   = vert_format_semantic_offset(mesh->vert_format, vert_semantic_position, 0, &pos_fmt, &pos_count);
+			if (pos_off >= 0 && pos_fmt == vert_fmt_f32 && pos_count >= 3)
+				pos_at = (const uint8_t*)mesh->verts + pos_off;
+		}
+
+		if (pos_at != nullptr) {
 			for (uint32_t i = 0; i < mesh->vert_count; i += 1) {
-				XMVECTOR pt = matrix_mul_pointx(transform_model, verts[i].pos);
+				vec3 p;
+				memcpy(&p, pos_at + i*mesh->vert_stride, sizeof(p));
+				XMVECTOR pt = matrix_mul_pointx(transform_model, p);
 
 				min = XMVectorMin(min, pt);
 				max = XMVectorMax(max, pt);
@@ -695,14 +712,18 @@ model_node_id model_node_index(model_t, int32_t index) {
 
 ///////////////////////////////////////////
 
+// Visuals only exist once the meshes have been attached, which is the last
+// step of every loader, so these wait for the whole load.
 int32_t model_node_visual_count(model_t model){
-	assets_block_until(&model->header, asset_state_loaded_meta);
+	assets_block_until(&model->header, asset_state_loaded);
 	return model->visuals.count;
 }
 
 ///////////////////////////////////////////
 
 model_node_id model_node_visual_index(model_t model, int32_t index) {
+	assets_block_until(&model->header, asset_state_loaded);
+	if (index < 0 || index >= model->visuals.count) return -1;
 	return model->visuals[index].node;
 }
 

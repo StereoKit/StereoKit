@@ -13,7 +13,12 @@ struct _material_t {
 
 	// Cached state - most pipeline state now in gpu_mat.key (single source of truth)
 	transparency_     alpha_mode;  // Higher-level abstraction mapping to blend_state + alpha_to_coverage
-	
+
+	// Name-keyed [[vk::constant_id]] overrides, re-fed through every pipeline
+	// rebuild. Names point into the shader meta, which outlives the material.
+	skr_spec_constant_t spec_overrides[SKR_MAX_SPEC_CONSTANTS];
+	int32_t             spec_override_count;
+
 	// Per-resource tracking — single allocation, pointers index into it.
 	// Layout: [tex_t * N][uint64_t * N][compute_buffer_t * N]
 	tex_t*            textures;            // owns the allocation

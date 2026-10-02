@@ -101,6 +101,11 @@ void text_buffer_check_dirty_inds(text_buffer_t& buffer) {
 ///////////////////////////////////////////
 
 text_style_t text_make_style(font_t font, float layout_height, color128 color) {
+	if (font == nullptr) {
+		log_err("text_make_style was given a null font!");
+		return sk_default_text_style;
+	}
+
 	shader_t     shader   = shader_find        (default_id_shader_font);
 	material_t   material = material_create    (shader);
 	text_style_t result   = text_make_style_mat(font, layout_height, material, color);
@@ -119,6 +124,11 @@ text_style_t text_make_style(font_t font, float layout_height, color128 color) {
 ///////////////////////////////////////////
 
 text_style_t text_make_style_shader(font_t font, float layout_height, shader_t shader, color128 color) {
+	if (font == nullptr) {
+		log_err("text_make_style was given a null font!");
+		return sk_default_text_style;
+	}
+
 	material_t   material = material_create(shader);
 	text_style_t result   = text_make_style_mat(font, layout_height, material, color);
 
@@ -176,6 +186,7 @@ int32_t text_buffer_find(font_t font, material_t material, render_layer_ layer) 
 text_style_t text_make_style_mat(font_t font, float layout_height, material_t material, color128 color) {
 	if (font == nullptr) {
 		log_err("text_make_style was given a null font!");
+		return sk_default_text_style;
 	}
 
 	int32_t index = text_buffer_find(font, material, render_layer_vfx);

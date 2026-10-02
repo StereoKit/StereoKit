@@ -72,7 +72,9 @@ class DemoNodes : ITest
 		}
 		UI.HandleEnd();
 
-		if (radioSound.UnreadSamples < radioSoundBuffer.Length && radioPlay)
+		// Top up when playback has less than a chunk queued ahead of it -
+		// the voice's cursor is its absolute position in the stream.
+		if (radioPlay && radioSound.TotalSamples - (int)radioSoundInst.Cursor < radioSoundBuffer.Length)
 		{
 			for (int i = 0; i < radioSoundBuffer.Length; i++)
 			{

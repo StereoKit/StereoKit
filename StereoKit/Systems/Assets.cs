@@ -66,7 +66,11 @@ namespace StereoKit
 		/// <summary>A list of supported model format extensions. This pairs
 		/// pretty well with `Platform.FilePicker` when attempting to load a
 		/// `Model`!</summary>
-		public static readonly string[] ModelFormats = { ".gltf", ".glb", ".obj", ".stl", ".ply" };
+		public static readonly string[] ModelFormats = { ".gltf", ".glb", ".obj", ".stl", ".ply", ".svg" };
+		/// <summary>A list of file format extensions that `Mesh.FromFile`
+		/// can load, formats that hold a single mesh and no materials.
+		/// </summary>
+		public static readonly string[] MeshFormats  = { ".stl", ".ply", ".svg" };
 		/// <summary>A list of supported texture format extensions. This pairs
 		/// pretty well with `Platform.FilePicker` when attempting to load a
 		/// `Tex`!</summary>

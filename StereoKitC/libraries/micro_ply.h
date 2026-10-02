@@ -151,6 +151,13 @@ void ply_convert(const ply_file_t *file, const char *element_name, const ply_map
 #include <stdlib.h>
 #include <string.h>
 
+// Text decimals are parsed with atof by default. atof is locale-dependent (it
+// honors LC_NUMERIC's decimal separator), so a host project can override this
+// with a locale-independent parser by defining MICRO_PLY_ATOF before including.
+#ifndef MICRO_PLY_ATOF
+#define MICRO_PLY_ATOF(str) atof(str)
+#endif
+
 ///////////////////////////////////////////
 
 typedef enum ply_fmt_ {
@@ -317,7 +324,7 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 						get_word(line + off, word, sizeof(word));
 						off += strlen(word) + 1;
 						if      (p->type == ply_prop_uint)    { uint64_t val = atol(word); _ply_convert(list_data, p->list_bytes, p->list_type, (uint8_t*)&val, sizeof(uint64_t), ply_prop_uint   ); }
-						else if (p->type == ply_prop_decimal) { double   val = atof(word); _ply_convert(list_data, p->list_bytes, p->list_type, (uint8_t*)&val, sizeof(double  ), ply_prop_decimal); }
+						else if (p->type == ply_prop_decimal) { double   val = MICRO_PLY_ATOF(word); _ply_convert(list_data, p->list_bytes, p->list_type, (uint8_t*)&val, sizeof(double  ), ply_prop_decimal); }
 						else                                  { int64_t  val = atol(word); _ply_convert(list_data, p->list_bytes, p->list_type, (uint8_t*)&val, sizeof(int64_t ), ply_prop_int    ); }
 						list_data  += p->list_bytes;
 						list_count += 1;
@@ -361,7 +368,7 @@ bool ply_read(const void *file_data, size_t data_size, ply_file_t *out_file) {
 						const ply_prop_t* p = &el->properties[prop];
 						get_word(line + off, word, sizeof(word));
 						off += strlen(word) + 1;
-						if      (p->type == ply_prop_decimal) { double   val = atof(word); _ply_convert(data+p->offset, p->bytes, p->type, (uint8_t*)&val, sizeof(double  ), ply_prop_decimal); }
+						if      (p->type == ply_prop_decimal) { double   val = MICRO_PLY_ATOF(word); _ply_convert(data+p->offset, p->bytes, p->type, (uint8_t*)&val, sizeof(double  ), ply_prop_decimal); }
 						else if (p->type == ply_prop_int)     { int64_t  val = atol(word); _ply_convert(data+p->offset, p->bytes, p->type, (uint8_t*)&val, sizeof(int64_t ), ply_prop_int    ); }
 						else                                  { uint64_t val = atol(word); _ply_convert(data+p->offset, p->bytes, p->type, (uint8_t*)&val, sizeof(uint64_t), ply_prop_uint   ); }
 					}
