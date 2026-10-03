@@ -3855,7 +3855,7 @@ SK_API anchor_t              anchor_get_new_index            (int32_t index);
 /*A lightweight identifier for a spatial entity. These are never reused
   within a session, so a stale identifier will simply stop resolving
   once its entity is gone, and 0 is never a valid entity.*/
-typedef uint32_t spatial_entity_t;
+typedef uint64_t spatial_entity_t;
 
 /*A spatial capability is a unit of scene understanding functionality
   that a device may provide, such as plane tracking, or QR code
@@ -3947,7 +3947,9 @@ typedef enum plane_align_ {
 	plane_align_arbitrary       = 4,
 } plane_align_;
 
-/*A semantic category the system has assigned to a detected plane.*/
+/*A semantic category the system has assigned to a detected plane. If
+  the system reports a category StereoKit doesn't know yet, it arrives
+  as Uncategorized.*/
 typedef enum plane_label_ {
 	/*No label information available.*/
 	plane_label_none          = 0,
@@ -4063,8 +4065,11 @@ SK_API spatial_capability_   spatial_get_active              (void);
 
 SK_API int32_t               spatial_entity_get_count        (spatial_component_ with_components);
 SK_API spatial_entity_t      spatial_entity_get_index        (spatial_component_ with_components, int32_t index);
-SK_API int32_t               spatial_entity_get_new_count    (void);
-SK_API spatial_entity_t      spatial_entity_get_new_index    (int32_t index);
+SK_API int32_t               spatial_entity_get_new_count    (spatial_component_ with_components);
+SK_API spatial_entity_t      spatial_entity_get_new_index    (spatial_component_ with_components, int32_t index);
+SK_API int32_t               spatial_entity_get_removed_count(spatial_component_ with_components);
+SK_API spatial_entity_t      spatial_entity_get_removed_index(spatial_component_ with_components, int32_t index);
+SK_API spatial_entity_t      spatial_entity_find_persisted   (const uint8_t* uuid_16);
 SK_API bool32_t              spatial_entity_is_valid         (spatial_entity_t entity);
 SK_API button_state_         spatial_entity_get_tracked      (spatial_entity_t entity);
 SK_API spatial_component_    spatial_entity_get_components   (spatial_entity_t entity);
@@ -4074,7 +4079,8 @@ SK_API spatial_entity_t      spatial_entity_get_parent       (spatial_entity_t e
 SK_API bool32_t              spatial_entity_get_anchor       (spatial_entity_t entity, pose_t* out_pose);
 SK_API bool32_t              spatial_entity_get_bounds2d     (spatial_entity_t entity, pose_t* out_center, vec2* out_size);
 SK_API bool32_t              spatial_entity_get_bounds3d     (spatial_entity_t entity, pose_t* out_center, vec3* out_size);
-SK_API bool32_t              spatial_entity_get_plane        (spatial_entity_t entity, plane_align_* out_alignment, plane_label_* out_label);
+SK_API bool32_t              spatial_entity_get_plane_align  (spatial_entity_t entity, plane_align_* out_alignment);
+SK_API bool32_t              spatial_entity_get_plane_label  (spatial_entity_t entity, plane_label_* out_label);
 SK_API bool32_t              spatial_entity_get_mesh         (spatial_entity_t entity, mesh_t mesh, pose_t* out_origin);
 SK_API bool32_t              spatial_entity_get_mesh2d       (spatial_entity_t entity, mesh_t mesh, pose_t* out_origin);
 SK_API bool32_t              spatial_entity_get_polygon      (spatial_entity_t entity, pose_t* out_origin, const vec2** out_verts, int32_t* out_count);

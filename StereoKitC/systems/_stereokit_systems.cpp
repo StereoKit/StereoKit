@@ -35,7 +35,8 @@ bool stereokit_systems_register() {
 	system_t sys_platform_begin   = { "FrameBegin"  };
 	system_t sys_platform_render  = { "FrameRender" };
 
-	system_set_initialize_deps(sys_platform, "Assets");
+	// The XR backend registers with the spatial registry during Platform init
+	system_set_initialize_deps(sys_platform, "Assets", "Spatial");
 	system_set_step_deps      (sys_platform_render, "App", "Text", "Sprites", "Lines", "World", "UILate", "Animation");
 
 	sys_platform       .func_initialize = platform_init;

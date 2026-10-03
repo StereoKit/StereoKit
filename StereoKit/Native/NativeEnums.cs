@@ -2396,7 +2396,9 @@ namespace StereoKit
 		Arbitrary    = 4,
 	}
 
-	/// <summary>A semantic category the system has assigned to a detected plane.</summary>
+	/// <summary>A semantic category the system has assigned to a detected plane. If
+	/// the system reports a category StereoKit doesn't know yet, it arrives
+	/// as Uncategorized.</summary>
 	public enum PlaneLabel {
 		/// <summary>No label information available.</summary>
 		None         = 0,

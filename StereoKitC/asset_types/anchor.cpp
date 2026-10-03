@@ -38,7 +38,12 @@ bool anchors_init() {
 		return false;
 	}
 
-	if (spatial_anchors_available())
+	// Excluding a legacy anchor extension signals the app doesn't want
+	// Anchor running, so the spatial backend shouldn't stand in for it.
+	bool legacy_excluded =
+		ext_management_is_excluded(XR_MSFT_SPATIAL_ANCHOR_EXTENSION_NAME) ||
+		ext_management_is_excluded(XR_FB_SPATIAL_ENTITY_EXTENSION_NAME);
+	if (spatial_anchors_available() && !legacy_excluded)
 		anch_sys = anchor_system_spatial;
 	else if (xr_ext_msft_spatial_anchors_available())
 		anch_sys = anchor_system_openxr_msft;

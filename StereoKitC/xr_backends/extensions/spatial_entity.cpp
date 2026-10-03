@@ -145,6 +145,7 @@ struct slot_t {
 	bool                  discovery_queued;
 	bool                  destroy_after_create;
 	bool                  update_warned;
+	bool                  perm_warned;
 	array_t<ent_handle_t> handles;
 };
 
@@ -226,6 +227,25 @@ static spatial_tracking_ xr_to_sk_tracking(XrSpatialEntityTrackingStateEXT xr_st
 	case XR_SPATIAL_ENTITY_TRACKING_STATE_TRACKING_EXT: return spatial_tracking_tracking;
 	case XR_SPATIAL_ENTITY_TRACKING_STATE_PAUSED_EXT:   return spatial_tracking_paused;
 	default:                                            return spatial_tracking_stopped;
+	}
+}
+
+static plane_align_ xr_to_plane_align(XrSpatialPlaneAlignmentEXT xr_align) {
+	switch (xr_align) {
+	case XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_UPWARD_EXT:   return plane_align_horizontal_up;
+	case XR_SPATIAL_PLANE_ALIGNMENT_HORIZONTAL_DOWNWARD_EXT: return plane_align_horizontal_down;
+	case XR_SPATIAL_PLANE_ALIGNMENT_VERTICAL_EXT:            return plane_align_vertical;
+	default:                                                 return plane_align_arbitrary;
+	}
+}
+
+static plane_label_ xr_to_plane_label(XrSpatialPlaneSemanticLabelEXT xr_label) {
+	switch (xr_label) {
+	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_FLOOR_EXT:   return plane_label_floor;
+	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_WALL_EXT:    return plane_label_wall;
+	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_CEILING_EXT: return plane_label_ceiling;
+	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_TABLE_EXT:   return plane_label_table;
+	default:                                          return plane_label_uncategorized;
 	}
 }
 
@@ -322,6 +342,7 @@ static xr_system_ xr_spatial_initialize(void*) {
 		for (int32_t m = 0; m < cap_mapping_count; m++)
 			if (cap_mappings[m].xr_value == xr_caps[i]) { map_idx = m; break; }
 		if (map_idx == -1) continue;
+		if (!backend_openxr_ext_enabled(cap_mappings[map_idx].ext_name)) continue;
 
 		// Enumerate components for this capability
 		XrSpatialCapabilityComponentTypesEXT comp_types = { XR_TYPE_SPATIAL_CAPABILITY_COMPONENT_TYPES_EXT };
@@ -554,19 +575,26 @@ static void slot_begin_start(int32_t slot_idx) {
 
 	permission_type_  perm_type = cap_permission(cap);
 	permission_state_ perm      = permission_state(perm_type);
-	if (perm == permission_state_capable) {
-		if ((local.requested_perms & (1 << perm_type)) == 0) {
-			local.requested_perms |= 1 << perm_type;
-			permission_request(&perm_type, 1);
+	if (perm == permission_state_unavailable) {
+		log_warnf("Spatial %s tracking's permission is missing from the manifest", cap_mappings[slot_idx].name);
+		slot->state = slot_state_off;
+		return;
+	}
+	if (perm == permission_state_capable && (local.requested_perms & (1 << perm_type)) == 0) {
+		local.requested_perms |= 1 << perm_type;
+		permission_request(&perm_type, 1);
+	}
+	// A denial may still flip to granted if the app asks again, or the
+	// user changes it in settings, so keep waiting rather than giving up.
+	if (perm != permission_state_granted && perm != permission_state_unknown) {
+		if ((perm == permission_state_denied || perm == permission_state_blocked) && !slot->perm_warned) {
+			slot->perm_warned = true;
+			log_warnf("Spatial %s tracking is waiting on a denied permission", cap_mappings[slot_idx].name);
 		}
 		slot->state = slot_state_permission;
 		return;
 	}
-	if (perm != permission_state_granted && perm != permission_state_unknown) {
-		log_warnf("Spatial %s tracking is missing its permission", cap_mappings[slot_idx].name);
-		slot->state = slot_state_off;
-		return;
-	}
+	slot->perm_warned = false;
 
 	// Persistence contexts must be chained at spatial context creation,
 	// so persistence capable slots wait for them here.
@@ -1077,11 +1105,10 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 					in->anchor_pose = xr_to_pose(d_anchor[i]);
 					break;
 				case spatial_component_plane_alignment:
-					// XR value order matches plane_align_, offset by _none
-					in->plane_alignment = (plane_align_)(d_align[i] + 1);
+					in->plane_alignment = xr_to_plane_align(d_align[i]);
 					break;
 				case spatial_component_plane_label:
-					in->plane_label = (plane_label_)d_label[i];
+					in->plane_label = xr_to_plane_label(d_label[i]);
 					break;
 				case spatial_component_mesh:
 					in->mesh_origin = xr_to_pose(d_mesh[i].origin);
@@ -1253,7 +1280,7 @@ static void xr_spatial_destroy(spatial_entity_id_t id) {
 ///////////////////////////////////////////
 
 static void xr_spatial_persist(spatial_entity_id_t id) {
-	if (local.persist_write_ctx == XR_NULL_HANDLE) return;
+	if (local.persist_write_ctx == XR_NULL_HANDLE) { spatial_backend_persist_failed(id); return; }
 
 	// Find the context this entity belongs to
 	XrSpatialContextEXT context = XR_NULL_HANDLE;
@@ -1265,6 +1292,7 @@ static void xr_spatial_persist(spatial_entity_id_t id) {
 	}
 	if (context == XR_NULL_HANDLE) {
 		log_warn("spatial_entity_persist: entity not found");
+		spatial_backend_persist_failed(id);
 		return;
 	}
 
@@ -1276,6 +1304,7 @@ static void xr_spatial_persist(spatial_entity_id_t id) {
 	XrResult    result = xrPersistSpatialEntityAsyncEXT(local.persist_write_ctx, &info, &future);
 	if (XR_FAILED(result)) {
 		log_warnf("%s [%s]", "xrPersistSpatialEntityAsyncEXT", openxr_string(result));
+		spatial_backend_persist_failed(id);
 		return;
 	}
 
@@ -1286,6 +1315,7 @@ static void xr_spatial_persist(spatial_entity_id_t id) {
 		XrResult result = xrPersistSpatialEntityCompleteEXT(local.persist_write_ctx, future, &completion);
 		if (XR_FAILED(result) || XR_FAILED(completion.futureResult) || completion.persistResult != XR_SPATIAL_PERSISTENCE_CONTEXT_RESULT_SUCCESS_EXT) {
 			log_warnf("Persisting a spatial entity failed [%s, result %d]", openxr_string(XR_FAILED(result) ? result : completion.futureResult), (int)completion.persistResult);
+			spatial_backend_persist_failed(id);
 			return;
 		}
 		spatial_backend_set_persist(id, completion.persistUuid.data);

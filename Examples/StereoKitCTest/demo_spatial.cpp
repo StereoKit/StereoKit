@@ -128,9 +128,8 @@ void demo_spatial_update() {
 		spatial_entity_t entity  = spatial_entity_get_index(spatial_component_none, i);
 		bool32_t         tracked = (spatial_entity_get_tracked(entity) & button_state_active) != 0;
 
-		plane_align_ align = plane_align_none;
-		plane_label_ label = plane_label_none;
-		spatial_entity_get_plane(entity, &align, &label);
+		plane_label_ label;
+		spatial_entity_get_plane_label(entity, &label);
 		color32 col = tracked ? label_color(label) : color32{ 128,128,128,255 };
 
 		pose_t center = {};
@@ -197,6 +196,14 @@ void demo_spatial_update() {
 			if (it != demo_meshes.end())
 				render_add_mesh(it->second.mesh, demo_mesh_mat, pose_matrix(it->second.origin));
 		}
+	}
+
+	int32_t removed_count = spatial_entity_get_removed_count(spatial_component_none);
+	for (int32_t i = 0; i < removed_count; i++) {
+		auto it = demo_meshes.find(spatial_entity_get_removed_index(spatial_component_none, i));
+		if (it == demo_meshes.end()) continue;
+		mesh_release(it->second.mesh);
+		demo_meshes.erase(it);
 	}
 }
 

@@ -76,10 +76,11 @@ struct spatial_ingest_t {
 	uint8_t             persist_uuid[16];
 };
 
-// Capability requests from internal systems, kept separate from the
-// user's spatial_enable/disable so user calls can't turn them off.
-void spatial_enable_system (spatial_capability_ capabilities);
-void spatial_disable_system(spatial_capability_ capabilities);
+// Capability requests from internal systems. These stay on when the app
+// never mentions a capability, but an explicit spatial_disable wins.
+void     spatial_enable_system   (spatial_capability_ capabilities);
+void     spatial_disable_system  (spatial_capability_ capabilities);
+bool32_t spatial_is_user_disabled(spatial_capability_ capability);
 
 // Report what the backend can do. Called once at backend init.
 void spatial_backend_set_support  (spatial_capability_ caps);
@@ -108,7 +109,12 @@ uint32_t                spatial_backend_get_config_serial(spatial_capability_ ca
 void spatial_backend_set_persist_ops(void (*persist)(spatial_entity_id_t id), void (*unpersist)(spatial_entity_id_t id, const uint8_t* uuid_16));
 // Completion callbacks for the async persist/unpersist operations.
 void spatial_backend_set_persist    (spatial_entity_id_t id, const uint8_t* uuid_16);
+void spatial_backend_persist_failed (spatial_entity_id_t id);
 void spatial_backend_clear_persist  (spatial_entity_id_t id);
+
+// True for an entity leaving the list because of spatial_entity_destroy,
+// rather than being lost by the system.
+bool32_t spatial_entity_was_destroyed(spatial_entity_t entity);
 
 ///////////////////////////////////////////
 // Anchor asset backend                  //
@@ -120,6 +126,7 @@ bool32_t     spatial_anchors_available   ();
 bool32_t     spatial_anchors_init        ();
 void         spatial_anchors_shutdown    ();
 void         spatial_anchors_step        ();
+void         spatial_anchors_on_removed  (); // Called by spatial_step, before removed entities are freed
 anchor_t     spatial_anchors_create      (pose_t pose, const char* name_utf8);
 void         spatial_anchors_destroy     (anchor_t anchor);
 void         spatial_anchors_delete      (anchor_t anchor);

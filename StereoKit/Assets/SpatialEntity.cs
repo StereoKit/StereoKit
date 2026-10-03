@@ -28,9 +28,9 @@ namespace StereoKit
 	/// accessors return no data.</summary>
 	public readonly struct SpatialEntity : IEquatable<SpatialEntity>
 	{
-		internal readonly uint _id;
+		internal readonly ulong _id;
 
-		internal SpatialEntity(uint id) => _id = id;
+		internal SpatialEntity(ulong id) => _id = id;
 
 		/// <summary>Does this identifier currently resolve to an entity?
 		/// This becomes false once the entity permanently leaves the entity
@@ -40,7 +40,7 @@ namespace StereoKit
 		/// <summary>The raw identifier value, unique within the current
 		/// session and never reused. 0 is never a valid entity, and this
 		/// value works well as a dictionary key.</summary>
-		public uint Id => _id;
+		public ulong Id => _id;
 
 		/// <summary>Is the system actively tracking this entity? Component
 		/// data is always the entity's last known state, so when this is
@@ -54,7 +54,9 @@ namespace StereoKit
 		/// Continuously updating poses are only flagged when they first
 		/// arrive, while mesh/polygon/marker data is flagged whenever the
 		/// system provides new data. Handy for skipping expensive work like
-		/// mesh extraction when nothing changed.</summary>
+		/// mesh extraction when nothing changed. These flags reset every
+		/// frame, so check them each frame or you may miss an update.
+		/// </summary>
 		public SpatialComponent Changed => NativeAPI.spatial_entity_get_changed(_id);
 		/// <summary>The entity this entity is attached to. This is an
 		/// invalid entity if there's no parent, so check `Valid`.</summary>
@@ -88,15 +90,27 @@ namespace StereoKit
 		public bool TryGetBounds3D(out Pose center, out Vec3 size)
 			=> NativeAPI.spatial_entity_get_bounds3d(_id, out center, out size);
 
-		/// <summary>Plane information for this entity: its general
-		/// orientation, and a semantic category like floor or table. An
-		/// entity may have either or both, absent values come back as None.
+		/// <summary>The general orientation of a detected plane, like
+		/// horizontal or vertical. Plane tracking always provides this, so
+		/// it's a reliable fallback on devices that don't provide labels.
 		/// </summary>
-		/// <param name="alignment">The plane's general orientation.</param>
-		/// <param name="label">The plane's semantic category.</param>
-		/// <returns>False if this entity has neither plane component.</returns>
-		public bool TryGetPlane(out PlaneAlign alignment, out PlaneLabel label)
-			=> NativeAPI.spatial_entity_get_plane(_id, out alignment, out label);
+		/// <param name="alignment">The plane's general orientation, None if
+		/// unavailable.</param>
+		/// <returns>False if this entity has no plane alignment component.
+		/// </returns>
+		public bool TryGetPlaneAlign(out PlaneAlign alignment)
+			=> NativeAPI.spatial_entity_get_plane_align(_id, out alignment);
+
+		/// <summary>A semantic category for a detected plane, like floor or
+		/// table. Not all devices provide labels, so check
+		/// `ComponentsFor(SpatialCapability.PlaneTracking)`, and consider
+		/// `TryGetPlaneAlign` as a fallback.</summary>
+		/// <param name="label">The plane's semantic category, None if
+		/// unavailable.</param>
+		/// <returns>False if this entity has no plane label component.
+		/// </returns>
+		public bool TryGetPlaneLabel(out PlaneLabel label)
+			=> NativeAPI.spatial_entity_get_plane_label(_id, out label);
 
 		/// <summary>The entity's 3D mesh! Mesh vertices are relative to the
 		/// origin pose, which the system keeps aligned with the physical
@@ -196,29 +210,49 @@ namespace StereoKit
 		public Guid PersistId { get {
 			byte[] uuid = new byte[16];
 			return NativeAPI.spatial_entity_get_persist_id(_id, uuid)
-				? new Guid(uuid)
+				? new Guid(uuid, bigEndian: true)
 				: Guid.Empty;
 		} }
 
 		/// <summary>Ask the system to persist this entity, giving it a
 		/// durable identity that survives across sessions! This is
 		/// asynchronous: on success, `PersistId` becomes valid a few frames
-		/// later, and `Changed` flags the Persistence component. Requires a
+		/// later, and `Changed` flags the Persistence component. On failure,
+		/// a warning is logged and `PersistId` stays empty. Calling this
+		/// while a persist is already in flight does nothing. Requires a
 		/// system with persistence support, and currently only anchor
 		/// entities are persistable.</summary>
 		public void Persist() => NativeAPI.spatial_entity_persist(_id);
 
 		/// <summary>Remove this entity from persistent storage. Its
 		/// `PersistId` becomes invalid once the asynchronous operation
-		/// completes.</summary>
+		/// completes. If a `Persist` is still in flight, this waits for it
+		/// to land and then undoes it.</summary>
 		public void Unpersist() => NativeAPI.spatial_entity_unpersist(_id);
+
+		/// <summary>Finds the live entity with this PersistId, the usual way
+		/// to restore something you persisted in an earlier session.
+		/// Persisted entities arrive through discovery like any other, which
+		/// takes a moment at startup, so this returns an invalid entity until
+		/// then. Keep checking each frame rather than just once!</summary>
+		/// <param name="persistId">A `PersistId` saved from an earlier
+		/// session.</param>
+		/// <returns>The matching entity, or an invalid entity if it hasn't
+		/// been discovered. Check `Valid`.</returns>
+		public static SpatialEntity FromPersistId(Guid persistId)
+		{
+			byte[] uuid = new byte[16];
+			persistId.TryWriteBytes(uuid, bigEndian: true, out _);
+			return new SpatialEntity(NativeAPI.spatial_entity_find_persisted(uuid));
+		}
 
 		/// <summary>The spatial capabilities the current device supports!
 		/// This is None until an XR session with spatial entity support has
 		/// initialized.</summary>
 		public static SpatialCapability Capabilities => NativeAPI.spatial_capabilities();
-		/// <summary>The capabilities that have been requested via `Enable`.
-		/// </summary>
+		/// <summary>The capabilities that have been requested, via `Enable`
+		/// or by StereoKit systems like `Anchor`, minus any you've turned off
+		/// with `Disable`.</summary>
 		public static SpatialCapability Enabled => NativeAPI.spatial_get_enabled();
 		/// <summary>The capabilities that are fully warmed up and actively
 		/// providing entities. A subset of `Enabled`: capabilities take a
@@ -235,10 +269,12 @@ namespace StereoKit
 
 		/// <summary>Request tracking for these capabilities, additively!
 		/// This takes effect asynchronously: entities will appear in the
-		/// entity list as the system warms up and discovers them, and the
-		/// system may ask the user for permission first. Enabling or
+		/// entity list as the system warms up and discovers them. Enabling or
 		/// disabling one capability never disturbs entities belonging to
-		/// another.</summary>
+		/// another. If a capability needs a permission, this requests it
+		/// automatically as a fallback, but requesting it yourself in advance
+		/// via `Permission.Request` gives you control over when the user is
+		/// asked, and lets you handle a denial.</summary>
 		/// <param name="capabilities">One or more capabilities to enable.
 		/// Unsupported capabilities are ignored.</param>
 		public static void Enable(SpatialCapability capabilities)
@@ -261,7 +297,10 @@ namespace StereoKit
 
 		/// <summary>Stop tracking these capabilities. Their entities leave
 		/// the entity list, and any SpatialEntity identifiers you still
-		/// hold stop resolving.</summary>
+		/// hold stop resolving. This also overrides StereoKit's own use of a
+		/// capability: the `Anchor` system turns on `SpatialCapability.Anchor`
+		/// by itself, and calling this before `SK.Initialize` keeps `Anchor`
+		/// from using spatial entities at all.</summary>
 		/// <param name="capabilities">One or more capabilities to disable.</param>
 		public static void Disable(SpatialCapability capabilities)
 			=> NativeAPI.spatial_disable(capabilities);
@@ -277,19 +316,43 @@ namespace StereoKit
 		/// <summary>An enumeration of every spatial entity StereoKit
 		/// currently knows about. This list is maintained for you: entities
 		/// appear as the system discovers them, and leave when the system
-		/// permanently stops tracking them.</summary>
-		public static SpatialEntityCollection All => new SpatialEntityCollection(SpatialComponent.None, false);
+		/// permanently stops tracking them. An entity in `Removed` is still
+		/// in this list for its final frame.</summary>
+		public static SpatialEntityCollection All => new SpatialEntityCollection(SpatialComponent.None, SpatialEntityCollection.List.All);
 
 		/// <summary>An enumeration of the spatial entities that have data
 		/// for all the given components.</summary>
 		/// <param name="components">Components each entity must have.</param>
 		/// <returns>An enumeration of matching entities.</returns>
 		public static SpatialEntityCollection With(SpatialComponent components)
-			=> new SpatialEntityCollection(components, false);
+			=> new SpatialEntityCollection(components, SpatialEntityCollection.List.All);
 
 		/// <summary>An enumeration of the spatial entities that appeared
 		/// for the first time this frame.</summary>
-		public static SpatialEntityCollection New => new SpatialEntityCollection(SpatialComponent.None, true);
+		public static SpatialEntityCollection New => new SpatialEntityCollection(SpatialComponent.None, SpatialEntityCollection.List.New);
+
+		/// <summary>An enumeration of the spatial entities that appeared
+		/// for the first time this frame, and have data for all the given
+		/// components.</summary>
+		/// <param name="components">Components each entity must have.</param>
+		/// <returns>An enumeration of matching new entities.</returns>
+		public static SpatialEntityCollection NewWith(SpatialComponent components)
+			=> new SpatialEntityCollection(components, SpatialEntityCollection.List.New);
+
+		/// <summary>An enumeration of the spatial entities leaving the entity
+		/// list this frame, either lost by the system or destroyed. They're
+		/// still `Valid` with readable data for this one frame, which makes
+		/// this the place to clean up anything you've cached per-entity!
+		/// </summary>
+		public static SpatialEntityCollection Removed => new SpatialEntityCollection(SpatialComponent.None, SpatialEntityCollection.List.Removed);
+
+		/// <summary>An enumeration of the spatial entities leaving the entity
+		/// list this frame that have data for all the given components.
+		/// </summary>
+		/// <param name="components">Components each entity must have.</param>
+		/// <returns>An enumeration of matching removed entities.</returns>
+		public static SpatialEntityCollection RemovedWith(SpatialComponent components)
+			=> new SpatialEntityCollection(components, SpatialEntityCollection.List.Removed);
 
 		/// <summary>Create a spatial anchor entity at the given pose: a
 		/// point the system will keep aligned with the physical world as
@@ -313,7 +376,7 @@ namespace StereoKit
 		public override bool Equals(object obj) => obj is SpatialEntity e && _id == e._id;
 		/// <summary>A hash of the identifier value.</summary>
 		/// <returns>A hash of the identifier value.</returns>
-		public override int GetHashCode() => (int)_id;
+		public override int GetHashCode() => _id.GetHashCode();
 		/// <summary>Do these identify the same entity?</summary>
 		/// <param name="a">First entity.</param>
 		/// <param name="b">Second entity.</param>
@@ -327,27 +390,31 @@ namespace StereoKit
 	}
 
 	/// <summary>An enumerable collection of SpatialEntities, as provided by
-	/// `SpatialEntity.All`, `With`, and `New`. Enumeration with foreach is
-	/// allocation free.</summary>
+	/// `SpatialEntity.All`, `With`, `New`, and `Removed`. Enumeration with
+	/// foreach is allocation free.</summary>
 	public readonly struct SpatialEntityCollection : IEnumerable<SpatialEntity>
 	{
+		internal enum List { All, New, Removed }
+
 		readonly SpatialComponent _filter;
-		readonly bool             _newOnly;
-		internal SpatialEntityCollection(SpatialComponent filter, bool newOnly)
+		readonly List             _list;
+		internal SpatialEntityCollection(SpatialComponent filter, List list)
 		{
-			_filter  = filter;
-			_newOnly = newOnly;
+			_filter = filter;
+			_list   = list;
 		}
 
 		/// <summary>The number of entities in this collection.</summary>
-		public int Count => _newOnly
-			? NativeAPI.spatial_entity_get_new_count()
-			: NativeAPI.spatial_entity_get_count(_filter);
+		public int Count => _list switch {
+			List.New     => NativeAPI.spatial_entity_get_new_count    (_filter),
+			List.Removed => NativeAPI.spatial_entity_get_removed_count(_filter),
+			_            => NativeAPI.spatial_entity_get_count        (_filter),
+		};
 
 		/// <summary>Gets an allocation free enumerator for this collection.
 		/// </summary>
 		/// <returns>A struct enumerator over the entities.</returns>
-		public Enumerator GetEnumerator() => new Enumerator(_filter, _newOnly);
+		public Enumerator GetEnumerator() => new Enumerator(_filter, _list);
 		IEnumerator<SpatialEntity> IEnumerable<SpatialEntity>.GetEnumerator() => GetEnumerator();
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -356,13 +423,13 @@ namespace StereoKit
 		public struct Enumerator : IEnumerator<SpatialEntity>
 		{
 			readonly SpatialComponent _filter;
-			readonly bool             _newOnly;
+			readonly List             _list;
 			int                       _index;
 			SpatialEntity             _current;
-			internal Enumerator(SpatialComponent filter, bool newOnly)
+			internal Enumerator(SpatialComponent filter, List list)
 			{
 				_filter  = filter;
-				_newOnly = newOnly;
+				_list    = list;
 				_index   = -1;
 				_current = default;
 			}
@@ -379,9 +446,11 @@ namespace StereoKit
 			public bool MoveNext()
 			{
 				_index++;
-				uint id = _newOnly
-					? NativeAPI.spatial_entity_get_new_index(_index)
-					: NativeAPI.spatial_entity_get_index(_filter, _index);
+				ulong id = _list switch {
+					List.New     => NativeAPI.spatial_entity_get_new_index    (_filter, _index),
+					List.Removed => NativeAPI.spatial_entity_get_removed_index(_filter, _index),
+					_            => NativeAPI.spatial_entity_get_index        (_filter, _index),
+				};
 				if (id == 0) return false;
 				_current = new SpatialEntity(id);
 				return true;

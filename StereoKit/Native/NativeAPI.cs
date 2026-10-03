@@ -937,42 +937,47 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialCapability spatial_get_enabled();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialCapability spatial_get_active();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          spatial_entity_get_count(SpatialComponent with_components);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint         spatial_entity_get_index(SpatialComponent with_components, int index);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          spatial_entity_get_new_count();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint         spatial_entity_get_new_index(int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_get_index(SpatialComponent with_components, int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          spatial_entity_get_new_count(SpatialComponent with_components);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_get_new_index(SpatialComponent with_components, int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          spatial_entity_get_removed_count(SpatialComponent with_components);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_get_removed_index(SpatialComponent with_components, int index);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_find_persisted(in byte uuid_16);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_is_valid(uint entity);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     spatial_entity_get_tracked(uint entity);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialComponent spatial_entity_get_components(uint entity);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialComponent spatial_entity_get_changed(uint entity);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint         spatial_entity_get_parent(uint entity);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_is_valid(ulong entity);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     spatial_entity_get_tracked(ulong entity);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialComponent spatial_entity_get_components(ulong entity);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialComponent spatial_entity_get_changed(ulong entity);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_get_parent(ulong entity);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_anchor(uint entity, out Pose out_pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_anchor(ulong entity, out Pose out_pose);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_bounds2d(uint entity, out Pose out_center, out Vec2 out_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_bounds2d(ulong entity, out Pose out_center, out Vec2 out_size);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_bounds3d(uint entity, out Pose out_center, out Vec3 out_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_bounds3d(ulong entity, out Pose out_center, out Vec3 out_size);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_plane(uint entity, out PlaneAlign out_alignment, out PlaneLabel out_label);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_plane_align(ulong entity, out PlaneAlign out_alignment);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_mesh(uint entity, IntPtr mesh, out Pose out_origin);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_plane_label(ulong entity, out PlaneLabel out_label);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_mesh2d(uint entity, IntPtr mesh, out Pose out_origin);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_mesh(ulong entity, IntPtr mesh, out Pose out_origin);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_polygon(uint entity, out Pose out_origin, out Vec2 out_verts, out int out_count);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_mesh2d(ulong entity, IntPtr mesh, out Pose out_origin);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_marker(uint entity, out MarkerType out_type, out uint out_marker_id);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       spatial_entity_get_marker_text(uint entity);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       spatial_entity_get_marker_data(uint entity, out int out_size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern uint         spatial_entity_create_anchor(Pose pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_polygon(ulong entity, out Pose out_origin, out Vec2 out_verts, out int out_count);
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_destroy(uint entity);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_marker(ulong entity, out MarkerType out_type, out uint out_marker_id);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       spatial_entity_get_marker_text(ulong entity);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       spatial_entity_get_marker_data(ulong entity, out int out_size);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_create_anchor(Pose pose);
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_destroy(ulong entity);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_persistence_available();
 		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_persist_id(uint entity, out byte out_uuid_16);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_entity_persist(uint entity);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_entity_unpersist(uint entity);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_persist_id(ulong entity, out byte out_uuid_16);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_entity_persist(ulong entity);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_entity_unpersist(ulong entity);
 
 		///////////////////////////////////////////
 

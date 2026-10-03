@@ -23,7 +23,7 @@ class DemoSpatialEntity : ITest
 		public string name;
 		public string anchorLabel;
 	}
-	Dictionary<uint, Visual> visuals = new Dictionary<uint, Visual>();
+	Dictionary<ulong, Visual> visuals = new Dictionary<ulong, Visual>();
 
 	static readonly (SpatialCapability cap, string name)[] capNames = {
 		(SpatialCapability.Anchor,        "Anchors"),
@@ -91,6 +91,8 @@ class DemoSpatialEntity : ITest
 
 		foreach (SpatialEntity entity in SpatialEntity.All)
 			DrawEntity(entity);
+		foreach (SpatialEntity entity in SpatialEntity.Removed)
+			visuals.Remove(entity.Id);
 
 		Demo.ShowSummary(title, description,
 			new Bounds(V.XY0(0.2f, -0.06f), V.XYZ(.3f, .28f, 0.1f)));
@@ -107,7 +109,7 @@ class DemoSpatialEntity : ITest
 		SpatialComponent changed    = entity.Changed;
 		bool             tracked    = entity.Tracked.IsActive();
 
-		entity.TryGetPlane(out PlaneAlign align, out PlaneLabel label);
+		entity.TryGetPlaneLabel(out PlaneLabel label);
 		Color32 color = tracked ? LabelColor(label) : new Color32(128, 128, 128, 255);
 
 		bool hasRect = entity.TryGetBounds2D(out Pose center, out Vec2 size2);

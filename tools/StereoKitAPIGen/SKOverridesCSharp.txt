@@ -14,7 +14,7 @@ float float
 double double
 void void
 char32_t uint
-spatial_entity_t uint
+spatial_entity_t ulong
 
 # Keyboard keys by default resolve to just numbers, no bueno
 key_0 N0

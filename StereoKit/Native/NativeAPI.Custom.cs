@@ -186,12 +186,16 @@ namespace StereoKit
 		// vertex data, the generated binding misreads it as a caller array.
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern bool spatial_entity_get_polygon(uint entity, out Pose out_origin, out IntPtr out_verts, out int out_count);
+		public static extern bool spatial_entity_get_polygon(ulong entity, out Pose out_origin, out IntPtr out_verts, out int out_count);
 
 		// The uuid is a caller-provided 16 byte buffer, the generated binding
 		// misreads it as a single out byte.
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern bool spatial_entity_get_persist_id(uint entity, [Out] byte[] out_uuid_16);
+		public static extern bool spatial_entity_get_persist_id(ulong entity, [Out] byte[] out_uuid_16);
+
+		// Same 16 byte buffer as above, this time going in.
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
+		public static extern ulong spatial_entity_find_persisted([In] byte[] uuid_16);
 	}
 }
