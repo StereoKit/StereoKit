@@ -16,7 +16,7 @@ class TestSpatialEntities : ITest
 	Pose     windowPose = (Demo.contentPose * Matrix.T(-0.2f, 0, 0)).Pose;
 	Material mesh2dMat;
 	bool     showMesh2d = true;
-	SpatialCapability prevEnabled;
+	SpatialCapability prevRequested;
 	Dictionary<SpatialEntity, Mesh> mesh2ds = new Dictionary<SpatialEntity, Mesh>();
 
 	static readonly MarkerType[] markerTypes = { MarkerType.QrCode, MarkerType.MicroQr, MarkerType.Aruco, MarkerType.AprilTag };
@@ -32,19 +32,20 @@ class TestSpatialEntities : ITest
 			markerSizesCm[i] = Spatial.GetMarkerSize(markerTypes[i]) * 100;
 
 		Tests.Test(TestInvalidEntity);
+		Tests.Test(TestNoneCapability);
 		Tests.Test(TestMarkerSettings);
 		Tests.Test(TestEmptyGuid);
-		if ((Spatial.Capabilities & SpatialCapability.Anchor) == 0)
+		if (!Spatial.IsSupported(SpatialCapability.Anchor))
 			Tests.Test(TestNoAnchorSupport);
 
-		prevEnabled = Spatial.Enabled;
-		Spatial.Enable(Spatial.Capabilities);
+		prevRequested = Spatial.Requested;
+		Spatial.Request(Spatial.Capabilities);
 	}
 
 	public void Shutdown()
 	{
 		// Disabling everything would also turn off the Anchor system for later tests
-		Spatial.Disable(Spatial.Capabilities & ~prevEnabled);
+		Spatial.Disable(Spatial.Capabilities & ~prevRequested);
 		mesh2ds.Clear();
 	}
 
@@ -59,10 +60,19 @@ class TestSpatialEntities : ITest
 			&& none.Status     == SpatialStatus.None
 			&& !none.TryGetGuid(out _)
 			&& none.Components == SpatialComponent.None
-			&& !none.TryGetAnchor(out _)
+			&& !none.Has(SpatialComponent.Anchor)
+			&& !none.HasChanged(SpatialComponent.Anchor)
+			&& Vec3.Distance(none.Pose.position, Vec3.Zero) == 0
 			&& !none.Persist()
 			&& !none.Destroy();
 	}
+
+	// None isn't a capability, so it's never supported or running.
+	bool TestNoneCapability()
+		=> !Spatial.IsSupported(SpatialCapability.None)
+		&& !Spatial.IsRequested(SpatialCapability.None)
+		&& !Spatial.IsRunning  (SpatialCapability.None)
+		&& !Spatial.IsSupported(SpatialCapability.Anchor, SpatialComponent.None);
 
 	bool TestMarkerSettings()
 	{
@@ -94,13 +104,16 @@ class TestSpatialEntities : ITest
 	}
 
 	bool TestEmptyGuid()
-		=> !SpatialEntity.Find(Guid.Empty).Valid
+		=> !SpatialEntity.FindAnchor(Guid.Empty).Valid
+		&& !SpatialEntity.FindAnchor("").Valid
+		&& !SpatialEntity.FindAnchor((string)null).Valid
 		&& !SpatialEntity.Unpersist(Guid.Empty);
 
 	// Without anchor support, requests fail up front rather than waiting.
 	bool TestNoAnchorSupport()
 		=> !SpatialEntity.CreateAnchor(Pose.Identity).Valid
-		&& !SpatialEntity.Find(Guid.NewGuid()).Valid;
+		&& !SpatialEntity.CreateAnchor(Pose.Identity, "test_anchor").Valid
+		&& !SpatialEntity.FindAnchor(Guid.NewGuid()).Valid;
 
 	///////////////////////////////////////////
 	// Interactive                           //
@@ -114,10 +127,10 @@ class TestSpatialEntities : ITest
 		UI.PushEnabled(SavedAnchorIds.Count > 0);
 		if (UI.Button($"Restore Saved ({SavedAnchorIds.Count})"))
 			foreach (Guid id in SavedAnchorIds.Ids)
-				SpatialEntity.Find(id);
+				SpatialEntity.FindAnchor(id);
 		UI.PopEnabled();
 		UI.SameLine();
-		UI.PushEnabled((Spatial.Enabled & SpatialCapability.Anchor) > 0);
+		UI.PushEnabled(Spatial.IsRequested(SpatialCapability.Anchor));
 		if (UI.Button("Anchor on Nearest Plane"))
 			AnchorOnNearestPlane();
 		UI.PopEnabled();
@@ -132,7 +145,7 @@ class TestSpatialEntities : ITest
 
 		foreach (SpatialEntity entity in SpatialEntity.All)
 		{
-			if ((entity.Changed & SpatialComponent.Persistence) > 0 && entity.TryGetGuid(out Guid guid))
+			if (entity.HasChanged(SpatialComponent.Persistence) && entity.TryGetGuid(out Guid guid))
 				SavedAnchorIds.Add(guid);
 			DrawStatus(entity);
 			if (showMesh2d) DrawMesh2D(entity);
@@ -155,8 +168,8 @@ class TestSpatialEntities : ITest
 		int shown = 0;
 		foreach (SpatialEntity entity in SpatialEntity.All)
 		{
-			bool isAnchor = (entity.Components & SpatialComponent.Anchor) > 0;
-			bool isLookup = entity.Status == SpatialStatus.Pending && (entity.Components & SpatialComponent.Persistence) > 0;
+			bool isAnchor = entity.Has(SpatialComponent.Anchor);
+			bool isLookup = entity.Status == SpatialStatus.Pending && entity.Has(SpatialComponent.Persistence);
 			if (!isAnchor && !isLookup) continue;
 			if (shown++ >= 8) { UI.Label("..."); break; }
 
@@ -220,7 +233,8 @@ class TestSpatialEntities : ITest
 
 	void DrawStatus(SpatialEntity entity)
 	{
-		if (!entity.TryGetAnchor(out Pose pose)) return;
+		if (!entity.Has(SpatialComponent.Anchor)) return;
+		Pose pose = entity.Pose;
 		Color color = entity.Status switch {
 			SpatialStatus.Ready   => new Color(0.3f, 1, 0.3f),
 			SpatialStatus.Pending => new Color(1, 1, 0.3f),
@@ -233,14 +247,14 @@ class TestSpatialEntities : ITest
 	// checks the handedness conversion of 2D vertex data.
 	void DrawMesh2D(SpatialEntity entity)
 	{
-		if ((entity.Components & SpatialComponent.Mesh2d) == 0) return;
+		if (!entity.Has(SpatialComponent.Mesh2d)) return;
 		if (!mesh2ds.TryGetValue(entity, out Mesh mesh))
 		{
 			mesh = new Mesh();
 			if (!entity.TryGetMesh2D(mesh, out _)) return;
 			mesh2ds.Add(entity, mesh);
 		}
-		Mesh refill = (entity.Changed & SpatialComponent.Mesh2d) > 0 ? mesh : null;
+		Mesh refill = entity.HasChanged(SpatialComponent.Mesh2d) ? mesh : null;
 		if (entity.TryGetMesh2D(refill, out Pose origin))
 			mesh.Draw(mesh2dMat, origin.ToMatrix());
 	}

@@ -74,9 +74,14 @@ struct spatial_ingest_t {
 };
 
 // Internal systems' requests, which an explicit spatial_disable still overrides
-void     spatial_enable_system   (spatial_capability_ capabilities);
-void     spatial_disable_system  (spatial_capability_ capabilities);
+void     spatial_request_system  (spatial_capability_ capabilities);
+void     spatial_release_system  (spatial_capability_ capabilities);
 bool32_t spatial_is_user_disabled(spatial_capability_ capability);
+
+// The entity's anchor name, from its creation or from storage. Null if unnamed.
+const char* spatial_entity_get_name(spatial_entity_t entity);
+// Names an anchor without taking the name from others, it's saved once persisted
+void        spatial_entity_set_name(spatial_entity_t entity, const char* name_utf8);
 
 // What the backend can do, set once at backend init
 void spatial_backend_set_support  (spatial_capability_ caps);
@@ -86,8 +91,8 @@ void spatial_backend_set_create_anchor(spatial_entity_id_t (*create)(pose_t pose
 // Releases the backend's tracking of an app-created entity
 void spatial_backend_set_destroy      (void (*destroy)(spatial_entity_id_t id));
 
-// Mark a capability's context as warmed up / torn down.
-void spatial_backend_set_active   (spatial_capability_ cap, bool32_t active);
+// A capability's context finished starting up, or was torn down
+void spatial_backend_set_running  (spatial_capability_ cap, bool32_t running);
 // Fills in `entity` for new entities, send it back on later ingests
 void spatial_backend_ingest       (spatial_capability_ source, spatial_ingest_t* entities, int32_t count);
 // Removes all of a capability's entities, as if tracking stopped

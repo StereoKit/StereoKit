@@ -3868,7 +3868,7 @@ typedef uint64_t spatial_entity_t;
 /*A spatial capability is a unit of scene understanding functionality
   that a device may provide, such as plane tracking, or QR code
   tracking. Check what the device supports with `Spatial.Capabilities`,
-  enable what you need, and StereoKit will maintain a list of the
+  request what you need, and StereoKit will maintain a list of the
   spatial entities the system discovers.
 
   The top 4 bits of this flag are reserved for vendor and experimental
@@ -4078,10 +4078,10 @@ typedef enum april_tag_dict_ {
 
 SK_API spatial_capability_   spatial_capabilities            (void);
 SK_API spatial_component_    spatial_capability_components   (spatial_capability_ capability);
-SK_API void                  spatial_enable                  (spatial_capability_ capabilities);
+SK_API void                  spatial_request                 (spatial_capability_ capabilities);
 SK_API void                  spatial_disable                 (spatial_capability_ capabilities);
-SK_API spatial_capability_   spatial_get_enabled             (void);
-SK_API spatial_capability_   spatial_get_active              (void);
+SK_API spatial_capability_   spatial_get_requested           (void);
+SK_API spatial_capability_   spatial_get_running             (void);
 
 SK_API void                  spatial_set_marker_size         (marker_type_ type, float size_meters);
 SK_API float                 spatial_get_marker_size         (marker_type_ type);
@@ -4098,7 +4098,8 @@ SK_API int32_t               spatial_entity_get_new_count    (spatial_component_
 SK_API spatial_entity_t      spatial_entity_get_new_index    (spatial_component_ with_components, int32_t index);
 SK_API int32_t               spatial_entity_get_removed_count(spatial_component_ with_components);
 SK_API spatial_entity_t      spatial_entity_get_removed_index(spatial_component_ with_components, int32_t index);
-SK_API spatial_entity_t      spatial_entity_find_uuid        (sk_uuid_t uuid);
+SK_API spatial_entity_t      spatial_entity_find_anchor      (const char* name_utf8);
+SK_API spatial_entity_t      spatial_entity_find_anchor_uuid (sk_uuid_t uuid);
 SK_API bool32_t              spatial_entity_is_valid         (spatial_entity_t entity);
 SK_API button_state_         spatial_entity_get_tracked      (spatial_entity_t entity);
 SK_API spatial_status_       spatial_entity_get_status       (spatial_entity_t entity);
@@ -4106,7 +4107,7 @@ SK_API spatial_component_    spatial_entity_get_components   (spatial_entity_t e
 SK_API spatial_component_    spatial_entity_get_changed      (spatial_entity_t entity);
 SK_API spatial_entity_t      spatial_entity_get_parent       (spatial_entity_t entity);
 
-SK_API bool32_t              spatial_entity_get_anchor       (spatial_entity_t entity, pose_t* out_pose);
+SK_API pose_t                spatial_entity_get_pose         (spatial_entity_t entity);
 SK_API bool32_t              spatial_entity_get_bounds2d     (spatial_entity_t entity, pose_t* out_center, vec2* out_size);
 SK_API bool32_t              spatial_entity_get_bounds3d     (spatial_entity_t entity, pose_t* out_center, vec3* out_size);
 SK_API bool32_t              spatial_entity_get_plane_align  (spatial_entity_t entity, plane_align_* out_alignment);
@@ -4118,7 +4119,7 @@ SK_API bool32_t              spatial_entity_get_marker       (spatial_entity_t e
 SK_API const char*           spatial_entity_get_marker_text  (spatial_entity_t entity);
 SK_API const uint8_t*        spatial_entity_get_marker_data  (spatial_entity_t entity, int32_t* out_size);
 
-SK_API spatial_entity_t      spatial_entity_create_anchor    (pose_t pose, bool32_t persist, spatial_entity_t parent);
+SK_API spatial_entity_t      spatial_entity_create_anchor    (pose_t pose, const char* opt_name_utf8 sk_default(nullptr), spatial_entity_t parent sk_default(0));
 SK_API bool32_t              spatial_entity_destroy          (spatial_entity_t entity);
 
 SK_API bool32_t              spatial_entity_get_uuid         (spatial_entity_t entity, sk_uuid_t* out_uuid);

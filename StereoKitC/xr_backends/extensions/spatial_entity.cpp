@@ -569,7 +569,7 @@ static void xr_spatial_shutdown(void*) {
 
 static void xr_spatial_step_begin(void*) {
 	// Reconcile requested capabilities with slot states
-	spatial_capability_ want_all = spatial_get_enabled() & local.supported;
+	spatial_capability_ want_all = spatial_get_requested() & local.supported;
 	for (int32_t i = 0; i < cap_mapping_count; i++) {
 		slot_t*             slot = &local.slots[i];
 		spatial_capability_ cap  = cap_mappings[i].sk_bit;
@@ -811,7 +811,7 @@ static void slot_create(int32_t slot_idx) {
 		}
 
 		slot->state = slot_state_ready;
-		spatial_backend_set_active(cap_mappings[slot_idx].sk_bit, true);
+		spatial_backend_set_running(cap_mappings[slot_idx].sk_bit, true);
 	}, ctx);
 }
 
@@ -820,7 +820,7 @@ static void slot_create(int32_t slot_idx) {
 static void slot_stop(int32_t slot_idx) {
 	slot_t* slot = &local.slots[slot_idx];
 
-	spatial_backend_set_active(cap_mappings[slot_idx].sk_bit, false);
+	spatial_backend_set_running(cap_mappings[slot_idx].sk_bit, false);
 	spatial_backend_drop_source(cap_mappings[slot_idx].sk_bit);
 	slot_clear_handles(slot);
 

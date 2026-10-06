@@ -430,6 +430,14 @@ bool platform_file_delete(const char* filename) {
 
 ///////////////////////////////////////////
 
+#if !defined(SK_OS_WINDOWS)
+bool platform_file_replace(const char* src_filename, const char* dest_filename) {
+	return rename(src_filename, dest_filename) == 0;
+}
+#endif
+
+///////////////////////////////////////////
+
 char *platform_push_path_ref(char *path, const char *directory) {
 	char *result = platform_push_path_new(path, directory);
 	sk_free(path);
@@ -510,8 +518,8 @@ static void platform_normalize_path_inplace(char *path) {
 }
 
 // Looks for a file matching `normalized` on the actual filesystem, checking
-// the given path directly and then (for relative paths) relative to the
-// executable. Takes ownership of `normalized` and returns it on a direct hit
+// the given path directly and then (for relative paths, except on Android)
+// relative to the executable. Takes ownership of `normalized` and returns it on a direct hit
 // (same buffer, no copy), a newly allocated path on an exe-relative hit, or
 // nullptr on miss (freeing the input). Does not consult Android APK assets —
 // callers must handle that separately.
@@ -526,6 +534,11 @@ static char *platform_find_existing_file(char *normalized) {
 #endif
 	if (!is_relative) { sk_free(normalized); return nullptr; }
 
+#if defined(SK_OS_ANDROID)
+	// No exe folder on Android, and asking for one logs an error
+	sk_free(normalized);
+	return nullptr;
+#else
 	char exe_dir[1024];
 	if (!ska_path_get(ska_path_exe, exe_dir, sizeof(exe_dir))) { sk_free(normalized); return nullptr; }
 
@@ -535,6 +548,7 @@ static char *platform_find_existing_file(char *normalized) {
 		return fullpath;
 	sk_free(fullpath);
 	return nullptr;
+#endif
 }
 
 ///////////////////////////////////////////

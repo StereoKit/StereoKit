@@ -9,6 +9,7 @@
 // Internal header, reached through StereoKitC's public include root. The
 // fake backend below stands in for OpenXR through the provider interface.
 #include <systems/spatial_entity.h>
+#include <systems/spatial_names.h>
 
 #include <string.h>
 
@@ -86,11 +87,18 @@ static bool spt_finding(sk_uuid_t id) {
 	return false;
 }
 
+// Unnamed, so these tests cover persistence without touching the name store
+static spatial_entity_t spt_create_persisted() {
+	spatial_entity_t e = spatial_entity_create_anchor(pose_identity, nullptr, 0);
+	spatial_entity_persist(e);
+	return e;
+}
+
 ///////////////////////////////////////////
 
 static void spt_test_create_persisted() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_create_anchor(pose_identity, true, 0);
+	spatial_entity_t e = spt_create_persisted();
 	SPT_CHECK(e != 0 && spatial_entity_get_status(e) == spatial_status_pending, "persisting a new anchor starts Pending");
 	SPT_CHECK(spt.persist_count == 1 && spt.persists[0] == e,                  "a tracked anchor persists right away");
 	SPT_CHECK(!spt_in_new(e),                                                   "app-created entities skip New the frame they're made");
@@ -107,7 +115,7 @@ static void spt_test_create_persisted() {
 
 static void spt_test_undo() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_create_anchor(pose_identity, true, 0);
+	spatial_entity_t e = spt_create_persisted();
 	spatial_entity_unpersist(e);
 	SPT_CHECK(spatial_entity_get_status(e) == spatial_status_pending, "unpersisting mid-persist stays Pending");
 
@@ -120,7 +128,7 @@ static void spt_test_undo() {
 
 static void spt_test_redo() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_create_anchor(pose_identity, true, 0);
+	spatial_entity_t e = spt_create_persisted();
 	spatial_backend_set_persist(e, spt_uuid(3));
 
 	spatial_entity_unpersist(e);
@@ -136,7 +144,7 @@ static void spt_test_redo() {
 
 static void spt_test_failure() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_create_anchor(pose_identity, true, 0);
+	spatial_entity_t e = spt_create_persisted();
 	spatial_backend_persist_failed(e);
 	SPT_CHECK(spatial_entity_get_status(e) == spatial_status_partial, "a failed persist reports Partial");
 
@@ -149,7 +157,7 @@ static void spt_test_failure() {
 
 static void spt_test_destroy_mid_persist() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_create_anchor(pose_identity, true, 0);
+	spatial_entity_t e = spt_create_persisted();
 	SPT_CHECK(spatial_entity_destroy(e) && spt.destroyed == 1 && spt_in_removed(e), "destroy releases the anchor and removes it");
 
 	sk_step(nullptr);
@@ -164,7 +172,7 @@ static void spt_test_destroy_mid_persist() {
 
 static void spt_test_lookup_unpersist() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_find_uuid(spt_uuid(7));
+	spatial_entity_t e = spatial_entity_find_anchor_uuid(spt_uuid(7));
 	SPT_CHECK(spatial_entity_get_status(e) == spatial_status_pending && spt_finding(spt_uuid(7)), "a lookup is Pending and asks the backend for its id");
 
 	spatial_entity_unpersist(e);
@@ -180,7 +188,7 @@ static void spt_test_lookup_unpersist() {
 
 static void spt_test_destroy_lookup() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_find_uuid(spt_uuid(8));
+	spatial_entity_t e = spatial_entity_find_anchor_uuid(spt_uuid(8));
 	SPT_CHECK(spatial_entity_destroy(e) && spt.unpersist_count == 1 && spt_in_removed(e), "destroying a lookup removes it from storage and the list");
 
 	sk_step(nullptr);
@@ -190,7 +198,7 @@ static void spt_test_destroy_lookup() {
 
 static void spt_test_lookup_binds() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_find_uuid(spt_uuid(9));
+	spatial_entity_t e = spatial_entity_find_anchor_uuid(spt_uuid(9));
 
 	spatial_ingest_t in = {};
 	in.id          = 1000;
@@ -243,6 +251,80 @@ static void spt_test_parent() {
 	SPT_CHECK(again.entity != parent.entity && spatial_entity_get_parent(child.entity) == again.entity, "a parent that returns under a new handle resolves to it");
 }
 
+static bool spt_pose_eq(pose_t a, pose_t b) { return memcmp(&a, &b, sizeof(pose_t)) == 0; }
+
+static void spt_test_pose() {
+	spt_reset();
+	SPT_CHECK(spt_pose_eq(spatial_entity_get_pose(spatial_entity_find_anchor_uuid(spt_uuid(20))), pose_identity), "an unloaded lookup has an identity pose");
+
+	pose_t           at     = { {1, 2, 3}, quat_identity };
+	spatial_entity_t anchor = spatial_entity_create_anchor(at, nullptr, 0);
+	SPT_CHECK(spt_pose_eq(spatial_entity_get_pose(anchor), at), "an anchor's pose is its anchor");
+
+	spatial_ingest_t plane = {};
+	plane.id              = 4000;
+	plane.tracking        = spatial_tracking_tracking;
+	plane.present         = spatial_component_bounds2d;
+	plane.bounds2d_center = { {4, 5, 6}, quat_identity };
+	spatial_backend_ingest(spatial_capability_plane_tracking, &plane, 1);
+	SPT_CHECK(spt_pose_eq(spatial_entity_get_pose(plane.entity), plane.bounds2d_center), "a plane's pose is its bounds center");
+
+	spatial_ingest_t both = plane;
+	both.entity      = 0;
+	both.id          = 4001;
+	both.present     = spatial_component_bounds2d | spatial_component_anchor;
+	both.anchor_pose = { {7, 8, 9}, quat_identity };
+	spatial_backend_ingest(spatial_capability_plane_tracking, &both, 1);
+	SPT_CHECK(spt_pose_eq(spatial_entity_get_pose(both.entity), both.anchor_pose), "an anchor wins over bounds");
+
+	spatial_ingest_t paused = plane;
+	paused.entity   = 0;
+	paused.id       = 4002;
+	paused.tracking = spatial_tracking_paused;
+	spatial_backend_ingest(spatial_capability_plane_tracking, &paused, 1);
+	SPT_CHECK(spt_pose_eq(spatial_entity_get_pose(paused.entity), pose_identity), "something first seen while paused has no pose yet");
+}
+
+static bool spt_named(const char* name, sk_uuid_t uuid) {
+	sk_uuid_t stored;
+	return spatial_names_find(name, &stored) && spt_uuid_eq(stored, uuid);
+}
+
+static void spt_test_names() {
+	spt_reset();
+	spatial_names_clear();
+
+	spatial_entity_t a = spatial_entity_create_anchor(pose_identity, "spt_table", 0);
+	SPT_CHECK(spt.persist_count == 1,                          "a named anchor persists");
+	SPT_CHECK(spatial_entity_find_anchor("spt_table") == a,    "a name finds its anchor before the persist lands");
+	spatial_backend_set_persist(a, spt_uuid(30));
+	SPT_CHECK(spt_named("spt_table", spt_uuid(30)),            "the name is saved once the persist lands");
+
+	spatial_entity_t b = spatial_entity_create_anchor(pose_identity, "spt_table", 0);
+	SPT_CHECK(spt_in_removed(a) && spt.unpersist_count == 1 && spt_uuid_eq(spt.unpersists[0].id, spt_uuid(30)), "a new anchor takes the name, and the old one is destroyed");
+	SPT_CHECK(spatial_entity_find_anchor("spt_table") == b,    "the name finds the new anchor");
+	spatial_backend_set_persist(b, spt_uuid(31));
+	SPT_CHECK(spt_named("spt_table", spt_uuid(31)),            "the name moves to the new anchor's uuid");
+
+	spatial_names_set(spt_uuid(32), "spt_saved");
+	spatial_names_shutdown();
+	SPT_CHECK(spt_named("spt_saved", spt_uuid(32)) && spt_named("spt_table", spt_uuid(31)), "names survive a reload from disk");
+
+	spatial_entity_t saved = spatial_entity_find_anchor("spt_saved");
+	SPT_CHECK(saved != 0 && spatial_entity_get_status(saved) == spatial_status_pending && spt_finding(spt_uuid(32)), "a stored name looks its anchor up by uuid");
+
+	spatial_names_set(spt_uuid(33), "spt_gone");
+	spatial_entity_t gone = spatial_entity_find_anchor("spt_gone");
+	spatial_backend_persist_not_found(spt_uuid(33));
+	SPT_CHECK(spatial_entity_get_status(gone) == spatial_status_failed && !spt_named("spt_gone", spt_uuid(33)), "storage lacking the uuid drops the name");
+
+	spatial_entity_unpersist(b);
+	SPT_CHECK(!spt_named("spt_table", spt_uuid(31)),           "unpersisting releases the name");
+	SPT_CHECK(spatial_entity_find_anchor("spt_nope") == 0,     "an unknown name finds nothing");
+
+	spatial_names_clear();
+}
+
 ///////////////////////////////////////////
 
 int spatial_tests_run() {
@@ -260,8 +342,8 @@ int spatial_tests_run() {
 	spatial_backend_set_create_anchor(spt_create);
 	spatial_backend_set_destroy      (spt_destroy);
 	spatial_backend_set_persist_ops  (spt_persist, spt_unpersist);
-	spatial_backend_set_active       (spatial_capability_anchor, true);
-	spatial_enable                   (spatial_capability_anchor);
+	spatial_backend_set_running      (spatial_capability_anchor, true);
+	spatial_request                  (spatial_capability_anchor);
 
 	// spatial_step runs as the next sk_step closes this frame, so tests start
 	// inside a frame like app code does.
@@ -277,6 +359,8 @@ int spatial_tests_run() {
 	spt_test_lookup_binds       ();
 	spt_test_not_persistable    ();
 	spt_test_parent             ();
+	spt_test_pose               ();
+	spt_test_names              ();
 
 	sk_shutdown();
 

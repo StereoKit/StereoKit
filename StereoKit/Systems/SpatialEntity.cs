@@ -16,10 +16,11 @@ namespace StereoKit
 	/// device supports, so data is accessed through TryGet methods, and
 	/// entities can be filtered by the components you need via `With`.
 	///
-	/// Enable the capabilities you're interested in with `Spatial.Enable`,
-	/// and StereoKit will keep an up-to-date list of entities that you can
-	/// poll each frame. Component data reflects the entity's last known state,
-	/// so check `Tracked` to know if it's currently live.
+	/// Request the capabilities you're interested in with
+	/// `Spatial.Request`, and StereoKit will keep an up-to-date list of
+	/// entities that you can poll each frame. Component data reflects the
+	/// entity's last known state, so check `Tracked` to know if it's
+	/// currently live.
 	///
 	/// SpatialEntity is a lightweight identifier, not a reference. The
 	/// device owns these entities and controls their lifetimes. Identifiers
@@ -37,13 +38,22 @@ namespace StereoKit
 		/// list, and a `default` SpatialEntity is never valid.</summary>
 		public bool Valid => _id != 0 && NativeAPI.spatial_entity_is_valid(_id);
 
-		/// <summary>Is the system actively tracking this entity? Component
-		/// data is always the entity's last known state, so when this is
-		/// inactive, that data may be stale. Entities that are permanently
-		/// lost leave the entity list entirely, except persisted ones, which
-		/// keep their identifier with `Status` Pending while storage loads
-		/// them again.</summary>
+		/// <summary>Is the system tracking this entity right now? While
+		/// active, `Pose` and all component data are live. While inactive,
+		/// they're last known and may be stale, or empty if the entity hasn't
+		/// been tracked yet. For requests still in progress, like a new
+		/// anchor, check `Status` instead. Entities that are permanently lost
+		/// leave the entity list, except persisted ones, which keep their
+		/// identifier with `Status` Pending while storage loads them again.
+		/// </summary>
 		public BtnState Tracked => NativeAPI.spatial_entity_get_tracked(_id);
+		/// <summary>Where this entity is in the world, from its anchor, or
+		/// else the center of its 2D or 3D bounds. This is live while
+		/// `Tracked` is active, and last known otherwise. It's
+		/// `Pose.Identity` until the entity has any data, like a `FindAnchor`
+		/// that hasn't loaded yet, or something first seen while untracked.
+		/// For a specific meaning, use the matching TryGet.</summary>
+		public Pose Pose => NativeAPI.spatial_entity_get_pose(_id);
 		/// <summary>The set of components this entity has valid data for.
 		/// Each component has a matching TryGet accessor.</summary>
 		public SpatialComponent Components => NativeAPI.spatial_entity_get_components(_id);
@@ -64,23 +74,32 @@ namespace StereoKit
 		/// frame, so check them each frame or you may miss an update.
 		/// </summary>
 		public SpatialComponent Changed => NativeAPI.spatial_entity_get_changed(_id);
+
+		/// <summary>Does this entity have data for all of these components?
+		/// </summary>
+		/// <param name="components">One or more components to check.</param>
+		/// <returns>True if every component given is present.</returns>
+		public bool Has(SpatialComponent components)
+			=> components != SpatialComponent.None && (Components & components) == components;
+
+		/// <summary>Did any of these components change this frame? Like
+		/// `Changed`, this resets every frame, so check it each frame.
+		/// </summary>
+		/// <param name="components">One or more components to check.</param>
+		/// <returns>True if any component given changed this frame.</returns>
+		public bool HasChanged(SpatialComponent components)
+			=> (Changed & components) != SpatialComponent.None;
 		/// <summary>The entity this entity is attached to. This is an
 		/// invalid entity if there's no parent, so check `Valid`.</summary>
 		public SpatialEntity Parent => new SpatialEntity(NativeAPI.spatial_entity_get_parent(_id));
-
-		/// <summary>The pose of this entity's anchor, a point the system
-		/// actively keeps aligned with the physical world as tracking
-		/// improves or drifts.</summary>
-		/// <param name="pose">The anchor's pose in world space.</param>
-		/// <returns>False if this entity has no anchor component.</returns>
-		public bool TryGetAnchor(out Pose pose)
-			=> NativeAPI.spatial_entity_get_anchor(_id, out pose);
 
 		/// <summary>The 2D rectangular bounds of this entity, such as the
 		/// extents of a detected plane, or the shape of a marker. The pose
 		/// faces out of the surface, so its Forward is the surface normal,
 		/// the same way quads and text face in StereoKit. A floor's pose faces
-		/// up, and a wall's pose faces into the room.</summary>
+		/// up, and a wall's pose faces into the room. The center is usually
+		/// the same as `Pose`, but can differ on entities with several pose
+		/// components, like a table with both a top and a volume.</summary>
 		/// <param name="center">The pose at the center of the rectangle.</param>
 		/// <param name="size">The rectangle's total size in meters, along
 		/// the center pose's X and Y axes.</param>
@@ -90,7 +109,9 @@ namespace StereoKit
 
 		/// <summary>The oriented 3D bounding volume of this entity. When
 		/// the entity has a front, like a screen or table top, the center
-		/// pose's Forward is the direction it faces.</summary>
+		/// pose's Forward is the direction it faces. The center is usually
+		/// the same as `Pose`, but can differ on entities with several pose
+		/// components, like a table with both a top and a volume.</summary>
 		/// <param name="center">The pose at the center of the volume.</param>
 		/// <param name="size">The volume's total size in meters, along the
 		/// center pose's axes.</param>
@@ -199,7 +220,7 @@ namespace StereoKit
 		/// tracking it, and it leaves the entity list at the end of the
 		/// frame. This SpatialEntity stops resolving once that happens.
 		/// This also works on entities that are still Pending, including
-		/// ones from `Find` that haven't loaded yet.</summary>
+		/// ones from `FindAnchor` that haven't loaded yet.</summary>
 		/// <returns>False if this entity can't be destroyed! Only
 		/// app-created entities like anchors can be, entities the system
 		/// discovered on its own, like planes, cannot.</returns>
@@ -208,7 +229,7 @@ namespace StereoKit
 		/// <summary>A durable identifier for this entity that stays the same
 		/// across sessions and device reboots! Entities only have one once
 		/// they're persisted, either by the system itself, or by a call to
-		/// `Persist`. Store it, and pass it to `Find` to get the same
+		/// `Persist`. Store it, and pass it to `FindAnchor` to get the same
 		/// physical entity back in a later session.</summary>
 		/// <param name="guid">The entity's persistent identifier,
 		/// `Guid.Empty` if it has none.</param>
@@ -235,14 +256,14 @@ namespace StereoKit
 		/// which capabilities support it.</returns>
 		public bool Persist() => NativeAPI.spatial_entity_persist(_id);
 
-		/// <summary>Remove this entity from persistent storage. It loses its
-		/// Guid once the asynchronous operation completes, and `Status` is
-		/// Pending until then, or Partial if it fails. If a `Persist` is
-		/// still in flight, this waits for it to land and then undoes it.
-		/// An entity from `Find` that
-		/// hasn't loaded yet stops loading, and once the unpersist lands it
-		/// leaves the entity list, since there's nothing left to load.
-		/// </summary>
+		/// <summary>Remove this entity from persistent storage. Its name, if
+		/// it has one, is released right away, and it loses its Guid once
+		/// the asynchronous operation completes. `Status` is Pending until
+		/// then, or Partial if it fails. If a `Persist` is still in flight,
+		/// this waits for it to land and then undoes it. An entity from
+		/// `FindAnchor` that hasn't loaded yet stops loading, and once the
+		/// unpersist lands it leaves the entity list, since there's nothing
+		/// left to load.</summary>
 		/// <returns>False if this can't work at all, like an invalid entity.
 		/// </returns>
 		public bool Unpersist() => NativeAPI.spatial_entity_unpersist(_id);
@@ -259,21 +280,30 @@ namespace StereoKit
 		public static bool Unpersist(Guid guid)
 			=> NativeAPI.spatial_entity_unpersist_uuid(NativeUuid.FromGuid(guid));
 
-		/// <summary>Gets the entity with this Guid, the usual way to restore
-		/// something you persisted in an earlier session. Call this once and
-		/// hold onto the result. Storage loads asynchronously, so the entity
-		/// starts out with `Status` Pending and no data, then fills in when
-		/// it loads. If storage doesn't have this Guid, `Status` becomes
-		/// Failed and the entity shows up in `Removed`. Loaded entities may
-		/// still take a moment to start tracking, and nothing loads while
-		/// `SpatialCapability.Anchor` isn't `Spatial.Enabled`.</summary>
+		/// <summary>Gets the anchor you created with this name, in this
+		/// session or an earlier one! This is the easy way to restore anchors
+		/// across app restarts. Call this once and hold onto the result.
+		/// Storage loads asynchronously, so the anchor starts out with
+		/// `Status` Pending and no data, then fills in when it loads. Nothing
+		/// loads while `SpatialCapability.Anchor` isn't `Spatial.Requested`.
+		/// </summary>
+		/// <param name="name">The name given to `CreateAnchor`.</param>
+		/// <returns>The anchor, already loaded or still loading. This is
+		/// invalid if no anchor has this name, so check `Valid`.</returns>
+		public static SpatialEntity FindAnchor(string name)
+			=> new SpatialEntity(NativeAPI.spatial_entity_find_anchor(name));
+
+		/// <summary>Gets the anchor with this Guid, for apps that keep track
+		/// of anchors by Guid themselves. Works like `FindAnchor(string)`,
+		/// and if storage doesn't have this Guid, `Status` becomes Failed and
+		/// the anchor shows up in `Removed`.</summary>
 		/// <param name="guid">A Guid from `TryGetGuid`, saved in an earlier
 		/// session.</param>
-		/// <returns>The entity, already loaded or still loading. This is
+		/// <returns>The anchor, already loaded or still loading. This is
 		/// invalid for an empty Guid, or a system without persistence
 		/// support.</returns>
-		public static SpatialEntity Find(Guid guid)
-			=> new SpatialEntity(NativeAPI.spatial_entity_find_uuid(NativeUuid.FromGuid(guid)));
+		public static SpatialEntity FindAnchor(Guid guid)
+			=> new SpatialEntity(NativeAPI.spatial_entity_find_anchor_uuid(NativeUuid.FromGuid(guid)));
 
 		/// <summary>The number of entities that have data for all the given
 		/// components.</summary>
@@ -299,7 +329,7 @@ namespace StereoKit
 
 		/// <summary>An enumeration of the spatial entities that appeared
 		/// for the first time this frame. Entities you create yourself, like
-		/// with `CreateAnchor` or `Find`, show up here on the
+		/// with `CreateAnchor` or `FindAnchor`, show up here on the
 		/// following frame, so every entity is seen here exactly once.
 		/// </summary>
 		public static SpatialEntityCollection New => new SpatialEntityCollection(SpatialComponent.None, SpatialEntityCollection.List.New);
@@ -331,23 +361,25 @@ namespace StereoKit
 		/// <summary>Create a spatial anchor entity at the given pose, a
 		/// point the system will keep aligned with the physical world as
 		/// tracking improves or drifts. You can call this any time after
-		/// enabling `SpatialCapability.Anchor`, even while it's still
+		/// requesting `SpatialCapability.Anchor`, even while it's still
 		/// starting up! Until the system takes over, the anchor sits at
 		/// this pose with `Tracked` inactive and `Status` Pending. If the
 		/// system can't create it, the anchor shows up in `Removed` with
 		/// `Status` Failed.</summary>
 		/// <param name="pose">A world space pose for the new anchor.</param>
-		/// <param name="persist">Also persist the anchor once it's
-		/// tracking, same as calling `Persist`. `TryGetGuid` starts
-		/// succeeding a little while later.</param>
+		/// <param name="name">Persists the anchor under this name, so
+		/// `FindAnchor` can get it back in a later session. Any anchor that
+		/// already has this name is destroyed, so placing "table" again moves
+		/// it. Leave this null for an anchor that only lasts this session,
+		/// or call `Persist` later to keep it by Guid instead.</param>
 		/// <param name="parent">An optional entity to attach the anchor
 		/// to, so it follows that entity as it moves. Few runtimes support
 		/// this yet, and creation fails on those that don't.</param>
 		/// <returns>The new anchor entity. This is an invalid entity if
 		/// this system doesn't support anchors, or can't persist them when
-		/// `persist` is true, so check `Valid`.</returns>
-		public static SpatialEntity CreateAnchor(Pose pose, bool persist = false, SpatialEntity parent = default)
-			=> new SpatialEntity(NativeAPI.spatial_entity_create_anchor(pose, persist, parent._id));
+		/// given a name, so check `Valid`.</returns>
+		public static SpatialEntity CreateAnchor(Pose pose, string name = null, SpatialEntity parent = default)
+			=> new SpatialEntity(NativeAPI.spatial_entity_create_anchor(pose, name, parent._id));
 
 		/// <summary>Do these identify the same entity?</summary>
 		/// <param name="other">The entity to compare with.</param>

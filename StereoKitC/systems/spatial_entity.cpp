@@ -5,8 +5,10 @@
  */
 
 #include "spatial_entity.h"
+#include "spatial_names.h"
 #include "../sk_memory.h"
 #include "../libraries/array.h"
+#include "../libraries/stref.h"
 #include "../asset_types/mesh_.h"
 #include "vert_format.h"
 
@@ -78,6 +80,7 @@ struct spatial_record_t {
 	uint8_t*            marker_data;
 	int32_t             marker_data_size;
 	sk_uuid_t           persist_id;
+	char*               name; // App chosen anchor name, saved to spatial_names once persisted
 };
 
 struct unpersist_req_t {
@@ -109,7 +112,7 @@ struct spatial_state_t {
 	spatial_capability_ supported;
 	spatial_component_  cap_comps[32]; // Indexed by capability bit position
 	spatial_capability_ requested_system; // Internal systems' requests
-	spatial_capability_ active;
+	spatial_capability_ running;
 	spatial_entity_id_t (*create_anchor)(pose_t pose, spatial_entity_id_t parent, spatial_entity_t entity);
 	void                (*destroy)      (spatial_entity_id_t id);
 	void                (*persist)      (spatial_entity_id_t id, spatial_entity_t entity);
@@ -221,6 +224,7 @@ static void record_free(spatial_record_t* rec) {
 	sk_free(rec->polygon_verts);
 	sk_free(rec->marker_text);
 	sk_free(rec->marker_data);
+	sk_free(rec->name);
 
 	int32_t  idx = (int32_t)(rec->handle & 0xFFFFFFFF);
 	uint32_t gen = rec->generation + 1;
@@ -273,7 +277,7 @@ spatial_component_ spatial_capability_components(spatial_capability_ capability)
 	return idx < 0 ? spatial_component_none : local.cap_comps[idx];
 }
 
-void spatial_enable(spatial_capability_ capabilities) {
+void spatial_request(spatial_capability_ capabilities) {
 	local.settings.requested     |=  capabilities;
 	local.settings.user_disabled &= ~capabilities;
 }
@@ -345,20 +349,20 @@ bool32_t spatial_is_user_disabled(spatial_capability_ capability) {
 	return (local.settings.user_disabled & capability) != 0;
 }
 
-void spatial_enable_system(spatial_capability_ capabilities) {
+void spatial_request_system(spatial_capability_ capabilities) {
 	local.requested_system |= capabilities;
 }
 
-void spatial_disable_system(spatial_capability_ capabilities) {
+void spatial_release_system(spatial_capability_ capabilities) {
 	local.requested_system &= ~capabilities;
 }
 
-spatial_capability_ spatial_get_enabled() {
+spatial_capability_ spatial_get_requested() {
 	return (local.settings.requested | local.requested_system) & ~local.settings.user_disabled;
 }
 
-spatial_capability_ spatial_get_active() {
-	return local.active;
+spatial_capability_ spatial_get_running() {
+	return local.running;
 }
 
 ///////////////////////////////////////////
@@ -423,23 +427,68 @@ spatial_entity_t spatial_entity_get_removed_index(spatial_component_ with_compon
 }
 
 // Storage loads async, so this returns a placeholder the backend's lookup binds to
-spatial_entity_t spatial_entity_find_uuid(sk_uuid_t persist_id) {
-	if (uuid_is_nil(persist_id)) return 0;
+spatial_entity_t spatial_entity_find_anchor_uuid(sk_uuid_t uuid) {
+	if (uuid_is_nil(uuid)) return 0;
 
-	spatial_record_t* rec = record_find_persisted(persist_id);
+	spatial_record_t* rec = record_find_persisted(uuid);
 	if (rec != nullptr) return rec->handle;
 
 	if (!cap_persistable(spatial_capability_anchor)) {
-		log_warn("spatial_entity_find_uuid: persistence isn't supported on this system");
+		log_warn("spatial_entity_find_anchor: persistence isn't supported on this system");
 		return 0;
 	}
-	if ((spatial_get_enabled() & spatial_capability_anchor) == 0)
-		log_warn("spatial_entity_find_uuid: this won't load until SpatialCapability.Anchor is enabled");
+	if ((spatial_get_requested() & spatial_capability_anchor) == 0)
+		log_warn("spatial_entity_find_anchor: this won't load until SpatialCapability.Anchor is requested");
 
 	rec = record_add(spatial_capability_anchor, record_life_pending_find);
 	rec->components = spatial_component_persistence;
-	rec->persist_id = persist_id;
+	rec->persist_id = uuid;
 	return rec->handle;
+}
+
+///////////////////////////////////////////
+
+// Includes anchors whose name hasn't reached storage yet, since their persist is still in flight.
+static spatial_record_t* record_find_named(const char* name) {
+	for (int32_t i = 0; i < local.live.count; i++) {
+		spatial_record_t* rec = record_find(local.live[i]);
+		if (rec != nullptr && record_listed(rec) && rec->name != nullptr && string_eq(rec->name, name))
+			return rec;
+	}
+	return nullptr;
+}
+
+spatial_entity_t spatial_entity_find_anchor(const char* name_utf8) {
+	if (name_utf8 == nullptr || name_utf8[0] == '\0') return 0;
+
+	spatial_record_t* rec = record_find_named(name_utf8);
+	if (rec != nullptr) return rec->handle;
+
+	sk_uuid_t uuid;
+	if (!spatial_names_find(name_utf8, &uuid)) return 0;
+
+	spatial_entity_t entity = spatial_entity_find_anchor_uuid(uuid);
+	rec = record_find(entity);
+	if (rec != nullptr && rec->name == nullptr) rec->name = string_copy(name_utf8);
+	return entity;
+}
+
+///////////////////////////////////////////
+
+const char* spatial_entity_get_name(spatial_entity_t entity) {
+	spatial_record_t* rec = record_find(entity);
+	if (rec == nullptr) return nullptr;
+	if (rec->name != nullptr) return rec->name;
+	return (rec->components & spatial_component_persistence) ? spatial_names_get(rec->persist_id) : nullptr;
+}
+
+void spatial_entity_set_name(spatial_entity_t entity, const char* name_utf8) {
+	spatial_record_t* rec = record_find(entity);
+	if (rec == nullptr) return;
+	sk_free(rec->name);
+	rec->name = name_utf8 == nullptr ? nullptr : string_copy(name_utf8);
+	if (rec->name != nullptr && (rec->components & spatial_component_persistence))
+		spatial_names_set(rec->persist_id, rec->name);
 }
 
 ///////////////////////////////////////////
@@ -499,12 +548,22 @@ spatial_entity_t spatial_entity_get_parent(spatial_entity_t entity) {
 
 ///////////////////////////////////////////
 
-bool32_t spatial_entity_get_anchor(spatial_entity_t entity, pose_t* out_pose) {
-	spatial_record_t* rec = record_with(entity, spatial_component_anchor);
-	if (rec == nullptr) return false;
-	*out_pose = rec->anchor_pose;
-	return true;
+// Anchors and bounds say where the thing is, mesh origins are only vertex frames
+pose_t spatial_entity_get_pose(spatial_entity_t entity) {
+	spatial_record_t* rec = record_find(entity);
+	if (rec == nullptr) return pose_identity;
+
+	spatial_component_ comps = rec->components;
+	if (comps & spatial_component_anchor  ) return rec->anchor_pose;
+	if (comps & spatial_component_bounds2d) return rec->bounds2d_center;
+	if (comps & spatial_component_bounds3d) return rec->bounds3d_center;
+	if (comps & spatial_component_mesh2d  ) return rec->mesh2d.origin;
+	if (comps & spatial_component_polygon ) return rec->polygon_origin;
+	if (comps & spatial_component_mesh    ) return rec->mesh.origin;
+	return pose_identity;
 }
+
+///////////////////////////////////////////
 
 bool32_t spatial_entity_get_bounds2d(spatial_entity_t entity, pose_t* out_center, vec2* out_size) {
 	spatial_record_t* rec = record_with(entity, spatial_component_bounds2d);
@@ -594,6 +653,7 @@ const uint8_t* spatial_entity_get_marker_data(spatial_entity_t entity, int32_t* 
 
 // Storage only needs the id, so this can wait for persistence to start.
 static void unpersist_send(spatial_entity_t entity, sk_uuid_t persist_id) {
+	spatial_names_remove(persist_id);
 	if (local.unpersist != nullptr) local.unpersist(entity, persist_id);
 	else                            local.unpersist_reqs.add({ entity, persist_id });
 }
@@ -634,10 +694,10 @@ static void persist_reconcile(spatial_record_t* rec) {
 	else if (rec->life == record_life_pending_find && !persisted) record_leave(rec, record_life_lost);
 }
 
-// Until anchors go active, a pending anchor sits untracked at its requested pose
+// Until anchors are running, a pending anchor sits untracked at its requested pose
 static void record_try_create(spatial_record_t* rec) {
 	if ((local.supported & spatial_capability_anchor) == 0) { record_leave(rec, record_life_failed); return; }
-	if (local.create_anchor == nullptr || (local.active & spatial_capability_anchor) == 0) return;
+	if (local.create_anchor == nullptr || (local.running & spatial_capability_anchor) == 0) return;
 
 	spatial_entity_id_t parent_id = 0;
 	if (rec->create_parent != 0) {
@@ -661,9 +721,30 @@ static void record_try_create(spatial_record_t* rec) {
 	persist_reconcile(rec);
 }
 
-spatial_entity_t spatial_entity_create_anchor(pose_t pose, bool32_t persist, spatial_entity_t parent) {
+// A new anchor takes over the name, so whatever held it goes away for good.
+static void name_take(const char* name) {
+	spatial_record_t* held = record_find_named(name);
+	if (held == nullptr) {
+		sk_uuid_t uuid;
+		if (!spatial_names_find(name, &uuid)) return;
+		held = record_find_persisted(uuid);
+		if (held == nullptr) { spatial_entity_unpersist_uuid(uuid); return; }
+	}
+
+	spatial_entity_t handle = held->handle;
+	sk_free(held->name);
+	held->name = nullptr;
+	if (!spatial_entity_destroy(handle)) spatial_entity_unpersist(handle);
+}
+
+spatial_entity_t spatial_entity_create_anchor(pose_t pose, const char* opt_name_utf8, spatial_entity_t parent) {
+	bool persist = opt_name_utf8 != nullptr;
 	if ((local.supported & spatial_capability_anchor) == 0) {
 		log_warn("spatial_entity_create_anchor: anchors aren't supported on this system");
+		return 0;
+	}
+	if (persist && opt_name_utf8[0] == '\0') {
+		log_warn("spatial_entity_create_anchor: an anchor's name can't be empty");
 		return 0;
 	}
 	if (persist && !cap_persistable(spatial_capability_anchor)) {
@@ -674,14 +755,18 @@ spatial_entity_t spatial_entity_create_anchor(pose_t pose, bool32_t persist, spa
 		log_warn("spatial_entity_create_anchor: parent entity is not valid");
 		return 0;
 	}
-	if ((spatial_get_enabled() & spatial_capability_anchor) == 0)
-		log_warn("spatial_entity_create_anchor: this anchor won't be created until SpatialCapability.Anchor is enabled");
+	if ((spatial_get_requested() & spatial_capability_anchor) == 0)
+		log_warn("spatial_entity_create_anchor: this anchor won't be created until SpatialCapability.Anchor is requested");
+	if (persist) name_take(opt_name_utf8);
 
 	spatial_record_t* rec = record_add(spatial_capability_anchor, record_life_pending_create);
 	rec->create_parent = parent;
 	rec->components    = spatial_component_anchor;
 	rec->anchor_pose   = pose;
-	if (persist) rec->persist_want = persist_want_persisted;
+	if (persist) {
+		rec->persist_want = persist_want_persisted;
+		rec->name         = string_copy(opt_name_utf8);
+	}
 	spatial_entity_t handle = rec->handle;
 	record_try_create(rec);
 	return handle;
@@ -830,6 +915,7 @@ void spatial_shutdown() {
 	local.detached      .free();
 	local.unpersist_reqs.free();
 	local = {};
+	spatial_names_shutdown();
 }
 
 ///////////////////////////////////////////
@@ -853,9 +939,9 @@ void spatial_backend_set_destroy(void (*destroy)(spatial_entity_id_t id)) {
 	local.destroy = destroy;
 }
 
-void spatial_backend_set_active(spatial_capability_ cap, bool32_t active) {
-	if (active) local.active |=  cap;
-	else        local.active &= ~cap;
+void spatial_backend_set_running(spatial_capability_ cap, bool32_t running) {
+	if (running) local.running |=  cap;
+	else         local.running &= ~cap;
 }
 
 ///////////////////////////////////////////
@@ -1006,6 +1092,7 @@ void spatial_backend_set_persist(spatial_entity_t entity, sk_uuid_t persist_id) 
 	spatial_record_t* rec = record_find_any(entity);
 	if (rec == nullptr) return;
 	persist_set   (rec, true, persist_id);
+	if (rec->name != nullptr) spatial_names_set(persist_id, rec->name);
 	persist_landed(rec, false, persist_want_persisted);
 }
 
@@ -1029,6 +1116,7 @@ void spatial_backend_unpersist_failed(spatial_entity_t entity) {
 }
 
 void spatial_backend_persist_not_found(sk_uuid_t persist_id) {
+	spatial_names_remove(persist_id);
 	spatial_record_t* rec = record_find_persisted(persist_id);
 	if (rec != nullptr && rec->life == record_life_pending_find) record_leave(rec, record_life_failed);
 }

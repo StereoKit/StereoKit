@@ -931,10 +931,10 @@ namespace StereoKit
 
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialCapability spatial_capabilities();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialComponent spatial_capability_components(SpatialCapability capability);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_enable(SpatialCapability capabilities);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_request(SpatialCapability capabilities);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_disable(SpatialCapability capabilities);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialCapability spatial_get_enabled();
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialCapability spatial_get_active();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialCapability spatial_get_requested();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialCapability spatial_get_running();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_set_marker_size(MarkerType type, float size_meters);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern float        spatial_get_marker_size(MarkerType type);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_set_marker_stationary(MarkerType type, [MarshalAs(UnmanagedType.Bool)] bool stationary);
@@ -950,7 +950,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_get_new_index(SpatialComponent with_components, int index);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          spatial_entity_get_removed_count(SpatialComponent with_components);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_get_removed_index(SpatialComponent with_components, int index);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_find_uuid(NativeUuid uuid);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_find_anchor([MarshalAs(UnmanagedType.LPUTF8Str)] string name_utf8);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_find_anchor_uuid(NativeUuid uuid);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_is_valid(ulong entity);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern BtnState     spatial_entity_get_tracked(ulong entity);
@@ -958,8 +959,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialComponent spatial_entity_get_components(ulong entity);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern SpatialComponent spatial_entity_get_changed(ulong entity);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_get_parent(ulong entity);
-		[return: MarshalAs(UnmanagedType.Bool)]
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_anchor(ulong entity, out Pose out_pose);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Pose         spatial_entity_get_pose(ulong entity);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_bounds2d(ulong entity, out Pose out_center, out Vec2 out_size);
 		[return: MarshalAs(UnmanagedType.Bool)]
@@ -976,7 +976,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_marker(ulong entity, out MarkerType out_type, out uint out_marker_id);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       spatial_entity_get_marker_text(ulong entity);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       spatial_entity_get_marker_data(ulong entity, out int out_size);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_create_anchor(Pose pose, [MarshalAs(UnmanagedType.Bool)] bool persist, ulong parent);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ulong        spatial_entity_create_anchor(Pose pose, [MarshalAs(UnmanagedType.LPUTF8Str)] string opt_name_utf8, ulong parent);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_destroy(ulong entity);
 		[return: MarshalAs(UnmanagedType.Bool)]

@@ -462,6 +462,8 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/systems/spatial_anchors.cpp
   StereoKitC/systems/spatial_entity.h
   StereoKitC/systems/spatial_entity.cpp
+  StereoKitC/systems/spatial_names.h
+  StereoKitC/systems/spatial_names.cpp
   StereoKitC/systems/text.h
   StereoKitC/systems/text.cpp
   StereoKitC/systems/vert_format.h

@@ -7,25 +7,25 @@ namespace StereoKit
 	/// `SpatialEntity` objects.
 	///
 	/// Check `Capabilities` to see what the current device supports, then
-	/// `Enable` what you need. Capabilities start up asynchronously, and may
-	/// need a permission first, so `Active` tells you which ones are
-	/// actually running. Marker settings like `SetMarkerSize` and
-	/// `ArucoDictionary` are best set before enabling, since changing them
-	/// restarts that capability's tracking.</summary>
+	/// `Request` what you need. Capabilities start up asynchronously, and
+	/// may need a permission first, so `Running` tells you which ones have
+	/// actually started. Marker settings like `SetMarkerSize` and
+	/// `ArucoDictionary` are best set before requesting, since changing
+	/// them restarts that capability's tracking.</summary>
 	public static class Spatial
 	{
 		/// <summary>The spatial capabilities the current device supports!
 		/// This is None until an XR session with spatial entity support has
 		/// initialized.</summary>
 		public static SpatialCapability Capabilities => NativeAPI.spatial_capabilities();
-		/// <summary>The capabilities that have been requested, via `Enable`
+		/// <summary>The capabilities that have been requested, via `Request`
 		/// or by StereoKit systems like `Anchor`, minus any you've turned off
 		/// with `Disable`.</summary>
-		public static SpatialCapability Enabled => NativeAPI.spatial_get_enabled();
-		/// <summary>The capabilities that are fully warmed up and actively
-		/// providing entities. This is a subset of `Enabled`, since
-		/// capabilities take a little time to start after being enabled.</summary>
-		public static SpatialCapability Active => NativeAPI.spatial_get_active();
+		public static SpatialCapability Requested => NativeAPI.spatial_get_requested();
+		/// <summary>The capabilities that have started up and are providing
+		/// entities. This is a subset of `Requested`, since capabilities
+		/// take a little time to start after being requested.</summary>
+		public static SpatialCapability Running => NativeAPI.spatial_get_running();
 
 		/// <summary>The components the device can provide on entities
 		/// discovered by the given capability.</summary>
@@ -35,24 +35,59 @@ namespace StereoKit
 		public static SpatialComponent ComponentsFor(SpatialCapability capability)
 			=> NativeAPI.spatial_capability_components(capability);
 
+		/// <summary>Does the current device support all of these
+		/// capabilities? This is false until an XR session with spatial
+		/// entity support has initialized.</summary>
+		/// <param name="capabilities">One or more capabilities to check.</param>
+		/// <returns>True if every capability given is supported.</returns>
+		public static bool IsSupported(SpatialCapability capabilities)
+			=> capabilities != SpatialCapability.None && (Capabilities & capabilities) == capabilities;
+
+		/// <summary>Can this capability provide all of these components on
+		/// this device? Handy for optional data like labels, which some
+		/// devices don't provide.</summary>
+		/// <param name="capability">A single capability to look up.</param>
+		/// <param name="components">One or more components to check.</param>
+		/// <returns>True if the capability can provide every component
+		/// given.</returns>
+		public static bool IsSupported(SpatialCapability capability, SpatialComponent components)
+			=> components != SpatialComponent.None && (ComponentsFor(capability) & components) == components;
+
+		/// <summary>Have all of these capabilities been requested, and not
+		/// turned off with `Disable`? This doesn't mean they've started yet,
+		/// see `IsRunning` for that.</summary>
+		/// <param name="capabilities">One or more capabilities to check.</param>
+		/// <returns>True if every capability given is requested.</returns>
+		public static bool IsRequested(SpatialCapability capabilities)
+			=> capabilities != SpatialCapability.None && (Requested & capabilities) == capabilities;
+
+		/// <summary>Have all of these capabilities started up, and are they
+		/// providing entities? Capabilities take a little time to start
+		/// after being requested, and may wait on a permission first.</summary>
+		/// <param name="capabilities">One or more capabilities to check.</param>
+		/// <returns>True if every capability given is running.</returns>
+		public static bool IsRunning(SpatialCapability capabilities)
+			=> capabilities != SpatialCapability.None && (Running & capabilities) == capabilities;
+
 		/// <summary>Request tracking for these capabilities, additively!
 		/// This takes effect asynchronously, and entities will appear in the
-		/// entity list as the system warms up and discovers them. Enabling or
-		/// disabling one capability never disturbs entities belonging to
-		/// another. If a capability needs a permission, this requests it
-		/// automatically as a fallback, but requesting it yourself in advance
-		/// via `Permission.Request` gives you control over when the user is
-		/// asked, and lets you handle a denial.</summary>
-		/// <param name="capabilities">One or more capabilities to enable.
-		/// Unsupported capabilities are ignored.</param>
-		public static void Enable(SpatialCapability capabilities)
-			=> NativeAPI.spatial_enable(capabilities);
+		/// entity list as the system starts up and discovers them.
+		/// Requesting or disabling one capability never disturbs entities
+		/// belonging to another. If a capability needs a permission, this
+		/// requests it automatically as a fallback, but requesting it
+		/// yourself in advance via `Permission.Request` gives you control
+		/// over when the user is asked, and lets you handle a denial.
+		/// </summary>
+		/// <param name="capabilities">One or more capabilities to request.
+		/// Unsupported capabilities never start running.</param>
+		public static void Request(SpatialCapability capabilities)
+			=> NativeAPI.spatial_request(capabilities);
 
 		/// <summary>Stop tracking these capabilities. Their entities leave
 		/// the entity list, and any SpatialEntity identifiers you still
 		/// hold stop resolving. Persisted entities are the exception, they
 		/// wait with `Status` Pending, and come back if the capability is
-		/// enabled again. This also overrides StereoKit's own use of a
+		/// requested again. This also overrides StereoKit's own use of a
 		/// capability. The `Anchor` system turns on
 		/// `SpatialCapability.Anchor` the first time you use it, and calling
 		/// this before `SK.Initialize` keeps `Anchor` from using spatial
@@ -62,11 +97,11 @@ namespace StereoKit
 			=> NativeAPI.spatial_disable(capabilities);
 
 		/// <summary>Tell the system how big your printed markers of this
-		/// type are. Knowing the real size lets it estimate marker distance
-		/// and pose more accurately. Changing this while that marker type is
-		/// being tracked restarts its tracking, so set it before `Enable`
-		/// when you can. Not all devices use this, treat it as a hint.
-		/// </summary>
+		/// type are. This matters most for ArUco and AprilTags, where a
+		/// known size can help a runtime judge marker distance, but it's
+		/// only a hint, and runtimes may ignore it. Changing this while that
+		/// marker type is being tracked restarts its tracking, so set it
+		/// before `Request` when you can.</summary>
 		/// <param name="type">The marker type this size applies to.</param>
 		/// <param name="sizeMeters">The edge length of the marker's square,
 		/// in meters. Use 0 if the sizes are mixed or unknown.</param>
@@ -84,7 +119,7 @@ namespace StereoKit
 		/// like a code taped to a wall, rather than being carried around.
 		/// Stationary markers can have their pose refined over time instead
 		/// of re-detected every frame. Changing this while that marker type
-		/// is being tracked restarts its tracking, so set it before `Enable`
+		/// is being tracked restarts its tracking, so set it before `Request`
 		/// when you can. Not all devices use this, treat it as a hint.
 		/// </summary>
 		/// <param name="type">The marker type this applies to.</param>

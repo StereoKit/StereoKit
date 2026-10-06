@@ -76,7 +76,7 @@ void demo_spatial_init() {
 	demo_mesh_mat = material_copy_id(default_id_material);
 	material_set_wireframe(demo_mesh_mat, true);
 
-	spatial_enable(spatial_capabilities());
+	spatial_request(spatial_capabilities());
 }
 
 ///////////////////////////////////////////
@@ -87,13 +87,13 @@ void demo_spatial_update() {
 	ui_window_begin("Spatial Entities", &window_pose);
 
 	spatial_capability_ supported = spatial_capabilities();
-	spatial_capability_ enabled   = spatial_get_enabled();
+	spatial_capability_ requested = spatial_get_requested();
 	for (int32_t i = 0; i < cap_name_count; i++) {
 		bool32_t is_supported = (supported & cap_names[i].cap) != 0;
-		bool32_t on           = is_supported && (enabled & cap_names[i].cap) != 0;
+		bool32_t on           = is_supported && (requested & cap_names[i].cap) != 0;
 		ui_push_enabled(is_supported);
 		if (ui_toggle(cap_names[i].name, on)) {
-			if (on) spatial_enable (cap_names[i].cap);
+			if (on) spatial_request(cap_names[i].cap);
 			else    spatial_disable(cap_names[i].cap);
 		}
 		ui_pop_enabled();
@@ -107,11 +107,12 @@ void demo_spatial_update() {
 
 	// Anchor creation + persistence
 	ui_hseparator();
-	ui_push_enabled((spatial_get_enabled() & spatial_capability_anchor) != 0);
+	ui_push_enabled((spatial_get_requested() & spatial_capability_anchor) != 0);
 	if (ui_button("Create Anchor")) {
 		pose_t head = input_head();
 		vec3   at   = head.position + head.orientation * vec3_forward * 0.5f;
-		spatial_entity_create_anchor({ at, quat_lookat(at, head.position) }, persist_new, 0);
+		spatial_entity_t anchor = spatial_entity_create_anchor({ at, quat_lookat(at, head.position) }, nullptr, 0);
+		if (persist_new) spatial_entity_persist(anchor);
 	}
 	ui_sameline();
 	ui_push_enabled((spatial_capability_components(spatial_capability_anchor) & spatial_component_persistence) != 0);
@@ -153,8 +154,8 @@ void demo_spatial_update() {
 		}
 
 		// Anchors draw as an axis gizmo, with their persist id when stored
-		pose_t anchor_pose;
-		if (spatial_entity_get_anchor(entity, &anchor_pose)) {
+		if (spatial_entity_get_components(entity) & spatial_component_anchor) {
+			pose_t anchor_pose = spatial_entity_get_pose(entity);
 			line_add_axis(anchor_pose, 0.1f);
 
 			sk_uuid_t uuid;

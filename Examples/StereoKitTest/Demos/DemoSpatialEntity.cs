@@ -27,7 +27,7 @@ class DemoSpatialEntity : ITest
 		public Guid   persistId;
 	}
 	Dictionary<SpatialEntity, Visual> visuals = new Dictionary<SpatialEntity, Visual>();
-	SpatialCapability                 prevEnabled;
+	SpatialCapability                 prevRequested;
 
 	static readonly (SpatialCapability cap, string name)[] capNames = {
 		(SpatialCapability.Anchor,        "Anchors"),
@@ -45,14 +45,14 @@ class DemoSpatialEntity : ITest
 		meshMat           = Material.Default.Copy();
 		meshMat.Wireframe = true;
 
-		prevEnabled = Spatial.Enabled;
-		Spatial.Enable(Spatial.Capabilities);
+		prevRequested = Spatial.Requested;
+		Spatial.Request(Spatial.Capabilities);
 	}
 
 	public void Shutdown()
 	{
 		// Disabling everything would also turn off the Anchor system for later demos
-		Spatial.Disable(Spatial.Capabilities & ~prevEnabled);
+		Spatial.Disable(Spatial.Capabilities & ~prevRequested);
 		visuals.Clear();
 	}
 
@@ -61,14 +61,14 @@ class DemoSpatialEntity : ITest
 		UI.WindowBegin("Spatial Entities", ref windowPose);
 
 		SpatialCapability supported = Spatial.Capabilities;
-		SpatialCapability enabled   = Spatial.Enabled;
+		SpatialCapability requested = Spatial.Requested;
 		foreach ((SpatialCapability cap, string name) in capNames)
 		{
 			UI.PushEnabled((supported & cap) > 0);
-			bool on = (enabled & cap) > 0;
+			bool on = (requested & cap) > 0;
 			if (UI.Toggle(name, ref on))
 			{
-				if (on) Spatial.Enable (cap);
+				if (on) Spatial.Request(cap);
 				else    Spatial.Disable(cap);
 			}
 			UI.PopEnabled();
@@ -89,15 +89,16 @@ class DemoSpatialEntity : ITest
 
 		// Anchor creation + persistence
 		UI.HSeparator();
-		UI.PushEnabled((Spatial.Enabled & SpatialCapability.Anchor) > 0);
+		UI.PushEnabled(Spatial.IsRequested(SpatialCapability.Anchor));
 		if (UI.Button("Create Anchor"))
 		{
 			Pose head = Input.Head;
 			Vec3 at   = head.position + head.Forward * 0.5f;
-			SpatialEntity.CreateAnchor(new Pose(at, Quat.LookAt(at, head.position)), persistNew);
+			SpatialEntity anchor = SpatialEntity.CreateAnchor(new Pose(at, Quat.LookAt(at, head.position)));
+			if (persistNew) anchor.Persist();
 		}
 		UI.SameLine();
-		UI.PushEnabled((Spatial.ComponentsFor(SpatialCapability.Anchor) & SpatialComponent.Persistence) > 0);
+		UI.PushEnabled(Spatial.IsSupported(SpatialCapability.Anchor, SpatialComponent.Persistence));
 		UI.Toggle("Persist", ref persistNew);
 		UI.PopEnabled();
 		UI.PopEnabled();
@@ -160,8 +161,9 @@ class DemoSpatialEntity : ITest
 		}
 
 		// Anchors draw as an axis gizmo, with their persist id when stored
-		if (entity.TryGetAnchor(out Pose anchorPose))
+		if (entity.Has(SpatialComponent.Anchor))
 		{
+			Pose anchorPose = entity.Pose;
 			Lines.AddAxis(anchorPose, 0.1f);
 			if (vis.anchorLabel == null || (changed & SpatialComponent.Persistence) > 0)
 			{

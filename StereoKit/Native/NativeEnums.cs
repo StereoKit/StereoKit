@@ -2311,7 +2311,7 @@ namespace StereoKit
 	/// <summary>A spatial capability is a unit of scene understanding functionality
 	/// that a device may provide, such as plane tracking, or QR code
 	/// tracking. Check what the device supports with `Spatial.Capabilities`,
-	/// enable what you need, and StereoKit will maintain a list of the
+	/// request what you need, and StereoKit will maintain a list of the
 	/// spatial entities the system discovers.
 	/// The top 4 bits of this flag are reserved for vendor and experimental
 	/// capabilities.</summary>
