@@ -180,9 +180,6 @@ void    audio_test_step   ();
 // Advances the main-thread clock without a step, so deferred play catch-up
 // tests can simulate a slow asset load.
 void    audio_test_advance(float seconds);
-// A/B hook: force point sources through the FOA bus (the pre-direct-
-// binaural render path), switchable live for listening comparisons.
-void    audio_test_force_bus(bool32_t enable);
 // A slot's au_voice_state_, so tests can watch voices free.
 int32_t audio_test_voice_state(int16_t slot);
 extern bool32_t   au_offline;

@@ -1519,37 +1519,58 @@ static void at_test_direct_batch() {
 	sound_release(sine);
 }
 
-// Direct and bus rendering must hold the same loudness, or spread
-// animation (and the A/B toggle) would double as a volume knob.
+// Paul Kellet's three-pole pink noise, the loudness probe: a tone reads the
+// decode's comb at one frequency, white weighs the top octaves too heavily.
+static void at_gen_pink(float* out, uint64_t start, uint64_t frames) {
+	float b0 = 0, b1 = 0, b2 = 0;
+	for (uint64_t i = 0; i < frames; i++) {
+		float w = at_noise((float)(start + i) / AU_SAMPLE_RATE) * 10.0f;
+		b0 = 0.99765f * b0 + w * 0.0990460f;
+		b1 = 0.96300f * b1 + w * 0.2965164f;
+		b2 = 0.57000f * b2 + w * 1.0526913f;
+		out[i] = (b0 + b1 + b2 + w * 0.1848f) * 0.03f;
+	}
+}
+
+// Steady-state energy of a looping play, after the decode's diffuseness
+// estimate has settled on it.
+static double at_spread_energy(sound_t sound, vec3 pos, float spread) {
+	sound_play_t play = {}; play.flags = sound_flags_loop; play.spread = spread;
+	sound_inst_t inst = sound_play(sound, pos, &play);
+	at_render(AT_BLOCK * 4, nullptr, nullptr);
+	double energy = at_render_energy(AT_BLOCK * 8);
+	sound_inst_stop(inst);
+	at_flush();
+	return energy;
+}
+
+// Spread must not double as a volume knob. The paths voice each direction
+// differently, so loudness is judged broadband and averaged over directions.
 static void at_test_direct_bus_level() {
-	sound_t      sine = at_generate(at_sine, 0.25f);
-	vec3         pos  = vec3{2, 0.5f, -2};
-	sound_play_t loop = {}; loop.flags = sound_flags_loop;
+	sound_t pink = sound_generate(at_gen_pink, 0.5f, sound_channels_mono);
+	sound_set_decibels(pink, AT_UNIT_GAIN_DB);
 
-	sound_inst_t inst     = sound_play(sine, pos, &loop);
-	double       e_direct = at_render_energy(AT_BLOCK * 4);
-	sound_inst_stop(inst);
-	at_flush();
+	const vec3  dirs[]    = { {2, 0.5f, -2}, {0, 0, -2}, {-2, 0, 0}, {0, 0, 2}, {0, 2, 0}, {0, -2, 0} };
+	const float spreads[] = { 0.25f, AU_DIRECT_SPREAD, 0.75f, 1.0f };
+	const int32_t dir_count = sizeof(dirs) / sizeof(dirs[0]);
 
-	audio_test_force_bus(true);
-	inst = sound_play(sine, pos, &loop);
-	double e_bus = at_render_energy(AT_BLOCK * 4);
-	sound_inst_stop(inst);
-	at_flush();
-	audio_test_force_bus(false);
+	double direct[dir_count];
+	for (int32_t d = 0; d < dir_count; d++)
+		direct[d] = at_spread_energy(pink, dirs[d], 0);
 
-	double ratio_db = 10.0 * log10(e_direct / e_bus);
-	AT_CHECK(fabs(ratio_db) < 1.5, "direct and bus paths render within 1.5dB");
+	for (int32_t s = 0; s < 4; s++) {
+		double mean_db = 0, worst_db = 0;
+		for (int32_t d = 0; d < dir_count; d++) {
+			double db = 10.0 * log10(at_spread_energy(pink, dirs[d], spreads[s]) / direct[d]);
+			mean_db += db / dir_count;
+			if (fabs(db) > worst_db) worst_db = fabs(db);
+		}
+		char desc[128];
+		snprintf(desc, sizeof(desc), "spread %.2f holds level against direct, %.2fdB mean, %.2fdB worst direction", spreads[s], mean_db, worst_db);
+		AT_CHECK(fabs(mean_db) < 0.75 && worst_db < 2.5, desc);
+	}
 
-	// Mid-crossfade holds level too - a spread sweep shouldn't dip.
-	sound_play_t mid = loop; mid.spread = 0.25f;
-	inst = sound_play(sine, pos, &mid);
-	double e_mid = at_render_energy(AT_BLOCK * 4);
-	sound_inst_stop(inst);
-	at_flush();
-	AT_CHECK(fabs(10.0 * log10(e_mid / e_direct)) < 2.0, "spread crossfade holds level within 2dB");
-
-	sound_release(sine);
+	sound_release(pink);
 }
 
 ///////////////////////////////////////////
