@@ -19,6 +19,8 @@ typedef struct anchor_stage_sys_t {
 	anchor_type_id    id;
 	array_t<anchor_t> persistent;
 	bool32_t          loaded;
+	bool32_t          has_store;     // False when there's no app data folder
+	char              store_path[1024];
 } anchor_stage_sys_t;
 
 typedef struct anchor_stage_t {
@@ -34,12 +36,17 @@ const char* anchor_stage_store_filename = "anchors.txt";
 bool32_t anchor_stage_init() {
 	anchor_stage_sys = {};
 
+	char folder[1024];
+	anchor_stage_sys.has_store = ska_path_get(ska_path_data, folder, sizeof(folder));
+	if (anchor_stage_sys.has_store)
+		snprintf(anchor_stage_sys.store_path, sizeof(anchor_stage_sys.store_path), "%s" platform_path_separator "%s", folder, anchor_stage_store_filename);
+
 	// Read anchors from a text file
 	char*  anchor_file      = nullptr;
 	size_t anchor_file_size = 0;
-	
-	if (ska_file_exists(anchor_stage_store_filename) &&
-		ska_file_read  (anchor_stage_store_filename, (void**)&anchor_file, &anchor_file_size)) {
+
+	if (anchor_stage_sys.has_store && ska_file_exists(anchor_stage_sys.store_path) &&
+		ska_file_read(anchor_stage_sys.store_path, (void**)&anchor_file, &anchor_file_size)) {
 
 		stref_t data_stref = stref_make(anchor_file);
 		stref_t line = {};
@@ -84,10 +91,10 @@ bool32_t anchor_stage_init() {
 
 ///////////////////////////////////////////
 
-void anchor_stage_shutdown() {
-	if (!anchor_stage_sys.loaded) return;
+static void anchor_stage_save() {
+	if (!anchor_stage_sys.has_store) return;
+	const char* store_path = anchor_stage_sys.store_path;
 
-	// Write our persistent anchors to file
 	if (anchor_stage_sys.persistent.count > 0) {
 		// string_from_float writes a locale-independent '.' decimal, so these
 		// always round-trip through string_to_float regardless of the user's
@@ -108,12 +115,16 @@ void anchor_stage_shutdown() {
 				a->name);
 			file_data = string_append(file_data, 1, line);
 		}
-		ska_file_write_text(anchor_stage_store_filename, file_data);
+		ska_file_write_text(store_path, file_data);
 		sk_free(file_data);
-	} else {
-		if (ska_file_exists(anchor_stage_store_filename))
-			platform_file_delete(anchor_stage_store_filename); // platform_file_delete not in sk_app
+	} else if (ska_file_exists(store_path)) {
+		platform_file_delete(store_path); // platform_file_delete not in sk_app
 	}
+}
+
+void anchor_stage_shutdown() {
+	if (!anchor_stage_sys.loaded) return;
+	anchor_stage_save();
 
 	// Release the persisted anchors and free the array
 	for (int32_t i = 0; i < anchor_stage_sys.persistent.count; i++) {
@@ -131,7 +142,8 @@ void anchor_stage_clear_stored() {
 		anchor_release(anchor_stage_sys.persistent[i]);
 	}
 	anchor_stage_sys.persistent.free();
-	ska_file_write_text(anchor_stage_store_filename, "");
+	if (anchor_stage_sys.has_store && ska_file_exists(anchor_stage_sys.store_path))
+		platform_file_delete(anchor_stage_sys.store_path);
 }
 
 ///////////////////////////////////////////

@@ -42,6 +42,13 @@ static size_t ktx2_zstd_inflate(void*, const void* src, size_t src_bytes, void* 
 
 ///////////////////////////////////////////
 
+static size_t texenc_zlib_inflate(void*, const void* src, size_t src_bytes, void* out_dst, size_t dst_bytes) {
+	int32_t written = stbi_zlib_decode_buffer((char*)out_dst, (int32_t)dst_bytes, (const char*)src, (int32_t)src_bytes);
+	return written < 0 ? 0 : (size_t)written;
+}
+
+///////////////////////////////////////////
+
 void texture_compression_init() {
 	local.ktx2.zstd = ktx2_zstd_inflate;
 	ktx2_context_prepare(&local.ktx2);
@@ -50,7 +57,7 @@ void texture_compression_init() {
 ///////////////////////////////////////////
 
 void texture_compression_gpu_init() {
-	sk_texenc_init();
+	sk_texenc_init(texenc_zlib_inflate, nullptr);
 #if defined(SKR_WEBGPU)
 	// Waits on WebGPU integration, where the encoders' WGSL still needs vetting.
 	local.caps = {};

@@ -26,9 +26,11 @@ namespace StereoKit
 		Dynamic
 	}
 
-	/// <summary>World contains information about the real world around the 
-	/// user. This includes things like play boundaries, scene understanding,
-	/// and other various things.</summary>
+	/// <summary>World contains information about the real world around the
+	/// user. This includes things like play boundaries, the tracking origin,
+	/// and occlusion or raycasting against the world mesh. For detecting
+	/// specific things in the user's space, like planes, markers, or
+	/// anchors, see `Spatial` and `SpatialEntity`.</summary>
 	public static class World
 	{
 		/// <summary>This refers to the play boundary, or guardian system

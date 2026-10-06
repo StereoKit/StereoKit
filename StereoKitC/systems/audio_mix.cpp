@@ -92,6 +92,10 @@ static int32_t  au_foa_tail    = 0;     // Decode ring-down frames left
 // use. Real heads shadow 15-20dB up top; 0.87 lands at ~-18dB.
 #define AU_SHADOW_WET    0.87f
 
+// A bus-decoded point source lands ~1.5dB under its direct render (the far
+// lateral speaker never sums coherently); the crossfade encode makes it up.
+#define AU_BUS_TRIM      1.19f
+
 // Spherical head radius, meters - shared by the interaural delay, the
 // coherence crossover, and the near-field ear distances.
 #define AU_HEAD_RADIUS   0.0875f
@@ -716,12 +720,6 @@ static void au_er_write(au_voice_t* voice, const au_er_taps_t* taps, const float
 // shadow, and parametric elevation/back voicing. Precision cues the FOA
 // bus can't provide - a source's own interaural delay is what makes it
 // pointable. Spread crossfades a voice from here onto the bus.
-
-// A/B hook: force everything through the bus for listening comparisons.
-static int32_t au_force_bus = 0;
-void audio_test_force_bus(bool32_t enable) {
-	atomic_store_i32(&au_force_bus, enable ? 1 : 0);
-}
 
 // Direct-form-I biquad with caller-owned state, st = [x1 x2 y1 y2].
 static inline float au_biquad_apply(const au_biquad_t* c, float* st, float x) {
@@ -1446,7 +1444,6 @@ static ma_uint32 voice_mix(au_voice_t* voice, pose_t head, float* output, ma_uin
 	// Point sources render direct binaural for per-source ITD precision, and
 	// crossfade onto the FOA bus as spread widens - width is the bus's job.
 	float k_bus = fminf(1.0f, spread / AU_DIRECT_SPREAD);
-	if (atomic_load_i32(&au_force_bus)) k_bus = 1;
 
 	// gain*dist strips the distance term back out, keeping the send constant
 	// while the source shares the space; past ~half the size the min() lets
@@ -1483,9 +1480,10 @@ static ma_uint32 voice_mix(au_voice_t* voice, pose_t head, float* output, ma_uin
 
 	// Bus encode is in the *world* ambisonic frame, head rotation applies
 	// at decode. SK -> ambisonic axes: +X front, +Y left, +Z up.
-	float    dir_scale = (1.0f - spread) * k_bus;
-	XMVECTOR enc       = XMVectorSet(gain * k_bus, gain * -u.x * dir_scale,
-	                                 gain * u.y * dir_scale, gain * -u.z * dir_scale);
+	float    bus_gain  = gain * k_bus * AU_BUS_TRIM;
+	float    dir_scale = (1.0f - spread) * bus_gain;
+	XMVECTOR enc       = XMVectorSet(bus_gain, -u.x * dir_scale,
+	                                 u.y * dir_scale, -u.z * dir_scale);
 
 	// Applied gains ramp from the previous block's values, the same declick
 	// the ear delays get. Zero endpoints cover the direct<->bus handoff.
@@ -1687,7 +1685,6 @@ static ma_uint32 voice_mix(au_voice_t* voice, pose_t head, float* output, ma_uin
 // Pure point sources - mono, spatialized, zero spread, outside the head -
 // all take the direct binaural path, so they can render 4-wide.
 static bool voice_is_direct(const au_voice_t* voice, vec3 listener_pos) {
-	if (atomic_load_i32(&au_force_bus))                        return false;
 	if (voice->sound->channels != sound_channels_mono)         return false;
 	if (atomic_load_i32(&voice->params.flags) & sound_flags_head_locked) return false;
 	if (atomic_load_f32(&voice->params.spread) > 0)            return false;

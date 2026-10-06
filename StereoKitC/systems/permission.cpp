@@ -106,6 +106,13 @@ const char* _permission_check_string(permission_type_ type, xr_runtime_ runtime)
 		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.USE_ANCHOR_API");
 		PERMISSION_SET  (xr_runtime_pico,       "com.picovr.permission.SPATIAL_DATA");
 		break;
+	case permission_type_plane_tracking:
+	case permission_type_marker_tracking:
+		PERMISSION_SET  (xr_runtime_android_xr, "android.permission.SCENE_UNDERSTANDING_COARSE");
+		PERMISSION_CHECK(xr_runtime_meta,       "com.oculus.permission.USE_SCENE");
+		PERMISSION_SET  (xr_runtime_meta,       "horizonos.permission.USE_SCENE");
+		PERMISSION_SET  (xr_runtime_pico,       "com.picovr.permission.SPATIAL_DATA");
+		break;
 	default:
 		break;
 	}

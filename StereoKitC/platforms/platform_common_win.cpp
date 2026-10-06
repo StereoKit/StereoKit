@@ -58,6 +58,17 @@ wchar_t *platform_to_wchar(const char *utf8_string) {
 
 ///////////////////////////////////////////
 
+bool platform_file_replace(const char* src_filename, const char* dest_filename) {
+	wchar_t* src  = platform_to_wchar(src_filename);
+	wchar_t* dest = platform_to_wchar(dest_filename);
+	bool     result = MoveFileExW(src, dest, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+	sk_free(src);
+	sk_free(dest);
+	return result;
+}
+
+///////////////////////////////////////////
+
 char *platform_from_wchar(const wchar_t *string) {
 	int32_t len  = (int)(wcslen(string)+1);
 	int32_t size = WideCharToMultiByte(CP_UTF8, 0, string, len, nullptr, 0, nullptr, nullptr);

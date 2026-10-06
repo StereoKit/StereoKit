@@ -4,26 +4,18 @@
 
 using StereoKit;
 using System;
-using System.Runtime.InteropServices;
 
-/// <summary>A blind-pointing test for audio spatialization: a click
+/// <summary>A blind-pointing test for audio spatialization. A click
 /// train plays from a hidden random direction, and you point at it and
-/// pinch. Angular error is tracked across rounds, and the old bus-based
-/// spatializer can be toggled live for an A/B comparison against the
-/// per-voice direct binaural path. This is an interactive tool - the
-/// headless test pass just idles.</summary>
+/// pinch. Angular error is tracked across rounds. This is an interactive
+/// tool, so the headless test pass just idles.</summary>
 class TestAudioAim : ITest
 {
-	// A/B hook exported by StereoKitC for spatializer listening tests.
-	[DllImport("StereoKitC", CallingConvention = CallingConvention.Cdecl)]
-	static extern void audio_test_force_bus(int enable);
-
 	Pose      windowPose = (Demo.contentPose * Matrix.T(0, 0, 0)).Pose;
 	Sound     clicks;
 	SoundInst inst;
 	Vec3      target;
 	bool      roundActive;
-	bool      busMode;
 	float     resultTimer;
 	float     lastError = -1;
 	int       rounds;
@@ -115,8 +107,6 @@ class TestAudioAim : ITest
 		if (roundActive) { if (UI.Button("Give up")) EndRound(-1); }
 		else             { if (UI.Button("Start round")) StartRound(); }
 
-		if (UI.Toggle("Classic bus spatializer", ref busMode))
-			audio_test_force_bus(busMode ? 1 : 0);
 		if (rounds > 0 && UI.Button("Reset stats")) { rounds = 0; errorSum = 0; lastError = -1; }
 		UI.PopEnabled();
 		UI.WindowEnd();
@@ -125,6 +115,5 @@ class TestAudioAim : ITest
 	public void Shutdown()
 	{
 		if (roundActive) inst.Stop();
-		audio_test_force_bus(0);
 	}
 }

@@ -203,7 +203,7 @@ bool32_t platform_file_picker_visible() {
 void file_picker_open_folder(const char *folder) {
 	char cwd_buf[1024];
 	if (folder == nullptr) {
-		ska_get_cwd(cwd_buf, sizeof(cwd_buf));
+		ska_path_get(ska_path_cwd, cwd_buf, sizeof(cwd_buf));
 		folder = cwd_buf;
 	}
 

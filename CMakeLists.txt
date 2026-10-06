@@ -252,7 +252,7 @@ if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.9.17
+    GIT_TAG v2026.10.4
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to
@@ -272,7 +272,7 @@ if (NOT SK_LOCAL_SK_APP)
   CPMAddPackage(
     NAME sk_app
     GITHUB_REPOSITORY StereoKit/sk_app
-    GIT_TAG v2026.9.10
+    GIT_TAG v2026.10.2
   )
 else()
   # For building directly with in-progress sk_app changes, point this to your
@@ -460,6 +460,11 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/systems/sprite_drawer.cpp
   StereoKitC/systems/system.h
   StereoKitC/systems/system.cpp
+  StereoKitC/systems/spatial_anchors.cpp
+  StereoKitC/systems/spatial_entity.h
+  StereoKitC/systems/spatial_entity.cpp
+  StereoKitC/systems/spatial_names.h
+  StereoKitC/systems/spatial_names.cpp
   StereoKitC/systems/text.h
   StereoKitC/systems/text.cpp
   StereoKitC/systems/vert_format.h
@@ -542,6 +547,8 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/xr_backends/extensions/fb_haptic.cpp
   StereoKitC/xr_backends/extensions/fb_render_model.h
   StereoKitC/xr_backends/extensions/fb_render_model.cpp
+  StereoKitC/xr_backends/extensions/future.h
+  StereoKitC/xr_backends/extensions/future.cpp
   StereoKitC/xr_backends/extensions/vulkan_enable.h
   StereoKitC/xr_backends/extensions/vulkan_enable.cpp
   StereoKitC/xr_backends/extensions/hand_mesh.h
@@ -556,6 +563,8 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/xr_backends/extensions/loader_init.cpp
   StereoKitC/xr_backends/extensions/palm_pose.h
   StereoKitC/xr_backends/extensions/palm_pose.cpp
+  StereoKitC/xr_backends/extensions/spatial_entity.h
+  StereoKitC/xr_backends/extensions/spatial_entity.cpp
   StereoKitC/xr_backends/extensions/android_create_instance.h
   StereoKitC/xr_backends/extensions/android_create_instance.cpp
   StereoKitC/xr_backends/extensions/android_thread.h
@@ -877,6 +886,8 @@ if (SK_BUILD_TESTS)
     Examples/StereoKitCTest/main.cpp
     Examples/StereoKitCTest/log_window.h
     Examples/StereoKitCTest/log_window.cpp
+    Examples/StereoKitCTest/demo_spatial.h
+    Examples/StereoKitCTest/demo_spatial.cpp
     Examples/StereoKitCTest/demo_envmap.h
     Examples/StereoKitCTest/demo_envmap.cpp
     Examples/StereoKitCTest/demo_shadows.h
@@ -966,8 +977,10 @@ endif()
 
 # Headless native test runner (tools/tests). Each suite self-inits SK in
 # offscreen mode, so it needs no window, shaders, or assets - just StereoKitC.
-# Desktop only: it's a CLI test binary, not an interactive app.
-if (SK_BUILD_TESTS AND NOT ANDROID)
+# Desktop only: it's a CLI test binary, not an interactive app. The suites
+# drive internals that a shared library doesn't export, so this only builds
+# against a static StereoKitC, like the Linux_x64_Tests preset.
+if (SK_BUILD_TESTS AND NOT ANDROID AND NOT SK_BUILD_SHARED_LIBS)
   add_skapp ( SKTests
     APP_NAME "StereoKit Native Tests" )
 
@@ -982,6 +995,8 @@ if (SK_BUILD_TESTS AND NOT ANDROID)
     tools/tests/sh_tests.cpp
     tools/tests/texcompress_tests.h
     tools/tests/texcompress_tests.cpp
+    tools/tests/spatial_tests.h
+    tools/tests/spatial_tests.cpp
   )
 
   # See the StereoKitCTest note: pin the standard so u8 literals stay char.

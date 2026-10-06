@@ -110,6 +110,7 @@ bool platform_init() {
 	ska_settings.alloc   = ska_alloc_wrapper;
 	ska_settings.realloc = ska_realloc_wrapper;
 	ska_settings.free    = ska_free_wrapper;
+	ska_settings.app_id  = settings->app_name;
 #if defined(SK_OS_ANDROID)
 	// Forward Android Context to sk_app so JNI features (clipboard, kvpstore,
 	// file dialogs, asset reading) work in library mode.
@@ -120,7 +121,6 @@ bool platform_init() {
 		log_fail_reason(80, log_error, "sk_app initialization failed");
 		return false;
 	}
-	ska_kvpstore_set_app_name(settings->app_name ? settings->app_name : "StereoKit");
 
 	// Set up any platform dependent variables
 	if (!platform_impl_init()) {
@@ -432,6 +432,14 @@ bool platform_file_delete(const char* filename) {
 
 ///////////////////////////////////////////
 
+#if !defined(SK_OS_WINDOWS)
+bool platform_file_replace(const char* src_filename, const char* dest_filename) {
+	return rename(src_filename, dest_filename) == 0;
+}
+#endif
+
+///////////////////////////////////////////
+
 char *platform_push_path_ref(char *path, const char *directory) {
 	char *result = platform_push_path_new(path, directory);
 	sk_free(path);
@@ -512,8 +520,8 @@ static void platform_normalize_path_inplace(char *path) {
 }
 
 // Looks for a file matching `normalized` on the actual filesystem, checking
-// the given path directly and then (for relative paths) relative to the
-// executable. Takes ownership of `normalized` and returns it on a direct hit
+// the given path directly and then (for relative paths, except on Android)
+// relative to the executable. Takes ownership of `normalized` and returns it on a direct hit
 // (same buffer, no copy), a newly allocated path on an exe-relative hit, or
 // nullptr on miss (freeing the input). Does not consult Android APK assets —
 // callers must handle that separately.
@@ -528,18 +536,21 @@ static char *platform_find_existing_file(char *normalized) {
 #endif
 	if (!is_relative) { sk_free(normalized); return nullptr; }
 
-	char exe_path[1024];
-	if (!ska_get_exe_path(exe_path, sizeof(exe_path))) { sk_free(normalized); return nullptr; }
+#if defined(SK_OS_ANDROID)
+	// No exe folder on Android, and asking for one logs an error
+	sk_free(normalized);
+	return nullptr;
+#else
+	char exe_dir[1024];
+	if (!ska_path_get(ska_path_exe, exe_dir, sizeof(exe_dir))) { sk_free(normalized); return nullptr; }
 
-	// ska_get_exe_path returns the exe file path, we need the directory
-	char *exe_dir  = platform_pop_path_new(exe_path);
 	char *fullpath = platform_push_path_new(exe_dir, normalized);
-	sk_free(exe_dir);
 	sk_free(normalized);
 	if (ska_file_exists(fullpath))
 		return fullpath;
 	sk_free(fullpath);
 	return nullptr;
+#endif
 }
 
 ///////////////////////////////////////////

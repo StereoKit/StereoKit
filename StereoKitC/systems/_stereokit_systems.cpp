@@ -17,6 +17,7 @@
 #include "sprite_drawer.h"
 #include "line_drawer.h"
 #include "world.h"
+#include "spatial_entity.h"
 #include "defaults.h"
 #include "permission.h"
 
@@ -34,7 +35,8 @@ bool stereokit_systems_register() {
 	system_t sys_platform_begin   = { "FrameBegin"  };
 	system_t sys_platform_render  = { "FrameRender" };
 
-	system_set_initialize_deps(sys_platform, "Assets");
+	// The XR backend registers with the spatial registry during Platform init
+	system_set_initialize_deps(sys_platform, "Assets", "Spatial");
 	system_set_step_deps      (sys_platform_render, "App", "Text", "Sprites", "Lines", "World", "UILate", "Animation");
 
 	sys_platform       .func_initialize = platform_init;
@@ -135,6 +137,14 @@ bool stereokit_systems_register() {
 	sys_world.func_step       = world_step;
 	sys_world.func_shutdown   = world_shutdown;
 	systems_add(&sys_world);
+
+	// Runs after app code, so the app gets a full frame to see new and removed marks
+	system_t sys_spatial = { "Spatial" };
+	system_set_step_deps(sys_spatial, "App", "Tools");
+	sys_spatial.func_initialize = spatial_init;
+	sys_spatial.func_step       = spatial_step;
+	sys_spatial.func_shutdown   = spatial_shutdown;
+	systems_add(&sys_spatial);
 
 	system_t sys_tools = { "Tools" };
 	system_set_initialize_deps(sys_tools, "Platform", "Defaults", "UI");
