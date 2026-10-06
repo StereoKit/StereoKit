@@ -35,10 +35,19 @@ typedef enum spatial_tracking_ {
 	spatial_tracking_tracking = 3, // Actively tracked, data is live
 } spatial_tracking_;
 
+struct spatial_mesh_data_t {
+	pose_t    origin; // The vertices are relative to this
+	vec3*     verts;
+	int32_t   vert_count;
+	uint32_t* inds;
+	int32_t   ind_count;
+};
+
 // One entity's worth of data for ingestion. Fields are read when their
 // bit is in `present`, buffer-backed fields also need their bit in
 // `buffers_changed`, and ownership of their allocations transfers here.
 struct spatial_ingest_t {
+	spatial_entity_t    entity; // 0 for an entity the registry hasn't seen, ingest fills it in
 	spatial_entity_id_t id;
 	spatial_tracking_   tracking;
 	spatial_component_  present;
@@ -51,20 +60,12 @@ struct spatial_ingest_t {
 	spatial_entity_id_t parent;
 	pose_t              anchor_pose;
 	plane_align_        plane_alignment;
-	plane_label_        plane_label;
+	spatial_label_      label;
 	marker_type_        marker_type;
 	uint32_t            marker_id;
 
-	pose_t              mesh_origin;
-	vec3*               mesh_verts;
-	int32_t             mesh_vert_count;
-	uint32_t*           mesh_inds;
-	int32_t             mesh_ind_count;
-	pose_t              mesh2d_origin;
-	vec3*               mesh2d_verts;
-	int32_t             mesh2d_vert_count;
-	uint32_t*           mesh2d_inds;
-	int32_t             mesh2d_ind_count;
+	spatial_mesh_data_t mesh;
+	spatial_mesh_data_t mesh2d;
 	pose_t              polygon_origin;
 	vec2*               polygon_verts;
 	int32_t             polygon_count;
@@ -73,7 +74,7 @@ struct spatial_ingest_t {
 	int32_t             marker_data_size;
 	// Unlike other components, persistence data is valid regardless of
 	// tracking state.
-	uint8_t             persist_uuid[16];
+	sk_uuid_t           persist_id;
 };
 
 // Capability requests from internal systems. These stay on when the app
@@ -86,35 +87,37 @@ bool32_t spatial_is_user_disabled(spatial_capability_ capability);
 void spatial_backend_set_support  (spatial_capability_ caps);
 void spatial_backend_set_cap_comps(spatial_capability_ cap, spatial_component_ comps);
 // Anchor creation hook: returns the new entity's id, or 0 on failure.
-// The backend must ingest the entity before returning.
-void spatial_backend_set_create_anchor(spatial_entity_id_t (*create)(pose_t pose));
+// The registry fills in the new entity's initial data itself.
+void spatial_backend_set_create_anchor(spatial_entity_id_t (*create)(pose_t pose, spatial_entity_id_t parent, spatial_entity_t entity));
 // Entity destruction hook: releases the backend's tracking of an
 // app-created entity.
 void spatial_backend_set_destroy      (void (*destroy)(spatial_entity_id_t id));
 
 // Mark a capability's context as warmed up / torn down.
 void spatial_backend_set_active   (spatial_capability_ cap, bool32_t active);
-// Push entity data into the registry.
-void spatial_backend_ingest       (spatial_capability_ source, const spatial_ingest_t* entities, int32_t count);
+// Push entity data into the registry. Fills in `entity` for new ones,
+// which the backend should send back on later ingests.
+void spatial_backend_ingest       (spatial_capability_ source, spatial_ingest_t* entities, int32_t count);
 // Removes all of a capability's entities, as if tracking stopped
 void spatial_backend_drop_source  (spatial_capability_ source);
 
-// The serial increments when the config changes, so the backend can
-// tell when an active capability needs a rebuild.
-spatial_marker_config_t spatial_backend_get_marker_config(spatial_capability_ cap);
-uint32_t                spatial_backend_get_config_serial(spatial_capability_ cap);
+// Increments when a capability's settings change, so the backend can
+// tell when an active context needs a rebuild.
+uint32_t            spatial_backend_get_config_serial(spatial_capability_ cap);
+spatial_capability_ spatial_marker_capability(marker_type_ type);
 
-// Async persistence operation hooks, results arrive later via
-// spatial_backend_set/clear_persist. Null hooks mean no persistence.
-void spatial_backend_set_persist_ops(void (*persist)(spatial_entity_id_t id), void (*unpersist)(spatial_entity_id_t id, const uint8_t* uuid_16));
-// Completion callbacks for the async persist/unpersist operations.
-void spatial_backend_set_persist    (spatial_entity_id_t id, const uint8_t* uuid_16);
-void spatial_backend_persist_failed (spatial_entity_id_t id);
-void spatial_backend_clear_persist  (spatial_entity_id_t id);
-
-// True for an entity leaving the list because of spatial_entity_destroy,
-// rather than being lost by the system.
-bool32_t spatial_entity_was_destroyed(spatial_entity_t entity);
+// Async persistence hooks, null when there's no persistence. Results
+// come back with the entity they were given, which is 0 for an unpersist
+// when only the uuid is known.
+void spatial_backend_set_persist_ops(void (*persist)(spatial_entity_id_t id, spatial_entity_t entity), void (*unpersist)(spatial_entity_t entity, sk_uuid_t persist_id));
+void spatial_backend_set_persist      (spatial_entity_t entity, sk_uuid_t persist_id);
+void spatial_backend_persist_failed   (spatial_entity_t entity);
+void spatial_backend_clear_persist    (spatial_entity_t entity);
+void spatial_backend_unpersist_failed (spatial_entity_t entity);
+// For persist id lookups, the backend fetches the ids apps are waiting
+// on, and reports the ones storage definitively doesn't have.
+int32_t spatial_backend_get_find_ids     (sk_uuid_t* out_ids, int32_t capacity);
+void    spatial_backend_persist_not_found(sk_uuid_t persist_id);
 
 ///////////////////////////////////////////
 // Anchor asset backend                  //

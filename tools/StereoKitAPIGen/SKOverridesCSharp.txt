@@ -15,6 +15,8 @@ double double
 void void
 char32_t uint
 spatial_entity_t ulong
+# Byte order differs from System.Guid, so this converts by hand
+sk_uuid_t NativeUuid
 
 # Keyboard keys by default resolve to just numbers, no bueno
 key_0 N0
@@ -122,7 +124,7 @@ audio_env_t AudioEnvironment
 
 # Complex structs in NativeTypes.cs with special handling
 @noimpl sk_settings_t rect_t sound_play_t
-@noimpl hand_sim_id_t id_hash_t
+@noimpl hand_sim_id_t id_hash_t sk_uuid_t
 # Request struct has string/feature arrays, hand-marshaled in Backend.Vulkan.Request
 @noimpl backend_vulkan_request_t
 # Keeps the raw codepoint private so readers use Text, which can't truncate

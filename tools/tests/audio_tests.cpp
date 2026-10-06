@@ -2,8 +2,7 @@
 
 #include <stereokit.h>
 
-// Internal headers, reached through StereoKitC's public include root. The
-// hooks used here are exported specifically for this harness.
+// Internal headers, reached through StereoKitC's public include root.
 #include <systems/audio.h>
 
 #include <math.h>

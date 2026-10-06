@@ -12,6 +12,7 @@
 #include "audio_tests.h"
 #include "asset_tests.h"
 #include "sh_tests.h"
+#include "spatial_tests.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -38,6 +39,7 @@ int main(int argc, char* argv[]) {
 	if (all || has_flag(argc, argv, "-audiostress")) failures += audio_stress_run();
 	if (all || has_flag(argc, argv, "-assettest"))   failures += asset_tests_run();
 	if (all || has_flag(argc, argv, "-shtest"))      failures += sh_tests_run();
+	if (all || has_flag(argc, argv, "-spatialtest")) failures += spatial_tests_run();
 
 	if (has_flag(argc, argv, "-audiobench")) failures += audio_bench_run();
 

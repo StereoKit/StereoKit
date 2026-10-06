@@ -2354,7 +2354,8 @@ namespace StereoKit
 		/// matching how quads and text face in StereoKit.</summary>
 		Bounds2d     = 1 << 0,
 		/// <summary>A center pose and XYZ size describing an oriented bounding
-		/// volume.</summary>
+		/// volume. When the entity has a front, like a screen or table top,
+		/// Forward (-Z) is the direction it faces.</summary>
 		Bounds3d     = 1 << 1,
 		/// <summary>A reference to a parent spatial entity this entity is attached
 		/// to.</summary>
@@ -2365,7 +2366,8 @@ namespace StereoKit
 		/// world.</summary>
 		Anchor       = 1 << 4,
 		/// <summary>A durable identity that allows the entity to be recognized across
-		/// sessions and reboots.</summary>
+		/// sessions and reboots. When `ComponentsFor` lists this for a
+		/// capability, the app can persist that capability's entities.</summary>
 		Persistence  = 1 << 5,
 		/// <summary>The general orientation category of a detected plane, see
 		/// `PlaneAlign`.</summary>
@@ -2375,11 +2377,38 @@ namespace StereoKit
 		Mesh2d       = 1 << 7,
 		/// <summary>A 2D boundary polygon outlining the entity's surface.</summary>
 		Polygon      = 1 << 8,
-		/// <summary>A semantic category for a detected plane, see `PlaneLabel`.</summary>
-		PlaneLabel   = 1 << 9,
+		/// <summary>A semantic category for the entity, like floor or table, see
+		/// `SpatialLabel`.</summary>
+		Label        = 1 << 9,
 		/// <summary>Marker information: the marker's type, numeric id, and any
 		/// decoded data.</summary>
 		Marker       = 1 << 10,
+	}
+
+	/// <summary>Whether the things you've asked of a spatial entity have gone through,
+	/// like creating an anchor or persisting it. Failure states are negative
+	/// and healthy ones positive, so `status &lt; 0` catches every failure.
+	/// This is separate from tracking, so an entity can be tracked and usable
+	/// while a persist is still Pending. Entities the system discovers on its
+	/// own, like planes, are Ready unless you ask something of them.</summary>
+	public enum SpatialStatus {
+		/// <summary>The entity couldn't be created, or storage doesn't have the id it
+		/// was looked up by. It shows up in the removed list with this status
+		/// for its final frame.</summary>
+		Failed       = -2,
+		/// <summary>The entity exists, but at least one thing you asked of it failed,
+		/// like a persist. Check its components to see what's missing, and
+		/// making a new request clears this.</summary>
+		Partial      = -1,
+		/// <summary>Not a valid entity.</summary>
+		None         = 0,
+		/// <summary>Something you asked of this entity is still in progress, like
+		/// creation, loading it by persist id, or a persist that's waiting on
+		/// the system.</summary>
+		Pending      = 1,
+		/// <summary>Nothing you've asked of this entity is still in progress, and
+		/// nothing failed.</summary>
+		Ready        = 2,
 	}
 
 	/// <summary>The general orientation of a detected plane.</summary>
@@ -2396,13 +2425,16 @@ namespace StereoKit
 		Arbitrary    = 4,
 	}
 
-	/// <summary>A semantic category the system has assigned to a detected plane. If
-	/// the system reports a category StereoKit doesn't know yet, it arrives
-	/// as Uncategorized.</summary>
-	public enum PlaneLabel {
+	/// <summary>A semantic category the system has assigned to a spatial entity, such
+	/// as a floor plane or a tracked keyboard. All label sources share this
+	/// one list, so a category can come from plane tracking on one device
+	/// and object tracking on another. Any given entity only uses a subset
+	/// of these, and if the system reports a category StereoKit doesn't know
+	/// yet, it arrives as Uncategorized. New values are only ever appended.</summary>
+	public enum SpatialLabel {
 		/// <summary>No label information available.</summary>
 		None         = 0,
-		/// <summary>The system recognizes this plane, but it doesn't fit any of the
+		/// <summary>The system recognizes this entity, but it doesn't fit any of the
 		/// categories it knows.</summary>
 		Uncategorized = 1,
 		/// <summary>A floor.</summary>

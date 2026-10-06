@@ -972,8 +972,10 @@ endif()
 
 # Headless native test runner (tools/tests). Each suite self-inits SK in
 # offscreen mode, so it needs no window, shaders, or assets - just StereoKitC.
-# Desktop only: it's a CLI test binary, not an interactive app.
-if (SK_BUILD_TESTS AND NOT ANDROID)
+# Desktop only: it's a CLI test binary, not an interactive app. The suites
+# drive internals that a shared library doesn't export, so this only builds
+# against a static StereoKitC, like the Linux_x64_Tests preset.
+if (SK_BUILD_TESTS AND NOT ANDROID AND NOT SK_BUILD_SHARED_LIBS)
   add_skapp ( SKTests
     APP_NAME "StereoKit Native Tests" )
 
@@ -986,6 +988,8 @@ if (SK_BUILD_TESTS AND NOT ANDROID)
     tools/tests/asset_tests.cpp
     tools/tests/sh_tests.h
     tools/tests/sh_tests.cpp
+    tools/tests/spatial_tests.h
+    tools/tests/spatial_tests.cpp
   )
 
   # See the StereoKitCTest note: pin the standard so u8 literals stay char.

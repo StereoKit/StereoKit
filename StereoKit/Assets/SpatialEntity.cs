@@ -37,19 +37,25 @@ namespace StereoKit
 		/// list, and a `default` SpatialEntity is never valid.</summary>
 		public bool Valid => _id != 0 && NativeAPI.spatial_entity_is_valid(_id);
 
-		/// <summary>The raw identifier value, unique within the current
-		/// session and never reused. 0 is never a valid entity, and this
-		/// value works well as a dictionary key.</summary>
-		public ulong Id => _id;
-
 		/// <summary>Is the system actively tracking this entity? Component
 		/// data is always the entity's last known state, so when this is
 		/// inactive, that data may be stale. Entities that are permanently
-		/// lost leave the entity list entirely.</summary>
+		/// lost leave the entity list entirely, except persisted ones, which
+		/// keep their identifier with `Status` Pending while storage loads
+		/// them again.</summary>
 		public BtnState Tracked => NativeAPI.spatial_entity_get_tracked(_id);
 		/// <summary>The set of components this entity has valid data for.
 		/// Each component has a matching TryGet accessor.</summary>
 		public SpatialComponent Components => NativeAPI.spatial_entity_get_components(_id);
+
+		/// <summary>Whether the things you've asked of this entity have gone
+		/// through, like creating, loading, or persisting it. Ready means
+		/// all done, Pending means something's still in progress, and
+		/// negative values are failures: Partial if a request like `Persist`
+		/// failed, Failed if the entity couldn't be created or found at all.
+		/// This is separate from `Tracked`, so a Pending anchor can still be
+		/// tracked and usable.</summary>
+		public SpatialStatus Status => NativeAPI.spatial_entity_get_status(_id);
 		/// <summary>Components whose data meaningfully changed this frame!
 		/// Continuously updating poses are only flagged when they first
 		/// arrive, while mesh/polygon/marker data is flagged whenever the
@@ -82,7 +88,9 @@ namespace StereoKit
 		public bool TryGetBounds2D(out Pose center, out Vec2 size)
 			=> NativeAPI.spatial_entity_get_bounds2d(_id, out center, out size);
 
-		/// <summary>The oriented 3D bounding volume of this entity.</summary>
+		/// <summary>The oriented 3D bounding volume of this entity. When
+		/// the entity has a front, like a screen or table top, the center
+		/// pose's Forward is the direction it faces.</summary>
 		/// <param name="center">The pose at the center of the volume.</param>
 		/// <param name="size">The volume's total size in meters, along the
 		/// center pose's axes.</param>
@@ -101,16 +109,16 @@ namespace StereoKit
 		public bool TryGetPlaneAlign(out PlaneAlign alignment)
 			=> NativeAPI.spatial_entity_get_plane_align(_id, out alignment);
 
-		/// <summary>A semantic category for a detected plane, like floor or
+		/// <summary>A semantic category for this entity, like floor or
 		/// table. Not all devices provide labels, so check
-		/// `ComponentsFor(SpatialCapability.PlaneTracking)`, and consider
-		/// `TryGetPlaneAlign` as a fallback.</summary>
-		/// <param name="label">The plane's semantic category, None if
+		/// `ComponentsFor` for the capability you're using. For planes,
+		/// `TryGetPlaneAlign` makes a good fallback.</summary>
+		/// <param name="label">The entity's semantic category, None if
 		/// unavailable.</param>
-		/// <returns>False if this entity has no plane label component.
+		/// <returns>False if this entity has no label component.
 		/// </returns>
-		public bool TryGetPlaneLabel(out PlaneLabel label)
-			=> NativeAPI.spatial_entity_get_plane_label(_id, out label);
+		public bool TryGetLabel(out SpatialLabel label)
+			=> NativeAPI.spatial_entity_get_label(_id, out label);
 
 		/// <summary>The entity's 3D mesh! Mesh vertices are relative to the
 		/// origin pose, which the system keeps aligned with the physical
@@ -187,64 +195,78 @@ namespace StereoKit
 		} }
 
 		/// <summary>Removes an app-created entity like an anchor from the
-		/// system entirely: it's unpersisted if persisted, the system stops
+		/// system entirely. It's unpersisted if persisted, the system stops
 		/// tracking it, and it leaves the entity list at the end of the
 		/// frame. This SpatialEntity stops resolving once that happens.
-		/// </summary>
+		/// This also works on entities that are still Pending, including
+		/// ones from `FromPersistId` that haven't loaded yet.</summary>
 		/// <returns>False if this entity can't be destroyed! Only
 		/// app-created entities like anchors can be, entities the system
 		/// discovered on its own, like planes, cannot.</returns>
 		public bool Destroy() => NativeAPI.spatial_entity_destroy(_id);
-
-		/// <summary>Can entities be written to persistent storage on this
-		/// system? When false, `Persist` will do nothing. This can take a
-		/// moment to become true while the system starts up, so it works
-		/// well for graying out persistence UI.</summary>
-		public static bool PersistenceAvailable => NativeAPI.spatial_persistence_available();
 
 		/// <summary>A durable identifier for this entity that stays the same
 		/// across sessions and device reboots! This is `Guid.Empty` unless
 		/// the entity is persisted: either by the system itself, or by a
 		/// call to `Persist`. Store this id to recognize the same physical
 		/// entity in a later session.</summary>
-		public Guid PersistId { get {
-			byte[] uuid = new byte[16];
-			return NativeAPI.spatial_entity_get_persist_id(_id, uuid)
-				? new Guid(uuid, bigEndian: true)
-				: Guid.Empty;
-		} }
+		public Guid PersistId => NativeAPI.spatial_entity_get_persist_id(_id, out NativeUuid uuid)
+			? uuid.ToGuid()
+			: Guid.Empty;
 
 		/// <summary>Ask the system to persist this entity, giving it a
 		/// durable identity that survives across sessions! This is
-		/// asynchronous: on success, `PersistId` becomes valid a few frames
-		/// later, and `Changed` flags the Persistence component. On failure,
-		/// a warning is logged and `PersistId` stays empty. Calling this
-		/// while a persist is already in flight does nothing. Requires a
-		/// system with persistence support, and currently only anchor
-		/// entities are persistable.</summary>
-		public void Persist() => NativeAPI.spatial_entity_persist(_id);
+		/// asynchronous, and safe to call right away since it waits until
+		/// the entity is tracking and persistence has started up. On success,
+		/// `PersistId` becomes valid and `Changed` flags the Persistence
+		/// component. On failure, `Status` becomes Partial and `PersistId`
+		/// stays empty. If an `Unpersist` is still in flight, this persists
+		/// again once it lands.</summary>
+		/// <returns>False if this can't work at all, like an invalid entity,
+		/// or one from a capability without persistence support. Check
+		/// `ComponentsFor` for `SpatialComponent.Persistence` to see which
+		/// capabilities support it.</returns>
+		public bool Persist() => NativeAPI.spatial_entity_persist(_id);
 
 		/// <summary>Remove this entity from persistent storage. Its
 		/// `PersistId` becomes invalid once the asynchronous operation
-		/// completes. If a `Persist` is still in flight, this waits for it
-		/// to land and then undoes it.</summary>
-		public void Unpersist() => NativeAPI.spatial_entity_unpersist(_id);
+		/// completes, and `Status` is Pending until then, or Partial if it
+		/// fails. If a `Persist` is still in flight, this waits for it to
+		/// land and then undoes it. An entity from `FromPersistId` that
+		/// hasn't loaded yet stops loading, and once the unpersist lands it
+		/// leaves the entity list, since there's nothing left to load.
+		/// </summary>
+		/// <returns>False if this can't work at all, like an invalid entity.
+		/// </returns>
+		public bool Unpersist() => NativeAPI.spatial_entity_unpersist(_id);
 
-		/// <summary>Finds the live entity with this PersistId, the usual way
-		/// to restore something you persisted in an earlier session.
-		/// Persisted entities arrive through discovery like any other, which
-		/// takes a moment at startup, so this returns an invalid entity until
-		/// then. Keep checking each frame rather than just once!</summary>
+		/// <summary>Remove something from persistent storage using just its
+		/// `PersistId`, no live entity needed! This is how you clean up
+		/// something stored in an earlier session that hasn't been
+		/// rediscovered, or never will be. If persistence is still starting
+		/// up, this waits for it.</summary>
 		/// <param name="persistId">A `PersistId` saved from an earlier
 		/// session.</param>
-		/// <returns>The matching entity, or an invalid entity if it hasn't
-		/// been discovered. Check `Valid`.</returns>
+		/// <returns>False if this can't work at all, like an empty id, or a
+		/// system without persistence support.</returns>
+		public static bool Unpersist(Guid persistId)
+			=> NativeAPI.spatial_entity_unpersist_by_id(NativeUuid.FromGuid(persistId));
+
+		/// <summary>Gets the entity with this PersistId, the usual way to
+		/// restore something you persisted in an earlier session. Call
+		/// this once and hold onto the result: storage loads asynchronously,
+		/// so the entity starts out with `Status` Pending and no data, then
+		/// fills in when it loads. If storage doesn't have this id, `Status`
+		/// becomes Failed and the entity shows up in `Removed`. Loaded
+		/// entities may still take a moment to start tracking, and nothing
+		/// loads while `SpatialCapability.Anchor` isn't `Enabled`.</summary>
+		/// <param name="persistId">A `PersistId` saved from an earlier
+		/// session.</param>
+		/// <returns>The entity, already loaded or still loading. This is
+		/// invalid for an empty id, or a system without persistence support.
+		/// </returns>
 		public static SpatialEntity FromPersistId(Guid persistId)
-		{
-			byte[] uuid = new byte[16];
-			persistId.TryWriteBytes(uuid, bigEndian: true, out _);
-			return new SpatialEntity(NativeAPI.spatial_entity_find_persisted(uuid));
-		}
+			=> new SpatialEntity(NativeAPI.spatial_entity_find_by_id(NativeUuid.FromGuid(persistId)));
 
 		/// <summary>The spatial capabilities the current device supports!
 		/// This is None until an XR session with spatial entity support has
@@ -280,24 +302,67 @@ namespace StereoKit
 		public static void Enable(SpatialCapability capabilities)
 			=> NativeAPI.spatial_enable(capabilities);
 
-		/// <summary>Enable marker tracking capabilities with additional
-		/// configuration: the marker dictionary to detect, the physical
-		/// size of your markers, and whether they stay put. Accurate values
-		/// improve detection and pose quality, though unsupported options
-		/// are quietly ignored, so treat these as hints. Calling this again
-		/// with a different config restarts that capability's tracking with
-		/// the new settings.</summary>
-		/// <param name="capabilities">One or more marker tracking
-		/// capabilities to enable with this config. Non-marker capabilities
-		/// are ignored.</param>
-		/// <param name="config">Configuration these markers should be
-		/// tracked with. `default` is a valid baseline config.</param>
-		public static void Enable(SpatialCapability capabilities, SpatialMarkerConfig config)
-			=> NativeAPI.spatial_enable_marker(capabilities, config);
+		/// <summary>Tell the system how big your printed markers of this
+		/// type are. Knowing the real size lets it estimate marker distance
+		/// and pose more accurately. Changing this while that marker type is
+		/// being tracked restarts its tracking, so set it before `Enable`
+		/// when you can. Not all devices use this, treat it as a hint.
+		/// </summary>
+		/// <param name="type">The marker type this size applies to.</param>
+		/// <param name="sizeMeters">The edge length of the marker's square,
+		/// in meters. Use 0 if the sizes are mixed or unknown.</param>
+		public static void SetMarkerSize(MarkerType type, float sizeMeters)
+			=> NativeAPI.spatial_set_marker_size(type, sizeMeters);
+
+		/// <summary>The physical marker size set via `SetMarkerSize`, 0 if
+		/// unknown.</summary>
+		/// <param name="type">The marker type to look up.</param>
+		/// <returns>The marker's edge length in meters.</returns>
+		public static float GetMarkerSize(MarkerType type)
+			=> NativeAPI.spatial_get_marker_size(type);
+
+		/// <summary>Tell the system whether markers of this type stay put,
+		/// like a code taped to a wall, rather than being carried around.
+		/// Stationary markers can have their pose refined over time instead
+		/// of re-detected every frame. Changing this while that marker type
+		/// is being tracked restarts its tracking, so set it before `Enable`
+		/// when you can. Not all devices use this, treat it as a hint.
+		/// </summary>
+		/// <param name="type">The marker type this applies to.</param>
+		/// <param name="stationary">True if these markers never move.</param>
+		public static void SetMarkerStationary(MarkerType type, bool stationary)
+			=> NativeAPI.spatial_set_marker_stationary(type, stationary);
+
+		/// <summary>Whether this marker type was marked as stationary via
+		/// `SetMarkerStationary`.</summary>
+		/// <param name="type">The marker type to look up.</param>
+		/// <returns>True if these markers are expected to stay put.</returns>
+		public static bool GetMarkerStationary(MarkerType type)
+			=> NativeAPI.spatial_get_marker_stationary(type);
+
+		/// <summary>Which family of ArUco markers `SpatialCapability.Aruco`
+		/// looks for. Markers from other dictionaries aren't detected, so
+		/// this must match the markers you printed! Default lets StereoKit
+		/// pick. Changing it while ArUco markers are being tracked restarts
+		/// that tracking.</summary>
+		public static ArucoDict ArucoDictionary {
+			get => NativeAPI.spatial_get_aruco_dictionary();
+			set => NativeAPI.spatial_set_aruco_dictionary(value); }
+
+		/// <summary>Which family of AprilTag markers
+		/// `SpatialCapability.AprilTag` looks for. Markers from other
+		/// dictionaries aren't detected, so this must match the markers you
+		/// printed! Default lets StereoKit pick. Changing it while AprilTags
+		/// are being tracked restarts that tracking.</summary>
+		public static AprilTagDict AprilTagDictionary {
+			get => NativeAPI.spatial_get_april_tag_dictionary();
+			set => NativeAPI.spatial_set_april_tag_dictionary(value); }
 
 		/// <summary>Stop tracking these capabilities. Their entities leave
 		/// the entity list, and any SpatialEntity identifiers you still
-		/// hold stop resolving. This also overrides StereoKit's own use of a
+		/// hold stop resolving. Persisted entities are the exception: they
+		/// wait with `Status` Pending, and come back if the capability is
+		/// enabled again. This also overrides StereoKit's own use of a
 		/// capability: the `Anchor` system turns on `SpatialCapability.Anchor`
 		/// by itself, and calling this before `SK.Initialize` keeps `Anchor`
 		/// from using spatial entities at all.</summary>
@@ -328,7 +393,10 @@ namespace StereoKit
 			=> new SpatialEntityCollection(components, SpatialEntityCollection.List.All);
 
 		/// <summary>An enumeration of the spatial entities that appeared
-		/// for the first time this frame.</summary>
+		/// for the first time this frame. Entities you create yourself, like
+		/// with `CreateAnchor` or `FromPersistId`, show up here on the
+		/// following frame, so every entity is seen here exactly once.
+		/// </summary>
 		public static SpatialEntityCollection New => new SpatialEntityCollection(SpatialComponent.None, SpatialEntityCollection.List.New);
 
 		/// <summary>An enumeration of the spatial entities that appeared
@@ -340,10 +408,11 @@ namespace StereoKit
 			=> new SpatialEntityCollection(components, SpatialEntityCollection.List.New);
 
 		/// <summary>An enumeration of the spatial entities leaving the entity
-		/// list this frame, either lost by the system or destroyed. They're
-		/// still `Valid` with readable data for this one frame, which makes
-		/// this the place to clean up anything you've cached per-entity!
-		/// </summary>
+		/// list this frame: lost by the system, destroyed, or `Status`
+		/// Failed. Lost persisted entities don't leave, they wait to load
+		/// again. These are still `Valid` with readable data for this one
+		/// frame, which makes this the place to clean up anything you've
+		/// cached per-entity!</summary>
 		public static SpatialEntityCollection Removed => new SpatialEntityCollection(SpatialComponent.None, SpatialEntityCollection.List.Removed);
 
 		/// <summary>An enumeration of the spatial entities leaving the entity
@@ -356,14 +425,24 @@ namespace StereoKit
 
 		/// <summary>Create a spatial anchor entity at the given pose: a
 		/// point the system will keep aligned with the physical world as
-		/// tracking improves or drifts. Requires
-		/// `SpatialCapability.Anchor` to be enabled and active.</summary>
+		/// tracking improves or drifts. You can call this any time after
+		/// enabling `SpatialCapability.Anchor`, even while it's still
+		/// starting up! Until the system takes over, the anchor sits at
+		/// this pose with `Tracked` inactive and `Status` Pending. If the
+		/// system can't create it, the anchor shows up in `Removed` with
+		/// `Status` Failed.</summary>
 		/// <param name="pose">A world space pose for the new anchor.</param>
+		/// <param name="persist">Also persist the anchor once it's
+		/// tracking, same as calling `Persist`. Its `PersistId` becomes
+		/// valid a little while later.</param>
+		/// <param name="parent">An optional entity to attach the anchor
+		/// to, so it follows that entity as it moves. Few runtimes support
+		/// this yet, and creation fails on those that don't.</param>
 		/// <returns>The new anchor entity. This is an invalid entity if
-		/// anchoring is not active or creation failed, so check `Valid`.
-		/// </returns>
-		public static SpatialEntity CreateAnchor(Pose pose)
-			=> new SpatialEntity(NativeAPI.spatial_entity_create_anchor(pose));
+		/// this system doesn't support anchors, or can't persist them when
+		/// `persist` is true, so check `Valid`.</returns>
+		public static SpatialEntity CreateAnchor(Pose pose, bool persist = false, SpatialEntity parent = default)
+			=> new SpatialEntity(NativeAPI.spatial_entity_create_anchor(pose, persist, parent._id));
 
 		/// <summary>Do these identify the same entity?</summary>
 		/// <param name="other">The entity to compare with.</param>

@@ -78,15 +78,16 @@ struct cap_mapping_t {
 	XrStructureType        config_type;
 	const char*            ext_name;
 	const char*            name;
+	marker_type_           marker_type; // None for capabilities that aren't markers
 };
 
 static const cap_mapping_t cap_mappings[] = {
-	{ spatial_capability_anchor,         XR_SPATIAL_CAPABILITY_ANCHOR_EXT,                        XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ANCHOR_EXT,         XR_EXT_SPATIAL_ANCHOR_EXTENSION_NAME,          "anchor"         },
-	{ spatial_capability_plane_tracking, XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT,                XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_PLANE_TRACKING_EXT, XR_EXT_SPATIAL_PLANE_TRACKING_EXTENSION_NAME,  "plane tracking" },
-	{ spatial_capability_qr_code,        XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT,       XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_QR_CODE_EXT,        XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME, "QR code"        },
-	{ spatial_capability_micro_qr,       XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT, XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_MICRO_QR_CODE_EXT,  XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME, "micro QR code"  },
-	{ spatial_capability_aruco,          XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT,  XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ARUCO_MARKER_EXT,   XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME, "ArUco marker"   },
-	{ spatial_capability_april_tag,      XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT,     XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_APRIL_TAG_EXT,      XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME, "AprilTag"       },
+	{ spatial_capability_anchor,         XR_SPATIAL_CAPABILITY_ANCHOR_EXT,                        XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ANCHOR_EXT,         XR_EXT_SPATIAL_ANCHOR_EXTENSION_NAME,          "anchor",         marker_type_none      },
+	{ spatial_capability_plane_tracking, XR_SPATIAL_CAPABILITY_PLANE_TRACKING_EXT,                XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_PLANE_TRACKING_EXT, XR_EXT_SPATIAL_PLANE_TRACKING_EXTENSION_NAME,  "plane tracking", marker_type_none      },
+	{ spatial_capability_qr_code,        XR_SPATIAL_CAPABILITY_MARKER_TRACKING_QR_CODE_EXT,       XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_QR_CODE_EXT,        XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME, "QR code",        marker_type_qr_code   },
+	{ spatial_capability_micro_qr,       XR_SPATIAL_CAPABILITY_MARKER_TRACKING_MICRO_QR_CODE_EXT, XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_MICRO_QR_CODE_EXT,  XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME, "micro QR code",  marker_type_micro_qr  },
+	{ spatial_capability_aruco,          XR_SPATIAL_CAPABILITY_MARKER_TRACKING_ARUCO_MARKER_EXT,  XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_ARUCO_MARKER_EXT,   XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME, "ArUco marker",   marker_type_aruco     },
+	{ spatial_capability_april_tag,      XR_SPATIAL_CAPABILITY_MARKER_TRACKING_APRIL_TAG_EXT,     XR_TYPE_SPATIAL_CAPABILITY_CONFIGURATION_APRIL_TAG_EXT,      XR_EXT_SPATIAL_MARKER_TRACKING_EXTENSION_NAME, "AprilTag",       marker_type_april_tag },
 };
 static const int32_t cap_mapping_count = sizeof(cap_mappings) / sizeof(cap_mappings[0]);
 
@@ -105,7 +106,7 @@ static const comp_mapping_t comp_mappings[] = {
 	{ spatial_component_plane_alignment, XR_SPATIAL_COMPONENT_TYPE_PLANE_ALIGNMENT_EXT     },
 	{ spatial_component_mesh2d,          XR_SPATIAL_COMPONENT_TYPE_MESH_2D_EXT             },
 	{ spatial_component_polygon,         XR_SPATIAL_COMPONENT_TYPE_POLYGON_2D_EXT          },
-	{ spatial_component_plane_label,     XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT},
+	{ spatial_component_label,           XR_SPATIAL_COMPONENT_TYPE_PLANE_SEMANTIC_LABEL_EXT},
 	{ spatial_component_marker,          XR_SPATIAL_COMPONENT_TYPE_MARKER_EXT              },
 };
 static const int32_t comp_mapping_count = sizeof(comp_mappings) / sizeof(comp_mappings[0]);
@@ -125,6 +126,8 @@ typedef enum slot_state_ {
 struct ent_handle_t {
 	XrSpatialEntityIdEXT id;
 	XrSpatialEntityEXT   handle;
+	spatial_entity_t     entity;    // The registry's handle for this entity
+	int32_t              batch_idx; // Position in the snapshot being ingested
 	// Buffer id stamps: same id means same data, so a re-fetch is only
 	// needed when these change.
 	XrSpatialBufferIdEXT stamp_mesh_v;
@@ -147,6 +150,7 @@ struct slot_t {
 	bool                  update_warned;
 	bool                  perm_warned;
 	array_t<ent_handle_t> handles;
+	hashmap_t<XrSpatialEntityIdEXT, int32_t> handle_idx; // Entity id to index in handles
 };
 
 // Heap data that must survive until the context creation future resolves.
@@ -163,6 +167,11 @@ struct slot_create_ctx_t {
 	XrSpatialPersistenceContextEXT                 persist_contexts[2];
 };
 
+struct scratch_t {
+	void*  data;
+	size_t size;
+};
+
 struct xr_spatial_state_t {
 	bool                available;
 	bool                anchor_ext;
@@ -174,6 +183,7 @@ struct xr_spatial_state_t {
 	slot_t              slots[cap_mapping_count];
 
 	bool                           persist_ops_ext;
+	bool                           persist_writable; // The app can persist things, not just read them
 	XrSpatialPersistenceScopeEXT   usable_scopes[2];
 	int32_t                        usable_scope_count;
 	bool                           persist_attempted; // Context creation happens once, after permission settles
@@ -181,6 +191,16 @@ struct xr_spatial_state_t {
 	XrSpatialPersistenceContextEXT persist_contexts[2];
 	int32_t                        persist_context_count;
 	XrSpatialPersistenceContextEXT persist_write_ctx; // The writable (LOCAL_ANCHORS) context, if any
+	float                          find_next_time;    // Pacing for persist id lookups
+
+	// Reused by every snapshot, so frame updates don't allocate
+	scratch_t scratch_ids;
+	scratch_t scratch_states;
+	scratch_t scratch_batch;
+	scratch_t scratch_comp_ids;
+	scratch_t scratch_comp_states;
+	scratch_t scratch_comp_data;
+	scratch_t scratch_entities;
 };
 static xr_spatial_state_t local = {};
 
@@ -202,9 +222,9 @@ static inline XrPosef pose_to_xr(pose_t pose) {
 	return result;
 }
 
-// The spec puts 2D surface normals at +Z, while StereoKit poses face -Z.
-// Rotating π around local Y (paired with negating local X in that
-// component's vertex data) makes Forward the normal, world geometry unchanged.
+// The spec faces surfaces and objects along +Z, while StereoKit faces -Z.
+// Rotating π around local Y makes Forward the facing direction; 2D vertex
+// data in that frame must also negate local X.
 static inline pose_t xr_to_pose_faced(const XrPosef& xr_pose) {
 	pose_t result = xr_to_pose(xr_pose);
 	quat   flip   = { 0,1,0,0 }; // π around Y
@@ -213,6 +233,22 @@ static inline pose_t xr_to_pose_faced(const XrPosef& xr_pose) {
 	result.orientation = quat_mul(flip, result.orientation);
 	return result;
 }
+
+// Zeroed, and only valid until the next request for the same scratch.
+template <typename T>
+static T* scratch_get(scratch_t* scratch, int32_t count) {
+	size_t size = sizeof(T) * (size_t)count;
+	if (scratch->size < size) {
+		scratch->data = sk_realloc(scratch->data, size);
+		scratch->size = size;
+	}
+	memset(scratch->data, 0, size);
+	return (T*)scratch->data;
+}
+
+static_assert(sizeof(sk_uuid_t) == sizeof(XrUuid), "Discovery filters pass sk_uuid_t arrays as XrUuid");
+static inline sk_uuid_t xr_to_uuid(const XrUuid& xr_uuid) { sk_uuid_t result; memcpy(result.bytes, xr_uuid.data, sizeof(result.bytes)); return result; }
+static inline XrUuid    uuid_to_xr(const sk_uuid_t& uuid ) { XrUuid    result; memcpy(result.data,  uuid.bytes,   sizeof(result.data )); return result; }
 
 static spatial_component_ xr_to_sk_comp(XrSpatialComponentTypeEXT xr_comp) {
 	for (int32_t i = 0; i < comp_mapping_count; i++) {
@@ -239,23 +275,13 @@ static plane_align_ xr_to_plane_align(XrSpatialPlaneAlignmentEXT xr_align) {
 	}
 }
 
-static plane_label_ xr_to_plane_label(XrSpatialPlaneSemanticLabelEXT xr_label) {
+static spatial_label_ xr_to_plane_label(XrSpatialPlaneSemanticLabelEXT xr_label) {
 	switch (xr_label) {
-	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_FLOOR_EXT:   return plane_label_floor;
-	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_WALL_EXT:    return plane_label_wall;
-	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_CEILING_EXT: return plane_label_ceiling;
-	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_TABLE_EXT:   return plane_label_table;
-	default:                                          return plane_label_uncategorized;
-	}
-}
-
-static marker_type_ cap_to_marker_type(spatial_capability_ cap) {
-	switch (cap) {
-	case spatial_capability_qr_code:  return marker_type_qr_code;
-	case spatial_capability_micro_qr: return marker_type_micro_qr;
-	case spatial_capability_aruco:    return marker_type_aruco;
-	case spatial_capability_april_tag:return marker_type_april_tag;
-	default:                          return marker_type_none;
+	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_FLOOR_EXT:   return spatial_label_floor;
+	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_WALL_EXT:    return spatial_label_wall;
+	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_CEILING_EXT: return spatial_label_ceiling;
+	case XR_SPATIAL_PLANE_SEMANTIC_LABEL_TABLE_EXT:   return spatial_label_table;
+	default:                                          return spatial_label_uncategorized;
 	}
 }
 
@@ -265,10 +291,42 @@ static int32_t slot_from_context(XrSpatialContextEXT context) {
 	return -1;
 }
 
-static ent_handle_t* slot_find_handle(slot_t* slot, XrSpatialEntityIdEXT id) {
-	for (int32_t i = 0; i < slot->handles.count; i++)
-		if (slot->handles[i].id == id) return &slot->handles[i];
+static slot_t* slot_from_cap(spatial_capability_ cap) {
+	for (int32_t i = 0; i < cap_mapping_count; i++)
+		if (cap_mappings[i].sk_bit == cap) return &local.slots[i];
 	return nullptr;
+}
+
+static ent_handle_t* slot_find_handle(slot_t* slot, XrSpatialEntityIdEXT id) {
+	int32_t* idx = slot->handle_idx.get(id);
+	return idx == nullptr ? nullptr : &slot->handles[*idx];
+}
+
+static void slot_add_handle(slot_t* slot, const ent_handle_t& handle) {
+	slot->handle_idx.set(handle.id, slot->handles.count);
+	slot->handles.add(handle);
+}
+
+// Swaps the last handle into the gap, so only that one needs re-indexing.
+static void slot_remove_handle(slot_t* slot, XrSpatialEntityIdEXT id) {
+	int32_t* found = slot->handle_idx.get(id);
+	if (found == nullptr) return;
+	int32_t idx  = *found;
+	int32_t last = slot->handles.count - 1;
+	xrDestroySpatialEntityEXT(slot->handles[idx].handle);
+	slot->handle_idx.remove(id);
+	if (idx != last) {
+		slot->handles[idx] = slot->handles[last];
+		slot->handle_idx.set(slot->handles[idx].id, idx);
+	}
+	slot->handles.remove(last);
+}
+
+static void slot_clear_handles(slot_t* slot) {
+	for (int32_t i = 0; i < slot->handles.count; i++)
+		xrDestroySpatialEntityEXT(slot->handles[i].handle);
+	slot->handles   .clear();
+	slot->handle_idx.free();
 }
 
 ///////////////////////////////////////////
@@ -283,14 +341,14 @@ static void       xr_spatial_event_poll(void* context, XrEventDataBuffer* event_
 static void       slot_begin_start     (int32_t slot_idx);
 static void       slot_create          (int32_t slot_idx);
 static void       slot_stop            (int32_t slot_idx);
-static void       slot_discover        (int32_t slot_idx);
+static void       slot_discover        (int32_t slot_idx, const sk_uuid_t* persist_ids, int32_t persist_id_count);
 static void       slot_update          (int32_t slot_idx);
 static void       slot_ingest_snapshot (int32_t slot_idx, XrSpatialSnapshotEXT xr_snapshot, bool create_handles, spatial_component_ comps, int32_t max_entities);
 
-static spatial_entity_id_t xr_spatial_create_anchor(pose_t pose);
+static spatial_entity_id_t xr_spatial_create_anchor(pose_t pose, spatial_entity_id_t parent, spatial_entity_t entity);
 static void                xr_spatial_destroy      (spatial_entity_id_t id);
-static void                xr_spatial_persist      (spatial_entity_id_t id);
-static void                xr_spatial_unpersist    (spatial_entity_id_t id, const uint8_t* uuid_16);
+static void                xr_spatial_persist      (spatial_entity_id_t id, spatial_entity_t entity);
+static void                xr_spatial_unpersist    (spatial_entity_t entity, sk_uuid_t persist_id);
 static void                persistence_init        ();
 static void                persistence_create_contexts();
 
@@ -327,6 +385,7 @@ static xr_system_ xr_spatial_initialize(void*) {
 	if (local.anchor_ext) {
 		OPENXR_LOAD_FN_RETURN(XR_ANCHOR_FUNCTIONS, xr_system_fail);
 	}
+	persistence_init();
 
 	// Enumerate supported capabilities
 	uint32_t cap_count = 0;
@@ -357,6 +416,10 @@ static xr_system_ xr_spatial_initialize(void*) {
 			comps |= xr_to_sk_comp(comp_types.componentTypes[c]);
 		sk_free(comp_types.componentTypes);
 
+		// Persistence means the app can persist things, so it's only listed
+		// when there's somewhere to write them.
+		if (!local.persist_writable) comps &= ~spatial_component_persistence;
+
 		local.supported |= cap_mappings[map_idx].sk_bit;
 		spatial_backend_set_cap_comps(cap_mappings[map_idx].sk_bit, comps);
 
@@ -382,8 +445,6 @@ static xr_system_ xr_spatial_initialize(void*) {
 	spatial_backend_set_destroy(xr_spatial_destroy);
 	if (local.anchor_ext)
 		spatial_backend_set_create_anchor(xr_spatial_create_anchor);
-
-	persistence_init();
 
 	local.available = true;
 	return xr_system_succeed;
@@ -417,12 +478,23 @@ static void persistence_init() {
 
 	for (uint32_t i = 0; i < scope_count; i++) {
 		XrSpatialPersistenceScopeEXT scope = scopes[i];
-		bool usable = scope == XR_SPATIAL_PERSISTENCE_SCOPE_SYSTEM_MANAGED_EXT
-		           || (scope == XR_SPATIAL_PERSISTENCE_SCOPE_LOCAL_ANCHORS_EXT && local.persist_ops_ext);
+		bool writable = scope == XR_SPATIAL_PERSISTENCE_SCOPE_LOCAL_ANCHORS_EXT && local.persist_ops_ext;
+		bool usable   = writable || scope == XR_SPATIAL_PERSISTENCE_SCOPE_SYSTEM_MANAGED_EXT;
 		if (usable && local.usable_scope_count < 2)
 			local.usable_scopes[local.usable_scope_count++] = scope;
+		local.persist_writable |= writable;
 	}
 	sk_free(scopes);
+}
+
+// Without writable storage, Persistence comes off every capability, and
+// the registry fails anything still waiting on it.
+static void persistence_lost() {
+	local.persist_writable = false;
+	for (int32_t i = 0; i < cap_mapping_count; i++) {
+		spatial_capability_ cap = cap_mappings[i].sk_bit;
+		spatial_backend_set_cap_comps(cap, spatial_capability_components(cap) & ~spatial_component_persistence);
+	}
 }
 
 ///////////////////////////////////////////
@@ -439,6 +511,7 @@ static void persistence_create_contexts() {
 		XrResult    result = xrCreateSpatialPersistenceContextAsyncEXT(xr_session, &create_info, &future);
 		if (XR_FAILED(result)) {
 			log_warnf("%s [%s]", "xrCreateSpatialPersistenceContextAsyncEXT", openxr_string(result));
+			if (scope == XR_SPATIAL_PERSISTENCE_SCOPE_LOCAL_ANCHORS_EXT) persistence_lost();
 			continue;
 		}
 
@@ -451,6 +524,7 @@ static void persistence_create_contexts() {
 			XrResult result = xrCreateSpatialPersistenceContextCompleteEXT(xr_session, future, &completion);
 			if (XR_FAILED(result) || XR_FAILED(completion.futureResult) || completion.createResult != XR_SPATIAL_PERSISTENCE_CONTEXT_RESULT_SUCCESS_EXT) {
 				log_warnf("%s [%s]", "xrCreateSpatialPersistenceContextAsyncEXT", openxr_string(XR_FAILED(result) ? result : completion.futureResult));
+				if (scope == XR_SPATIAL_PERSISTENCE_SCOPE_LOCAL_ANCHORS_EXT) persistence_lost();
 				return;
 			}
 
@@ -472,8 +546,7 @@ static void xr_spatial_shutdown(void*) {
 	// tear everything down directly.
 	for (int32_t i = 0; i < cap_mapping_count; i++) {
 		slot_t* slot = &local.slots[i];
-		for (int32_t h = 0; h < slot->handles.count; h++)
-			xrDestroySpatialEntityEXT(slot->handles[h].handle);
+		slot_clear_handles(slot);
 		slot->handles.free();
 		if (slot->context != XR_NULL_HANDLE)
 			xrDestroySpatialContextEXT(slot->context);
@@ -485,6 +558,10 @@ static void xr_spatial_shutdown(void*) {
 	spatial_backend_set_create_anchor(nullptr);
 	spatial_backend_set_destroy      (nullptr);
 	spatial_backend_set_persist_ops  (nullptr, nullptr);
+
+	scratch_t* scratches[] = { &local.scratch_ids, &local.scratch_states, &local.scratch_batch, &local.scratch_comp_ids, &local.scratch_comp_states, &local.scratch_comp_data, &local.scratch_entities };
+	for (int32_t i = 0; i < (int32_t)(sizeof(scratches) / sizeof(scratches[0])); i++)
+		sk_free(scratches[i]->data);
 	local = {};
 
 	OPENXR_CLEAR_FN(XR_EXT_FUNCTIONS);
@@ -506,8 +583,8 @@ static void xr_spatial_step_begin(void*) {
 		bool want = (want_all & cap) != 0
 		         && backend_openxr_ext_enabled(cap_mappings[i].ext_name);
 
-		// A marker config change needs a context rebuild: tear the slot
-		// down and let the restart below pick up the new config.
+		// A settings change needs a context rebuild, so tear the slot down
+		// and let the restart below pick up the new settings.
 		if (want && slot->state == slot_state_ready && slot->config_serial != spatial_backend_get_config_serial(cap)) {
 			slot_stop(i);
 			local.attempted &= ~cap;
@@ -531,6 +608,26 @@ static void xr_spatial_step_begin(void*) {
 			slot_begin_start(i);
 	}
 
+	// Look up persist ids apps are waiting on. Storage leaves out ids it
+	// can't answer for yet, so this retries until each is resolved.
+	float now = time_totalf_unscaled();
+	if (now >= local.find_next_time) {
+		for (int32_t i = 0; i < cap_mapping_count; i++) {
+			slot_t* slot = &local.slots[i];
+			if (slot->state != slot_state_ready || slot->discovery_active || (slot->comps & spatial_component_persistence) == 0) continue;
+
+			int32_t count = spatial_backend_get_find_ids(nullptr, 0);
+			if (count > 0) {
+				sk_uuid_t* ids = sk_malloc_t(sk_uuid_t, count);
+				spatial_backend_get_find_ids(ids, count);
+				slot_discover(i, ids, count);
+				sk_free(ids);
+				local.find_next_time = now + 1.0f;
+			}
+			break;
+		}
+	}
+
 	// Refresh tracked entities with a synchronous update snapshot
 	for (int32_t i = 0; i < cap_mapping_count; i++) {
 		if (local.slots[i].state == slot_state_ready && local.slots[i].handles.count > 0)
@@ -552,7 +649,7 @@ static void xr_spatial_event_poll(void*, XrEventDataBuffer* event_data) {
 		return;
 
 	if (local.slots[slot_idx].discovery_active) local.slots[slot_idx].discovery_queued = true;
-	else                                        slot_discover(slot_idx);
+	else                                        slot_discover(slot_idx, nullptr, 0);
 }
 
 ///////////////////////////////////////////
@@ -645,33 +742,35 @@ static void slot_create(int32_t slot_idx) {
 
 	// Apply the user's marker configuration. SK enum values match the XR
 	// values, with 0 as a "let SK pick" default.
-	spatial_capability_ cap = cap_mappings[slot_idx].sk_bit;
-	const spatial_capability_ marker_caps = spatial_capability_qr_code | spatial_capability_micro_qr | spatial_capability_aruco | spatial_capability_april_tag;
-	if (cap & marker_caps) {
-		spatial_marker_config_t config = spatial_backend_get_marker_config(cap);
+	spatial_capability_ cap         = cap_mappings[slot_idx].sk_bit;
+	marker_type_        marker_type = cap_mappings[slot_idx].marker_type;
+	if (marker_type != marker_type_none) {
+		aruco_dict_     aruco_dict = spatial_get_aruco_dictionary    ();
+		april_tag_dict_ april_dict = spatial_get_april_tag_dictionary();
+		float           size       = spatial_get_marker_size         (marker_type);
 
 		if (cap == spatial_capability_aruco)
-			((XrSpatialCapabilityConfigurationArucoMarkerEXT*)cfg)->arUcoDict = config.aruco_dict == aruco_dict_default
+			((XrSpatialCapabilityConfigurationArucoMarkerEXT*)cfg)->arUcoDict = aruco_dict == aruco_dict_default
 				? XR_SPATIAL_MARKER_ARUCO_DICT_4X4_50_EXT
-				: (XrSpatialMarkerArucoDictEXT)config.aruco_dict;
+				: (XrSpatialMarkerArucoDictEXT)aruco_dict;
 		if (cap == spatial_capability_april_tag)
-			((XrSpatialCapabilityConfigurationAprilTagEXT*)cfg)->aprilDict = config.april_tag_dict == april_tag_dict_default
+			((XrSpatialCapabilityConfigurationAprilTagEXT*)cfg)->aprilDict = april_dict == april_tag_dict_default
 				? XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H11_EXT
-				: (XrSpatialMarkerAprilTagDictEXT)config.april_tag_dict;
+				: (XrSpatialMarkerAprilTagDictEXT)april_dict;
 
-		if (config.marker_size > 0) {
+		if (size > 0) {
 			if (local.feat_fixed_size & cap) {
 				ctx->marker_size = { XR_TYPE_SPATIAL_MARKER_SIZE_EXT };
-				ctx->marker_size.markerSideLength = config.marker_size;
+				ctx->marker_size.markerSideLength = size;
 				xr_insert_next((XrBaseHeader*)cfg, (XrBaseHeader*)&ctx->marker_size);
-			} else log_diagf("Spatial %s tracking doesn't support fixed size markers, ignoring marker_size", cap_mappings[slot_idx].name);
+			} else log_diagf("Spatial %s tracking doesn't support known marker sizes, ignoring marker size", cap_mappings[slot_idx].name);
 		}
-		if (config.static_markers) {
+		if (spatial_get_marker_stationary(marker_type)) {
 			if (local.feat_static & cap) {
 				ctx->marker_static = { XR_TYPE_SPATIAL_MARKER_STATIC_OPTIMIZATION_EXT };
 				ctx->marker_static.optimizeForStaticMarker = XR_TRUE;
 				xr_insert_next((XrBaseHeader*)cfg, (XrBaseHeader*)&ctx->marker_static);
-			} else log_diagf("Spatial %s tracking doesn't support static marker optimization, ignoring static_markers", cap_mappings[slot_idx].name);
+			} else log_diagf("Spatial %s tracking doesn't support stationary marker optimization, ignoring it", cap_mappings[slot_idx].name);
 		}
 	}
 	slot->config_serial = spatial_backend_get_config_serial(cap);
@@ -733,10 +832,7 @@ static void slot_stop(int32_t slot_idx) {
 
 	spatial_backend_set_active(cap_mappings[slot_idx].sk_bit, false);
 	spatial_backend_drop_source(cap_mappings[slot_idx].sk_bit);
-
-	for (int32_t i = 0; i < slot->handles.count; i++)
-		xrDestroySpatialEntityEXT(slot->handles[i].handle);
-	slot->handles.clear();
+	slot_clear_handles(slot);
 
 	// A discovery future may still reference this context; let its
 	// completion callback finish the teardown.
@@ -758,10 +854,18 @@ static void slot_stop(int32_t slot_idx) {
 // Discovery                             //
 ///////////////////////////////////////////
 
-static void slot_discover(int32_t slot_idx) {
+// With persist ids, storage reports each one as loaded or not found,
+// rather than discovery returning everything.
+static void slot_discover(int32_t slot_idx, const sk_uuid_t* persist_ids, int32_t persist_id_count) {
 	slot_t* slot = &local.slots[slot_idx];
 
-	XrSpatialDiscoverySnapshotCreateInfoEXT info = { XR_TYPE_SPATIAL_DISCOVERY_SNAPSHOT_CREATE_INFO_EXT };
+	XrSpatialDiscoverySnapshotCreateInfoEXT     info   = { XR_TYPE_SPATIAL_DISCOVERY_SNAPSHOT_CREATE_INFO_EXT };
+	XrSpatialDiscoveryPersistenceUuidFilterEXT filter = { XR_TYPE_SPATIAL_DISCOVERY_PERSISTENCE_UUID_FILTER_EXT };
+	if (persist_id_count > 0) {
+		filter.persistedUuidCount = (uint32_t)persist_id_count;
+		filter.persistedUuids     = (const XrUuid*)persist_ids;
+		info.next = &filter;
+	}
 
 	XrFutureEXT future = XR_NULL_FUTURE_EXT;
 	XrResult    result = xrCreateSpatialDiscoverySnapshotAsyncEXT(slot->context, &info, &future);
@@ -803,7 +907,7 @@ static void slot_discover(int32_t slot_idx) {
 
 		if (slot->discovery_queued) {
 			slot->discovery_queued = false;
-			slot_discover(slot_idx);
+			slot_discover(slot_idx, nullptr, 0);
 		}
 	}, (void*)(intptr_t)slot_idx);
 }
@@ -815,7 +919,7 @@ static void slot_discover(int32_t slot_idx) {
 static void slot_update(int32_t slot_idx) {
 	slot_t* slot = &local.slots[slot_idx];
 
-	XrSpatialEntityEXT* entities = sk_malloc_t(XrSpatialEntityEXT, slot->handles.count);
+	XrSpatialEntityEXT* entities = scratch_get<XrSpatialEntityEXT>(&local.scratch_entities, slot->handles.count);
 	for (int32_t i = 0; i < slot->handles.count; i++)
 		entities[i] = slot->handles[i].handle;
 
@@ -844,7 +948,6 @@ static void slot_update(int32_t slot_idx) {
 
 	XrSpatialSnapshotEXT xr_snapshot = XR_NULL_HANDLE;
 	XrResult             result      = xrCreateSpatialUpdateSnapshotEXT(slot->context, &create_info, &xr_snapshot);
-	sk_free(entities);
 
 	if (XR_FAILED(result)) {
 		if (!slot->update_warned)
@@ -860,12 +963,6 @@ static void slot_update(int32_t slot_idx) {
 ///////////////////////////////////////////
 // Snapshot ingestion                    //
 ///////////////////////////////////////////
-
-static int32_t batch_index_of(const XrSpatialEntityIdEXT* ids, int32_t count, XrSpatialEntityIdEXT id) {
-	for (int32_t i = 0; i < count; i++)
-		if (ids[i] == id) return i;
-	return -1;
-}
 
 // Fetch a vec3 buffer from the snapshot, returns null when empty.
 static vec3* fetch_buffer_v3(XrSpatialSnapshotEXT snapshot, XrSpatialBufferIdEXT id, int32_t* out_count) {
@@ -940,8 +1037,8 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 	}
 	if (max_entities == 0) return;
 
-	XrSpatialEntityIdEXT*            ids    = sk_malloc_t(XrSpatialEntityIdEXT,            max_entities);
-	XrSpatialEntityTrackingStateEXT* states = sk_malloc_t(XrSpatialEntityTrackingStateEXT, max_entities);
+	XrSpatialEntityIdEXT*            ids    = scratch_get<XrSpatialEntityIdEXT>           (&local.scratch_ids,    max_entities);
+	XrSpatialEntityTrackingStateEXT* states = scratch_get<XrSpatialEntityTrackingStateEXT>(&local.scratch_states, max_entities);
 	result_info.entityIdCapacityInput    = max_entities;
 	result_info.entityIds                = ids;
 	result_info.entityStateCapacityInput = max_entities;
@@ -950,25 +1047,35 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 	result = xrQuerySpatialComponentDataEXT(xr_snapshot, &condition, &result_info);
 	if (XR_FAILED(result)) {
 		log_warnf("%s [%s]", "xrQuerySpatialComponentDataEXT", openxr_string(result));
-		sk_free(ids); sk_free(states);
 		return;
 	}
 	int32_t count = (int32_t)result_info.entityIdCountOutput;
-	if (count == 0) { sk_free(ids); sk_free(states); return; }
+	if (count == 0) return;
 
-	spatial_ingest_t* batch = sk_malloc_zero_t(spatial_ingest_t, count);
+	// Only entities with a handle are ingested, since frame updates can't
+	// reach the others, and an unknown stopped entity needs no record.
+	spatial_ingest_t* batch       = scratch_get<spatial_ingest_t>(&local.scratch_batch, count);
+	int32_t           batch_count = 0;
 	for (int32_t i = 0; i < count; i++) {
-		batch[i].id       = (spatial_entity_id_t)ids[i];
-		batch[i].tracking = xr_to_sk_tracking(states[i]);
-
-		if (create_handles && batch[i].tracking != spatial_tracking_stopped && slot_find_handle(slot, ids[i]) == nullptr) {
+		spatial_tracking_ tracking = xr_to_sk_tracking(states[i]);
+		ent_handle_t*     handle   = slot_find_handle(slot, ids[i]);
+		if (handle == nullptr && create_handles && tracking != spatial_tracking_stopped) {
 			XrSpatialEntityFromIdCreateInfoEXT create_info = { XR_TYPE_SPATIAL_ENTITY_FROM_ID_CREATE_INFO_EXT };
 			create_info.entityId = ids[i];
-			ent_handle_t handle = {};
-			handle.id = ids[i];
-			if (XR_SUCCEEDED(xrCreateSpatialEntityFromIdEXT(slot->context, &create_info, &handle.handle)))
-				slot->handles.add(handle);
+			ent_handle_t created = {};
+			created.id = ids[i];
+			if (XR_SUCCEEDED(xrCreateSpatialEntityFromIdEXT(slot->context, &create_info, &created.handle))) {
+				slot_add_handle(slot, created);
+				handle = slot_find_handle(slot, ids[i]);
+			}
 		}
+		if (handle == nullptr) continue;
+
+		handle->batch_idx = batch_count;
+		batch[batch_count].entity   = handle->entity;
+		batch[batch_count].id       = (spatial_entity_id_t)ids[i];
+		batch[batch_count].tracking = tracking;
+		batch_count++;
 	}
 
 	// Phase 2: per-component queries. Only entities that are actively
@@ -985,8 +1092,9 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 		// The phase 1 entity count is an upper bound for every component,
 		// so a sizing call isn't needed here.
 		int32_t comp_count = count;
-		XrSpatialEntityIdEXT*            comp_ids    = sk_malloc_t(XrSpatialEntityIdEXT,            comp_count);
-		XrSpatialEntityTrackingStateEXT* comp_states = sk_malloc_t(XrSpatialEntityTrackingStateEXT, comp_count);
+		XrSpatialEntityIdEXT*            comp_ids    = scratch_get<XrSpatialEntityIdEXT>           (&local.scratch_comp_ids,    comp_count);
+		XrSpatialEntityTrackingStateEXT* comp_states = scratch_get<XrSpatialEntityTrackingStateEXT>(&local.scratch_comp_states, comp_count);
+		scratch_t*                       comp_data   = &local.scratch_comp_data;
 		XrSpatialComponentDataQueryResultEXT comp_result = { XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT };
 		comp_result.entityIdCapacityInput    = comp_count;
 		comp_result.entityIds                = comp_ids;
@@ -1020,57 +1128,57 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 
 		switch (comp_bit) {
 		case spatial_component_bounds2d:
-			d_b2d = sk_malloc_zero_t(XrSpatialBounded2DDataEXT, comp_count);
+			d_b2d = scratch_get<XrSpatialBounded2DDataEXT>(comp_data, comp_count);
 			list_b2d.boundCount = comp_count; list_b2d.bounds = d_b2d;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_b2d);
 			break;
 		case spatial_component_bounds3d:
-			d_b3d = sk_malloc_zero_t(XrBoxf, comp_count);
+			d_b3d = scratch_get<XrBoxf>(comp_data, comp_count);
 			list_b3d.boundCount = comp_count; list_b3d.bounds = d_b3d;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_b3d);
 			break;
 		case spatial_component_parent:
-			d_parent = sk_malloc_zero_t(XrSpatialEntityIdEXT, comp_count);
+			d_parent = scratch_get<XrSpatialEntityIdEXT>(comp_data, comp_count);
 			list_parent.parentCount = comp_count; list_parent.parents = d_parent;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_parent);
 			break;
 		case spatial_component_mesh:
-			d_mesh = sk_malloc_zero_t(XrSpatialMeshDataEXT, comp_count);
+			d_mesh = scratch_get<XrSpatialMeshDataEXT>(comp_data, comp_count);
 			list_mesh.meshCount = comp_count; list_mesh.meshes = d_mesh;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_mesh);
 			break;
 		case spatial_component_anchor:
-			d_anchor = sk_malloc_zero_t(XrPosef, comp_count);
+			d_anchor = scratch_get<XrPosef>(comp_data, comp_count);
 			list_anchor.locationCount = comp_count; list_anchor.locations = d_anchor;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_anchor);
 			break;
 		case spatial_component_plane_alignment:
-			d_align = sk_malloc_zero_t(XrSpatialPlaneAlignmentEXT, comp_count);
+			d_align = scratch_get<XrSpatialPlaneAlignmentEXT>(comp_data, comp_count);
 			list_align.planeAlignmentCount = comp_count; list_align.planeAlignments = d_align;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_align);
 			break;
 		case spatial_component_mesh2d:
-			d_mesh2d = sk_malloc_zero_t(XrSpatialMeshDataEXT, comp_count);
+			d_mesh2d = scratch_get<XrSpatialMeshDataEXT>(comp_data, comp_count);
 			list_mesh2d.meshCount = comp_count; list_mesh2d.meshes = d_mesh2d;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_mesh2d);
 			break;
 		case spatial_component_polygon:
-			d_poly = sk_malloc_zero_t(XrSpatialPolygon2DDataEXT, comp_count);
+			d_poly = scratch_get<XrSpatialPolygon2DDataEXT>(comp_data, comp_count);
 			list_poly.polygonCount = comp_count; list_poly.polygons = d_poly;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_poly);
 			break;
-		case spatial_component_plane_label:
-			d_label = sk_malloc_zero_t(XrSpatialPlaneSemanticLabelEXT, comp_count);
+		case spatial_component_label:
+			d_label = scratch_get<XrSpatialPlaneSemanticLabelEXT>(comp_data, comp_count);
 			list_label.semanticLabelCount = comp_count; list_label.semanticLabels = d_label;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_label);
 			break;
 		case spatial_component_marker:
-			d_marker = sk_malloc_zero_t(XrSpatialMarkerDataEXT, comp_count);
+			d_marker = scratch_get<XrSpatialMarkerDataEXT>(comp_data, comp_count);
 			list_marker.markerCount = comp_count; list_marker.markers = d_marker;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_marker);
 			break;
 		case spatial_component_persistence:
-			d_persist = sk_malloc_zero_t(XrSpatialPersistenceDataEXT, comp_count);
+			d_persist = scratch_get<XrSpatialPersistenceDataEXT>(comp_data, comp_count);
 			list_persist.persistDataCount = comp_count; list_persist.persistData = d_persist;
 			xr_insert_next((XrBaseHeader*)&comp_result, (XrBaseHeader*)&list_persist);
 			break;
@@ -1081,12 +1189,15 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 		comp_count = (int32_t)comp_result.entityIdCountOutput;
 		if (XR_SUCCEEDED(result)) {
 			for (int32_t i = 0; i < comp_count; i++) {
-				int32_t idx = batch_index_of(ids, count, comp_ids[i]);
-				if (idx < 0) continue;
-				if (batch[idx].tracking != spatial_tracking_tracking && comp_bit != spatial_component_persistence) continue;
-
-				spatial_ingest_t* in     = &batch[idx];
-				ent_handle_t*     handle = slot_find_handle(slot, comp_ids[i]);
+				// Not-found ids come without an entity, so they bypass the batch
+				if (comp_bit == spatial_component_persistence && d_persist[i].persistState == XR_SPATIAL_PERSISTENCE_STATE_NOT_FOUND_EXT) {
+					spatial_backend_persist_not_found(xr_to_uuid(d_persist[i].persistUuid));
+					continue;
+				}
+				ent_handle_t* handle = slot_find_handle(slot, comp_ids[i]);
+				if (handle == nullptr || handle->batch_idx >= batch_count || batch[handle->batch_idx].id != (spatial_entity_id_t)comp_ids[i]) continue;
+				spatial_ingest_t* in = &batch[handle->batch_idx];
+				if (in->tracking != spatial_tracking_tracking && comp_bit != spatial_component_persistence) continue;
 				in->present |= comp_bit;
 
 				switch (comp_bit) {
@@ -1095,7 +1206,7 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 					in->bounds2d_size   = { d_b2d[i].extents.width, d_b2d[i].extents.height };
 					break;
 				case spatial_component_bounds3d:
-					in->bounds3d_center = xr_to_pose(d_b3d[i].center);
+					in->bounds3d_center = xr_to_pose_faced(d_b3d[i].center);
 					in->bounds3d_size   = { d_b3d[i].extents.width, d_b3d[i].extents.height, d_b3d[i].extents.depth };
 					break;
 				case spatial_component_parent:
@@ -1107,41 +1218,41 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 				case spatial_component_plane_alignment:
 					in->plane_alignment = xr_to_plane_align(d_align[i]);
 					break;
-				case spatial_component_plane_label:
-					in->plane_label = xr_to_plane_label(d_label[i]);
+				case spatial_component_label:
+					in->label = xr_to_plane_label(d_label[i]);
 					break;
 				case spatial_component_mesh:
-					in->mesh_origin = xr_to_pose(d_mesh[i].origin);
-					if (handle && (handle->stamp_mesh_v != d_mesh[i].vertexBuffer.bufferId || handle->stamp_mesh_i != d_mesh[i].indexBuffer.bufferId)) {
+					in->mesh.origin = xr_to_pose(d_mesh[i].origin);
+					if (handle->stamp_mesh_v != d_mesh[i].vertexBuffer.bufferId || handle->stamp_mesh_i != d_mesh[i].indexBuffer.bufferId) {
 						handle->stamp_mesh_v = d_mesh[i].vertexBuffer.bufferId;
 						handle->stamp_mesh_i = d_mesh[i].indexBuffer.bufferId;
-						in->mesh_verts = fetch_buffer_v3 (xr_snapshot, d_mesh[i].vertexBuffer.bufferId, &in->mesh_vert_count);
-						in->mesh_inds  = fetch_buffer_u32(xr_snapshot, d_mesh[i].indexBuffer .bufferId, &in->mesh_ind_count);
+						in->mesh.verts = fetch_buffer_v3 (xr_snapshot, d_mesh[i].vertexBuffer.bufferId, &in->mesh.vert_count);
+						in->mesh.inds  = fetch_buffer_u32(xr_snapshot, d_mesh[i].indexBuffer .bufferId, &in->mesh.ind_count);
 						in->buffers_changed |= spatial_component_mesh;
 					}
 					break;
 				case spatial_component_mesh2d:
-					in->mesh2d_origin = xr_to_pose_faced(d_mesh2d[i].origin);
-					if (handle && (handle->stamp_mesh2d_v != d_mesh2d[i].vertexBuffer.bufferId || handle->stamp_mesh2d_i != d_mesh2d[i].indexBuffer.bufferId)) {
+					in->mesh2d.origin = xr_to_pose_faced(d_mesh2d[i].origin);
+					if (handle->stamp_mesh2d_v != d_mesh2d[i].vertexBuffer.bufferId || handle->stamp_mesh2d_i != d_mesh2d[i].indexBuffer.bufferId) {
 						handle->stamp_mesh2d_v = d_mesh2d[i].vertexBuffer.bufferId;
 						handle->stamp_mesh2d_i = d_mesh2d[i].indexBuffer.bufferId;
 						// 2D mesh vertices are vec2, widen to vec3 with z=0
 						int32_t v2_count = 0;
 						vec2*   v2       = fetch_buffer_v2(xr_snapshot, d_mesh2d[i].vertexBuffer.bufferId, &v2_count);
 						if (v2) {
-							in->mesh2d_verts      = sk_malloc_t(vec3, v2_count);
-							in->mesh2d_vert_count = v2_count;
+							in->mesh2d.verts      = sk_malloc_t(vec3, v2_count);
+							in->mesh2d.vert_count = v2_count;
 							for (int32_t v = 0; v < v2_count; v++)
-								in->mesh2d_verts[v] = { -v2[v].x, v2[v].y, 0 };
+								in->mesh2d.verts[v] = { -v2[v].x, v2[v].y, 0 };
 							sk_free(v2);
 						}
-						in->mesh2d_inds = fetch_buffer_u16_widen(xr_snapshot, d_mesh2d[i].indexBuffer.bufferId, &in->mesh2d_ind_count);
+						in->mesh2d.inds = fetch_buffer_u16_widen(xr_snapshot, d_mesh2d[i].indexBuffer.bufferId, &in->mesh2d.ind_count);
 						in->buffers_changed |= spatial_component_mesh2d;
 					}
 					break;
 				case spatial_component_polygon:
 					in->polygon_origin = xr_to_pose_faced(d_poly[i].origin);
-					if (handle && handle->stamp_polygon != d_poly[i].vertexBuffer.bufferId) {
+					if (handle->stamp_polygon != d_poly[i].vertexBuffer.bufferId) {
 						handle->stamp_polygon = d_poly[i].vertexBuffer.bufferId;
 						in->polygon_verts = fetch_buffer_v2(xr_snapshot, d_poly[i].vertexBuffer.bufferId, &in->polygon_count);
 						for (int32_t v = 0; v < in->polygon_count; v++)
@@ -1150,9 +1261,9 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 					}
 					break;
 				case spatial_component_marker:
-					in->marker_type = cap_to_marker_type(cap);
+					in->marker_type = cap_mappings[slot_idx].marker_type;
 					in->marker_id   = d_marker[i].markerId;
-					if (handle && handle->stamp_marker != d_marker[i].data.bufferId) {
+					if (handle->stamp_marker != d_marker[i].data.bufferId) {
 						handle->stamp_marker = d_marker[i].data.bufferId;
 						if (d_marker[i].data.bufferId != XR_NULL_SPATIAL_BUFFER_ID_EXT) {
 							XrSpatialBufferGetInfoEXT buf_info = { XR_TYPE_SPATIAL_BUFFER_GET_INFO_EXT };
@@ -1178,54 +1289,37 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 					}
 					break;
 				case spatial_component_persistence:
-					// NOT_FOUND means the uuid is known to storage but its
-					// entity isn't; nothing useful to surface for it here.
-					if (d_persist[i].persistState == XR_SPATIAL_PERSISTENCE_STATE_LOADED_EXT) {
-						memcpy(in->persist_uuid, d_persist[i].persistUuid.data, sizeof(in->persist_uuid));
-					} else {
-						in->present &= ~spatial_component_persistence;
-					}
+					in->persist_id = xr_to_uuid(d_persist[i].persistUuid);
 					break;
 				default: break;
 				}
 			}
 		}
 
-		sk_free(comp_ids);  sk_free(comp_states);
-		sk_free(d_b2d);     sk_free(d_b3d);     sk_free(d_parent);
-		sk_free(d_mesh);    sk_free(d_anchor);  sk_free(d_align);
-		sk_free(d_mesh2d);  sk_free(d_poly);    sk_free(d_label);
-		sk_free(d_marker);  sk_free(d_persist);
 	}
 
-	spatial_backend_ingest(cap, batch, count);
+	spatial_backend_ingest(cap, batch, batch_count);
 
-	// Stopped entities never come back; drop their handles
-	for (int32_t i = 0; i < count; i++) {
-		if (batch[i].tracking != spatial_tracking_stopped) continue;
-		for (int32_t h = 0; h < slot->handles.count; h++) {
-			if (slot->handles[h].id == ids[i]) {
-				xrDestroySpatialEntityEXT(slot->handles[h].handle);
-				slot->handles.remove(h);
-				break;
-			}
-		}
+	// Keep the registry's handles for next time, and drop stopped entities,
+	// since they never come back.
+	for (int32_t i = 0; i < batch_count; i++) {
+		if (batch[i].tracking == spatial_tracking_stopped) slot_remove_handle(slot, (XrSpatialEntityIdEXT)batch[i].id);
+		else                                               slot_find_handle  (slot, (XrSpatialEntityIdEXT)batch[i].id)->entity = batch[i].entity;
 	}
 
-	sk_free(batch);
-	sk_free(ids);
-	sk_free(states);
 }
 
 ///////////////////////////////////////////
 // Anchor creation                       //
 ///////////////////////////////////////////
 
-static spatial_entity_id_t xr_spatial_create_anchor(pose_t pose) {
-	int32_t slot_idx = -1;
-	for (int32_t i = 0; i < cap_mapping_count; i++)
-		if (cap_mappings[i].sk_bit == spatial_capability_anchor) { slot_idx = i; break; }
-	slot_t* slot = &local.slots[slot_idx];
+static spatial_entity_id_t xr_spatial_create_anchor(pose_t pose, spatial_entity_id_t parent, spatial_entity_t entity) {
+	if (parent != 0) {
+		log_warn("spatial_entity_create_anchor: this runtime can't attach anchors to a parent");
+		return 0;
+	}
+
+	slot_t* slot = slot_from_cap(spatial_capability_anchor);
 	if (slot->state != slot_state_ready) return 0;
 
 	XrSpatialAnchorCreateInfoEXT create_info = { XR_TYPE_SPATIAL_ANCHOR_CREATE_INFO_EXT };
@@ -1244,57 +1338,43 @@ static spatial_entity_id_t xr_spatial_create_anchor(pose_t pose) {
 	ent_handle_t handle = {};
 	handle.id     = anchor_id;
 	handle.handle = anchor_entity;
-	slot->handles.add(handle);
-
-	// Ingest immediately so the entity is available to the caller
-	spatial_ingest_t ingest = {};
-	ingest.id          = (spatial_entity_id_t)anchor_id;
-	ingest.tracking    = spatial_tracking_tracking;
-	ingest.present     = spatial_component_anchor;
-	ingest.anchor_pose = pose;
-	spatial_backend_ingest(spatial_capability_anchor, &ingest, 1);
-
+	handle.entity = entity;
+	slot_add_handle(slot, handle);
 	return (spatial_entity_id_t)anchor_id;
 }
 
 ///////////////////////////////////////////
 
+// The ready slot that has a handle for this entity, if any.
+static slot_t* slot_from_entity(spatial_entity_id_t id) {
+	for (int32_t i = 0; i < cap_mapping_count; i++) {
+		slot_t* slot = &local.slots[i];
+		if (slot->state == slot_state_ready && slot_find_handle(slot, (XrSpatialEntityIdEXT)id) != nullptr) return slot;
+	}
+	return nullptr;
+}
+
 // Releases the runtime's handle for an app-created entity. For
 // non-persisted anchors, this lets the runtime stop tracking them.
 static void xr_spatial_destroy(spatial_entity_id_t id) {
-	for (int32_t s = 0; s < cap_mapping_count; s++) {
-		slot_t* slot = &local.slots[s];
-		if (slot->state != slot_state_ready) continue;
-
-		for (int32_t h = 0; h < slot->handles.count; h++) {
-			if (slot->handles[h].id != (XrSpatialEntityIdEXT)id) continue;
-			xrDestroySpatialEntityEXT(slot->handles[h].handle);
-			slot->handles.remove(h);
-			return;
-		}
-	}
+	slot_t* slot = slot_from_entity(id);
+	if (slot != nullptr) slot_remove_handle(slot, (XrSpatialEntityIdEXT)id);
 }
 
 ///////////////////////////////////////////
 // Persistence operations                //
 ///////////////////////////////////////////
 
-static void xr_spatial_persist(spatial_entity_id_t id) {
-	if (local.persist_write_ctx == XR_NULL_HANDLE) { spatial_backend_persist_failed(id); return; }
+static void xr_spatial_persist(spatial_entity_id_t id, spatial_entity_t entity) {
+	if (local.persist_write_ctx == XR_NULL_HANDLE) { spatial_backend_persist_failed(entity); return; }
 
-	// Find the context this entity belongs to
-	XrSpatialContextEXT context = XR_NULL_HANDLE;
-	for (int32_t i = 0; i < cap_mapping_count; i++) {
-		if (local.slots[i].state == slot_state_ready && slot_find_handle(&local.slots[i], (XrSpatialEntityIdEXT)id) != nullptr) {
-			context = local.slots[i].context;
-			break;
-		}
-	}
-	if (context == XR_NULL_HANDLE) {
+	slot_t* slot = slot_from_entity(id);
+	if (slot == nullptr) {
 		log_warn("spatial_entity_persist: entity not found");
-		spatial_backend_persist_failed(id);
+		spatial_backend_persist_failed(entity);
 		return;
 	}
+	XrSpatialContextEXT context = slot->context;
 
 	XrSpatialEntityPersistInfoEXT info = { XR_TYPE_SPATIAL_ENTITY_PERSIST_INFO_EXT };
 	info.spatialContext  = context;
@@ -1304,50 +1384,52 @@ static void xr_spatial_persist(spatial_entity_id_t id) {
 	XrResult    result = xrPersistSpatialEntityAsyncEXT(local.persist_write_ctx, &info, &future);
 	if (XR_FAILED(result)) {
 		log_warnf("%s [%s]", "xrPersistSpatialEntityAsyncEXT", openxr_string(result));
-		spatial_backend_persist_failed(id);
+		spatial_backend_persist_failed(entity);
 		return;
 	}
 
 	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future) {
-		spatial_entity_id_t id = (spatial_entity_id_t)(uintptr_t)context;
+		spatial_entity_t entity = (spatial_entity_t)(uintptr_t)context;
 
 		XrPersistSpatialEntityCompletionEXT completion = { XR_TYPE_PERSIST_SPATIAL_ENTITY_COMPLETION_EXT };
 		XrResult result = xrPersistSpatialEntityCompleteEXT(local.persist_write_ctx, future, &completion);
 		if (XR_FAILED(result) || XR_FAILED(completion.futureResult) || completion.persistResult != XR_SPATIAL_PERSISTENCE_CONTEXT_RESULT_SUCCESS_EXT) {
 			log_warnf("Persisting a spatial entity failed [%s, result %d]", openxr_string(XR_FAILED(result) ? result : completion.futureResult), (int)completion.persistResult);
-			spatial_backend_persist_failed(id);
+			spatial_backend_persist_failed(entity);
 			return;
 		}
-		spatial_backend_set_persist(id, completion.persistUuid.data);
-	}, (void*)(uintptr_t)id);
+		spatial_backend_set_persist(entity, xr_to_uuid(completion.persistUuid));
+	}, (void*)(uintptr_t)entity);
 }
 
 ///////////////////////////////////////////
 
-static void xr_spatial_unpersist(spatial_entity_id_t id, const uint8_t* uuid_16) {
-	if (local.persist_write_ctx == XR_NULL_HANDLE) return;
+static void xr_spatial_unpersist(spatial_entity_t entity, sk_uuid_t persist_id) {
+	if (local.persist_write_ctx == XR_NULL_HANDLE) { spatial_backend_unpersist_failed(entity); return; }
 
 	XrSpatialEntityUnpersistInfoEXT info = { XR_TYPE_SPATIAL_ENTITY_UNPERSIST_INFO_EXT };
-	memcpy(info.persistUuid.data, uuid_16, sizeof(info.persistUuid.data));
+	info.persistUuid = uuid_to_xr(persist_id);
 
 	XrFutureEXT future = XR_NULL_FUTURE_EXT;
 	XrResult    result = xrUnpersistSpatialEntityAsyncEXT(local.persist_write_ctx, &info, &future);
 	if (XR_FAILED(result)) {
 		log_warnf("%s [%s]", "xrUnpersistSpatialEntityAsyncEXT", openxr_string(result));
+		spatial_backend_unpersist_failed(entity);
 		return;
 	}
 
 	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future) {
-		spatial_entity_id_t id = (spatial_entity_id_t)(uintptr_t)context;
+		spatial_entity_t entity = (spatial_entity_t)(uintptr_t)context;
 
 		XrUnpersistSpatialEntityCompletionEXT completion = { XR_TYPE_UNPERSIST_SPATIAL_ENTITY_COMPLETION_EXT };
 		XrResult result = xrUnpersistSpatialEntityCompleteEXT(local.persist_write_ctx, future, &completion);
 		if (XR_FAILED(result) || XR_FAILED(completion.futureResult) || completion.unpersistResult != XR_SPATIAL_PERSISTENCE_CONTEXT_RESULT_SUCCESS_EXT) {
 			log_warnf("Unpersisting a spatial entity failed [%s, result %d]", openxr_string(XR_FAILED(result) ? result : completion.futureResult), (int)completion.unpersistResult);
+			spatial_backend_unpersist_failed(entity);
 			return;
 		}
-		spatial_backend_clear_persist(id);
-	}, (void*)(uintptr_t)id);
+		spatial_backend_clear_persist(entity);
+	}, (void*)(uintptr_t)entity);
 }
 
 }

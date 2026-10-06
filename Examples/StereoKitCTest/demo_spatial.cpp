@@ -30,23 +30,23 @@ static const int32_t cap_name_count = sizeof(cap_names) / sizeof(cap_names[0]);
 
 ///////////////////////////////////////////
 
-static const char* label_name(plane_label_ label) {
+static const char* label_name(spatial_label_ label) {
 	switch (label) {
-	case plane_label_floor:   return "Floor";
-	case plane_label_wall:    return "Wall";
-	case plane_label_ceiling: return "Ceiling";
-	case plane_label_table:   return "Table";
-	default:                  return "Surface";
+	case spatial_label_floor:   return "Floor";
+	case spatial_label_wall:    return "Wall";
+	case spatial_label_ceiling: return "Ceiling";
+	case spatial_label_table:   return "Table";
+	default:                    return "Surface";
 	}
 }
 
-static color32 label_color(plane_label_ label) {
+static color32 label_color(spatial_label_ label) {
 	switch (label) {
-	case plane_label_floor:   return {  64, 255,  64, 255 };
-	case plane_label_wall:    return {  64,  64, 255, 255 };
-	case plane_label_ceiling: return { 255,  64,  64, 255 };
-	case plane_label_table:   return { 255, 255,  64, 255 };
-	default:                  return { 255, 255, 255, 255 };
+	case spatial_label_floor:   return {  64, 255,  64, 255 };
+	case spatial_label_wall:    return {  64,  64, 255, 255 };
+	case spatial_label_ceiling: return { 255,  64,  64, 255 };
+	case spatial_label_table:   return { 255, 255,  64, 255 };
+	default:                    return { 255, 255, 255, 255 };
 	}
 }
 
@@ -105,18 +105,16 @@ void demo_spatial_update() {
 	ui_label(txt);
 	ui_toggle("Show Meshes", show_meshes);
 
-	// Anchor creation + persistence, when the capability is up
+	// Anchor creation + persistence
 	ui_hseparator();
-	ui_push_enabled((spatial_get_active() & spatial_capability_anchor) != 0);
+	ui_push_enabled((spatial_get_enabled() & spatial_capability_anchor) != 0);
 	if (ui_button("Create Anchor")) {
 		pose_t head = input_head();
 		vec3   at   = head.position + head.orientation * vec3_forward * 0.5f;
-		spatial_entity_t anchor = spatial_entity_create_anchor({ at, quat_lookat(at, head.position) });
-		if (anchor && persist_new)
-			spatial_entity_persist(anchor);
+		spatial_entity_create_anchor({ at, quat_lookat(at, head.position) }, persist_new, 0);
 	}
 	ui_sameline();
-	ui_push_enabled(spatial_persistence_available());
+	ui_push_enabled((spatial_capability_components(spatial_capability_anchor) & spatial_component_persistence) != 0);
 	ui_toggle("Persist", persist_new);
 	ui_pop_enabled();
 	ui_pop_enabled();
@@ -128,8 +126,8 @@ void demo_spatial_update() {
 		spatial_entity_t entity  = spatial_entity_get_index(spatial_component_none, i);
 		bool32_t         tracked = (spatial_entity_get_tracked(entity) & button_state_active) != 0;
 
-		plane_label_ label;
-		spatial_entity_get_plane_label(entity, &label);
+		spatial_label_ label;
+		spatial_entity_get_label(entity, &label);
 		color32 col = tracked ? label_color(label) : color32{ 128,128,128,255 };
 
 		pose_t center = {};
@@ -159,16 +157,16 @@ void demo_spatial_update() {
 		if (spatial_entity_get_anchor(entity, &anchor_pose)) {
 			line_add_axis(anchor_pose, 0.1f);
 
-			uint8_t uuid[16];
-			char    anchor_txt[16];
-			if (spatial_entity_get_persist_id(entity, uuid))
-				snprintf(anchor_txt, sizeof(anchor_txt), "%02x%02x%02x%02x", uuid[0], uuid[1], uuid[2], uuid[3]);
+			sk_uuid_t uuid;
+			char      anchor_txt[16];
+			if (spatial_entity_get_persist_id(entity, &uuid))
+				snprintf(anchor_txt, sizeof(anchor_txt), "%02x%02x%02x%02x", uuid.bytes[0], uuid.bytes[1], uuid.bytes[2], uuid.bytes[3]);
 			else
 				snprintf(anchor_txt, sizeof(anchor_txt), "anchor");
 			text_add_at(anchor_txt, pose_matrix(anchor_pose), 0, pivot_top_center);
 		}
 
-		// A text label: decoded marker data, marker id, or plane label
+		// A text label: decoded marker data, marker id, or semantic label
 		marker_type_ marker_type;
 		uint32_t     marker_id;
 		char         name[128] = {};
@@ -176,7 +174,7 @@ void demo_spatial_update() {
 			const char* marker_text = spatial_entity_get_marker_text(entity);
 			if (marker_text) snprintf(name, sizeof(name), "%s",         marker_text);
 			else             snprintf(name, sizeof(name), "Marker #%u", marker_id);
-		} else if (label != plane_label_none) {
+		} else if (label != spatial_label_none) {
 			snprintf(name, sizeof(name), "%s", label_name(label));
 		}
 		if (name[0] != '\0' && has_rect)

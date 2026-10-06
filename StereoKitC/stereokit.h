@@ -67,6 +67,14 @@ namespace sk {
 typedef int32_t  bool32_t;
 typedef uint64_t id_hash_t;
 
+/*A 128 bit universally unique identifier, with bytes in the standard
+  RFC 4122 order, so they read the same as the usual
+  xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx text form. All zeros is the nil
+  UUID, which never identifies anything.*/
+typedef struct sk_uuid_t {
+	uint8_t bytes[16];
+} sk_uuid_t;
+
 typedef struct vec2 {
 	float x;
 	float y;
@@ -3904,7 +3912,8 @@ typedef enum spatial_component_ {
 	  matching how quads and text face in StereoKit.*/
 	spatial_component_bounds2d        = 1 << 0,
 	/*A center pose and XYZ size describing an oriented bounding
-	  volume.*/
+	  volume. When the entity has a front, like a screen or table top,
+	  Forward (-Z) is the direction it faces.*/
 	spatial_component_bounds3d        = 1 << 1,
 	/*A reference to a parent spatial entity this entity is attached
 	  to.*/
@@ -3915,7 +3924,8 @@ typedef enum spatial_component_ {
 	  world.*/
 	spatial_component_anchor          = 1 << 4,
 	/*A durable identity that allows the entity to be recognized across
-	  sessions and reboots.*/
+	  sessions and reboots. When `ComponentsFor` lists this for a
+	  capability, the app can persist that capability's entities.*/
 	spatial_component_persistence     = 1 << 5,
 	/*The general orientation category of a detected plane, see
 	  `PlaneAlign`.*/
@@ -3925,13 +3935,40 @@ typedef enum spatial_component_ {
 	spatial_component_mesh2d          = 1 << 7,
 	/*A 2D boundary polygon outlining the entity's surface.*/
 	spatial_component_polygon         = 1 << 8,
-	/*A semantic category for a detected plane, see `PlaneLabel`.*/
-	spatial_component_plane_label     = 1 << 9,
+	/*A semantic category for the entity, like floor or table, see
+	  `SpatialLabel`.*/
+	spatial_component_label           = 1 << 9,
 	/*Marker information: the marker's type, numeric id, and any
 	  decoded data.*/
 	spatial_component_marker          = 1 << 10,
 } spatial_component_;
 SK_MakeFlag(spatial_component_);
+
+/*Whether the things you've asked of a spatial entity have gone through,
+  like creating an anchor or persisting it. Failure states are negative
+  and healthy ones positive, so `status < 0` catches every failure.
+  This is separate from tracking, so an entity can be tracked and usable
+  while a persist is still Pending. Entities the system discovers on its
+  own, like planes, are Ready unless you ask something of them.*/
+typedef enum spatial_status_ {
+	/*The entity couldn't be created, or storage doesn't have the id it
+	  was looked up by. It shows up in the removed list with this status
+	  for its final frame.*/
+	spatial_status_failed  = -2,
+	/*The entity exists, but at least one thing you asked of it failed,
+	  like a persist. Check its components to see what's missing, and
+	  making a new request clears this.*/
+	spatial_status_partial = -1,
+	/*Not a valid entity.*/
+	spatial_status_none    = 0,
+	/*Something you asked of this entity is still in progress, like
+	  creation, loading it by persist id, or a persist that's waiting on
+	  the system.*/
+	spatial_status_pending = 1,
+	/*Nothing you've asked of this entity is still in progress, and
+	  nothing failed.*/
+	spatial_status_ready   = 2,
+} spatial_status_;
 
 /*The general orientation of a detected plane.*/
 typedef enum plane_align_ {
@@ -3947,24 +3984,27 @@ typedef enum plane_align_ {
 	plane_align_arbitrary       = 4,
 } plane_align_;
 
-/*A semantic category the system has assigned to a detected plane. If
-  the system reports a category StereoKit doesn't know yet, it arrives
-  as Uncategorized.*/
-typedef enum plane_label_ {
+/*A semantic category the system has assigned to a spatial entity, such
+  as a floor plane or a tracked keyboard. All label sources share this
+  one list, so a category can come from plane tracking on one device
+  and object tracking on another. Any given entity only uses a subset
+  of these, and if the system reports a category StereoKit doesn't know
+  yet, it arrives as Uncategorized. New values are only ever appended.*/
+typedef enum spatial_label_ {
 	/*No label information available.*/
-	plane_label_none          = 0,
-	/*The system recognizes this plane, but it doesn't fit any of the
+	spatial_label_none          = 0,
+	/*The system recognizes this entity, but it doesn't fit any of the
 	  categories it knows.*/
-	plane_label_uncategorized = 1,
+	spatial_label_uncategorized = 1,
 	/*A floor.*/
-	plane_label_floor         = 2,
+	spatial_label_floor         = 2,
 	/*A wall.*/
-	plane_label_wall          = 3,
+	spatial_label_wall          = 3,
 	/*A ceiling.*/
-	plane_label_ceiling       = 4,
+	spatial_label_ceiling       = 4,
 	/*A table, or table-like surface.*/
-	plane_label_table         = 5,
-} plane_label_;
+	spatial_label_table         = 5,
+} spatial_label_;
 
 /*The type of a detected marker.*/
 typedef enum marker_type_ {
@@ -4036,32 +4076,21 @@ typedef enum april_tag_dict_ {
 	april_tag_dict_36h11   = 4,
 } april_tag_dict_;
 
-/*Configuration for marker tracking capabilities, used with
-  `SpatialEntity.Enable`. A zero-initialized struct is a valid default
-  configuration. Accurate values here let the system detect and track
-  markers with better pose and size accuracy, but unsupported options
-  are quietly ignored, so treat these as hints rather than guarantees.*/
-typedef struct spatial_marker_config_t {
-	/*For `SpatialCapability.Aruco`: the marker dictionary to detect.*/
-	aruco_dict_     aruco_dict;
-	/*For `SpatialCapability.AprilTag`: the marker dictionary to
-	  detect.*/
-	april_tag_dict_ april_tag_dict;
-	/*The physical side length of all markers, in meters. Use 0 if
-	  marker sizes are unknown or mixed.*/
-	float           marker_size;
-	/*True if all markers stay fixed in the environment, allowing the
-	  system to optimize tracking.*/
-	bool32_t        static_markers;
-} spatial_marker_config_t;
-
 SK_API spatial_capability_   spatial_capabilities            (void);
 SK_API spatial_component_    spatial_capability_components   (spatial_capability_ capability);
 SK_API void                  spatial_enable                  (spatial_capability_ capabilities);
-SK_API void                  spatial_enable_marker           (spatial_capability_ capabilities, spatial_marker_config_t config);
 SK_API void                  spatial_disable                 (spatial_capability_ capabilities);
 SK_API spatial_capability_   spatial_get_enabled             (void);
 SK_API spatial_capability_   spatial_get_active              (void);
+
+SK_API void                  spatial_set_marker_size         (marker_type_ type, float size_meters);
+SK_API float                 spatial_get_marker_size         (marker_type_ type);
+SK_API void                  spatial_set_marker_stationary   (marker_type_ type, bool32_t stationary);
+SK_API bool32_t              spatial_get_marker_stationary   (marker_type_ type);
+SK_API void                  spatial_set_aruco_dictionary    (aruco_dict_ dictionary);
+SK_API aruco_dict_           spatial_get_aruco_dictionary    (void);
+SK_API void                  spatial_set_april_tag_dictionary(april_tag_dict_ dictionary);
+SK_API april_tag_dict_       spatial_get_april_tag_dictionary(void);
 
 SK_API int32_t               spatial_entity_get_count        (spatial_component_ with_components);
 SK_API spatial_entity_t      spatial_entity_get_index        (spatial_component_ with_components, int32_t index);
@@ -4069,9 +4098,10 @@ SK_API int32_t               spatial_entity_get_new_count    (spatial_component_
 SK_API spatial_entity_t      spatial_entity_get_new_index    (spatial_component_ with_components, int32_t index);
 SK_API int32_t               spatial_entity_get_removed_count(spatial_component_ with_components);
 SK_API spatial_entity_t      spatial_entity_get_removed_index(spatial_component_ with_components, int32_t index);
-SK_API spatial_entity_t      spatial_entity_find_persisted   (const uint8_t* uuid_16);
+SK_API spatial_entity_t      spatial_entity_find_by_id       (sk_uuid_t persist_id);
 SK_API bool32_t              spatial_entity_is_valid         (spatial_entity_t entity);
 SK_API button_state_         spatial_entity_get_tracked      (spatial_entity_t entity);
+SK_API spatial_status_       spatial_entity_get_status       (spatial_entity_t entity);
 SK_API spatial_component_    spatial_entity_get_components   (spatial_entity_t entity);
 SK_API spatial_component_    spatial_entity_get_changed      (spatial_entity_t entity);
 SK_API spatial_entity_t      spatial_entity_get_parent       (spatial_entity_t entity);
@@ -4080,7 +4110,7 @@ SK_API bool32_t              spatial_entity_get_anchor       (spatial_entity_t e
 SK_API bool32_t              spatial_entity_get_bounds2d     (spatial_entity_t entity, pose_t* out_center, vec2* out_size);
 SK_API bool32_t              spatial_entity_get_bounds3d     (spatial_entity_t entity, pose_t* out_center, vec3* out_size);
 SK_API bool32_t              spatial_entity_get_plane_align  (spatial_entity_t entity, plane_align_* out_alignment);
-SK_API bool32_t              spatial_entity_get_plane_label  (spatial_entity_t entity, plane_label_* out_label);
+SK_API bool32_t              spatial_entity_get_label        (spatial_entity_t entity, spatial_label_* out_label);
 SK_API bool32_t              spatial_entity_get_mesh         (spatial_entity_t entity, mesh_t mesh, pose_t* out_origin);
 SK_API bool32_t              spatial_entity_get_mesh2d       (spatial_entity_t entity, mesh_t mesh, pose_t* out_origin);
 SK_API bool32_t              spatial_entity_get_polygon      (spatial_entity_t entity, pose_t* out_origin, const vec2** out_verts, int32_t* out_count);
@@ -4088,13 +4118,13 @@ SK_API bool32_t              spatial_entity_get_marker       (spatial_entity_t e
 SK_API const char*           spatial_entity_get_marker_text  (spatial_entity_t entity);
 SK_API const uint8_t*        spatial_entity_get_marker_data  (spatial_entity_t entity, int32_t* out_size);
 
-SK_API spatial_entity_t      spatial_entity_create_anchor    (pose_t pose);
+SK_API spatial_entity_t      spatial_entity_create_anchor    (pose_t pose, bool32_t persist, spatial_entity_t parent);
 SK_API bool32_t              spatial_entity_destroy          (spatial_entity_t entity);
 
-SK_API bool32_t              spatial_persistence_available   (void);
-SK_API bool32_t              spatial_entity_get_persist_id   (spatial_entity_t entity, uint8_t* out_uuid_16);
-SK_API void                  spatial_entity_persist          (spatial_entity_t entity);
-SK_API void                  spatial_entity_unpersist        (spatial_entity_t entity);
+SK_API bool32_t              spatial_entity_get_persist_id   (spatial_entity_t entity, sk_uuid_t* out_persist_id);
+SK_API bool32_t              spatial_entity_persist          (spatial_entity_t entity);
+SK_API bool32_t              spatial_entity_unpersist        (spatial_entity_t entity);
+SK_API bool32_t              spatial_entity_unpersist_by_id  (sk_uuid_t persist_id);
 
 ///////////////////////////////////////////
 

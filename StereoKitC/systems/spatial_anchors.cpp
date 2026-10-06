@@ -24,15 +24,16 @@ namespace sk {
 ///////////////////////////////////////////
 
 // Runtimes only store a uuid, so the anchor's name is kept here to give
-// it back the same Name when it's rediscovered in a later session.
+// it back the same Name when it's loaded in a later session.
 struct anchor_name_t {
-	uint8_t uuid[16];
-	char*   name;
+	sk_uuid_t persist_id;
+	char*     name;
 };
 
 struct spatial_anchors_state_t {
 	array_t<anchor_t>         anchors;  // Holds one ref each
-	array_t<spatial_entity_t> entities; // Parallel to anchors, 0 while a persisted anchor awaits rediscovery
+	array_t<spatial_entity_t> entities;    // Parallel to anchors
+	array_t<sk_uuid_t>        persist_ids; // Parallel to anchors, last known, zero when not persisted
 	array_t<anchor_name_t>    names;
 	bool32_t                  has_names_file; // False when there's no app data folder
 	char                      names_path[1024];
@@ -48,23 +49,20 @@ static spatial_entity_t anchor_entity(anchor_t anchor) {
 	return idx < 0 ? 0 : local.entities[idx];
 }
 
-static int32_t find_by_entity(spatial_entity_t entity) {
-	for (int32_t i = 0; i < local.entities.count; i++) {
-		if (local.entities[i] == entity) return i;
-	}
-	return -1;
-}
-
 static void unlink(int32_t idx) {
-	local.anchors .remove(idx);
-	local.entities.remove(idx);
+	local.anchors    .remove(idx);
+	local.entities   .remove(idx);
+	local.persist_ids.remove(idx);
 }
 
-static void uuid_to_string(const uint8_t* uuid, char* out_str, int32_t size) {
+static bool uuid_eq(const sk_uuid_t& a, const sk_uuid_t& b) { return memcmp(a.bytes, b.bytes, sizeof(a.bytes)) == 0; }
+
+static void uuid_to_string(sk_uuid_t id, char* out_str, int32_t size) {
+	const uint8_t* b = id.bytes;
 	snprintf(out_str, size,
 		"%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-		uuid[0], uuid[1], uuid[ 2], uuid[ 3], uuid[ 4], uuid[ 5], uuid[ 6], uuid[ 7],
-		uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
+		b[0], b[1], b[ 2], b[ 3], b[ 4], b[ 5], b[ 6], b[ 7],
+		b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15]);
 }
 
 static int32_t hex_val(char c) {
@@ -74,9 +72,9 @@ static int32_t hex_val(char c) {
 	return -1;
 }
 
-static int32_t names_find(const uint8_t* uuid) {
+static int32_t names_find(sk_uuid_t id) {
 	for (int32_t i = 0; i < local.names.count; i++)
-		if (memcmp(local.names[i].uuid, uuid, 16) == 0) return i;
+		if (uuid_eq(local.names[i].persist_id, id)) return i;
 	return -1;
 }
 
@@ -103,9 +101,9 @@ static void names_load() {
 			int32_t hi = hex_val(line.start[b*2]);
 			int32_t lo = hex_val(line.start[b*2+1]);
 			valid = hi >= 0 && lo >= 0;
-			entry.uuid[b] = (uint8_t)(hi << 4 | lo);
+			entry.persist_id.bytes[b] = (uint8_t)(hi << 4 | lo);
 		}
-		if (!valid || names_find(entry.uuid) >= 0) continue;
+		if (!valid || names_find(entry.persist_id) >= 0) continue;
 		entry.name = stref_copy(stref_substr(line.start + 33, line.length - 33));
 		local.names.add(entry);
 	}
@@ -123,39 +121,41 @@ static void names_save() {
 	char  hex[33];
 	for (int32_t i = 0; i < local.names.count; i++) {
 		for (int32_t b = 0; b < 16; b++)
-			snprintf(&hex[b*2], 3, "%02x", local.names[i].uuid[b]);
+			snprintf(&hex[b*2], 3, "%02x", local.names[i].persist_id.bytes[b]);
 		file = string_append(file, 4, hex, " ", local.names[i].name, "\n");
 	}
 	ska_file_write_text(local.names_path, file);
 	sk_free(file);
 }
 
-static void names_set(const uint8_t* uuid, const char* name) {
-	int32_t idx = names_find(uuid);
+static void names_set(sk_uuid_t id, const char* name) {
+	int32_t idx = names_find(id);
 	if (idx >= 0) {
 		if (string_eq(local.names[idx].name, name)) return;
 		sk_free(local.names[idx].name);
 		local.names[idx].name = string_copy(name);
 	} else {
 		anchor_name_t entry = {};
-		memcpy(entry.uuid, uuid, 16);
-		entry.name = string_copy(name);
+		entry.persist_id = id;
+		entry.name       = string_copy(name);
 		local.names.add(entry);
 	}
 	names_save();
 }
 
-static void names_remove_at(int32_t idx) {
+static void names_remove(sk_uuid_t id) {
+	int32_t idx = names_find(id);
+	if (idx < 0) return;
 	sk_free(local.names[idx].name);
 	local.names.remove(idx);
 	names_save();
 }
 
 // The stored name if there is one, otherwise the uuid as a string.
-static void persisted_name(const uint8_t* uuid, char* out_name, int32_t size) {
-	int32_t idx = names_find(uuid);
+static void persisted_name(sk_uuid_t id, char* out_name, int32_t size) {
+	int32_t idx = names_find(id);
 	if (idx >= 0) snprintf(out_name, size, "%s", local.names[idx].name);
-	else          uuid_to_string(uuid, out_name, size);
+	else          uuid_to_string(id, out_name, size);
 }
 
 // The resulting anchor_t reference belongs to local.anchors.
@@ -163,12 +163,13 @@ static anchor_t wrap_entity(spatial_entity_t entity, const char* name) {
 	pose_t pose = pose_identity;
 	spatial_entity_get_anchor(entity, &pose);
 
-	anchor_t anchor = anchor_create_manual(0, pose, name, nullptr);
-	uint8_t  uuid[16];
+	anchor_t  anchor = anchor_create_manual(0, pose, name, nullptr);
+	sk_uuid_t id;
 	anchor->tracked   = spatial_entity_get_tracked(entity);
-	anchor->persisted = spatial_entity_get_persist_id(entity, uuid);
-	local.anchors .add(anchor);
-	local.entities.add(entity);
+	anchor->persisted = spatial_entity_get_persist_id(entity, &id);
+	local.anchors    .add(anchor);
+	local.entities   .add(entity);
+	local.persist_ids.add(id);
 	return anchor;
 }
 
@@ -186,6 +187,12 @@ bool32_t spatial_anchors_init() {
 	// while still letting an explicit spatial_disable turn them off.
 	spatial_enable_system(spatial_capability_anchor);
 	names_load();
+
+	// Named anchors are listed right away, and fill in as storage loads them
+	for (int32_t i = 0; i < local.names.count; i++) {
+		spatial_entity_t entity = spatial_entity_find_by_id(local.names[i].persist_id);
+		if (entity != 0) wrap_entity(entity, local.names[i].name);
+	}
 	return true;
 }
 
@@ -195,8 +202,9 @@ void spatial_anchors_shutdown() {
 	spatial_disable_system(spatial_capability_anchor);
 	for (int32_t i = local.anchors.count - 1; i >= 0; i--)
 		anchor_release(local.anchors[i]);
-	local.anchors .free();
-	local.entities.free();
+	local.anchors    .free();
+	local.entities   .free();
+	local.persist_ids.free();
 	for (int32_t i = 0; i < local.names.count; i++)
 		sk_free(local.names[i].name);
 	local.names.free();
@@ -206,31 +214,17 @@ void spatial_anchors_shutdown() {
 ///////////////////////////////////////////
 
 void spatial_anchors_step() {
-	// Wrap anchor entities we haven't seen before: persisted anchors the
-	// system loaded from storage, or ones made via the spatial entity API.
+	// Wrap anchor entities we haven't seen before, like persisted anchors
+	// we have no name for, or ones made via the spatial entity API.
 	int32_t count = spatial_entity_get_count(spatial_component_anchor);
 	for (int32_t i = 0; i < count; i++) {
 		spatial_entity_t entity = spatial_entity_get_index(spatial_component_anchor, i);
-		if (find_by_entity(entity) >= 0)
-			continue;
+		if (local.entities.index_of(entity) >= 0) continue;
 
-		char    name[128];
-		uint8_t uuid[16];
-		if (spatial_entity_get_persist_id(entity, uuid)) {
-			persisted_name(uuid, name, sizeof(name));
-
-			// A capability cycle re-discovers persisted anchors as fresh
-			// entities, re-bind those only to an anchor_t that's waiting.
-			int32_t existing = -1;
-			for (int32_t a = 0; a < local.anchors.count; a++)
-				if (string_eq(local.anchors[a]->name, name)) { existing = a; break; }
-			if (existing >= 0) {
-				if (local.entities[existing] == 0) local.entities[existing] = entity;
-				continue;
-			}
-		} else {
-			snprintf(name, sizeof(name), "anchor/%llx", (unsigned long long)entity);
-		}
+		char      name[128];
+		sk_uuid_t id;
+		if (spatial_entity_get_persist_id(entity, &id)) persisted_name(id, name, sizeof(name));
+		else snprintf(name, sizeof(name), "anchor/%llx", (unsigned long long)entity);
 		wrap_entity(entity, name);
 	}
 
@@ -238,20 +232,19 @@ void spatial_anchors_step() {
 	for (int32_t i = 0; i < local.anchors.count; i++) {
 		anchor_t         anchor = local.anchors[i];
 		spatial_entity_t entity = local.entities[i];
-		if (entity == 0) continue;
 
 		pose_t pose;
 		if (spatial_entity_get_anchor(entity, &pose))
 			anchor_update_manual(anchor, pose);
 
-		uint8_t  uuid[16];
-		bool32_t persisted = spatial_entity_get_persist_id(entity, uuid);
-		if (persisted && !anchor->persisted) {
-			names_set(uuid, anchor->name);
-		} else if (!persisted && anchor->persisted) {
-			for (int32_t n = 0; n < local.names.count; n++)
-				if (string_eq(local.names[n].name, anchor->name)) { names_remove_at(n); break; }
-		}
+		// The id is gone by the time unpersisting lands, so names go by the last known one
+		sk_uuid_t  id;
+		sk_uuid_t* known     = &local.persist_ids[i];
+		bool32_t   persisted = spatial_entity_get_persist_id(entity, &id);
+		bool       moved     = !uuid_eq(id, *known);
+		if (anchor->persisted && (!persisted || moved)) names_remove(*known);
+		if (persisted && (!anchor->persisted || moved)) names_set   (id, anchor->name);
+		*known            = id;
 		anchor->tracked   = spatial_entity_get_tracked(entity);
 		anchor->persisted = persisted;
 	}
@@ -259,30 +252,28 @@ void spatial_anchors_step() {
 
 ///////////////////////////////////////////
 
+// Persisted entities the system loses keep their handle while storage
+// reloads them, so anything removed here is gone for good.
 void spatial_anchors_on_removed() {
-	int32_t count = spatial_entity_get_removed_count(spatial_component_anchor);
+	bool    persistable = (spatial_capability_components(spatial_capability_anchor) & spatial_component_persistence) != 0;
+	int32_t count       = spatial_entity_get_removed_count(spatial_component_none);
 	for (int32_t i = 0; i < count; i++) {
-		spatial_entity_t entity = spatial_entity_get_removed_index(spatial_component_anchor, i);
-		int32_t          idx    = find_by_entity(entity);
+		spatial_entity_t entity = spatial_entity_get_removed_index(spatial_component_none, i);
+		int32_t          idx    = local.entities.index_of(entity);
 		if (idx < 0) continue;
 
-		// Persisted anchors that were lost, rather than destroyed, can come
-		// back through discovery, so they wait unbound for a re-bind.
-		anchor_t anchor = local.anchors[idx];
-		uint8_t  uuid[16];
-		if (spatial_entity_get_persist_id(entity, uuid) && !spatial_entity_was_destroyed(entity)) {
-			local.entities[idx] = 0;
-			anchor->tracked     = button_state_inactive;
-			continue;
-		}
-		anchor_delete(anchor);
+		// A failed lookup only means storage lacks the id while persistence works
+		sk_uuid_t id;
+		if (persistable && spatial_entity_get_status(entity) == spatial_status_failed && spatial_entity_get_persist_id(entity, &id))
+			names_remove(id);
+		anchor_delete(local.anchors[idx]);
 	}
 }
 
 ///////////////////////////////////////////
 
 anchor_t spatial_anchors_create(pose_t pose, const char* name_utf8) {
-	spatial_entity_t entity = spatial_entity_create_anchor(pose);
+	spatial_entity_t entity = spatial_entity_create_anchor(pose, false, 0);
 	if (entity == 0) return nullptr;
 
 	anchor_t anchor = wrap_entity(entity, name_utf8);
@@ -300,15 +291,13 @@ void spatial_anchors_destroy(anchor_t anchor) {
 ///////////////////////////////////////////
 
 void spatial_anchors_delete(anchor_t anchor) {
-	// Destroys the underlying entity (which also unpersists it), and
-	// releases this system's reference so the anchor won't come back.
+	// Destroying also unpersists, but an entity that already left keeps its
+	// name, since a lookup can fail just because persistence is unavailable.
 	spatial_entity_t entity = anchor_entity(anchor);
-	uint8_t          uuid[16];
-	if (spatial_entity_get_persist_id(entity, uuid)) {
-		int32_t name_idx = names_find(uuid);
-		if (name_idx >= 0) names_remove_at(name_idx);
-	}
-	spatial_entity_destroy(entity);
+	sk_uuid_t        id;
+	bool32_t         has_id = spatial_entity_get_persist_id(entity, &id);
+	if (spatial_entity_destroy(entity) && has_id)
+		names_remove(id);
 
 	int32_t idx = local.anchors.index_of(anchor);
 	if (idx >= 0) {
@@ -325,9 +314,10 @@ bool32_t spatial_anchors_persist(anchor_t anchor, bool32_t persistent) {
 
 	// This is asynchronous: anchor->persisted reflects the change once
 	// the operation completes.
-	if (persistent) spatial_entity_persist  (anchor_entity(anchor));
-	else            spatial_entity_unpersist(anchor_entity(anchor));
-	return true;
+	spatial_entity_t entity = anchor_entity(anchor);
+	return persistent
+		? spatial_entity_persist  (entity)
+		: spatial_entity_unpersist(entity);
 }
 
 ///////////////////////////////////////////
@@ -335,7 +325,7 @@ bool32_t spatial_anchors_persist(anchor_t anchor, bool32_t persistent) {
 void spatial_anchors_clear_stored() {
 	for (int32_t i = 0; i < local.anchors.count; i++) {
 		if (local.anchors[i]->persisted)
-			spatial_entity_unpersist(anchor_entity(local.anchors[i]));
+			spatial_entity_unpersist(local.entities[i]);
 	}
 }
 
@@ -343,9 +333,8 @@ void spatial_anchors_clear_stored() {
 
 anchor_caps_ spatial_anchors_capabilities() {
 	anchor_caps_ result = {};
-	if (spatial_anchors_available())         result |= anchor_caps_stability;
-	if (spatial_persistence_available() &&
-	    (spatial_capability_components(spatial_capability_anchor) & spatial_component_persistence))
+	if (spatial_anchors_available()) result |= anchor_caps_stability;
+	if (spatial_capability_components(spatial_capability_anchor) & spatial_component_persistence)
 		result |= anchor_caps_storable;
 	return result;
 }

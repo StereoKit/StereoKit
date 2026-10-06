@@ -173,19 +173,18 @@ extern double au_main_clock;
 
 // Offline harness for deterministic tests: enable offline *before* sk_init to
 // skip device creation, then pump blocks with render_block and main-thread
-// work with test_step. Exported so test executables can reach them.
-SK_API void audio_render_block(float* out_stereo, int32_t frame_count);
-SK_API void audio_test_offline(bool32_t enable);
-SK_API void audio_test_step   ();
+// work with test_step.
+void    audio_render_block(float* out_stereo, int32_t frame_count);
+void    audio_test_offline(bool32_t enable);
+void    audio_test_step   ();
 // Advances the main-thread clock without a step, so deferred play catch-up
 // tests can simulate a slow asset load.
-SK_API void audio_test_advance(float seconds);
+void    audio_test_advance(float seconds);
 // A/B hook: force point sources through the FOA bus (the pre-direct-
 // binaural render path), switchable live for listening comparisons.
-SK_API void audio_test_force_bus(bool32_t enable);
-// A slot's au_voice_state_, so tests can watch voices free without linking
-// the voice pool data directly.
-SK_API int32_t audio_test_voice_state(int16_t slot);
+void    audio_test_force_bus(bool32_t enable);
+// A slot's au_voice_state_, so tests can watch voices free.
+int32_t audio_test_voice_state(int16_t slot);
 extern bool32_t   au_offline;
 extern au_voice_t au_voices[AU_VOICE_COUNT];
 
