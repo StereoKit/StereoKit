@@ -76,8 +76,9 @@ namespace StereoKit
 		/// belonging to another. If a capability needs a permission, this
 		/// requests it automatically as a fallback, but requesting it
 		/// yourself in advance via `Permission.Request` gives you control
-		/// over when the user is asked, and lets you handle a denial.
-		/// </summary>
+		/// over when the user is asked, and lets you handle a denial. You can
+		/// call this before `SK.Initialize`, and it takes effect once
+		/// StereoKit starts.</summary>
 		/// <param name="capabilities">One or more capabilities to request.
 		/// Unsupported capabilities never start running.</param>
 		public static void Request(SpatialCapability capabilities)
