@@ -51,11 +51,9 @@ void xr_ext_future_register() {
 ///////////////////////////////////////////
 
 xr_system_ xr_ext_future_initialize(void*) {
-	// Check if we got our extension
 	if (!backend_openxr_ext_enabled(XR_EXT_FUTURE_EXTENSION_NAME))
 		return xr_system_fail;
 
-	// Load all extension functions
 	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
 
 	local.available = true;
@@ -102,8 +100,7 @@ void xr_ext_future_on_finish(XrFutureEXT future, void(*on_finish)(void* context,
 	if (!local.available)
 		return;
 
-	// Do a quick check on the future, in case the result is available right
-	// away! If not, queue it up for polling at the start of each frame.
+	// Ready futures finish right away, the rest poll at the start of each frame
 	if (xr_ext_future_check(future)) {
 		on_finish(context, future);
 	} else {

@@ -4,13 +4,9 @@
  * Copyright (c) 2025 Qualcomm Technologies, Inc.
  */
 
-// OpenXR provider for the spatial entity registry, implementing
-// XR_EXT_spatial_entity and its satellite extensions.
+// OpenXR provider for the spatial entity registry, one context per capability
+// so changing one never invalidates another's entities.
 // https://registry.khronos.org/OpenXR/specs/1.1/html/xrspec.html#XR_EXT_spatial_entity
-//
-// This uses one XrSpatialContextEXT "slot" per capability, so changing
-// one capability never invalidates entities belonging to another, and
-// entity IDs are unique across contexts, so all slots feed one registry.
 
 #include "spatial_entity.h"
 #include "ext_management.h"
@@ -111,6 +107,10 @@ static const comp_mapping_t comp_mappings[] = {
 };
 static const int32_t comp_mapping_count = sizeof(comp_mappings) / sizeof(comp_mappings[0]);
 
+// Marker dictionaries are cast straight across to their XR values
+static_assert((int)aruco_dict_4x4_50     == XR_SPATIAL_MARKER_ARUCO_DICT_4X4_50_EXT    && (int)aruco_dict_7x7_1000 == XR_SPATIAL_MARKER_ARUCO_DICT_7X7_1000_EXT, "aruco_dict_ must match XrSpatialMarkerArucoDictEXT");
+static_assert((int)april_tag_dict_16h5   == XR_SPATIAL_MARKER_APRIL_TAG_DICT_16H5_EXT  && (int)april_tag_dict_36h11 == XR_SPATIAL_MARKER_APRIL_TAG_DICT_36H11_EXT, "april_tag_dict_ must match XrSpatialMarkerAprilTagDictEXT");
+
 ///////////////////////////////////////////
 // State                                 //
 ///////////////////////////////////////////
@@ -128,8 +128,7 @@ struct ent_handle_t {
 	XrSpatialEntityEXT   handle;
 	spatial_entity_t     entity;    // The registry's handle for this entity
 	int32_t              batch_idx; // Position in the snapshot being ingested
-	// Buffer id stamps: same id means same data, so a re-fetch is only
-	// needed when these change.
+	// Same buffer id means same data, so these only re-fetch on change
 	XrSpatialBufferIdEXT stamp_mesh_v;
 	XrSpatialBufferIdEXT stamp_mesh_i;
 	XrSpatialBufferIdEXT stamp_mesh2d_v;
@@ -149,6 +148,7 @@ struct slot_t {
 	bool                  destroy_after_create;
 	bool                  update_warned;
 	bool                  perm_warned;
+	struct slot_create_ctx_t* create_ctx; // Owned while context creation is in flight
 	array_t<ent_handle_t> handles;
 	hashmap_t<XrSpatialEntityIdEXT, int32_t> handle_idx; // Entity id to index in handles
 };
@@ -156,8 +156,7 @@ struct slot_t {
 // Heap data that must survive until the context creation future resolves.
 struct slot_create_ctx_t {
 	int32_t slot_idx;
-	// Large enough for any capability config struct; they all begin with
-	// XrSpatialCapabilityConfigurationBaseHeaderEXT.
+	// Big enough for any capability config, they all share the base header
 	XrSpatialCapabilityConfigurationArucoMarkerEXT config;
 	XrSpatialCapabilityConfigurationBaseHeaderEXT* config_ptr;
 	XrSpatialComponentTypeEXT                      comp_types[comp_mapping_count];
@@ -222,14 +221,12 @@ static inline XrPosef pose_to_xr(pose_t pose) {
 	return result;
 }
 
-// The spec faces surfaces and objects along +Z, while StereoKit faces -Z.
-// Rotating π around local Y makes Forward the facing direction; 2D vertex
-// data in that frame must also negate local X.
+// The spec faces +Z and StereoKit faces -Z, so this flips π around local Y.
+// 2D vertex data in that frame also needs its X negated.
 static inline pose_t xr_to_pose_faced(const XrPosef& xr_pose) {
 	pose_t result = xr_to_pose(xr_pose);
 	quat   flip   = { 0,1,0,0 }; // π around Y
-	// quat_mul applies its first argument first, so the flip happens in
-	// the pose's local frame, before the pose's own rotation.
+	// quat_mul applies its first argument first, so this flips in local space
 	result.orientation = quat_mul(flip, result.orientation);
 	return result;
 }
@@ -376,7 +373,9 @@ void xr_ext_spatial_entity_register() {
 ///////////////////////////////////////////
 
 static xr_system_ xr_spatial_initialize(void*) {
-	if (!backend_openxr_ext_enabled(XR_EXT_SPATIAL_ENTITY_EXTENSION_NAME))
+	// Every async call here rides on futures, which silently never finish without it
+	if (!backend_openxr_ext_enabled(XR_EXT_SPATIAL_ENTITY_EXTENSION_NAME) ||
+		!backend_openxr_ext_enabled(XR_EXT_FUTURE_EXTENSION_NAME))
 		return xr_system_fail;
 
 	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
@@ -387,7 +386,6 @@ static xr_system_ xr_spatial_initialize(void*) {
 	}
 	persistence_init();
 
-	// Enumerate supported capabilities
 	uint32_t cap_count = 0;
 	XrResult result = xrEnumerateSpatialCapabilitiesEXT(xr_instance, xr_system_id, 0, &cap_count, nullptr);
 	if (XR_FAILED(result)) { log_warnf("%s [%s]", "xrEnumerateSpatialCapabilitiesEXT", openxr_string(result)); return xr_system_fail; }
@@ -403,7 +401,6 @@ static xr_system_ xr_spatial_initialize(void*) {
 		if (map_idx == -1) continue;
 		if (!backend_openxr_ext_enabled(cap_mappings[map_idx].ext_name)) continue;
 
-		// Enumerate components for this capability
 		XrSpatialCapabilityComponentTypesEXT comp_types = { XR_TYPE_SPATIAL_CAPABILITY_COMPONENT_TYPES_EXT };
 		xrEnumerateSpatialCapabilityComponentTypesEXT(xr_instance, xr_system_id, xr_caps[i], &comp_types);
 		comp_types.componentTypeCapacityInput = comp_types.componentTypeCountOutput;
@@ -416,8 +413,7 @@ static xr_system_ xr_spatial_initialize(void*) {
 			comps |= xr_to_sk_comp(comp_types.componentTypes[c]);
 		sk_free(comp_types.componentTypes);
 
-		// Persistence means the app can persist things, so it's only listed
-		// when there's somewhere to write them.
+		// Persistence means the app can write, so it needs writable storage
 		if (!local.persist_writable) comps &= ~spatial_component_persistence;
 
 		local.supported |= cap_mappings[map_idx].sk_bit;
@@ -452,8 +448,7 @@ static xr_system_ xr_spatial_initialize(void*) {
 
 ///////////////////////////////////////////
 
-// Checks what persistence support the system has, context creation
-// happens later, once permissions are settled.
+// Only checks support, contexts wait until permissions settle
 static void persistence_init() {
 	if (!backend_openxr_ext_enabled(XR_EXT_SPATIAL_PERSISTENCE_EXTENSION_NAME))
 		return;
@@ -487,8 +482,7 @@ static void persistence_init() {
 	sk_free(scopes);
 }
 
-// Without writable storage, Persistence comes off every capability, and
-// the registry fails anything still waiting on it.
+// The registry then fails anything still waiting on persistence
 static void persistence_lost() {
 	local.persist_writable = false;
 	for (int32_t i = 0; i < cap_mapping_count; i++) {
@@ -499,8 +493,7 @@ static void persistence_lost() {
 
 ///////////////////////////////////////////
 
-// Persistence storage can be permission gated, so this must not happen
-// until permissions have settled.
+// Storage can be permission gated, so only call this once permissions settle
 static void persistence_create_contexts() {
 	for (int32_t i = 0; i < local.usable_scope_count; i++) {
 		XrSpatialPersistenceScopeEXT scope = local.usable_scopes[i];
@@ -542,12 +535,12 @@ static void persistence_create_contexts() {
 ///////////////////////////////////////////
 
 static void xr_spatial_shutdown(void*) {
-	// The session is going away along with any in-flight futures, so
-	// tear everything down directly.
+	// In-flight futures die with the session, so tear down directly
 	for (int32_t i = 0; i < cap_mapping_count; i++) {
 		slot_t* slot = &local.slots[i];
 		slot_clear_handles(slot);
 		slot->handles.free();
+		sk_free(slot->create_ctx);
 		if (slot->context != XR_NULL_HANDLE)
 			xrDestroySpatialContextEXT(slot->context);
 	}
@@ -583,8 +576,7 @@ static void xr_spatial_step_begin(void*) {
 		bool want = (want_all & cap) != 0
 		         && backend_openxr_ext_enabled(cap_mappings[i].ext_name);
 
-		// A settings change needs a context rebuild, so tear the slot down
-		// and let the restart below pick up the new settings.
+		// Settings need a fresh context, so stop and let the restart below rebuild
 		if (want && slot->state == slot_state_ready && slot->config_serial != spatial_backend_get_config_serial(cap)) {
 			slot_stop(i);
 			local.attempted &= ~cap;
@@ -608,8 +600,7 @@ static void xr_spatial_step_begin(void*) {
 			slot_begin_start(i);
 	}
 
-	// Look up persist ids apps are waiting on. Storage leaves out ids it
-	// can't answer for yet, so this retries until each is resolved.
+	// Storage leaves out ids it can't answer yet, so lookups retry until resolved
 	float now = time_totalf_unscaled();
 	if (now >= local.find_next_time) {
 		for (int32_t i = 0; i < cap_mapping_count; i++) {
@@ -664,8 +655,7 @@ static permission_type_ cap_permission(spatial_capability_ cap) {
 	}
 }
 
-// Moves a slot toward creation, parking it in slot_state_permission
-// while permissions or persistence contexts settle. Safe to call every frame.
+// Parks in slot_state_permission until permissions and persistence settle
 static void slot_begin_start(int32_t slot_idx) {
 	slot_t*             slot = &local.slots[slot_idx];
 	spatial_capability_ cap  = cap_mappings[slot_idx].sk_bit;
@@ -681,8 +671,7 @@ static void slot_begin_start(int32_t slot_idx) {
 		local.requested_perms |= 1 << perm_type;
 		permission_request(&perm_type, 1);
 	}
-	// A denial may still flip to granted if the app asks again, or the
-	// user changes it in settings, so keep waiting rather than giving up.
+	// A denial can flip to granted later, so keep waiting rather than giving up
 	if (perm != permission_state_granted && perm != permission_state_unknown) {
 		if ((perm == permission_state_denied || perm == permission_state_blocked) && !slot->perm_warned) {
 			slot->perm_warned = true;
@@ -693,8 +682,7 @@ static void slot_begin_start(int32_t slot_idx) {
 	}
 	slot->perm_warned = false;
 
-	// Persistence contexts must be chained at spatial context creation,
-	// so persistence capable slots wait for them here.
+	// Persistence contexts must be chained at creation, so wait for them
 	if (spatial_capability_components(cap) & spatial_component_persistence) {
 		if (!local.persist_attempted) {
 			local.persist_attempted = true;
@@ -713,13 +701,13 @@ static void slot_begin_start(int32_t slot_idx) {
 static void slot_create(int32_t slot_idx) {
 	slot_t* slot = &local.slots[slot_idx];
 
-	// Enable every component the capability supports, though persistence
-	// only works when persistence contexts were successfully created.
+	// Persistence only works if its contexts were created
 	slot->comps = spatial_capability_components(cap_mappings[slot_idx].sk_bit);
 	if (local.persist_context_count == 0)
 		slot->comps &= ~spatial_component_persistence;
 	if (slot->comps == spatial_component_none) {
 		log_warnf("Spatial %s tracking has no usable components", cap_mappings[slot_idx].name);
+		slot->state = slot_state_off;
 		return;
 	}
 
@@ -740,8 +728,7 @@ static void slot_create(int32_t slot_idx) {
 	cfg->enabledComponents     = ctx->comp_types;
 	ctx->config_ptr = cfg;
 
-	// Apply the user's marker configuration. SK enum values match the XR
-	// values, with 0 as a "let SK pick" default.
+	// Dictionary enums match XR values, with 0 meaning let SK pick
 	spatial_capability_ cap         = cap_mappings[slot_idx].sk_bit;
 	marker_type_        marker_type = cap_mappings[slot_idx].marker_type;
 	if (marker_type != marker_type_none) {
@@ -792,9 +779,11 @@ static void slot_create(int32_t slot_idx) {
 	if (XR_FAILED(result)) {
 		log_warnf("%s [%s]", "xrCreateSpatialContextAsyncEXT", openxr_string(result));
 		sk_free(ctx);
+		slot->state = slot_state_off;
 		return;
 	}
-	slot->state = slot_state_creating;
+	slot->state      = slot_state_creating;
+	slot->create_ctx = ctx;
 
 	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future) {
 		slot_create_ctx_t* ctx  = (slot_create_ctx_t*)context;
@@ -804,6 +793,7 @@ static void slot_create(int32_t slot_idx) {
 		XrResult result = xrCreateSpatialContextCompleteEXT(xr_session, future, &completion);
 		int32_t  slot_idx = ctx->slot_idx;
 		sk_free(ctx);
+		slot->create_ctx = nullptr;
 
 		if (XR_FAILED(result) || XR_FAILED(completion.futureResult)) {
 			log_warnf("%s [%s]", "xrCreateSpatialContextAsyncEXT", openxr_string(XR_FAILED(result) ? result : completion.futureResult));
@@ -834,8 +824,7 @@ static void slot_stop(int32_t slot_idx) {
 	spatial_backend_drop_source(cap_mappings[slot_idx].sk_bit);
 	slot_clear_handles(slot);
 
-	// A discovery future may still reference this context; let its
-	// completion callback finish the teardown.
+	// A discovery future may still use this context, so its callback finishes teardown
 	if (slot->discovery_active) {
 		slot->state = slot_state_stopping;
 		return;
@@ -854,8 +843,7 @@ static void slot_stop(int32_t slot_idx) {
 // Discovery                             //
 ///////////////////////////////////////////
 
-// With persist ids, storage reports each one as loaded or not found,
-// rather than discovery returning everything.
+// With persist ids, storage reports each one as loaded or not found
 static void slot_discover(int32_t slot_idx, const sk_uuid_t* persist_ids, int32_t persist_id_count) {
 	slot_t* slot = &local.slots[slot_idx];
 
@@ -923,8 +911,7 @@ static void slot_update(int32_t slot_idx) {
 	for (int32_t i = 0; i < slot->handles.count; i++)
 		entities[i] = slot->handles[i].handle;
 
-	// Poses change every frame, while other components change rarely, so
-	// most updates only ask for the pose carrying components.
+	// Only poses change every frame, so most updates skip the other components
 	const spatial_component_ pose_comps = spatial_component_anchor | spatial_component_bounds2d | spatial_component_bounds3d;
 	spatial_component_       comps      = slot->comps & pose_comps;
 	slot->update_count++;
@@ -1019,14 +1006,12 @@ static uint32_t* fetch_buffer_u16_widen(XrSpatialSnapshotEXT snapshot, XrSpatial
 
 ///////////////////////////////////////////
 
-// Pushes a snapshot's entities into the registry. create_handles is for
-// discovery snapshots, where unseen ids need handles for frame updates.
+// create_handles is for discovery, where unseen ids need handles for frame updates
 static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snapshot, bool create_handles, spatial_component_ comps, int32_t max_entities) {
 	slot_t*             slot = &local.slots[slot_idx];
 	spatial_capability_ cap  = cap_mappings[slot_idx].sk_bit;
 
-	// Phase 1: all entity ids and tracking states. Callers that know an
-	// upper bound for the entity count skip the sizing call.
+	// Phase 1 gets ids and tracking states, a known upper bound skips the sizing call
 	XrSpatialComponentDataQueryConditionEXT condition   = { XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_CONDITION_EXT };
 	XrSpatialComponentDataQueryResultEXT    result_info = { XR_TYPE_SPATIAL_COMPONENT_DATA_QUERY_RESULT_EXT };
 	XrResult result;
@@ -1052,8 +1037,7 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 	int32_t count = (int32_t)result_info.entityIdCountOutput;
 	if (count == 0) return;
 
-	// Only entities with a handle are ingested, since frame updates can't
-	// reach the others, and an unknown stopped entity needs no record.
+	// Frame updates can't reach entities without a handle, so only these are ingested
 	spatial_ingest_t* batch       = scratch_get<spatial_ingest_t>(&local.scratch_batch, count);
 	int32_t           batch_count = 0;
 	for (int32_t i = 0; i < count; i++) {
@@ -1064,9 +1048,13 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 			create_info.entityId = ids[i];
 			ent_handle_t created = {};
 			created.id = ids[i];
-			if (XR_SUCCEEDED(xrCreateSpatialEntityFromIdEXT(slot->context, &create_info, &created.handle))) {
+			XrResult create_result = xrCreateSpatialEntityFromIdEXT(slot->context, &create_info, &created.handle);
+			if (XR_SUCCEEDED(create_result)) {
 				slot_add_handle(slot, created);
 				handle = slot_find_handle(slot, ids[i]);
+			} else {
+				// Skipped until the next discovery tries again
+				log_diagf("%s [%s]", "xrCreateSpatialEntityFromIdEXT", openxr_string(create_result));
 			}
 		}
 		if (handle == nullptr) continue;
@@ -1078,9 +1066,7 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 		batch_count++;
 	}
 
-	// Phase 2: per-component queries. Only entities that are actively
-	// tracking get data ingested; the spec leaves buffers untouched for
-	// paused/stopped entities.
+	// Phase 2 gets component data, which the spec leaves untouched unless tracking
 	for (int32_t c = 0; c < comp_mapping_count; c++) {
 		spatial_component_ comp_bit = comp_mappings[c].sk_bit;
 		if ((comps & comp_bit) == 0) continue;
@@ -1089,8 +1075,7 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 		condition.componentTypeCount = 1;
 		condition.componentTypes     = &xr_comp;
 
-		// The phase 1 entity count is an upper bound for every component,
-		// so a sizing call isn't needed here.
+		// Phase 1's count bounds every component, so no sizing call
 		int32_t comp_count = count;
 		XrSpatialEntityIdEXT*            comp_ids    = scratch_get<XrSpatialEntityIdEXT>           (&local.scratch_comp_ids,    comp_count);
 		XrSpatialEntityTrackingStateEXT* comp_states = scratch_get<XrSpatialEntityTrackingStateEXT>(&local.scratch_comp_states, comp_count);
@@ -1300,8 +1285,7 @@ static void slot_ingest_snapshot(int32_t slot_idx, XrSpatialSnapshotEXT xr_snaps
 
 	spatial_backend_ingest(cap, batch, batch_count);
 
-	// Keep the registry's handles for next time, and drop stopped entities,
-	// since they never come back.
+	// Stopped entities never come back, so their handles go
 	for (int32_t i = 0; i < batch_count; i++) {
 		if (batch[i].tracking == spatial_tracking_stopped) slot_remove_handle(slot, (XrSpatialEntityIdEXT)batch[i].id);
 		else                                               slot_find_handle  (slot, (XrSpatialEntityIdEXT)batch[i].id)->entity = batch[i].entity;
@@ -1354,8 +1338,7 @@ static slot_t* slot_from_entity(spatial_entity_id_t id) {
 	return nullptr;
 }
 
-// Releases the runtime's handle for an app-created entity. For
-// non-persisted anchors, this lets the runtime stop tracking them.
+// Lets the runtime stop tracking non-persisted anchors
 static void xr_spatial_destroy(spatial_entity_id_t id) {
 	slot_t* slot = slot_from_entity(id);
 	if (slot != nullptr) slot_remove_handle(slot, (XrSpatialEntityIdEXT)id);

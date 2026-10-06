@@ -45,14 +45,14 @@ class DemoSpatialEntity : ITest
 		meshMat           = Material.Default.Copy();
 		meshMat.Wireframe = true;
 
-		prevEnabled = SpatialEntity.Enabled;
-		SpatialEntity.Enable(SpatialEntity.Capabilities);
+		prevEnabled = Spatial.Enabled;
+		Spatial.Enable(Spatial.Capabilities);
 	}
 
 	public void Shutdown()
 	{
 		// Disabling everything would also turn off the Anchor system for later demos
-		SpatialEntity.Disable(SpatialEntity.Capabilities & ~prevEnabled);
+		Spatial.Disable(Spatial.Capabilities & ~prevEnabled);
 		visuals.Clear();
 	}
 
@@ -60,16 +60,16 @@ class DemoSpatialEntity : ITest
 	{
 		UI.WindowBegin("Spatial Entities", ref windowPose);
 
-		SpatialCapability supported = SpatialEntity.Capabilities;
-		SpatialCapability enabled   = SpatialEntity.Enabled;
+		SpatialCapability supported = Spatial.Capabilities;
+		SpatialCapability enabled   = Spatial.Enabled;
 		foreach ((SpatialCapability cap, string name) in capNames)
 		{
 			UI.PushEnabled((supported & cap) > 0);
 			bool on = (enabled & cap) > 0;
 			if (UI.Toggle(name, ref on))
 			{
-				if (on) SpatialEntity.Enable (cap);
-				else    SpatialEntity.Disable(cap);
+				if (on) Spatial.Enable (cap);
+				else    Spatial.Disable(cap);
 			}
 			UI.PopEnabled();
 		}
@@ -89,7 +89,7 @@ class DemoSpatialEntity : ITest
 
 		// Anchor creation + persistence
 		UI.HSeparator();
-		UI.PushEnabled((SpatialEntity.Enabled & SpatialCapability.Anchor) > 0);
+		UI.PushEnabled((Spatial.Enabled & SpatialCapability.Anchor) > 0);
 		if (UI.Button("Create Anchor"))
 		{
 			Pose head = Input.Head;
@@ -97,7 +97,7 @@ class DemoSpatialEntity : ITest
 			SpatialEntity.CreateAnchor(new Pose(at, Quat.LookAt(at, head.position)), persistNew);
 		}
 		UI.SameLine();
-		UI.PushEnabled((SpatialEntity.ComponentsFor(SpatialCapability.Anchor) & SpatialComponent.Persistence) > 0);
+		UI.PushEnabled((Spatial.ComponentsFor(SpatialCapability.Anchor) & SpatialComponent.Persistence) > 0);
 		UI.Toggle("Persist", ref persistNew);
 		UI.PopEnabled();
 		UI.PopEnabled();
@@ -165,7 +165,7 @@ class DemoSpatialEntity : ITest
 			Lines.AddAxis(anchorPose, 0.1f);
 			if (vis.anchorLabel == null || (changed & SpatialComponent.Persistence) > 0)
 			{
-				Guid persistId = entity.PersistId;
+				entity.TryGetGuid(out Guid persistId);
 				vis.anchorLabel = persistId == Guid.Empty ? "anchor" : persistId.ToString().Substring(0, 8);
 				TrackSavedId(vis, persistId);
 			}
@@ -246,7 +246,7 @@ class DemoSpatialEntity : ITest
 	}
 }
 
-// PersistIds only mean something if you keep them! This remembers every
+// Guids only mean something if you keep them! This remembers every
 // anchor the app has persisted, so they can be restored or cleaned up in a
 // later session.
 static class SavedAnchorIds

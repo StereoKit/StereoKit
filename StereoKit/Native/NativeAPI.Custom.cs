@@ -182,8 +182,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = CharSet.Unicode, CallingConvention = call)]
 		public static extern BtnState ui_volume_at_16([MarshalAs(UnmanagedType.LPWStr)] string id, Bounds bounds, UIConfirm interact_type, out Interactor out_opt_interactor, out BtnState out_opt_focus_state);
 
-		// spatial_entity_get_polygon returns a pointer to registry-owned
-		// vertex data, the generated binding misreads it as a caller array.
+		// Hands back a pointer to registry-owned vertices, not a caller array
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern bool spatial_entity_get_polygon(ulong entity, out Pose out_origin, out IntPtr out_verts, out int out_count);

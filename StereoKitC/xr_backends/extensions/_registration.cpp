@@ -89,6 +89,7 @@ bool ext_registration() {
 	xr_profile_meta_detached_controllers_register();
 	oxri_register();
 
+	// Anchors pick their backend at init, so they must init after spatial entities
 	anchors_register();
 	sensor_register();
 	sensor_depth_register();

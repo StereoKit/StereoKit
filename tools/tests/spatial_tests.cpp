@@ -62,7 +62,7 @@ static bool spt_uuid_eq(sk_uuid_t a, sk_uuid_t b) { return memcmp(a.bytes, b.byt
 
 static sk_uuid_t spt_persist_id(spatial_entity_t entity) {
 	sk_uuid_t id;
-	spatial_entity_get_persist_id(entity, &id);
+	spatial_entity_get_uuid(entity, &id);
 	return id;
 }
 
@@ -164,7 +164,7 @@ static void spt_test_destroy_mid_persist() {
 
 static void spt_test_lookup_unpersist() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_find_by_id(spt_uuid(7));
+	spatial_entity_t e = spatial_entity_find_uuid(spt_uuid(7));
 	SPT_CHECK(spatial_entity_get_status(e) == spatial_status_pending && spt_finding(spt_uuid(7)), "a lookup is Pending and asks the backend for its id");
 
 	spatial_entity_unpersist(e);
@@ -180,7 +180,7 @@ static void spt_test_lookup_unpersist() {
 
 static void spt_test_destroy_lookup() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_find_by_id(spt_uuid(8));
+	spatial_entity_t e = spatial_entity_find_uuid(spt_uuid(8));
 	SPT_CHECK(spatial_entity_destroy(e) && spt.unpersist_count == 1 && spt_in_removed(e), "destroying a lookup removes it from storage and the list");
 
 	sk_step(nullptr);
@@ -190,7 +190,7 @@ static void spt_test_destroy_lookup() {
 
 static void spt_test_lookup_binds() {
 	spt_reset();
-	spatial_entity_t e = spatial_entity_find_by_id(spt_uuid(9));
+	spatial_entity_t e = spatial_entity_find_uuid(spt_uuid(9));
 
 	spatial_ingest_t in = {};
 	in.id          = 1000;
@@ -213,6 +213,34 @@ static void spt_test_not_persistable() {
 	in.present  = spatial_component_bounds2d;
 	spatial_backend_ingest(spatial_capability_plane_tracking, &in, 1);
 	SPT_CHECK(!spatial_entity_persist(in.entity) && spatial_entity_get_status(in.entity) == spatial_status_ready, "persisting an unpersistable entity fails without marking it Partial");
+}
+
+static void spt_test_parent() {
+	spt_reset();
+	spatial_ingest_t child = {};
+	child.id       = 3000;
+	child.tracking = spatial_tracking_tracking;
+	child.present  = spatial_component_parent;
+	child.parent   = 3001;
+	spatial_backend_ingest(spatial_capability_plane_tracking, &child, 1);
+	SPT_CHECK(spatial_entity_get_parent(child.entity) == 0, "a parent that hasn't arrived yet resolves to nothing");
+
+	spatial_ingest_t parent = {};
+	parent.id       = 3001;
+	parent.tracking = spatial_tracking_tracking;
+	spatial_backend_ingest(spatial_capability_plane_tracking, &parent, 1);
+	SPT_CHECK(spatial_entity_get_parent(child.entity) == parent.entity, "a parent arriving after its child still resolves");
+
+	parent.tracking = spatial_tracking_stopped;
+	spatial_backend_ingest(spatial_capability_plane_tracking, &parent, 1);
+	sk_step(nullptr);
+	SPT_CHECK(spatial_entity_get_parent(child.entity) == 0, "a removed parent stops resolving");
+
+	spatial_ingest_t again = {};
+	again.id       = 3001;
+	again.tracking = spatial_tracking_tracking;
+	spatial_backend_ingest(spatial_capability_plane_tracking, &again, 1);
+	SPT_CHECK(again.entity != parent.entity && spatial_entity_get_parent(child.entity) == again.entity, "a parent that returns under a new handle resolves to it");
 }
 
 ///////////////////////////////////////////
@@ -248,6 +276,7 @@ int spatial_tests_run() {
 	spt_test_destroy_lookup     ();
 	spt_test_lookup_binds       ();
 	spt_test_not_persistable    ();
+	spt_test_parent             ();
 
 	sk_shutdown();
 

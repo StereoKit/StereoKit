@@ -144,6 +144,8 @@ audio_env_t AudioEnvironment
 # sound_generate's callback is the batch delegate, and sound_create_mem takes
 # a raw byte blob - neither is inferable from the void*/fnptr signature.
 @noimpl sound_generate sound_create_mem
+# Hands back a pointer to registry-owned vertices, not a caller array
+@noimpl spatial_entity_get_polygon
 @noimpl spherical_harmonics_t hand_t controller_t file_filter_t
 # Request takes arrays of strings/features, hand-marshaled in NativeAPI.Custom.cs
 @noimpl backend_vulkan_request

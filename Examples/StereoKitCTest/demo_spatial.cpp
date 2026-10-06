@@ -159,7 +159,7 @@ void demo_spatial_update() {
 
 			sk_uuid_t uuid;
 			char      anchor_txt[16];
-			if (spatial_entity_get_persist_id(entity, &uuid))
+			if (spatial_entity_get_uuid(entity, &uuid))
 				snprintf(anchor_txt, sizeof(anchor_txt), "%02x%02x%02x%02x", uuid.bytes[0], uuid.bytes[1], uuid.bytes[2], uuid.bytes[3]);
 			else
 				snprintf(anchor_txt, sizeof(anchor_txt), "anchor");

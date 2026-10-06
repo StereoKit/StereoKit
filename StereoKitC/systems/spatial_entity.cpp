@@ -41,10 +41,8 @@ typedef enum persist_flight_ {
 	persist_flight_unpersist,
 } persist_flight_;
 
-// Entity records live in a slot map: a spatial_entity_t handle is a
-// 32 bit slot index plus a 32 bit generation, and freeing a slot bumps
-// its generation, so stale handles fail to resolve instead of aliasing
-// a newer entity. Generations start at 1, so 0 is never a valid handle.
+// Handles are a 32 bit slot index plus a 32 bit generation that bumps on
+// free, so stale handles fail instead of aliasing. 0 is never valid.
 struct spatial_record_t {
 	bool32_t            alive;
 	uint32_t            generation;
@@ -65,6 +63,7 @@ struct spatial_record_t {
 	pose_t              bounds3d_center;
 	vec3                bounds3d_size;
 	spatial_entity_id_t parent;
+	spatial_entity_t    parent_cache; // Last resolved parent, checked against `parent` on read
 	pose_t              anchor_pose;
 	plane_align_        plane_alignment;
 	spatial_label_      label;
@@ -86,8 +85,7 @@ struct unpersist_req_t {
 	sk_uuid_t        persist_id;
 };
 
-// Remembers the last filtered lookup, so sequential index loops resume
-// where the previous call left off instead of rescanning.
+// Lets sequential index loops resume from the last match instead of rescanning
 struct list_cursor_t {
 	spatial_component_ filter;
 	int32_t            index;
@@ -185,8 +183,7 @@ static spatial_record_t* record_find_persisted(sk_uuid_t persist_id) {
 	return nullptr;
 }
 
-// Note that allocation may grow the slot array, invalidating any
-// previously held record pointers.
+// May grow the slot array, invalidating any held record pointers
 static spatial_record_t* record_add(spatial_capability_ source, record_life_ life) {
 	int32_t idx;
 	if (local.slot_free.count > 0) {
@@ -249,8 +246,7 @@ static void record_leave(spatial_record_t* rec, record_life_ life) {
 	local.list_version++;
 }
 
-// Storage still has a persisted entity the system lost, so the same
-// handle waits on a lookup instead of leaving.
+// A lost persisted entity keeps its handle and waits on a storage lookup
 static void record_lose(spatial_record_t* rec) {
 	if (rec->life == record_life_pending_create || rec->life == record_life_pending_find) return;
 	bool persist_busy = rec->persist_want != persist_want_none || rec->persist_flight != persist_flight_none;
@@ -289,8 +285,7 @@ void spatial_disable(spatial_capability_ capabilities) {
 
 ///////////////////////////////////////////
 
-// Settings are baked into a capability's context, so a change asks the
-// backend to rebuild the contexts it affects.
+// Settings are baked into contexts, so a change asks the backend to rebuild
 static void config_changed(spatial_capability_ capabilities) {
 	for (int32_t i = 0; i < 32; i++)
 		if (capabilities & (1 << i)) local.settings.config_serials[i]++;
@@ -427,20 +422,19 @@ spatial_entity_t spatial_entity_get_removed_index(spatial_component_ with_compon
 	return list_index(&local.removed, &local.cursor_removed, with_components, index);
 }
 
-// Storage loads asynchronously, so this hands back a placeholder that
-// the backend's lookup binds to, or fails when storage lacks the id.
-spatial_entity_t spatial_entity_find_by_id(sk_uuid_t persist_id) {
+// Storage loads async, so this returns a placeholder the backend's lookup binds to
+spatial_entity_t spatial_entity_find_uuid(sk_uuid_t persist_id) {
 	if (uuid_is_nil(persist_id)) return 0;
 
 	spatial_record_t* rec = record_find_persisted(persist_id);
 	if (rec != nullptr) return rec->handle;
 
 	if (!cap_persistable(spatial_capability_anchor)) {
-		log_warn("spatial_entity_find_by_id: persistence isn't supported on this system");
+		log_warn("spatial_entity_find_uuid: persistence isn't supported on this system");
 		return 0;
 	}
 	if ((spatial_get_enabled() & spatial_capability_anchor) == 0)
-		log_warn("spatial_entity_find_by_id: this won't load until SpatialCapability.Anchor is enabled");
+		log_warn("spatial_entity_find_uuid: this won't load until SpatialCapability.Anchor is enabled");
 
 	rec = record_add(spatial_capability_anchor, record_life_pending_find);
 	rec->components = spatial_component_persistence;
@@ -484,17 +478,23 @@ spatial_component_ spatial_entity_get_changed(spatial_entity_t entity) {
 	return rec == nullptr ? spatial_component_none : rec->changed;
 }
 
-// Parents arrive as backend ids, which can refer to entities that are new
-// in the same batch, so they're resolved here instead.
+// Resolved on read, since a parent can arrive later than its child
 spatial_entity_t spatial_entity_get_parent(spatial_entity_t entity) {
 	spatial_record_t* rec = record_with(entity, spatial_component_parent);
 	if (rec == nullptr || rec->parent == 0) return 0;
 
+	spatial_record_t* cached = record_find(rec->parent_cache);
+	if (cached != nullptr && cached->backend_id == rec->parent) return cached->handle;
+
+	rec->parent_cache = 0;
 	for (int32_t i = 0; i < local.live.count; i++) {
 		spatial_record_t* parent = record_find(local.live[i]);
-		if (parent != nullptr && parent->backend_id == rec->parent) return parent->handle;
+		if (parent != nullptr && parent->backend_id == rec->parent) {
+			rec->parent_cache = parent->handle;
+			break;
+		}
 	}
-	return 0;
+	return rec->parent_cache;
 }
 
 ///////////////////////////////////////////
@@ -534,8 +534,7 @@ bool32_t spatial_entity_get_label(spatial_entity_t entity, spatial_label_* out_l
 	return rec != nullptr;
 }
 
-// A null ref_mesh only retrieves the origin pose, filling the mesh is the
-// expensive path.
+// A null ref_mesh only fetches the origin, filling the mesh is the expensive part
 static bool32_t fill_mesh(const spatial_mesh_data_t* data, mesh_t ref_mesh, pose_t* out_origin) {
 	*out_origin = data->origin;
 	if (ref_mesh == nullptr) return true;
@@ -605,9 +604,8 @@ static void record_detached_free(spatial_record_t* rec) {
 	record_free(rec);
 }
 
-// Moves the entity one operation toward what the app last asked for. The
-// backend may complete an operation before this returns, so callers must
-// not rely on the record's state afterwards.
+// Moves one operation toward the app's last request. The backend may finish
+// it before this returns, so don't trust the record's state afterwards.
 static void persist_reconcile(spatial_record_t* rec) {
 	if (rec->persist_flight != persist_flight_none) return;
 	bool persisted = (rec->components & spatial_component_persistence) != 0;
@@ -636,8 +634,7 @@ static void persist_reconcile(spatial_record_t* rec) {
 	else if (rec->life == record_life_pending_find && !persisted) record_leave(rec, record_life_lost);
 }
 
-// Hands a pending anchor to the backend once anchors are active. Until
-// then, it sits untracked at its requested pose.
+// Until anchors go active, a pending anchor sits untracked at its requested pose
 static void record_try_create(spatial_record_t* rec) {
 	if ((local.supported & spatial_capability_anchor) == 0) { record_leave(rec, record_life_failed); return; }
 	if (local.create_anchor == nullptr || (local.active & spatial_capability_anchor) == 0) return;
@@ -692,8 +689,7 @@ spatial_entity_t spatial_entity_create_anchor(pose_t pose, bool32_t persist, spa
 
 ///////////////////////////////////////////
 
-// The entity leaves the list at the end of the frame, so app code gets
-// one frame to see it as just_inactive.
+// Leaves the list at frame end, so app code gets one just_inactive frame
 bool32_t spatial_entity_destroy(spatial_entity_t entity) {
 	spatial_record_t* rec = record_find(entity);
 	if (rec == nullptr || !record_listed(rec)) return false;
@@ -709,9 +705,9 @@ bool32_t spatial_entity_destroy(spatial_entity_t entity) {
 
 ///////////////////////////////////////////
 
-bool32_t spatial_entity_get_persist_id(spatial_entity_t entity, sk_uuid_t* out_persist_id) {
+bool32_t spatial_entity_get_uuid(spatial_entity_t entity, sk_uuid_t* out_uuid) {
 	spatial_record_t* rec = record_with(entity, spatial_component_persistence);
-	*out_persist_id = rec == nullptr ? sk_uuid_t{} : rec->persist_id;
+	*out_uuid = rec == nullptr ? sk_uuid_t{} : rec->persist_id;
 	return rec != nullptr;
 }
 
@@ -739,7 +735,7 @@ bool32_t spatial_entity_unpersist(spatial_entity_t entity) {
 	return true;
 }
 
-bool32_t spatial_entity_unpersist_by_id(sk_uuid_t persist_id) {
+bool32_t spatial_entity_unpersist_uuid(sk_uuid_t persist_id) {
 	if (uuid_is_nil(persist_id)) return false;
 
 	spatial_record_t* rec = record_find_persisted(persist_id);
@@ -764,15 +760,13 @@ bool spatial_init() {
 ///////////////////////////////////////////
 
 void spatial_step() {
-	// App code has seen this frame's arrivals, and anything added from here
-	// on belongs to the next frame.
+	// Anything added from here on belongs to next frame's New
 	local.arrived.clear();
 
 	// Anchor assets need removed entities' data, so they go before the free
 	spatial_anchors_on_removed();
 
-	// Remove entities that left this frame, now that app code has had a
-	// chance to see their just_inactive state.
+	// App code has had its just_inactive frame, so these can go now
 	for (int32_t i = 0; i < local.removed.count; i++) {
 		spatial_record_t* rec = record_find(local.removed[i]);
 		if (rec == nullptr) continue;
@@ -808,8 +802,7 @@ void spatial_step() {
 		else                                              persist_reconcile(rec);
 	}
 
-	// Persistence can turn out to be unavailable after startup, like when
-	// its permission is denied.
+	// Persistence can vanish after startup, like from a denied permission
 	if (!cap_persistable(spatial_capability_anchor)) {
 		for (int32_t i = 0; i < local.unpersist_reqs.count; i++)
 			if (local.unpersist_reqs[i].entity != 0) spatial_backend_unpersist_failed(local.unpersist_reqs[i].entity);
@@ -867,8 +860,7 @@ void spatial_backend_set_active(spatial_capability_ cap, bool32_t active) {
 
 ///////////////////////////////////////////
 
-// Returns true when the data changed, and takes ownership of the new
-// buffers when they were replaced.
+// True when the data changed, and takes ownership of replaced buffers
 static bool mesh_data_take(spatial_mesh_data_t* dest, const spatial_mesh_data_t* src, bool buffers_changed) {
 	dest->origin = src->origin;
 	if (!buffers_changed) return false;
@@ -912,8 +904,7 @@ void spatial_backend_ingest(spatial_capability_ source, spatial_ingest_t* entiti
 			continue;
 		}
 
-		// Tracking state edges. Preserve just_* marks from earlier
-		// ingests this frame; spatial_step clears them.
+		// Keeps just_* edges from earlier ingests this frame, spatial_step clears them
 		bool was = (rec->tracked & button_state_active) != 0;
 		bool is  = in->tracking == spatial_tracking_tracking;
 		button_state_ edges = rec->tracked & button_state_changed;
@@ -931,8 +922,7 @@ void spatial_backend_ingest(spatial_capability_ source, spatial_ingest_t* entiti
 		}
 		persist_reconcile(rec);
 
-		// Other component data is only valid while tracking; paused
-		// entities keep their last-known data.
+		// Paused entities keep their last-known data
 		if (!is) continue;
 
 		rec->changed |= in->present & ~rec->components;

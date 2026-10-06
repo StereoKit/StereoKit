@@ -138,8 +138,7 @@ bool stereokit_systems_register() {
 	sys_world.func_shutdown   = world_shutdown;
 	systems_add(&sys_world);
 
-	// Spatial entity registry maintenance runs after app code so the app
-	// gets one full frame to see new/changed/stopped marks.
+	// Runs after app code, so the app gets a full frame to see new and removed marks
 	system_t sys_spatial = { "Spatial" };
 	system_set_step_deps(sys_spatial, "App", "Tools");
 	sys_spatial.func_initialize = spatial_init;

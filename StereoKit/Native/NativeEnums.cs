@@ -2350,7 +2350,7 @@ namespace StereoKit
 		None         = 0,
 		/// <summary>A center pose and XY size describing a 2D rectangle, such as the
 		/// extents of a detected plane, or the shape of a marker. The pose
-		/// faces out of the surface: Forward (-Z) is the surface normal,
+		/// faces out of the surface, so Forward (-Z) is the surface normal,
 		/// matching how quads and text face in StereoKit.</summary>
 		Bounds2d     = 1 << 0,
 		/// <summary>A center pose and XYZ size describing an oriented bounding
@@ -2366,7 +2366,7 @@ namespace StereoKit
 		/// world.</summary>
 		Anchor       = 1 << 4,
 		/// <summary>A durable identity that allows the entity to be recognized across
-		/// sessions and reboots. When `ComponentsFor` lists this for a
+		/// sessions and reboots. When `Spatial.ComponentsFor` lists this for a
 		/// capability, the app can persist that capability's entities.</summary>
 		Persistence  = 1 << 5,
 		/// <summary>The general orientation category of a detected plane, see

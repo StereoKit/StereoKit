@@ -10,9 +10,7 @@
 
 namespace sk {
 
-// The public spatial entity API lives in stereokit.h. This is the
-// internal side: system lifecycle, plus the provider interface spatial
-// backends use to push data into the registry.
+// Internal lifecycle and backend provider interface, the public API is in stereokit.h
 
 typedef uint64_t spatial_entity_id_t;
 
@@ -21,7 +19,7 @@ typedef uint64_t spatial_entity_id_t;
 ///////////////////////////////////////////
 
 bool spatial_init    ();
-void spatial_step    (); // Runs after app code: clears new/changed marks, removes stopped entities
+void spatial_step    (); // Runs after app code, clearing new/changed marks and freeing removed entities
 void spatial_shutdown();
 
 ///////////////////////////////////////////
@@ -43,9 +41,8 @@ struct spatial_mesh_data_t {
 	int32_t   ind_count;
 };
 
-// One entity's worth of data for ingestion. Fields are read when their
-// bit is in `present`, buffer-backed fields also need their bit in
-// `buffers_changed`, and ownership of their allocations transfers here.
+// Fields are read when their bit is in `present`, buffers also need their bit
+// in `buffers_changed`, and ownership of those allocations transfers on ingest.
 struct spatial_ingest_t {
 	spatial_entity_t    entity; // 0 for an entity the registry hasn't seen, ingest fills it in
 	spatial_entity_id_t id;
@@ -72,62 +69,54 @@ struct spatial_ingest_t {
 	char*               marker_text;
 	uint8_t*            marker_data;
 	int32_t             marker_data_size;
-	// Unlike other components, persistence data is valid regardless of
-	// tracking state.
+	// Valid regardless of tracking state, unlike other components
 	sk_uuid_t           persist_id;
 };
 
-// Capability requests from internal systems. These stay on when the app
-// never mentions a capability, but an explicit spatial_disable wins.
+// Internal systems' requests, which an explicit spatial_disable still overrides
 void     spatial_enable_system   (spatial_capability_ capabilities);
 void     spatial_disable_system  (spatial_capability_ capabilities);
 bool32_t spatial_is_user_disabled(spatial_capability_ capability);
 
-// Report what the backend can do. Called once at backend init.
+// What the backend can do, set once at backend init
 void spatial_backend_set_support  (spatial_capability_ caps);
 void spatial_backend_set_cap_comps(spatial_capability_ cap, spatial_component_ comps);
-// Anchor creation hook: returns the new entity's id, or 0 on failure.
-// The registry fills in the new entity's initial data itself.
+// Returns the new anchor's backend id, or 0 on failure
 void spatial_backend_set_create_anchor(spatial_entity_id_t (*create)(pose_t pose, spatial_entity_id_t parent, spatial_entity_t entity));
-// Entity destruction hook: releases the backend's tracking of an
-// app-created entity.
+// Releases the backend's tracking of an app-created entity
 void spatial_backend_set_destroy      (void (*destroy)(spatial_entity_id_t id));
 
 // Mark a capability's context as warmed up / torn down.
 void spatial_backend_set_active   (spatial_capability_ cap, bool32_t active);
-// Push entity data into the registry. Fills in `entity` for new ones,
-// which the backend should send back on later ingests.
+// Fills in `entity` for new entities, send it back on later ingests
 void spatial_backend_ingest       (spatial_capability_ source, spatial_ingest_t* entities, int32_t count);
 // Removes all of a capability's entities, as if tracking stopped
 void spatial_backend_drop_source  (spatial_capability_ source);
 
-// Increments when a capability's settings change, so the backend can
-// tell when an active context needs a rebuild.
+// Bumps when a capability's settings change, so the backend knows to rebuild
 uint32_t            spatial_backend_get_config_serial(spatial_capability_ cap);
 spatial_capability_ spatial_marker_capability(marker_type_ type);
 
-// Async persistence hooks, null when there's no persistence. Results
-// come back with the entity they were given, which is 0 for an unpersist
-// when only the uuid is known.
+// Null without persistence. Results come back with the entity they were
+// given, which is 0 for an unpersist by uuid alone.
 void spatial_backend_set_persist_ops(void (*persist)(spatial_entity_id_t id, spatial_entity_t entity), void (*unpersist)(spatial_entity_t entity, sk_uuid_t persist_id));
 void spatial_backend_set_persist      (spatial_entity_t entity, sk_uuid_t persist_id);
 void spatial_backend_persist_failed   (spatial_entity_t entity);
 void spatial_backend_clear_persist    (spatial_entity_t entity);
 void spatial_backend_unpersist_failed (spatial_entity_t entity);
-// For persist id lookups, the backend fetches the ids apps are waiting
-// on, and reports the ones storage definitively doesn't have.
+// Persist ids the app is waiting on, and the ones storage says it lacks
 int32_t spatial_backend_get_find_ids     (sk_uuid_t* out_ids, int32_t capacity);
 void    spatial_backend_persist_not_found(sk_uuid_t persist_id);
 
 ///////////////////////////////////////////
 // Anchor asset backend                  //
 ///////////////////////////////////////////
-// Implements the anchor_t asset API on top of the spatial entity
-// registry, see anchor_system_spatial in asset_types/anchor.
+// The anchor_t asset API built on the registry, see anchor_system_spatial
 
 bool32_t     spatial_anchors_available   ();
 bool32_t     spatial_anchors_init        ();
 void         spatial_anchors_shutdown    ();
+void         spatial_anchors_wake        (); // Starts anchors on first Anchor API use, safe to call repeatedly
 void         spatial_anchors_step        ();
 void         spatial_anchors_on_removed  (); // Called by spatial_step, before removed entities are freed
 anchor_t     spatial_anchors_create      (pose_t pose, const char* name_utf8);

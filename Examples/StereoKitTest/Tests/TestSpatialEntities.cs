@@ -29,22 +29,22 @@ class TestSpatialEntities : ITest
 		mesh2dMat.Wireframe = true;
 		mesh2dMat[MatParamName.ColorTint] = new Color(1, 0.5f, 0);
 		for (int i = 0; i < markerTypes.Length; i++)
-			markerSizesCm[i] = SpatialEntity.GetMarkerSize(markerTypes[i]) * 100;
+			markerSizesCm[i] = Spatial.GetMarkerSize(markerTypes[i]) * 100;
 
 		Tests.Test(TestInvalidEntity);
 		Tests.Test(TestMarkerSettings);
-		Tests.Test(TestEmptyPersistId);
-		if ((SpatialEntity.Capabilities & SpatialCapability.Anchor) == 0)
+		Tests.Test(TestEmptyGuid);
+		if ((Spatial.Capabilities & SpatialCapability.Anchor) == 0)
 			Tests.Test(TestNoAnchorSupport);
 
-		prevEnabled = SpatialEntity.Enabled;
-		SpatialEntity.Enable(SpatialEntity.Capabilities);
+		prevEnabled = Spatial.Enabled;
+		Spatial.Enable(Spatial.Capabilities);
 	}
 
 	public void Shutdown()
 	{
 		// Disabling everything would also turn off the Anchor system for later tests
-		SpatialEntity.Disable(SpatialEntity.Capabilities & ~prevEnabled);
+		Spatial.Disable(Spatial.Capabilities & ~prevEnabled);
 		mesh2ds.Clear();
 	}
 
@@ -57,7 +57,7 @@ class TestSpatialEntities : ITest
 		SpatialEntity none = default;
 		return !none.Valid
 			&& none.Status     == SpatialStatus.None
-			&& none.PersistId  == Guid.Empty
+			&& !none.TryGetGuid(out _)
 			&& none.Components == SpatialComponent.None
 			&& !none.TryGetAnchor(out _)
 			&& !none.Persist()
@@ -66,41 +66,41 @@ class TestSpatialEntities : ITest
 
 	bool TestMarkerSettings()
 	{
-		float        prevSize       = SpatialEntity.GetMarkerSize(MarkerType.QrCode);
-		bool         prevStationary = SpatialEntity.GetMarkerStationary(MarkerType.Aruco);
-		ArucoDict    prevAruco      = SpatialEntity.ArucoDictionary;
-		AprilTagDict prevApril      = SpatialEntity.AprilTagDictionary;
+		float        prevSize       = Spatial.GetMarkerSize(MarkerType.QrCode);
+		bool         prevStationary = Spatial.GetMarkerStationary(MarkerType.Aruco);
+		ArucoDict    prevAruco      = Spatial.ArucoDictionary;
+		AprilTagDict prevApril      = Spatial.AprilTagDictionary;
 
-		SpatialEntity.SetMarkerSize      (MarkerType.QrCode, 0.05f);
-		SpatialEntity.SetMarkerStationary(MarkerType.Aruco,  true);
-		SpatialEntity.ArucoDictionary    = ArucoDict.Dict5x5_100;
-		SpatialEntity.AprilTagDictionary = AprilTagDict.Tag16h5;
+		Spatial.SetMarkerSize      (MarkerType.QrCode, 0.05f);
+		Spatial.SetMarkerStationary(MarkerType.Aruco,  true);
+		Spatial.ArucoDictionary    = ArucoDict.Dict5x5_100;
+		Spatial.AprilTagDictionary = AprilTagDict.Tag16h5;
 		bool result =
-			SpatialEntity.GetMarkerSize      (MarkerType.QrCode)  == 0.05f &&
-			SpatialEntity.GetMarkerSize      (MarkerType.MicroQr) == 0     && // Settings are per type
-			SpatialEntity.GetMarkerStationary(MarkerType.Aruco)            &&
-			!SpatialEntity.GetMarkerStationary(MarkerType.AprilTag)        &&
-			SpatialEntity.ArucoDictionary    == ArucoDict.Dict5x5_100      &&
-			SpatialEntity.AprilTagDictionary == AprilTagDict.Tag16h5;
+			Spatial.GetMarkerSize      (MarkerType.QrCode)  == 0.05f &&
+			Spatial.GetMarkerSize      (MarkerType.MicroQr) == 0     && // Settings are per type
+			Spatial.GetMarkerStationary(MarkerType.Aruco)            &&
+			!Spatial.GetMarkerStationary(MarkerType.AprilTag)        &&
+			Spatial.ArucoDictionary    == ArucoDict.Dict5x5_100      &&
+			Spatial.AprilTagDictionary == AprilTagDict.Tag16h5;
 
-		SpatialEntity.SetMarkerSize(MarkerType.QrCode, -1);
-		result &= SpatialEntity.GetMarkerSize(MarkerType.QrCode) == 0; // Negative sizes mean unknown
+		Spatial.SetMarkerSize(MarkerType.QrCode, -1);
+		result &= Spatial.GetMarkerSize(MarkerType.QrCode) == 0; // Negative sizes mean unknown
 
-		SpatialEntity.SetMarkerSize      (MarkerType.QrCode, prevSize);
-		SpatialEntity.SetMarkerStationary(MarkerType.Aruco,  prevStationary);
-		SpatialEntity.ArucoDictionary    = prevAruco;
-		SpatialEntity.AprilTagDictionary = prevApril;
+		Spatial.SetMarkerSize      (MarkerType.QrCode, prevSize);
+		Spatial.SetMarkerStationary(MarkerType.Aruco,  prevStationary);
+		Spatial.ArucoDictionary    = prevAruco;
+		Spatial.AprilTagDictionary = prevApril;
 		return result;
 	}
 
-	bool TestEmptyPersistId()
-		=> !SpatialEntity.FromPersistId(Guid.Empty).Valid
+	bool TestEmptyGuid()
+		=> !SpatialEntity.Find(Guid.Empty).Valid
 		&& !SpatialEntity.Unpersist(Guid.Empty);
 
 	// Without anchor support, requests fail up front rather than waiting.
 	bool TestNoAnchorSupport()
 		=> !SpatialEntity.CreateAnchor(Pose.Identity).Valid
-		&& !SpatialEntity.FromPersistId(Guid.NewGuid()).Valid;
+		&& !SpatialEntity.Find(Guid.NewGuid()).Valid;
 
 	///////////////////////////////////////////
 	// Interactive                           //
@@ -114,10 +114,10 @@ class TestSpatialEntities : ITest
 		UI.PushEnabled(SavedAnchorIds.Count > 0);
 		if (UI.Button($"Restore Saved ({SavedAnchorIds.Count})"))
 			foreach (Guid id in SavedAnchorIds.Ids)
-				SpatialEntity.FromPersistId(id);
+				SpatialEntity.Find(id);
 		UI.PopEnabled();
 		UI.SameLine();
-		UI.PushEnabled((SpatialEntity.Enabled & SpatialCapability.Anchor) > 0);
+		UI.PushEnabled((Spatial.Enabled & SpatialCapability.Anchor) > 0);
 		if (UI.Button("Anchor on Nearest Plane"))
 			AnchorOnNearestPlane();
 		UI.PopEnabled();
@@ -132,17 +132,18 @@ class TestSpatialEntities : ITest
 
 		foreach (SpatialEntity entity in SpatialEntity.All)
 		{
-			if ((entity.Changed & SpatialComponent.Persistence) > 0)
-				SavedAnchorIds.Add(entity.PersistId);
+			if ((entity.Changed & SpatialComponent.Persistence) > 0 && entity.TryGetGuid(out Guid guid))
+				SavedAnchorIds.Add(guid);
 			DrawStatus(entity);
 			if (showMesh2d) DrawMesh2D(entity);
 		}
 		// Persisted entities only leave once storage no longer has them
 		foreach (SpatialEntity entity in SpatialEntity.Removed)
 		{
+			entity.TryGetGuid(out Guid guid);
 			if (entity.Status == SpatialStatus.Failed)
-				Log.Info($"Spatial entity {entity.PersistId} failed");
-			SavedAnchorIds.Remove(entity.PersistId);
+				Log.Info($"Spatial entity {guid} failed");
+			SavedAnchorIds.Remove(guid);
 			mesh2ds.Remove(entity);
 		}
 	}
@@ -160,7 +161,7 @@ class TestSpatialEntities : ITest
 			if (shown++ >= 8) { UI.Label("..."); break; }
 
 			UI.PushId(entity.GetHashCode());
-			Guid id = entity.PersistId;
+			entity.TryGetGuid(out Guid id);
 			UI.Label($"{(id == Guid.Empty ? "unsaved " : id.ToString().Substring(0, 8))} {entity.Status} {(entity.Tracked.IsActive() ? "tracked" : "untracked")}", new Vec2(0.13f, 0));
 			UI.SameLine();
 			if (UI.Button("Persist"))   entity.Persist();
@@ -182,18 +183,18 @@ class TestSpatialEntities : ITest
 			UI.Label($"{type} {markerSizesCm[i]:0}cm", new Vec2(0.09f, 0));
 			UI.SameLine();
 			if (UI.HSlider("size", ref markerSizesCm[i], 0, 30, 1, 0.12f, UIConfirm.Push, UINotify.Finalize))
-				SpatialEntity.SetMarkerSize(type, markerSizesCm[i] / 100);
+				Spatial.SetMarkerSize(type, markerSizesCm[i] / 100);
 			UI.SameLine();
-			bool stationary = SpatialEntity.GetMarkerStationary(type);
+			bool stationary = Spatial.GetMarkerStationary(type);
 			if (UI.Toggle("Static", ref stationary))
-				SpatialEntity.SetMarkerStationary(type, stationary);
+				Spatial.SetMarkerStationary(type, stationary);
 			UI.PopId();
 		}
-		if (UI.Button($"ArUco {SpatialEntity.ArucoDictionary}"))
-			SpatialEntity.ArucoDictionary = (ArucoDict)(((int)SpatialEntity.ArucoDictionary + 1) % ((int)ArucoDict.Dict7x7_1000 + 1));
+		if (UI.Button($"ArUco {Spatial.ArucoDictionary}"))
+			Spatial.ArucoDictionary = (ArucoDict)(((int)Spatial.ArucoDictionary + 1) % ((int)ArucoDict.Dict7x7_1000 + 1));
 		UI.SameLine();
-		if (UI.Button($"AprilTag {SpatialEntity.AprilTagDictionary}"))
-			SpatialEntity.AprilTagDictionary = (AprilTagDict)(((int)SpatialEntity.AprilTagDictionary + 1) % ((int)AprilTagDict.Tag36h11 + 1));
+		if (UI.Button($"AprilTag {Spatial.AprilTagDictionary}"))
+			Spatial.AprilTagDictionary = (AprilTagDict)(((int)Spatial.AprilTagDictionary + 1) % ((int)AprilTagDict.Tag36h11 + 1));
 	}
 
 	// Few runtimes support parented anchors yet, so on those this shows up

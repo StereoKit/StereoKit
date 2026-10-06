@@ -3908,7 +3908,7 @@ typedef enum spatial_component_ {
 	spatial_component_none            = 0,
 	/*A center pose and XY size describing a 2D rectangle, such as the
 	  extents of a detected plane, or the shape of a marker. The pose
-	  faces out of the surface: Forward (-Z) is the surface normal,
+	  faces out of the surface, so Forward (-Z) is the surface normal,
 	  matching how quads and text face in StereoKit.*/
 	spatial_component_bounds2d        = 1 << 0,
 	/*A center pose and XYZ size describing an oriented bounding
@@ -3924,7 +3924,7 @@ typedef enum spatial_component_ {
 	  world.*/
 	spatial_component_anchor          = 1 << 4,
 	/*A durable identity that allows the entity to be recognized across
-	  sessions and reboots. When `ComponentsFor` lists this for a
+	  sessions and reboots. When `Spatial.ComponentsFor` lists this for a
 	  capability, the app can persist that capability's entities.*/
 	spatial_component_persistence     = 1 << 5,
 	/*The general orientation category of a detected plane, see
@@ -4098,7 +4098,7 @@ SK_API int32_t               spatial_entity_get_new_count    (spatial_component_
 SK_API spatial_entity_t      spatial_entity_get_new_index    (spatial_component_ with_components, int32_t index);
 SK_API int32_t               spatial_entity_get_removed_count(spatial_component_ with_components);
 SK_API spatial_entity_t      spatial_entity_get_removed_index(spatial_component_ with_components, int32_t index);
-SK_API spatial_entity_t      spatial_entity_find_by_id       (sk_uuid_t persist_id);
+SK_API spatial_entity_t      spatial_entity_find_uuid        (sk_uuid_t uuid);
 SK_API bool32_t              spatial_entity_is_valid         (spatial_entity_t entity);
 SK_API button_state_         spatial_entity_get_tracked      (spatial_entity_t entity);
 SK_API spatial_status_       spatial_entity_get_status       (spatial_entity_t entity);
@@ -4121,10 +4121,10 @@ SK_API const uint8_t*        spatial_entity_get_marker_data  (spatial_entity_t e
 SK_API spatial_entity_t      spatial_entity_create_anchor    (pose_t pose, bool32_t persist, spatial_entity_t parent);
 SK_API bool32_t              spatial_entity_destroy          (spatial_entity_t entity);
 
-SK_API bool32_t              spatial_entity_get_persist_id   (spatial_entity_t entity, sk_uuid_t* out_persist_id);
+SK_API bool32_t              spatial_entity_get_uuid         (spatial_entity_t entity, sk_uuid_t* out_uuid);
 SK_API bool32_t              spatial_entity_persist          (spatial_entity_t entity);
 SK_API bool32_t              spatial_entity_unpersist        (spatial_entity_t entity);
-SK_API bool32_t              spatial_entity_unpersist_by_id  (sk_uuid_t persist_id);
+SK_API bool32_t              spatial_entity_unpersist_uuid   (sk_uuid_t uuid);
 
 ///////////////////////////////////////////
 
