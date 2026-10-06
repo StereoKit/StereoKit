@@ -14,6 +14,13 @@ float float
 double double
 void void
 char32_t uint
+spatial_entity_t ulong
+# Match the casing of TryGetBounds2D and friends
+spatial_component_bounds2d Bounds2D
+spatial_component_bounds3d Bounds3D
+spatial_component_mesh2d   Mesh2D
+# Byte order differs from System.Guid, so this converts by hand
+sk_uuid_t NativeUuid
 
 # Keyboard keys by default resolve to just numbers, no bueno
 key_0 N0
@@ -121,7 +128,7 @@ audio_env_t AudioEnvironment
 
 # Complex structs in NativeTypes.cs with special handling
 @noimpl sk_settings_t rect_t sound_play_t
-@noimpl hand_sim_id_t id_hash_t
+@noimpl hand_sim_id_t id_hash_t sk_uuid_t
 # Request struct has string/feature arrays, hand-marshaled in Backend.Vulkan.Request
 @noimpl backend_vulkan_request_t
 # Keeps the raw codepoint private so readers use Text, which can't truncate
@@ -141,6 +148,8 @@ audio_env_t AudioEnvironment
 # sound_generate's callback is the batch delegate, and sound_create_mem takes
 # a raw byte blob - neither is inferable from the void*/fnptr signature.
 @noimpl sound_generate sound_create_mem
+# Hands back a pointer to registry-owned vertices, not a caller array
+@noimpl spatial_entity_get_polygon
 @noimpl spherical_harmonics_t hand_t controller_t file_filter_t
 # Request takes arrays of strings/features, hand-marshaled in NativeAPI.Custom.cs
 @noimpl backend_vulkan_request
@@ -166,3 +175,24 @@ picker_callback PickerCallback
 
 # Public API delegates that need XML documentation (hand-written in NativeTypes.cs)
 @noimpl AppStep AppShutdown AssetOnLoadCallback AudioGenerator InputEventCallback
+# Marker dictionary names start with digits, which C# identifiers can't
+aruco_dict_4x4_50   Dict4x4_50
+aruco_dict_4x4_100  Dict4x4_100
+aruco_dict_4x4_250  Dict4x4_250
+aruco_dict_4x4_1000 Dict4x4_1000
+aruco_dict_5x5_50   Dict5x5_50
+aruco_dict_5x5_100  Dict5x5_100
+aruco_dict_5x5_250  Dict5x5_250
+aruco_dict_5x5_1000 Dict5x5_1000
+aruco_dict_6x6_50   Dict6x6_50
+aruco_dict_6x6_100  Dict6x6_100
+aruco_dict_6x6_250  Dict6x6_250
+aruco_dict_6x6_1000 Dict6x6_1000
+aruco_dict_7x7_50   Dict7x7_50
+aruco_dict_7x7_100  Dict7x7_100
+aruco_dict_7x7_250  Dict7x7_250
+aruco_dict_7x7_1000 Dict7x7_1000
+april_tag_dict_16h5  Tag16h5
+april_tag_dict_25h9  Tag25h9
+april_tag_dict_36h10 Tag36h10
+april_tag_dict_36h11 Tag36h11

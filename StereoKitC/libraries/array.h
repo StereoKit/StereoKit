@@ -260,6 +260,29 @@ struct array_t {
 const float   _hashmap_search_dist_pct = 0.001f;
 const int32_t _hashmap_search_dist_min = 3;
 
+// Lookups stop at the first empty slot, so a removal shifts the rest of
+// its probe run back to keep those entries reachable.
+template <typename E>
+void _hashmap_remove_at(E* items, int32_t capacity, int32_t at) {
+	items[at].hash = 0;
+	int32_t next = at;
+	while (true) {
+		next = next + 1 == capacity ? 0 : next + 1;
+		if (items[next].hash == 0) return;
+
+		// Entries whose home slot lies between the hole and here stay put
+		int32_t home  = (int32_t)(items[next].hash % capacity);
+		bool    stays = at <= next
+			? (home > at && home <= next)
+			: (home > at || home <= next);
+		if (stays) continue;
+
+		items[at]        = items[next];
+		items[next].hash = 0;
+		at = next;
+	}
+}
+
 template <typename K, typename T>
 struct hashmap_t {
 	struct entry_t {
@@ -373,13 +396,13 @@ struct hashmap_t {
 	const T* get_or(const K& key, const T& default_value)  {
 		int32_t id = contains(key);
 		return id == -1
-			? default_value
+			? &default_value
 			: &items[id].value;
 	}
-	
+
 	void free     ()                 { ARRAY_FREE(items); *this = {}; }
-	bool remove   (const K& key)     { int32_t at = contains(key); if (at != -1) { if (items[at].hash != 0) { count--; } items[at].hash = 0; } return at != -1; }
-	void remove_at(const int32_t at) { if (items[at].hash != 0) { count--; } items[at].hash = 0; }
+	bool remove   (const K& key)     { int32_t at = contains(key); if (at == -1) return false; remove_at(at); return true; }
+	void remove_at(const int32_t at) { if (items[at].hash == 0) return; count--; _hashmap_remove_at(items, capacity, at); }
 };
 
 //////////////////////////////////////
@@ -427,12 +450,13 @@ struct dictionary_t {
 		memset(items, 0, sizeof(entry_t) * size);
 		for (int32_t i = 0; i < old_capacity; i++) {
 			if (old_items[i].hash == 0) continue;
-			set(old_items[i].key, old_items[i].value);
+			set(old_items[i].key, old_items[i].value); // set keeps its own copy
+			ARRAY_FREE(old_items[i].key);
 		}
-		
+
 		ARRAY_FREE(old_items);
 	}
-	
+
 	int32_t set(const char *key, const T &value) {
 		if (count+1 >= capacity) {
 			resize(capacity == 0 ? 4 : capacity * 2);
@@ -507,14 +531,14 @@ struct dictionary_t {
 	const T* get_or(const char* key, const T& default_value) {
 		int32_t id = contains(key);
 		return id == -1
-			? default_value
+			? &default_value
 			: &items[id].value;
 	}
-	
-	void each     (void (*e)(T&))    { for (int32_t i = 0; i < count; i++) if (items[i].hash != 0) e(items[i].value); }
+
+	void each     (void (*e)(T&))    { for (int32_t i = 0; i < capacity; i++) if (items[i].hash != 0) e(items[i].value); }
 	void free     ()                 { for(int i=0;i<capacity;i+=1) {if (items[i].hash != 0) ARRAY_FREE(items[i].key); } ARRAY_FREE(items); *this = {}; }
-	bool remove   (const char* key)  { int32_t at = contains(key); if (at != -1) { if (items[at].hash != 0) { count--; } items[at].hash = 0; ARRAY_FREE(items[at].key); } return at != -1; }
-	void remove_at(const int32_t at) { if (items[at].hash != 0) { count--; } items[at].hash = 0; }
+	bool remove   (const char* key)  { int32_t at = contains(key); if (at == -1) return false; remove_at(at); return true; }
+	void remove_at(const int32_t at) { if (items[at].hash == 0) return; count--; ARRAY_FREE(items[at].key); _hashmap_remove_at(items, capacity, at); }
 };
 
 //////////////////////////////////////

@@ -68,8 +68,7 @@ void        assets_on_load_remove_all (asset_header_t *asset);
 // Runs the job inline on skr-initialized threads (main, asset). Foreign
 // threads queue the job to the asset threads and block until it finishes.
 bool32_t    assets_execute_blocking   (bool32_t (*asset_job)(void *data), void *data);
-// SK_API so the SKTests harness can drive the scheduler with synthetic tasks.
-SK_API void assets_add_task           (asset_task_t task);
+void        assets_add_task           (asset_task_t task);
 inline int64_t asset_sort(int32_t priority, int32_t complexity) { return ((int64_t)priority << 32) | ((int64_t)complexity); }
 
 // The priority the public tex/model/font create functions default to.

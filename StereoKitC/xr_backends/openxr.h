@@ -84,7 +84,7 @@ typedef struct poll_event_callback_t {
 typedef struct xr_system_t {
 	const char* request_exts[4];
 	int32_t     request_ext_count;
-	const char* request_opt_exts[4];
+	const char* request_opt_exts[8];
 	int32_t     request_opt_ext_count;
 	bool        required;
 

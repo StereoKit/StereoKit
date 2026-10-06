@@ -24,6 +24,15 @@
       }
     },
     {
+      "name":        "Tests",
+      "description": "Static StereoKitC, so SKTests can reach unexported internals",
+      "hidden":      true,
+      "cacheVariables": {
+        "SK_BUILD_TESTS":       "ON",
+        "SK_BUILD_SHARED_LIBS": "OFF"
+      }
+    },
+    {
       "name":        "BuildType_Debug",
       "description": "Debug build type",
       "hidden":      true,
@@ -236,6 +245,12 @@
       "name":        "Linux_x64_Debug_Fast",
       "inherits":    ["Linux_x64_Debug", "Fast"],
       "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Debug_Fast"
+    },
+    {
+      "name":        "Linux_x64_Tests",
+      "description": "Debug build for Linux x64 native tests (SKTests)",
+      "inherits":    ["Tests", "Linux_x64_Debug"],
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Tests"
     },
     {
       "name":        "Linux_Arm64",
@@ -457,6 +472,7 @@
       { "name":"Android_x64_Debug_Fast",     "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"Android_x64_Debug_Fast" },
       { "name":"Linux_x64_Debug",            "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"Linux_x64_Debug" },
       { "name":"Linux_x64_Debug_Fast",       "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"Linux_x64_Debug_Fast" },
+      { "name":"Linux_x64_Tests",            "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"Linux_x64_Tests" },
       { "name":"Linux_x64_Release",          "inherits":"Default_Base","configuration":"Release", "configurePreset":"Linux_x64_Release" },
       { "name":"Linux_x64_Release_Fast",     "inherits":"Default_Base","configuration":"Release", "configurePreset":"Linux_x64_Release_Fast" },
       { "name":"Linux_Arm64_Debug",          "inherits":"Default_Base","configuration":"Debug",   "configurePreset":"Linux_Arm64_Debug" },

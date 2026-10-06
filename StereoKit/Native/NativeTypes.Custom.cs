@@ -846,4 +846,26 @@ namespace StereoKit
 			: "";
 	}
 
+	/// <summary>Native sk_uuid_t: 16 bytes in RFC 4122 order. Guid stores
+	/// its bytes differently, so this always converts big-endian.</summary>
+	[StructLayout(LayoutKind.Sequential)]
+	internal struct NativeUuid
+	{
+		ulong _bytes0;
+		ulong _bytes1;
+
+		internal static NativeUuid FromGuid(Guid guid)
+		{
+			NativeUuid result = default;
+			guid.TryWriteBytes(MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref result, 1)), bigEndian: true, out _);
+			return result;
+		}
+
+		internal Guid ToGuid()
+		{
+			NativeUuid copy = this;
+			return new Guid(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref copy, 1)), bigEndian: true);
+		}
+	}
+
 }

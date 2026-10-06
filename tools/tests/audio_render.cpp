@@ -17,9 +17,8 @@ static void ar_sleep_ms(int32_t ms) { usleep(ms * 1000); }
 
 using namespace sk;
 
-// Offline listening renders for spatializer tuning, not a test suite: stereo
-// float32 wavs for headphone A/B comparison. The interesting pairs are
-// *_direct vs *_bus, the same orbiting source through both render paths.
+// Offline listening renders for spatializer tuning, not a test suite. These
+// are stereo float32 wavs meant for headphones.
 
 #define AR_BLOCK 480 // 10ms, a typical device period
 
@@ -81,12 +80,11 @@ static void ar_gen_bursts(float* out, uint64_t start, uint64_t frames) {
 
 // An orbiting burst source, one revolution per 4s. Horizontal circles the
 // head, vertical loops the median plane: front, overhead, behind, below.
-static void ar_render_orbit(const char* path, sound_t sound, float radius, bool vertical, bool force_bus) {
+static void ar_render_orbit(const char* path, sound_t sound, float radius, bool vertical) {
 	const uint32_t total = AU_SAMPLE_RATE * 8;
 	FILE* file = ar_wav_open(path, total);
 	if (file == nullptr) return;
 
-	audio_test_force_bus(force_bus);
 	sound_play_t settings = {}; settings.flags = sound_flags_loop;
 	sound_inst_t inst     = sound_play(sound, vec3{0, 0, -radius}, &settings);
 
@@ -104,7 +102,6 @@ static void ar_render_orbit(const char* path, sound_t sound, float radius, bool 
 	fclose(file);
 
 	sound_inst_stop(inst);
-	audio_test_force_bus(false);
 	ar_flush();
 	log_infof("[audio_render] wrote %s", path);
 }
@@ -194,16 +191,12 @@ int audio_render_run(const char* out_dir, const char* ambi_file) {
 	sound_set_decibels(bursts, 83);
 
 	char path[512];
-	snprintf(path, sizeof(path), "%s/orbit_direct.wav", out_dir);
-	ar_render_orbit(path, bursts, 2.0f, false, false);
-	snprintf(path, sizeof(path), "%s/orbit_bus.wav", out_dir);
-	ar_render_orbit(path, bursts, 2.0f, false, true);
-	snprintf(path, sizeof(path), "%s/vertical_direct.wav", out_dir);
-	ar_render_orbit(path, bursts, 2.0f, true, false);
-	snprintf(path, sizeof(path), "%s/vertical_bus.wav", out_dir);
-	ar_render_orbit(path, bursts, 2.0f, true, true);
+	snprintf(path, sizeof(path), "%s/orbit.wav", out_dir);
+	ar_render_orbit(path, bursts, 2.0f, false);
+	snprintf(path, sizeof(path), "%s/vertical.wav", out_dir);
+	ar_render_orbit(path, bursts, 2.0f, true);
 	snprintf(path, sizeof(path), "%s/orbit_near.wav", out_dir);
-	ar_render_orbit(path, bursts, 0.35f, false, false);
+	ar_render_orbit(path, bursts, 0.35f, false);
 	snprintf(path, sizeof(path), "%s/env_off.wav", out_dir);
 	ar_render_env(path, bursts, ar_env_off);
 	snprintf(path, sizeof(path), "%s/env_room.wav", out_dir);

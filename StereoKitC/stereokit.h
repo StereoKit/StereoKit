@@ -67,6 +67,14 @@ namespace sk {
 typedef int32_t  bool32_t;
 typedef uint64_t id_hash_t;
 
+/*A 128 bit universally unique identifier, with bytes in the standard
+  RFC 4122 order, so they read the same as the usual
+  xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx text form. All zeros is the nil
+  UUID, which never identifies anything.*/
+typedef struct sk_uuid_t {
+	uint8_t bytes[16];
+} sk_uuid_t;
+
 typedef struct vec2 {
 	float x;
 	float y;
@@ -1011,7 +1019,7 @@ SK_API bool32_t         device_has_hand_tracking  (void);
 typedef enum permission_type_ {
 	/*For access to microphone data, this is typically an interactive
 	  permission that the user will need to explicitly approve.
-	  
+
 	  This maps to android.permission.RECORD_AUDIO on Android.*/
 	permission_type_microphone,
 	/*For access to camera data, this is typically an interactive permission
@@ -1070,6 +1078,20 @@ typedef enum permission_type_ {
 	  XR and com.oculus.permission.USE_ANCHOR_API on Meta, but varies
 	  per-runtime.*/
 	permission_type_anchors,
+	/*For detecting walls, floors, tables and other surfaces in the user's
+	  space, via spatial_capability_plane_tracking. This is typically an
+	  interactive permission that the user will need to explicitly approve.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+	  XR, but varies per-runtime.*/
+	permission_type_plane_tracking,
+	/*For detecting QR codes, ArUco markers and AprilTags in the user's
+	  space, via the spatial marker capabilities. This is typically an
+	  interactive permission that the user will need to explicitly approve.
+
+	  This maps to android.permission.SCENE_UNDERSTANDING_COARSE on Android
+	  XR, but varies per-runtime.*/
+	permission_type_marker_tracking,
 	/*This enum is for tracking the number of value in this enum.*/
 	permission_type_max,
 } permission_type_;
@@ -3828,12 +3850,286 @@ SK_API const char*           anchor_get_name                 (const anchor_t anc
 SK_API button_state_         anchor_get_tracked              (const anchor_t anchor);
 SK_API bool32_t              anchor_get_perception_anchor    (const anchor_t anchor, void** out_perception_spatial_anchor);
 
+SK_API void                  anchor_delete                   (anchor_t anchor);
 SK_API void                  anchor_clear_stored             (void);
 SK_API anchor_caps_          anchor_get_capabilities         (void);
 SK_API int32_t               anchor_get_count                (void);
 SK_API anchor_t              anchor_get_index                (int32_t index);
 SK_API int32_t               anchor_get_new_count            (void);
 SK_API anchor_t              anchor_get_new_index            (int32_t index);
+
+///////////////////////////////////////////
+
+/*A lightweight identifier for a spatial entity. These are never reused
+  within a session, so a stale identifier will simply stop resolving
+  once its entity is gone, and 0 is never a valid entity.*/
+typedef uint64_t spatial_entity_t;
+
+/*A spatial capability is a unit of scene understanding functionality
+  that a device may provide, such as plane tracking, or QR code
+  tracking. Check what the device supports with `Spatial.Capabilities`,
+  request what you need, and StereoKit will maintain a list of the
+  spatial entities the system discovers.
+
+  The top 4 bits of this flag are reserved for vendor and experimental
+  capabilities.*/
+typedef enum spatial_capability_ {
+	/*No spatial capabilities.*/
+	spatial_capability_none           = 0,
+	/*Spatial anchors, poses the system keeps as stable as it can
+	  relative to the physical world. This allows creating new anchor
+	  entities via `SpatialEntity.CreateAnchor`.*/
+	spatial_capability_anchor         = 1 << 0,
+	/*Detection and tracking of flat surfaces in the environment, like
+	  floors, walls, and tables.*/
+	spatial_capability_plane_tracking = 1 << 1,
+	/*Detection and tracking of QR codes, including their decoded
+	  data.*/
+	spatial_capability_qr_code        = 1 << 2,
+	/*Detection and tracking of Micro QR codes, including their decoded
+	  data.*/
+	spatial_capability_micro_qr       = 1 << 3,
+	/*Detection and tracking of ArUco fiducial markers.*/
+	spatial_capability_aruco          = 1 << 4,
+	/*Detection and tracking of AprilTag fiducial markers.*/
+	spatial_capability_april_tag      = 1 << 5,
+} spatial_capability_;
+SK_MakeFlag(spatial_capability_);
+
+/*Spatial entities are composed of components, where each component is
+  a chunk of data or behavior the entity provides. This flag describes
+  a set of components, and each component has a matching accessor on
+  the entity.
+
+  The top 4 bits of this flag are reserved for vendor and experimental
+  components.*/
+typedef enum spatial_component_ {
+	/*No components.*/
+	spatial_component_none            = 0,
+	/*A center pose and XY size describing a 2D rectangle, such as the
+	  extents of a detected plane, or the shape of a marker. The pose
+	  faces out of the surface, so Forward (-Z) is the surface normal,
+	  matching how quads and text face in StereoKit.*/
+	spatial_component_bounds2d        = 1 << 0,
+	/*A center pose and XYZ size describing an oriented bounding
+	  volume. When the entity has a front, like a screen or table top,
+	  Forward (-Z) is the direction it faces.*/
+	spatial_component_bounds3d        = 1 << 1,
+	/*A reference to a parent spatial entity this entity is attached
+	  to.*/
+	spatial_component_parent          = 1 << 2,
+	/*A 3D triangle mesh representing the entity's shape.*/
+	spatial_component_mesh            = 1 << 3,
+	/*A pose the system actively keeps stable relative to the physical
+	  world.*/
+	spatial_component_anchor          = 1 << 4,
+	/*A durable identity that allows the entity to be recognized across
+	  sessions and reboots. When `Spatial.ComponentsFor` lists this for a
+	  capability, the app can persist that capability's entities.*/
+	spatial_component_persistence     = 1 << 5,
+	/*The general orientation category of a detected plane, see
+	  `PlaneAlign`.*/
+	spatial_component_plane_alignment = 1 << 6,
+	/*A 2D triangle mesh of the entity's surface, on the XY plane of
+	  its bounds2d pose.*/
+	spatial_component_mesh2d          = 1 << 7,
+	/*A 2D boundary polygon outlining the entity's surface. In C, the
+	  vertex pointer from spatial_entity_get_polygon is only valid until
+	  the next frame, so copy it to keep it longer.*/
+	spatial_component_polygon         = 1 << 8,
+	/*A semantic category for the entity, like floor or table, see
+	  `SpatialLabel`.*/
+	spatial_component_label           = 1 << 9,
+	/*Marker information: the marker's type, numeric id, and any
+	  decoded data. In C, the text and data pointers are only valid until
+	  the next frame, so copy them to keep them longer.*/
+	spatial_component_marker          = 1 << 10,
+} spatial_component_;
+SK_MakeFlag(spatial_component_);
+
+/*Whether the things you've asked of a spatial entity have gone through,
+  like creating an anchor or persisting it. Failure states are negative
+  and healthy ones positive, so `status < 0` catches every failure.
+  This is separate from tracking, so an entity can be tracked and usable
+  while a persist is still Pending. Entities the system discovers on its
+  own, like planes, are Ready unless you ask something of them.*/
+typedef enum spatial_status_ {
+	/*The entity couldn't be created, or storage doesn't have the id it
+	  was looked up by. It shows up in the removed list with this status
+	  for its final frame.*/
+	spatial_status_failed  = -2,
+	/*The entity exists, but at least one thing you asked of it failed,
+	  like a persist. Check its components to see what's missing, and
+	  making a new request clears this.*/
+	spatial_status_partial = -1,
+	/*Not a valid entity.*/
+	spatial_status_none    = 0,
+	/*Something you asked of this entity is still in progress, like
+	  creation, loading it by persist id, or a persist that's waiting on
+	  the system.*/
+	spatial_status_pending = 1,
+	/*Nothing you've asked of this entity is still in progress, and
+	  nothing failed.*/
+	spatial_status_ready   = 2,
+} spatial_status_;
+
+/*The general orientation of a detected plane.*/
+typedef enum plane_align_ {
+	/*Alignment is not known.*/
+	plane_align_none            = 0,
+	/*A horizontal surface facing up, like a floor or table top.*/
+	plane_align_horizontal_up   = 1,
+	/*A horizontal surface facing down, like a ceiling.*/
+	plane_align_horizontal_down = 2,
+	/*A vertical surface, like a wall.*/
+	plane_align_vertical        = 3,
+	/*A surface at some other arbitrary angle, like a ramp.*/
+	plane_align_arbitrary       = 4,
+} plane_align_;
+
+/*A semantic category the system has assigned to a spatial entity, such
+  as a floor plane or a tracked keyboard. All label sources share this
+  one list, so a category can come from plane tracking on one device
+  and object tracking on another. Any given entity only uses a subset
+  of these, and if the system reports a category StereoKit doesn't know
+  yet, it arrives as Uncategorized. New values are only ever appended.*/
+typedef enum spatial_label_ {
+	/*No label information available.*/
+	spatial_label_none          = 0,
+	/*The system recognizes this entity, but it doesn't fit any of the
+	  categories it knows.*/
+	spatial_label_uncategorized = 1,
+	/*A floor.*/
+	spatial_label_floor         = 2,
+	/*A wall.*/
+	spatial_label_wall          = 3,
+	/*A ceiling.*/
+	spatial_label_ceiling       = 4,
+	/*A table, or table-like surface.*/
+	spatial_label_table         = 5,
+} spatial_label_;
+
+/*The type of a detected marker.*/
+typedef enum marker_type_ {
+	/*Not a marker.*/
+	marker_type_none      = 0,
+	/*A QR code, data is typically a decoded string.*/
+	marker_type_qr_code   = 1,
+	/*A Micro QR code, data is typically a decoded string.*/
+	marker_type_micro_qr  = 2,
+	/*An ArUco fiducial marker, identified by its numeric id.*/
+	marker_type_aruco     = 3,
+	/*An AprilTag fiducial marker, identified by its numeric id.*/
+	marker_type_april_tag = 4,
+} marker_type_;
+
+/*Predefined ArUco marker dictionaries. A dictionary describes the grid
+  size of the markers, and how many unique marker ids it contains. The
+  tracker can only detect markers from the dictionary it's configured
+  for.*/
+typedef enum aruco_dict_ {
+	/*Let StereoKit pick, currently 4x4, 50 ids.*/
+	aruco_dict_default  = 0,
+	/*4x4 grid, 50 unique ids.*/
+	aruco_dict_4x4_50   = 1,
+	/*4x4 grid, 100 unique ids.*/
+	aruco_dict_4x4_100  = 2,
+	/*4x4 grid, 250 unique ids.*/
+	aruco_dict_4x4_250  = 3,
+	/*4x4 grid, 1000 unique ids.*/
+	aruco_dict_4x4_1000 = 4,
+	/*5x5 grid, 50 unique ids.*/
+	aruco_dict_5x5_50   = 5,
+	/*5x5 grid, 100 unique ids.*/
+	aruco_dict_5x5_100  = 6,
+	/*5x5 grid, 250 unique ids.*/
+	aruco_dict_5x5_250  = 7,
+	/*5x5 grid, 1000 unique ids.*/
+	aruco_dict_5x5_1000 = 8,
+	/*6x6 grid, 50 unique ids.*/
+	aruco_dict_6x6_50   = 9,
+	/*6x6 grid, 100 unique ids.*/
+	aruco_dict_6x6_100  = 10,
+	/*6x6 grid, 250 unique ids.*/
+	aruco_dict_6x6_250  = 11,
+	/*6x6 grid, 1000 unique ids.*/
+	aruco_dict_6x6_1000 = 12,
+	/*7x7 grid, 50 unique ids.*/
+	aruco_dict_7x7_50   = 13,
+	/*7x7 grid, 100 unique ids.*/
+	aruco_dict_7x7_100  = 14,
+	/*7x7 grid, 250 unique ids.*/
+	aruco_dict_7x7_250  = 15,
+	/*7x7 grid, 1000 unique ids.*/
+	aruco_dict_7x7_1000 = 16,
+} aruco_dict_;
+
+/*Predefined AprilTag marker dictionaries. The name describes the tag
+  family: grid bits, and the minimum hamming distance between ids.*/
+typedef enum april_tag_dict_ {
+	/*Let StereoKit pick, currently 36h11.*/
+	april_tag_dict_default = 0,
+	/*4x4 bits, hamming distance 5, 30 ids.*/
+	april_tag_dict_16h5    = 1,
+	/*5x5 bits, hamming distance 9, 35 ids.*/
+	april_tag_dict_25h9    = 2,
+	/*6x6 bits, hamming distance 10, 2320 ids.*/
+	april_tag_dict_36h10   = 3,
+	/*6x6 bits, hamming distance 11, 587 ids. The most common choice.*/
+	april_tag_dict_36h11   = 4,
+} april_tag_dict_;
+
+SK_API spatial_capability_   spatial_capabilities            (void);
+SK_API spatial_component_    spatial_capability_components   (spatial_capability_ capability);
+SK_API void                  spatial_request                 (spatial_capability_ capabilities);
+SK_API void                  spatial_disable                 (spatial_capability_ capabilities);
+SK_API spatial_capability_   spatial_get_requested           (void);
+SK_API spatial_capability_   spatial_get_running             (void);
+
+SK_API void                  spatial_set_marker_size         (marker_type_ type, float size_meters);
+SK_API float                 spatial_get_marker_size         (marker_type_ type);
+SK_API void                  spatial_set_marker_stationary   (marker_type_ type, bool32_t stationary);
+SK_API bool32_t              spatial_get_marker_stationary   (marker_type_ type);
+SK_API void                  spatial_set_aruco_dictionary    (aruco_dict_ dictionary);
+SK_API aruco_dict_           spatial_get_aruco_dictionary    (void);
+SK_API void                  spatial_set_april_tag_dictionary(april_tag_dict_ dictionary);
+SK_API april_tag_dict_       spatial_get_april_tag_dictionary(void);
+
+SK_API int32_t               spatial_entity_get_count        (spatial_component_ with_components);
+SK_API spatial_entity_t      spatial_entity_get_index        (spatial_component_ with_components, int32_t index);
+SK_API int32_t               spatial_entity_get_new_count    (spatial_component_ with_components);
+SK_API spatial_entity_t      spatial_entity_get_new_index    (spatial_component_ with_components, int32_t index);
+SK_API int32_t               spatial_entity_get_removed_count(spatial_component_ with_components);
+SK_API spatial_entity_t      spatial_entity_get_removed_index(spatial_component_ with_components, int32_t index);
+SK_API spatial_entity_t      spatial_entity_find_anchor      (const char* name_utf8);
+SK_API spatial_entity_t      spatial_entity_find_anchor_uuid (sk_uuid_t uuid);
+SK_API bool32_t              spatial_entity_is_valid         (spatial_entity_t entity);
+SK_API button_state_         spatial_entity_get_tracked      (spatial_entity_t entity);
+SK_API spatial_status_       spatial_entity_get_status       (spatial_entity_t entity);
+SK_API spatial_component_    spatial_entity_get_components   (spatial_entity_t entity);
+SK_API spatial_component_    spatial_entity_get_changed      (spatial_entity_t entity);
+SK_API spatial_entity_t      spatial_entity_get_parent       (spatial_entity_t entity);
+
+SK_API pose_t                spatial_entity_get_pose         (spatial_entity_t entity);
+SK_API bool32_t              spatial_entity_get_bounds2d     (spatial_entity_t entity, pose_t* out_center, vec2* out_size);
+SK_API bool32_t              spatial_entity_get_bounds3d     (spatial_entity_t entity, pose_t* out_center, vec3* out_size);
+SK_API bool32_t              spatial_entity_get_plane_align  (spatial_entity_t entity, plane_align_* out_alignment);
+SK_API bool32_t              spatial_entity_get_label        (spatial_entity_t entity, spatial_label_* out_label);
+SK_API bool32_t              spatial_entity_get_mesh         (spatial_entity_t entity, mesh_t mesh, pose_t* out_origin);
+SK_API bool32_t              spatial_entity_get_mesh2d       (spatial_entity_t entity, mesh_t mesh, pose_t* out_origin);
+SK_API bool32_t              spatial_entity_get_polygon      (spatial_entity_t entity, pose_t* out_origin, const vec2** out_verts, int32_t* out_count);
+SK_API bool32_t              spatial_entity_get_marker       (spatial_entity_t entity, marker_type_* out_type, uint32_t* out_marker_id);
+SK_API const char*           spatial_entity_get_marker_text  (spatial_entity_t entity);
+SK_API const uint8_t*        spatial_entity_get_marker_data  (spatial_entity_t entity, int32_t* out_size);
+
+SK_API spatial_entity_t      spatial_entity_create_anchor    (pose_t pose, const char* opt_name_utf8 sk_default(nullptr), spatial_entity_t parent sk_default(0));
+SK_API bool32_t              spatial_entity_destroy          (spatial_entity_t entity);
+
+SK_API bool32_t              spatial_entity_get_uuid         (spatial_entity_t entity, sk_uuid_t* out_uuid);
+SK_API const char*           spatial_entity_get_name         (spatial_entity_t entity);
+SK_API bool32_t              spatial_entity_persist          (spatial_entity_t entity);
+SK_API bool32_t              spatial_entity_unpersist        (spatial_entity_t entity);
+SK_API bool32_t              spatial_entity_unpersist_uuid   (sk_uuid_t uuid);
 
 ///////////////////////////////////////////
 

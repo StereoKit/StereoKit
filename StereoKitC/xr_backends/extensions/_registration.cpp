@@ -22,6 +22,7 @@
 #include "fb_colorspace.h"
 #include "fb_haptic.h"
 #include "fb_render_model.h"
+#include "future.h"
 #include "view_config_views_change.h"
 #include "vulkan_enable.h"
 #include "hand_tracking.h"
@@ -30,6 +31,7 @@
 #include "light_estimation.h"
 #include "loader_init.h"
 #include "palm_pose.h"
+#include "spatial_entity.h"
 #include "android_create_instance.h"
 #include "android_thread.h"
 #include "overlay.h"
@@ -57,6 +59,8 @@ bool ext_registration() {
 	xr_ext_time_register();
 	xr_ext_android_create_instance_register();
 	xr_ext_android_thread_register();
+	xr_ext_future_register();
+	xr_ext_spatial_entity_register();
 	xr_ext_vulkan_enable_register();
 	xr_ext_hand_tracking_register();
 	xr_ext_msft_hand_mesh_register();
@@ -85,6 +89,7 @@ bool ext_registration() {
 	xr_profile_meta_detached_controllers_register();
 	oxri_register();
 
+	// Anchors pick their backend at init, so they must init after spatial entities
 	anchors_register();
 	sensor_register();
 	sensor_depth_register();
