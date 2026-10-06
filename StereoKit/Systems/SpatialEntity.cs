@@ -156,7 +156,7 @@ namespace StereoKit
 
 		/// <summary>The entity's 2D surface mesh, on the XY plane of the
 		/// origin pose. Works just like `TryGetMesh`, so pass null to fetch
-		/// only the origin, and refill when `Changed` flags the Mesh2d
+		/// only the origin, and refill when `Changed` flags the Mesh2D
 		/// component.</summary>
 		/// <param name="mesh">A valid Mesh to fill with the entity's
 		/// geometry, or null to only retrieve the origin pose.</param>
@@ -166,7 +166,9 @@ namespace StereoKit
 			=> NativeAPI.spatial_entity_get_mesh2d(_id, mesh?._inst ?? IntPtr.Zero, out origin);
 
 		/// <summary>The boundary polygon outlining the entity's surface, on
-		/// the XY plane of the origin pose.</summary>
+		/// the XY plane of the origin pose. This allocates a new array each
+		/// call, so for every frame use, prefer the overload that reuses one.
+		/// </summary>
 		/// <param name="origin">Pose the polygon's points are relative to.</param>
 		/// <param name="polygon">A copy of the boundary points, in meters
 		/// on the origin's XY plane.</param>
@@ -178,14 +180,43 @@ namespace StereoKit
 				return false;
 
 			polygon = new Vec2[count];
-			if (count > 0)
-			{
-				float[] data = new float[count * 2];
-				Marshal.Copy(verts, data, 0, data.Length);
-				for (int i = 0; i < count; i++)
-					polygon[i] = new Vec2(data[i * 2], data[i * 2 + 1]);
-			}
+			CopyPolygon(verts, polygon, count);
 			return true;
+		}
+
+		/// <summary>The boundary polygon outlining the entity's surface,
+		/// copied into an array you keep, so calling this every frame doesn't
+		/// allocate. The array only grows when it's too small, so use
+		/// `count` rather than its length.</summary>
+		/// <param name="origin">Pose the polygon's points are relative to.</param>
+		/// <param name="polygon">An array to copy the boundary points into,
+		/// in meters on the origin's XY plane. Null is fine, it's created
+		/// as needed.</param>
+		/// <param name="count">How many points in the array belong to this
+		/// polygon.</param>
+		/// <returns>False if this entity has no polygon component.</returns>
+		public bool TryGetPolygon(out Pose origin, ref Vec2[] polygon, out int count)
+		{
+			if (!NativeAPI.spatial_entity_get_polygon(_id, out origin, out IntPtr verts, out count)) {
+				count = 0;
+				return false;
+			}
+			if (polygon == null || polygon.Length < count)
+				polygon = new Vec2[count];
+			CopyPolygon(verts, polygon, count);
+			return true;
+		}
+
+		// Reused between calls, which is safe since the spatial API is main thread only
+		static float[] _polygonScratch;
+		static void CopyPolygon(IntPtr verts, Vec2[] into, int count)
+		{
+			if (count <= 0) return;
+			if (_polygonScratch == null || _polygonScratch.Length < count * 2)
+				_polygonScratch = new float[count * 2];
+			Marshal.Copy(verts, _polygonScratch, 0, count * 2);
+			for (int i = 0; i < count; i++)
+				into[i] = new Vec2(_polygonScratch[i * 2], _polygonScratch[i * 2 + 1]);
 		}
 
 		/// <summary>Marker information, for entities discovered by a marker
@@ -199,21 +230,42 @@ namespace StereoKit
 			=> NativeAPI.spatial_entity_get_marker(_id, out type, out markerId);
 
 		/// <summary>The marker's decoded string data, for QR family markers
-		/// that contain text. Null if unavailable.</summary>
+		/// that contain text. Null if unavailable. Each read creates a new
+		/// string, so cache it, and read again when `HasChanged` flags the
+		/// Marker component.</summary>
 		public string MarkerText { get {
 			IntPtr text = NativeAPI.spatial_entity_get_marker_text(_id);
 			return text == IntPtr.Zero ? null : NativeHelper.FromUtf8(text);
 		} }
 
 		/// <summary>The marker's raw decoded bytes, for markers with binary
-		/// data. Null if unavailable.</summary>
+		/// data. Null if unavailable. Each read allocates a new array, see
+		/// `TryGetMarkerData` to reuse one.</summary>
 		public byte[] MarkerData { get {
-			IntPtr data = NativeAPI.spatial_entity_get_marker_data(_id, out int size);
-			if (data == IntPtr.Zero) return null;
-			byte[] result = new byte[size];
-			Marshal.Copy(data, result, 0, size);
-			return result;
+			byte[] result = null;
+			return TryGetMarkerData(ref result, out _) ? result : null;
 		} }
+
+		/// <summary>The marker's raw decoded bytes, copied into an array you
+		/// keep, so repeated reads don't allocate. The array only grows when
+		/// it's too small, so use `size` rather than its length.</summary>
+		/// <param name="data">An array to copy the bytes into. Null is fine,
+		/// it's created as needed.</param>
+		/// <param name="size">How many bytes in the array belong to this
+		/// marker.</param>
+		/// <returns>False if the marker has no binary data.</returns>
+		public bool TryGetMarkerData(ref byte[] data, out int size)
+		{
+			IntPtr source = NativeAPI.spatial_entity_get_marker_data(_id, out size);
+			if (source == IntPtr.Zero) {
+				size = 0;
+				return false;
+			}
+			if (data == null || data.Length < size)
+				data = new byte[size];
+			Marshal.Copy(source, data, 0, size);
+			return true;
+		}
 
 		/// <summary>Removes an app-created entity like an anchor from the
 		/// system entirely. It's unpersisted if persisted, the system stops
@@ -240,6 +292,19 @@ namespace StereoKit
 			bool result = NativeAPI.spatial_entity_get_uuid(_id, out NativeUuid uuid);
 			guid = result ? uuid.ToGuid() : Guid.Empty;
 			return result;
+		}
+
+		/// <summary>The name this anchor was given by `CreateAnchor`, or by
+		/// the `Anchor` class. Persisted anchors get their name back when
+		/// they load in a later session, however they were found, so this
+		/// is a good way to tell restored anchors apart.</summary>
+		/// <param name="name">The anchor's name, null if it has none.</param>
+		/// <returns>False if this entity has no name.</returns>
+		public bool TryGetName(out string name)
+		{
+			IntPtr text = NativeAPI.spatial_entity_get_name(_id);
+			name = text == IntPtr.Zero ? null : NativeHelper.FromUtf8(text);
+			return name != null;
 		}
 
 		/// <summary>Ask the system to persist this entity, giving it a
@@ -304,14 +369,6 @@ namespace StereoKit
 		/// support.</returns>
 		public static SpatialEntity FindAnchor(Guid guid)
 			=> new SpatialEntity(NativeAPI.spatial_entity_find_anchor_uuid(NativeUuid.FromGuid(guid)));
-
-		/// <summary>The number of entities that have data for all the given
-		/// components.</summary>
-		/// <param name="withComponents">Components to filter by, or None to
-		/// count every entity.</param>
-		/// <returns>The number of matching entities.</returns>
-		public static int Count(SpatialComponent withComponents = SpatialComponent.None)
-			=> NativeAPI.spatial_entity_get_count(withComponents);
 
 		/// <summary>An enumeration of every spatial entity StereoKit
 		/// currently knows about. This list is maintained for you, entities

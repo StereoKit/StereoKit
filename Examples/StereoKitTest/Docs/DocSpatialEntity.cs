@@ -26,7 +26,7 @@ class DocSpatialEntity : ITest
 
 	public void DrawPlanes()
 	{
-		foreach (SpatialEntity plane in SpatialEntity.With(SpatialComponent.Bounds2d))
+		foreach (SpatialEntity plane in SpatialEntity.With(SpatialComponent.Bounds2D))
 		{
 			// Quads face Forward, same as the plane's center pose
 			plane.TryGetBounds2D(out Pose center, out Vec2 size);
@@ -41,7 +41,7 @@ class DocSpatialEntity : ITest
 	/// surface that faces upward.
 	static bool FindTable(out Pose surface)
 	{
-		foreach (SpatialEntity plane in SpatialEntity.With(SpatialComponent.Bounds2d))
+		foreach (SpatialEntity plane in SpatialEntity.With(SpatialComponent.Bounds2D))
 		{
 			bool isTable = plane.TryGetLabel(out SpatialLabel label)
 				? label == SpatialLabel.Table
@@ -195,7 +195,7 @@ class DocSpatialEntity : ITest
 
 	public void StepPlaneMeshes()
 	{
-		foreach (SpatialEntity plane in SpatialEntity.With(SpatialComponent.Mesh2d))
+		foreach (SpatialEntity plane in SpatialEntity.With(SpatialComponent.Mesh2D))
 		{
 			bool isNew = !planeMeshes.TryGetValue(plane, out Mesh mesh);
 			if (isNew)
@@ -205,7 +205,7 @@ class DocSpatialEntity : ITest
 			}
 
 			// A null mesh only fetches the origin, which moves every frame
-			bool refill = isNew || plane.HasChanged(SpatialComponent.Mesh2d);
+			bool refill = isNew || plane.HasChanged(SpatialComponent.Mesh2D);
 			plane.TryGetMesh2D(refill ? mesh : null, out Pose origin);
 			mesh.Draw(Material.Default, origin.ToMatrix());
 		}
@@ -219,16 +219,19 @@ class DocSpatialEntity : ITest
 	/// :CodeSample: SpatialEntity.TryGetPolygon
 	/// ### Outlining a plane's real shape
 	/// Bounds are a rectangle, while the polygon follows the actual edge,
-	/// like an L-shaped counter.
+	/// like an L-shaped counter. This runs every frame, so it reuses one
+	/// array instead of allocating a new one each time.
+	static Vec2[] outline;
+
 	static void DrawOutline(SpatialEntity plane)
 	{
-		if (!plane.TryGetPolygon(out Pose origin, out Vec2[] points)) return;
+		if (!plane.TryGetPolygon(out Pose origin, ref outline, out int count)) return;
 
 		Matrix toWorld = origin.ToMatrix();
-		for (int i = 0; i < points.Length; i++)
+		for (int i = 0; i < count; i++)
 		{
-			Vec3 start = toWorld.Transform(points[i].XY0);
-			Vec3 end   = toWorld.Transform(points[(i + 1) % points.Length].XY0);
+			Vec3 start = toWorld.Transform(outline[i].XY0);
+			Vec3 end   = toWorld.Transform(outline[(i + 1) % count].XY0);
 			Lines.Add(start, end, Color32.White, 0.005f);
 		}
 	}

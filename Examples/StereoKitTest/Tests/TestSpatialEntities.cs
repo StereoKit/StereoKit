@@ -55,8 +55,13 @@ class TestSpatialEntities : ITest
 
 	bool TestInvalidEntity()
 	{
-		SpatialEntity none = default;
+		SpatialEntity none    = default;
+		Vec2[]        polygon = null;
+		byte[]        data    = null;
 		return !none.Valid
+			&& !none.TryGetName(out _)
+			&& !none.TryGetPolygon(out _, ref polygon, out int count) && count == 0
+			&& !none.TryGetMarkerData(ref data, out int size) && size == 0
 			&& none.Status     == SpatialStatus.None
 			&& !none.TryGetGuid(out _)
 			&& none.Components == SpatialComponent.None
@@ -218,7 +223,7 @@ class TestSpatialEntities : ITest
 		SpatialEntity nearest = default;
 		Pose          center  = Pose.Identity;
 		float         best    = float.MaxValue;
-		foreach (SpatialEntity entity in SpatialEntity.With(SpatialComponent.Bounds2d | SpatialComponent.PlaneAlignment))
+		foreach (SpatialEntity entity in SpatialEntity.With(SpatialComponent.Bounds2D | SpatialComponent.PlaneAlignment))
 		{
 			if (!entity.TryGetBounds2D(out Pose c, out _)) continue;
 			float dist = Vec3.DistanceSq(c.position, head);
@@ -247,14 +252,14 @@ class TestSpatialEntities : ITest
 	// checks the handedness conversion of 2D vertex data.
 	void DrawMesh2D(SpatialEntity entity)
 	{
-		if (!entity.Has(SpatialComponent.Mesh2d)) return;
+		if (!entity.Has(SpatialComponent.Mesh2D)) return;
 		if (!mesh2ds.TryGetValue(entity, out Mesh mesh))
 		{
 			mesh = new Mesh();
 			if (!entity.TryGetMesh2D(mesh, out _)) return;
 			mesh2ds.Add(entity, mesh);
 		}
-		Mesh refill = entity.HasChanged(SpatialComponent.Mesh2d) ? mesh : null;
+		Mesh refill = entity.HasChanged(SpatialComponent.Mesh2D) ? mesh : null;
 		if (entity.TryGetMesh2D(refill, out Pose origin))
 			mesh.Draw(mesh2dMat, origin.ToMatrix());
 	}

@@ -83,7 +83,7 @@ class DemoSpatialEntity : ITest
 			if (entity.Status == SpatialStatus.Pending) pending++;
 		}
 		UI.HSeparator();
-		UI.Label($"{SpatialEntity.Count()} entities, {tracked} tracked, {pending} pending");
+		UI.Label($"{SpatialEntity.All.Count} entities, {tracked} tracked, {pending} pending");
 		UI.Label($"{SpatialEntity.New.Count} new, {SpatialEntity.Removed.Count} removed this frame");
 		UI.Toggle("Show Meshes", ref showMeshes);
 

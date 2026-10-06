@@ -2352,11 +2352,11 @@ namespace StereoKit
 		/// extents of a detected plane, or the shape of a marker. The pose
 		/// faces out of the surface, so Forward (-Z) is the surface normal,
 		/// matching how quads and text face in StereoKit.</summary>
-		Bounds2d     = 1 << 0,
+		Bounds2D     = 1 << 0,
 		/// <summary>A center pose and XYZ size describing an oriented bounding
 		/// volume. When the entity has a front, like a screen or table top,
 		/// Forward (-Z) is the direction it faces.</summary>
-		Bounds3d     = 1 << 1,
+		Bounds3D     = 1 << 1,
 		/// <summary>A reference to a parent spatial entity this entity is attached
 		/// to.</summary>
 		Parent       = 1 << 2,
@@ -2374,14 +2374,17 @@ namespace StereoKit
 		PlaneAlignment = 1 << 6,
 		/// <summary>A 2D triangle mesh of the entity's surface, on the XY plane of
 		/// its bounds2d pose.</summary>
-		Mesh2d       = 1 << 7,
-		/// <summary>A 2D boundary polygon outlining the entity's surface.</summary>
+		Mesh2D       = 1 << 7,
+		/// <summary>A 2D boundary polygon outlining the entity's surface. In C, the
+		/// vertex pointer from spatial_entity_get_polygon is only valid until
+		/// the next frame, so copy it to keep it longer.</summary>
 		Polygon      = 1 << 8,
 		/// <summary>A semantic category for the entity, like floor or table, see
 		/// `SpatialLabel`.</summary>
 		Label        = 1 << 9,
 		/// <summary>Marker information: the marker's type, numeric id, and any
-		/// decoded data.</summary>
+		/// decoded data. In C, the text and data pointers are only valid until
+		/// the next frame, so copy them to keep them longer.</summary>
 		Marker       = 1 << 10,
 	}
 

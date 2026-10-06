@@ -981,6 +981,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_destroy(ulong entity);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_get_uuid(ulong entity, out NativeUuid out_uuid);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       spatial_entity_get_name(ulong entity);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_entity_persist(ulong entity);
 		[return: MarshalAs(UnmanagedType.Bool)]

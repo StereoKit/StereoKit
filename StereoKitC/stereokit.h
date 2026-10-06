@@ -3933,13 +3933,16 @@ typedef enum spatial_component_ {
 	/*A 2D triangle mesh of the entity's surface, on the XY plane of
 	  its bounds2d pose.*/
 	spatial_component_mesh2d          = 1 << 7,
-	/*A 2D boundary polygon outlining the entity's surface.*/
+	/*A 2D boundary polygon outlining the entity's surface. In C, the
+	  vertex pointer from spatial_entity_get_polygon is only valid until
+	  the next frame, so copy it to keep it longer.*/
 	spatial_component_polygon         = 1 << 8,
 	/*A semantic category for the entity, like floor or table, see
 	  `SpatialLabel`.*/
 	spatial_component_label           = 1 << 9,
 	/*Marker information: the marker's type, numeric id, and any
-	  decoded data.*/
+	  decoded data. In C, the text and data pointers are only valid until
+	  the next frame, so copy them to keep them longer.*/
 	spatial_component_marker          = 1 << 10,
 } spatial_component_;
 SK_MakeFlag(spatial_component_);
@@ -4123,6 +4126,7 @@ SK_API spatial_entity_t      spatial_entity_create_anchor    (pose_t pose, const
 SK_API bool32_t              spatial_entity_destroy          (spatial_entity_t entity);
 
 SK_API bool32_t              spatial_entity_get_uuid         (spatial_entity_t entity, sk_uuid_t* out_uuid);
+SK_API const char*           spatial_entity_get_name         (spatial_entity_t entity);
 SK_API bool32_t              spatial_entity_persist          (spatial_entity_t entity);
 SK_API bool32_t              spatial_entity_unpersist        (spatial_entity_t entity);
 SK_API bool32_t              spatial_entity_unpersist_uuid   (sk_uuid_t uuid);

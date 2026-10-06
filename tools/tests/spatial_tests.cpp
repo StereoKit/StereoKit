@@ -318,6 +318,18 @@ static void spt_test_names() {
 	spatial_backend_persist_not_found(spt_uuid(33));
 	SPT_CHECK(spatial_entity_get_status(gone) == spatial_status_failed && !spt_named("spt_gone", spt_uuid(33)), "storage lacking the uuid drops the name");
 
+	spatial_names_set(spt_uuid(34), "spt_found");
+	spatial_ingest_t found = {};
+	found.id         = 5000;
+	found.tracking   = spatial_tracking_tracking;
+	found.present    = spatial_component_anchor | spatial_component_persistence;
+	found.persist_id = spt_uuid(34);
+	spatial_backend_ingest(spatial_capability_anchor, &found, 1);
+	const char* found_name = spatial_entity_get_name(found.entity);
+	SPT_CHECK(found_name != nullptr && strcmp(found_name, "spt_found") == 0, "a stored anchor gets its name back when discovered");
+	const char* b_name = spatial_entity_get_name(b);
+	SPT_CHECK(b_name != nullptr && strcmp(b_name, "spt_table") == 0,         "a named anchor reports its name");
+
 	spatial_entity_unpersist(b);
 	SPT_CHECK(!spt_named("spt_table", spt_uuid(31)),           "unpersisting releases the name");
 	SPT_CHECK(spatial_entity_find_anchor("spt_nope") == 0,     "an unknown name finds nothing");

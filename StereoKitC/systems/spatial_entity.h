@@ -78,8 +78,6 @@ void     spatial_request_system  (spatial_capability_ capabilities);
 void     spatial_release_system  (spatial_capability_ capabilities);
 bool32_t spatial_is_user_disabled(spatial_capability_ capability);
 
-// The entity's anchor name, from its creation or from storage. Null if unnamed.
-const char* spatial_entity_get_name(spatial_entity_t entity);
 // Names an anchor without taking the name from others, it's saved once persisted
 void        spatial_entity_set_name(spatial_entity_t entity, const char* name_utf8);
 

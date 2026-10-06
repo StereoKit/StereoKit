@@ -15,6 +15,10 @@ double double
 void void
 char32_t uint
 spatial_entity_t ulong
+# Match the casing of TryGetBounds2D and friends
+spatial_component_bounds2d Bounds2D
+spatial_component_bounds3d Bounds3D
+spatial_component_mesh2d   Mesh2D
 # Byte order differs from System.Guid, so this converts by hand
 sk_uuid_t NativeUuid
 
