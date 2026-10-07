@@ -33,70 +33,77 @@ static const tex_compress_caps_t tct_bc   = { false, false, true  };
 static const tex_compress_caps_t tct_none = { false, false, false };
 static const tex_compress_caps_t tct_both = { true,  true,  true  };
 
-static tex_format_ tct_pick(tex_hint_ hints, tex_compress_caps_t caps, bool32_t alpha = false, tex_format_ src = tex_format_rgba32, tex_type_ type = tex_type_image, int32_t size = 256, int32_t arrays = 1) {
-	return tex_compress_pick(hints, tex_hint_quality, type, src, alpha, size, size, arrays, caps);
+// A decoded image's format already follows the srgb flag, so `none` mirrors that.
+static tex_format_ tct_pick(tex_data_ flags, tex_compress_caps_t caps, bool32_t alpha = false, tex_format_ src = tex_format_none, tex_type_ type = tex_type_image, int32_t size = 256, int32_t arrays = 1) {
+	if (src == tex_format_none) src = (flags & tex_data_srgb) ? tex_format_rgba32_srgb : tex_format_rgba32_linear;
+	return tex_compress_pick(flags, tex_data_quality, type, src, alpha, size, size, arrays, caps);
 }
 
 ///////////////////////////////////////////
 
 static void tct_test_policy() {
-	TCT_CHECK(tct_pick(tex_hint_srgb,                                  tct_astc) == tex_format_astc4x4_rgba_srgb, "no policy uses the quality default");
-	TCT_CHECK(tct_pick(tex_hint_srgb | tex_hint_small,                 tct_astc) == tex_format_astc6x6_rgba_srgb, "small picks ASTC 6x6");
-	TCT_CHECK(tct_pick(tex_hint_srgb | tex_hint_small | tex_hint_quality, tct_astc) == tex_format_astc4x4_rgba_srgb, "quality wins over small");
-	TCT_CHECK(tct_pick(tex_hint_srgb | tex_hint_uncompressed | tex_hint_quality, tct_astc) == tex_format_none, "uncompressed wins over quality");
-	TCT_CHECK(tex_compress_pick(tex_hint_srgb, tex_hint_uncompressed, tex_type_image, tex_format_rgba32, false, 256, 256, 1, tct_astc) == tex_format_none, "an uncompressed default leaves hint-less textures alone");
-	TCT_CHECK(tex_compress_pick(tex_hint_srgb, tex_hint_none,         tex_type_image, tex_format_rgba32, false, 256, 256, 1, tct_astc) == tex_format_none, "a zero default means no compression");
-	TCT_CHECK(tex_compress_pick(tex_hint_srgb | tex_hint_small, tex_hint_uncompressed, tex_type_image, tex_format_rgba32, false, 256, 256, 1, tct_astc) == tex_format_astc6x6_rgba_srgb, "a texture's own policy beats the default");
+	TCT_CHECK(tct_pick(tex_data_srgb,                                  tct_astc) == tex_format_astc4x4_rgba_srgb, "no policy uses the quality default");
+	TCT_CHECK(tct_pick(tex_data_srgb | tex_data_small,                 tct_astc) == tex_format_astc6x6_rgba_srgb, "small picks ASTC 6x6");
+	TCT_CHECK(tct_pick(tex_data_srgb | tex_data_small | tex_data_quality, tct_astc) == tex_format_astc4x4_rgba_srgb, "quality wins over small");
+	TCT_CHECK(tct_pick(tex_data_srgb | tex_data_uncompressed | tex_data_quality, tct_astc) == tex_format_none, "uncompressed wins over quality");
+	TCT_CHECK(tex_compress_pick(tex_data_srgb, tex_data_uncompressed, tex_type_image, tex_format_rgba32, false, 256, 256, 1, tct_astc) == tex_format_none, "an uncompressed default leaves hint-less textures alone");
+	TCT_CHECK(tex_compress_pick(tex_data_srgb, tex_data_none,         tex_type_image, tex_format_rgba32, false, 256, 256, 1, tct_astc) == tex_format_none, "a zero default means no compression");
+	TCT_CHECK(tex_compress_pick(tex_data_srgb | tex_data_small, tex_data_uncompressed, tex_type_image, tex_format_rgba32, false, 256, 256, 1, tct_astc) == tex_format_astc6x6_rgba_srgb, "a texture's own policy beats the default");
 }
 
 ///////////////////////////////////////////
 
 static void tct_test_families() {
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_both) == tex_format_astc4x4_rgba_srgb, "ASTC wins when both families are available");
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_bc  ) == tex_format_bc7_rgba_srgb,     "BC quality picks BC7");
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_none) == tex_format_none,              "no encoder family keeps the source");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_both) == tex_format_astc4x4_rgba_srgb, "ASTC wins when both families are available");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_bc  ) == tex_format_bc7_rgba_srgb,     "BC quality picks BC7");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_none) == tex_format_none,              "no encoder family keeps the source");
 
-	TCT_CHECK(tct_pick(tex_hint_none,                    tct_astc) == tex_format_astc4x4_rgba, "linear data gets a linear ASTC format");
-	TCT_CHECK(tct_pick(tex_hint_none,                    tct_bc  ) == tex_format_bc7_rgba,     "linear data gets a linear BC format");
-	TCT_CHECK(tct_pick(tex_hint_srgb | tex_hint_normal,  tct_astc) == tex_format_astc4x4_rgba, "normals are linear even if tagged srgb");
-	TCT_CHECK(tct_pick(tex_hint_normal | tex_hint_small, tct_bc  ) == tex_format_bc1_rgb,      "small normals are treated as linear data");
+	TCT_CHECK(tct_pick(tex_data_none,                    tct_astc) == tex_format_astc4x4_rgba, "linear data gets a linear ASTC format");
+	TCT_CHECK(tct_pick(tex_data_none,                    tct_bc  ) == tex_format_bc7_rgba,     "linear data gets a linear BC format");
+	TCT_CHECK(tct_pick(tex_data_srgb | tex_data_normal,  tct_astc) == tex_format_astc4x4_rgba, "normals are linear even if tagged srgb");
+	TCT_CHECK(tct_pick(tex_data_normal | tex_data_small, tct_bc  ) == tex_format_bc1_rgb,      "small normals are treated as linear data");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32_linear) == tex_format_astc4x4_rgba,      "a known linear format wins over the srgb flag");
+	TCT_CHECK(tct_pick(tex_data_none, tct_astc, false, tex_format_rgba32_srgb)   == tex_format_astc4x4_rgba_srgb, "a known sRGB format compresses as sRGB without the flag");
 }
 
 ///////////////////////////////////////////
 
 static void tct_test_alpha() {
-	const tex_hint_ small = tex_hint_srgb | tex_hint_small;
+	const tex_data_ small = tex_data_srgb | tex_data_small;
 	TCT_CHECK(tct_pick(small,                   tct_bc, false) == tex_format_bc1_rgb_srgb,  "small opaque BC picks BC1");
 	TCT_CHECK(tct_pick(small,                   tct_bc, true ) == tex_format_bc7_rgba_srgb, "small BC with alpha keeps real alpha in BC7");
-	TCT_CHECK(tct_pick(small | tex_hint_cutout, tct_bc, true ) == tex_format_bc1_rgba_srgb, "cutout alpha takes BC1 punch-through");
-	TCT_CHECK(tct_pick(small | tex_hint_opaque, tct_bc, true ) == tex_format_bc1_rgb_srgb,  "opaque drops a present alpha channel");
-	TCT_CHECK(tct_pick(tex_hint_srgb,           tct_bc, true ) == tex_format_bc7_rgba_srgb, "quality alpha is BC7");
+	TCT_CHECK(tct_pick(small | tex_data_cutout, tct_bc, true ) == tex_format_bc1_rgba_srgb, "cutout alpha takes BC1 punch-through");
+	TCT_CHECK(tct_pick(small | tex_data_opaque, tct_bc, true ) == tex_format_bc1_rgb_srgb,  "opaque drops a present alpha channel");
+	TCT_CHECK(tct_pick(tex_data_srgb,           tct_bc, true ) == tex_format_bc7_rgba_srgb, "quality alpha is BC7");
 	TCT_CHECK(tct_pick(small,                   tct_astc, true) == tex_format_astc6x6_rgba_srgb, "ASTC picks per block, so alpha doesn't change it");
 }
 
 ///////////////////////////////////////////
 
 static void tct_test_hdr() {
-	TCT_CHECK(tct_pick(tex_hint_none,  tct_bc,   false, tex_format_rg11b10) == tex_format_bc6h_rgbuf,        "HDR on BC is BC6H");
-	TCT_CHECK(tct_pick(tex_hint_small, tct_astc, false, tex_format_rg11b10) == tex_format_astc8x8_rgba_hdr,  "small HDR on ASTC is 8x8 HDR");
-	TCT_CHECK(tct_pick(tex_hint_none,  tct_astc, false, tex_format_rg11b10) == tex_format_none,              "quality HDR on ASTC stays uncompressed");
-	TCT_CHECK(tct_pick(tex_hint_small, tex_compress_caps_t{ true, false, false }, false, tex_format_rg11b10) == tex_format_none, "no ASTC HDR support stays uncompressed");
-	TCT_CHECK(tct_pick(tex_hint_small, tct_both, false, tex_format_rg11b10) == tex_format_astc8x8_rgba_hdr, "small HDR prefers ASTC 8x8 over BC6H");
+	TCT_CHECK(tct_pick(tex_data_none,  tct_bc,   false, tex_format_rg11b10) == tex_format_bc6h_rgbuf,        "HDR on BC is BC6H");
+	TCT_CHECK(tct_pick(tex_data_small, tct_astc, false, tex_format_rg11b10) == tex_format_astc8x8_rgba_hdr,  "small HDR on ASTC is 8x8 HDR");
+	TCT_CHECK(tct_pick(tex_data_none,  tct_astc, false, tex_format_rg11b10) == tex_format_none,              "quality HDR on ASTC stays uncompressed");
+	TCT_CHECK(tct_pick(tex_data_small, tex_compress_caps_t{ true, false, false }, false, tex_format_rg11b10) == tex_format_none, "no ASTC HDR support stays uncompressed");
+	TCT_CHECK(tct_pick(tex_data_small, tct_both, false, tex_format_rg11b10) == tex_format_astc8x8_rgba_hdr, "small HDR prefers ASTC 8x8 over BC6H");
+	TCT_CHECK(tct_pick(tex_data_none, tct_bc, true, tex_format_rgba128) == tex_format_bc6h_rgbuf,  "float RGBA is an HDR source");
+	TCT_CHECK(tct_pick(tex_data_none, tct_bc, true, tex_format_rgba64f) == tex_format_bc6h_rgbuf,  "half RGBA is an HDR source");
+	TCT_CHECK(tct_pick(tex_data_none, tct_bc, false, tex_format_r8)     == tex_format_none,        "single channel data stays uncompressed");
 }
 
 ///////////////////////////////////////////
 
 static void tct_test_refusals() {
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_astc, false, tex_format_bc7_rgba_srgb) == tex_format_none,  "already compressed sources are kept");
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_astc, false, tex_format_rgba128)      == tex_format_none,  "unsupported source formats are kept");
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_astc, false, tex_format_rgba32, tex_type_image | tex_type_dynamic)      == tex_format_none, "dynamic textures are never compressed");
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_astc, false, tex_format_rgba32, tex_type_image | tex_type_rendertarget) == tex_format_none, "rendertargets are never compressed");
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_astc, false, tex_format_rgba32,  tex_type_image, 64) == tex_format_none,       "palette sized LDR images stay uncompressed");
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_astc, false, tex_format_rgba32,  tex_type_image, 65) != tex_format_none,       "LDR just past the palette size compresses");
-	TCT_CHECK(tct_pick(tex_hint_none, tct_bc,   false, tex_format_rg11b10, tex_type_image, 32) == tex_format_bc6h_rgbuf, "small HDR still compresses");
-	TCT_CHECK(tct_pick(tex_hint_none, tct_bc,   false, tex_format_rg11b10, tex_type_image, 4)  == tex_format_none,       "HDR smaller than a block stays uncompressed");
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_astc, false, tex_format_rgba32, tex_type_image, 256, 4) == tex_format_none, "texture arrays stay uncompressed for now");
-	TCT_CHECK(tct_pick(tex_hint_srgb, tct_astc, false, tex_format_rgba32, tex_type_image_nomips | tex_type_cubemap, 256, 6) == tex_format_astc4x4_rgba_srgb, "cubemaps compress");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_bc7_rgba_srgb) == tex_format_none,  "already compressed sources are kept");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba128)      == tex_format_none,  "unsupported source formats are kept");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32, tex_type_image | tex_type_dynamic)      == tex_format_none, "dynamic textures are never compressed");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32, tex_type_image | tex_type_rendertarget) == tex_format_none, "rendertargets are never compressed");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32,  tex_type_image, 64) == tex_format_astc4x4_rgba_srgb, "small LDR images compress like any other");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32,  tex_type_image, 4)  == tex_format_none,              "LDR smaller than a block stays uncompressed");
+	TCT_CHECK(tct_pick(tex_data_none, tct_bc,   false, tex_format_rg11b10, tex_type_image, 32) == tex_format_bc6h_rgbuf, "small HDR still compresses");
+	TCT_CHECK(tct_pick(tex_data_none, tct_bc,   false, tex_format_rg11b10, tex_type_image, 4)  == tex_format_none,       "HDR smaller than a block stays uncompressed");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32, tex_type_image, 256, 4) == tex_format_none, "texture arrays stay uncompressed for now");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32, tex_type_image_nomips | tex_type_cubemap, 256, 6) == tex_format_astc4x4_rgba_srgb, "cubemaps compress");
 }
 
 ///////////////////////////////////////////
@@ -167,11 +174,11 @@ static void tct_test_gpu() {
 	int   len  = 0;
 	void* file = tct_qoi(256, false, &len);
 
-	tex_t quality = tex_create_mem(file, (size_t)len, tex_hint_srgb);
-	tex_t data    = tex_create_mem(file, (size_t)len, tex_hint_none | tex_hint_small);
-	tex_t raw     = tex_create_mem(file, (size_t)len, tex_hint_srgb | tex_hint_uncompressed);
-	tex_format_ expect_quality = tex_compress_pick(tex_hint_srgb,                  tex_hint_quality, tex_type_image, tex_format_rgba32,        false, 256, 256, 1, caps);
-	tex_format_ expect_data    = tex_compress_pick(tex_hint_none | tex_hint_small, tex_hint_quality, tex_type_image, tex_format_rgba32_linear, false, 256, 256, 1, caps);
+	tex_t quality = tex_create_mem(file, (size_t)len, tex_data_srgb);
+	tex_t data    = tex_create_mem(file, (size_t)len, tex_data_none | tex_data_small);
+	tex_t raw     = tex_create_mem(file, (size_t)len, tex_data_srgb | tex_data_uncompressed);
+	tex_format_ expect_quality = tex_compress_pick(tex_data_srgb,                  tex_data_quality, tex_type_image, tex_format_rgba32,        false, 256, 256, 1, caps);
+	tex_format_ expect_data    = tex_compress_pick(tex_data_none | tex_data_small, tex_data_quality, tex_type_image, tex_format_rgba32_linear, false, 256, 256, 1, caps);
 
 	// Format is settled from the header, before the pixels decode.
 	TCT_CHECK(tex_get_format(quality) == (expect_quality != tex_format_none ? expect_quality : tex_format_rgba32), "format is final at creation");
@@ -187,7 +194,7 @@ static void tct_test_gpu() {
 	const int32_t burst = 24;
 	tex_t many[burst];
 	for (int32_t i = 0; i < burst; i++)
-		many[i] = tex_create_mem(file, (size_t)len, (i & 1) ? tex_hint_srgb : (tex_hint_srgb | tex_hint_small));
+		many[i] = tex_create_mem(file, (size_t)len, (i & 1) ? tex_data_srgb : (tex_data_srgb | tex_data_small));
 	assets_block_for_priority(INT32_MAX);
 	bool all_loaded = true;
 	for (int32_t i = 0; i < burst; i++) {
@@ -200,6 +207,134 @@ static void tct_test_gpu() {
 	tex_release(data);
 	tex_release(raw);
 	free(file);
+}
+
+///////////////////////////////////////////
+
+static void tct_fill(color32* pixels, int32_t count, color32 color) {
+	for (int32_t i = 0; i < count; i++) pixels[i] = color;
+}
+
+static void tct_test_set_colors() {
+	tex_compress_caps_t caps   = tex_compress_caps();
+	const int32_t       size   = 256;
+	color32*            pixels = (color32*)malloc(sizeof(color32) * size * size);
+	tct_fill(pixels, size * size, color32{ 200, 40, 90, 255 });
+
+	tex_format_ expect = tex_compress_pick(tex_data_srgb, tex_data_quality, tex_type_image, tex_format_rgba32, true, size, size, 1, caps);
+	if (expect == tex_format_none) expect = tex_format_rgba32;
+
+	// Async by default, with the format settled before the upload runs
+	tex_t async = tex_create(tex_type_image, tex_format_rgba32);
+	tex_set_colors(async, size, size, pixels);
+	TCT_CHECK(tex_get_format(async) == expect, "set_colors settles its format on return");
+	assets_block_for_priority(INT32_MAX);
+	TCT_CHECK(tex_asset_state(async) == asset_state_loaded, "async set_colors loads");
+	TCT_CHECK(tex_get_mips(async) == 9,                     "async set_colors generates mips before encoding");
+
+	// The data format survives compression, so the next update still reads as RGBA
+	tex_set_colors(async, size, size, pixels);
+	assets_block_for_priority(INT32_MAX);
+	TCT_CHECK(tex_get_format(async) == expect && tex_get_mips(async) == 9, "a second update on a compressed texture keeps format and mips");
+
+	tex_t blocking = tex_create(tex_type_image, tex_format_rgba32);
+	tex_set_colors(blocking, size, size, pixels, tex_data_srgb | tex_data_blocking);
+	TCT_CHECK(tex_asset_state(blocking) == asset_state_loaded && tex_get_format(blocking) == expect, "blocking set_colors is loaded on return");
+
+	// Rapid async updates land in order, so the last one wins
+	const int32_t small = 64;
+	tex_t latest = tex_create(tex_type_image_nomips, tex_format_rgba32);
+	for (int32_t i = 0; i < 32; i++) {
+		tct_fill(pixels, small * small, color32{ (uint8_t)i, 0, 0, 255 });
+		tex_set_colors(latest, small, small, pixels, tex_data_srgb | tex_data_uncompressed);
+	}
+	assets_block_for_priority(INT32_MAX);
+	color32* readback = (color32*)malloc(sizeof(color32) * small * small);
+	tex_get_data(latest, readback, sizeof(color32) * small * small, 0);
+	TCT_CHECK(readback[0].r == 31, "the last of many async updates wins");
+	free(readback);
+
+	// An explicit float format is an HDR source for this call
+	float* hdr = (float*)malloc(sizeof(float) * 4 * size * size);
+	for (int32_t i = 0; i < size * size * 4; i++) hdr[i] = 2.0f;
+	tex_format_ expect_hdr = tex_compress_pick(tex_data_srgb, tex_data_quality, tex_type_image, tex_format_rgba128, true, size, size, 1, caps);
+	tex_t floats = tex_create(tex_type_image, tex_format_rgba32);
+	tex_set_colors(floats, size, size, hdr, tex_data_srgb | tex_data_blocking, tex_format_rgba128);
+	TCT_CHECK(tex_get_format(floats) == (expect_hdr != tex_format_none ? expect_hdr : tex_format_rgba128), "an explicit data format applies to that call");
+	free(hdr);
+
+	// Like a font atlas gaining glyphs, a same-size update must reach every
+	// mip, or the new content vanishes at a distance.
+	const int32_t atlas_size = 64;
+	uint8_t* atlas = (uint8_t*)calloc(atlas_size * atlas_size, 1);
+	tex_t    glyphs = tex_create(tex_type_image | tex_type_dynamic, tex_format_r8);
+	tex_set_colors(glyphs, atlas_size, atlas_size, atlas, tex_data_blocking | tex_data_uncompressed);
+	memset(atlas, 255, atlas_size * atlas_size);
+	tex_set_colors(glyphs, atlas_size, atlas_size, atlas, tex_data_blocking | tex_data_uncompressed);
+	int32_t mips     = tex_get_mips(glyphs);
+	uint8_t smallest = 0;
+	tex_get_data(glyphs, &smallest, 1, mips - 1);
+	TCT_CHECK(mips == 7,       "a same-size update keeps the mip chain");
+	TCT_CHECK(smallest == 255, "a same-size update regenerates every mip");
+	// Same-size updates to a dynamic texture write in place
+	memset(atlas, 128, atlas_size * atlas_size);
+	tex_set_colors(glyphs, atlas_size, atlas_size, atlas, tex_data_blocking | tex_data_uncompressed);
+	tex_get_data(glyphs, &smallest, 1, tex_get_mips(glyphs) - 1);
+	TCT_CHECK(smallest == 128, "an in-place update regenerates every mip");
+	tex_release(glyphs);
+	free(atlas);
+
+	tex_release(async);
+	tex_release(blocking);
+	tex_release(latest);
+	tex_release(floats);
+	free(pixels);
+}
+
+///////////////////////////////////////////
+
+static void tct_test_copy() {
+	tex_compress_caps_t caps   = tex_compress_caps();
+	const int32_t       size   = 256;
+	color32*            pixels = (color32*)malloc(sizeof(color32) * size * size);
+	tct_fill(pixels, size * size, color32{ 30, 160, 220, 255 });
+	tex_t source = tex_create_color32(pixels, size, size, tex_data_srgb | tex_data_blocking | tex_data_uncompressed);
+	free(pixels);
+
+	tex_format_ expect = tex_compress_pick(tex_data_srgb, tex_get_compression_default(), tex_type_image, tex_format_rgba32, true, size, size, 1, caps);
+	if (expect == tex_format_none) expect = tex_format_rgba32;
+
+	tex_t copied = tex_copy(source);
+	TCT_CHECK(tex_asset_state(copied) == asset_state_loaded && tex_get_format(copied) == expect, "a copy compresses by default and is done on return");
+	TCT_CHECK(tex_get_mips(copied) == 9,                                                          "a compressed copy generates mips before encoding");
+
+	tex_t raw = tex_copy(source, tex_type_image, tex_format_none, tex_data_uncompressed);
+	TCT_CHECK(tex_get_format(raw) == tex_format_rgba32, "an uncompressed copy keeps the source format");
+
+	if (caps.bc || caps.astc) {
+		tex_format_ exact = caps.astc ? tex_format_astc6x6_rgba_srgb : tex_format_bc1_rgb_srgb;
+		tex_t explicit_fmt = tex_copy(source, tex_type_image, exact);
+		TCT_CHECK(tex_get_format(explicit_fmt) == exact, "an explicit block format is used as given");
+		tex_release(explicit_fmt);
+	}
+
+	tex_t dest   = tex_create();
+	tex_t landed = tex_copy(source, tex_type_image, tex_format_none, tex_data_srgb, dest);
+	TCT_CHECK(landed == dest && tex_get_format(dest) == expect && tex_asset_state(dest) == asset_state_loaded, "a copy lands in `into` and returns it");
+	tex_release(landed);
+
+	TCT_CHECK(tex_copy(source, tex_type_image, tex_format_none, tex_data_srgb, source) == nullptr, "a copy over its own source is refused");
+
+	tex_t target = tex_create_rendertarget(size, size, 1, tex_format_rgba32, tex_format_none);
+	tex_t baked  = tex_copy(target);
+	TCT_CHECK(tex_get_format(baked) == expect, "a rendertarget copies into a compressed image");
+
+	tex_release(baked);
+	tex_release(target);
+	tex_release(dest);
+	tex_release(raw);
+	tex_release(copied);
+	tex_release(source);
 }
 
 ///////////////////////////////////////////
@@ -221,6 +356,8 @@ int texcompress_tests_run() {
 	settings.standby_mode  = standby_mode_none;
 	if (sk_init(settings)) {
 		tct_test_gpu();
+		tct_test_set_colors();
+		tct_test_copy();
 		sk_shutdown();
 	} else {
 		TCT_CHECK(false, "sk_init for the GPU tests");

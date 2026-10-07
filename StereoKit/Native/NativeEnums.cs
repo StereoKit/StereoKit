@@ -993,17 +993,20 @@ namespace StereoKit
 		Image        = ImageNomips | Mips,
 	}
 
-	/// <summary>Hints that describe what a texture holds, and how StereoKit should store it
-	/// on the GPU. Content hints say what the pixels mean, and compression hints
-	/// pick between quality and size. With no compression hint, the texture uses
-	/// the app wide default compression, which starts as quality.</summary>
+	/// <summary>Flags for texture data: what it holds, how StereoKit should store it on
+	/// the GPU, and how the call that receives it behaves. Each flag means the
+	/// same thing in every function that takes one. With no flags, work happens
+	/// asynchronously on the asset system, using the app wide default
+	/// compression, which starts as quality.</summary>
 	[Flags]
-	public enum TexHint {
+	public enum TexData {
 		/// <summary>Linear data, like roughness, metalness, or a mask. Compression follows
-		/// the default.</summary>
+		/// the default, and the call is asynchronous.</summary>
 		None         = 0,
 		/// <summary>Color data stored in sRGB, which is what most color images are. This
-		/// has the same value `true` had for the older sRGB bool parameter.</summary>
+		/// only applies where the data's format isn't already known, like when
+		/// decoding an image file. This has the same value `true` had for the
+		/// older sRGB bool parameter.</summary>
 		Srgb         = 1 << 0,
 		/// <summary>A tangent space normal map. This is reserved for dedicated normal map
 		/// compression, and is treated like linear data for now.</summary>
@@ -1021,6 +1024,13 @@ namespace StereoKit
 		Quality      = 1 << 9,
 		/// <summary>Compress this texture, preferring a small size over quality.</summary>
 		Small        = 1 << 10,
+		/// <summary>Finish the work before the call returns, so the texture is loaded (or
+		/// failed) right away. Without this, the work happens on the asset system,
+		/// and the texture keeps its previous content until the new content is
+		/// ready. Asynchronous calls copy your data first, so blocking avoids that
+		/// copy, which can be worthwhile for large uploads from a thread that can
+		/// afford to wait. On the main thread, blocking can cause a hitch.</summary>
+		Blocking     = 1 << 16,
 	}
 
 	/// <summary>How does the shader grab pixels from the texture? Or more

@@ -13,7 +13,7 @@ class TestProceduralGeo : ITest
 	Material materialWire;
 
 	public void Initialize() {
-		Tex uvTex = Tex.FromFile("UVTex.png");
+		Tex uvTex = Tex.FromFile("UVTex.png", TexData.Srgb | TexData.Uncompressed);
 		uvTex.SampleMode = TexSample.Point;
 
 		material = Default.Material.Copy();

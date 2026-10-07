@@ -41,13 +41,13 @@ struct model_load_t {
 	size_t            file_size;
 	asset_file_read_t file_read;
 	int32_t           priority;
-	tex_hint_         tex_hints;
+	tex_data_         tex_flags;
 	model_format_     format;
 	void*             format_data;
 };
 
-typedef bool (*modelfmt_metadata_fn)(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_hint_ tex_hints, void **out_format_data);
-typedef bool (*modelfmt_meshes_fn)  (model_t model, const char *filename, shader_t shader, int32_t priority, tex_hint_ tex_hints, void *format_data);
+typedef bool (*modelfmt_metadata_fn)(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_data_ tex_flags, void **out_format_data);
+typedef bool (*modelfmt_meshes_fn)  (model_t model, const char *filename, shader_t shader, int32_t priority, tex_data_ tex_flags, void *format_data);
 typedef void (*modelfmt_free_fn)    (void *format_data);
 
 struct model_fmt_t {
@@ -103,7 +103,7 @@ static asset_action_result_ model_load_metadata(asset_task_t *, asset_header_t *
 	model_t       model = (model_t)asset;
 	model_load_t *load  = (model_load_t *)data;
 
-	if (!model_format_fns[load->format].metadata(model, load->filename, load->file_data, load->file_size, load->shader, load->priority, load->tex_hints, &load->format_data)) {
+	if (!model_format_fns[load->format].metadata(model, load->filename, load->file_data, load->file_size, load->shader, load->priority, load->tex_flags, &load->format_data)) {
 		log_errf("Issue loading metadata for: %s", load->filename);
 		return asset_action_fail;
 	}
@@ -119,7 +119,7 @@ static asset_action_result_ model_load_meshes(asset_task_t *, asset_header_t *as
 	model_t       model = (model_t)asset;
 	model_load_t *load  = (model_load_t *)data;
 
-	if (!model_format_fns[load->format].meshes(model, load->filename, load->shader, load->priority, load->tex_hints, load->format_data)) {
+	if (!model_format_fns[load->format].meshes(model, load->filename, load->shader, load->priority, load->tex_flags, load->format_data)) {
 		log_errf("Issue loading mesh data for: %s", load->filename);
 		return asset_action_fail;
 	}
@@ -239,7 +239,7 @@ model_t model_create_mesh(mesh_t mesh, material_t material) {
 
 ///////////////////////////////////////////
 
-model_t model_create_mem(const char *filename, const void *data, size_t data_size, shader_t shader, int32_t priority, tex_hint_ tex_hints) {
+model_t model_create_mem(const char *filename, const void *data, size_t data_size, shader_t shader, int32_t priority, tex_data_ tex_flags) {
 	profiler_zone();
 
 	model_format_ format = model_get_format(filename);
@@ -255,7 +255,7 @@ model_t model_create_mem(const char *filename, const void *data, size_t data_siz
 	load->filename  = string_copy(filename);
 	load->shader    = shader;
 	load->priority  = priority;
-	load->tex_hints = tex_hints;
+	load->tex_flags = tex_flags;
 	load->format    = format;
 	if (shader) shader_addref(shader);
 
@@ -278,13 +278,14 @@ model_t model_create_mem(const char *filename, const void *data, size_t data_siz
 	task.priority     = priority;
 	task.sort         = asset_sort(priority, asset_complexity_bytes(data_size));
 
-	assets_add_task(task);
+	if (tex_flags & tex_data_blocking) assets_run_blocking(task);
+	else                               assets_add_task    (task);
 	return result;
 }
 
 ///////////////////////////////////////////
 
-model_t model_create_file(const char *filename, shader_t shader, int32_t priority, tex_hint_ tex_hints) {
+model_t model_create_file(const char *filename, shader_t shader, int32_t priority, tex_data_ tex_flags) {
 	profiler_zone();
 
 	model_t result = model_find(filename);
@@ -305,7 +306,7 @@ model_t model_create_file(const char *filename, shader_t shader, int32_t priorit
 	load->filename  = string_copy(filename);
 	load->shader    = shader;
 	load->priority  = priority;
-	load->tex_hints = tex_hints;
+	load->tex_flags = tex_flags;
 	load->format    = format;
 	if (shader) shader_addref(shader);
 
@@ -325,7 +326,8 @@ model_t model_create_file(const char *filename, shader_t shader, int32_t priorit
 	task.priority     = priority;
 	task.sort         = asset_sort(priority, asset_complexity_bytes(platform_file_size(filename)));
 
-	assets_add_task(task);
+	if (tex_flags & tex_data_blocking) assets_run_blocking(task);
+	else                               assets_add_task    (task);
 	return result;
 }
 

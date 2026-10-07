@@ -11,7 +11,7 @@ class DocAnim : ITest
 		/// Here, we're loading a Model that we know has the animations "Idle"
 		/// and "Jump". This sample shows some options, but only a single call
 		/// to PlayAnim is necessary to start an animation.
-		Model model = Model.FromFile("Cosmonaut.glb", texHints: TexHint.Uncompressed);
+		Model model = Model.FromFile("Cosmonaut.glb", null, TexData.Uncompressed);
 
 		// You can look at the model's animations:
 		foreach (Anim anim in model.Anims)

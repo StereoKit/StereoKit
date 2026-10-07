@@ -17,7 +17,7 @@ internal class DocTextures : ITest
 		// will not convert the data for you. Images from file are compressed
 		// by default, so ask for an uncompressed one to read 32 bit RGBA
 		// pixels back!
-		Tex texture = Tex.FromFile("floor.png", TexHint.Srgb | TexHint.Uncompressed);
+		Tex texture = Tex.FromFile("floor.png", TexData.Srgb | TexData.Uncompressed);
 		Color32[] colors = texture.GetColorData<Color32>();
 
 		// For a more complex texture, such as this generated texture with 32

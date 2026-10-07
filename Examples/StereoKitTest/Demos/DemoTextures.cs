@@ -15,28 +15,19 @@ class DemoTextures : ITest
 
 	public void Initialize()
 	{
-		/// :CodeSample: Tex.SetColors
+		/// :CodeSample: Tex.FromColors Tex.SetColors
 		/// ### Creating a texture procedurally
 		/// It's pretty easy to create an array of colors, and
-		/// just pass that into an empty texture! Here, we're 
+		/// just turn that into a texture! Here, we're
 		/// building a simple grid texture, like so:
 		/// 
 		/// ![Procedural Texture]({{site.url}}/img/screenshots/ProceduralTexture.jpg)
 		/// 
-		/// You can call SetTexture as many times as you like! If 
-		/// you're calling it frequently, you may want to keep
-		/// the width and height consistent to prevent from creating
-		/// new texture objects. Use TexType.ImageNomips to prevent
-		/// StereoKit from calculating mip-maps, which can be costly,
-		/// especially when done frequently.
-		// Create an empty texture! This is TextType.Image, and 
-		// an RGBA 32 bit color format.
-		Tex gridTex = new Tex();
-
-		// Use point sampling to ensure that the grid lines are
-		// crisp and sharp, not blended with the pixels around it.
-		gridTex.SampleMode = TexSample.Point;
-
+		/// For a texture you update over time, create it once and
+		/// call SetColors with new pixels. Keep the width and height
+		/// consistent to prevent from creating new texture objects,
+		/// and use TexType.ImageNomips to prevent StereoKit from
+		/// calculating mip-maps, which can be costly when done often.
 		// Allocate memory for the pixels we'll fill in, powers
 		// of two are always best for textures, since this makes
 		// things like generating mip-maps easier.
@@ -65,8 +56,13 @@ class DemoTextures : ITest
 				colors[x+y*width] = baseColor;
 		} }
 
-		// Put the pixel information into the texture
-		gridTex.SetColors(width, height, colors);
+		// Turn the pixels into a texture! Compression would blur
+		// thin grid lines like these, so this one opts out.
+		Tex gridTex = Tex.FromColors(colors, width, height, TexData.Srgb | TexData.Uncompressed);
+
+		// Use point sampling to ensure that the grid lines are
+		// crisp and sharp, not blended with the pixels around it.
+		gridTex.SampleMode = TexSample.Point;
 		/// :End:
 
 		/// :CodeSample: Material MatParamName

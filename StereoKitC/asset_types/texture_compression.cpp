@@ -315,11 +315,17 @@ static bool tex_format_is_ldr_source(tex_format_ format) {
 
 ///////////////////////////////////////////
 
-tex_format_ tex_compress_pick(tex_hint_ hints, tex_hint_ default_policy, tex_type_ type, tex_format_ src_format, bool32_t src_alpha, int32_t width, int32_t height, int32_t array_count, tex_compress_caps_t caps) {
-	tex_hint_ policy = hints & tex_hint_policy_mask;
-	if (policy == tex_hint_none) policy = default_policy & tex_hint_policy_mask;
-	if (policy == tex_hint_none || (policy & tex_hint_uncompressed)) return tex_format_none;
-	bool quality = (policy & tex_hint_quality) != 0;
+static bool tex_format_is_hdr_source(tex_format_ format) {
+	return format == tex_format_rg11b10 || format == tex_format_rgba64f || format == tex_format_rgba128;
+}
+
+///////////////////////////////////////////
+
+tex_format_ tex_compress_pick(tex_data_ flags, tex_data_ default_policy, tex_type_ type, tex_format_ src_format, bool32_t src_alpha, int32_t width, int32_t height, int32_t array_count, tex_compress_caps_t caps) {
+	tex_data_ policy = flags & tex_data_policy_mask;
+	if (policy == tex_data_none) policy = default_policy & tex_data_policy_mask;
+	if (policy == tex_data_none || (policy & tex_data_uncompressed)) return tex_format_none;
+	bool quality = (policy & tex_data_quality) != 0;
 
 	// GPU written or CPU updated textures can't be block compressed.
 	const tex_type_ refuse = tex_type_rendertarget | tex_type_depth | tex_type_depthtarget | tex_type_dynamic | tex_type_compute | tex_type_volume;
@@ -328,25 +334,23 @@ tex_format_ tex_compress_pick(tex_hint_ hints, tex_hint_ default_policy, tex_typ
 	// Formats need at least one whole block, and 8x8 is the largest.
 	if (width < 8 || height < 8)                                  return tex_format_none;
 
-	if (src_format == tex_format_rg11b10) {
+	if (tex_format_is_hdr_source(src_format)) {
 		if (!quality && caps.astc_hdr) return tex_format_astc8x8_rgba_hdr;
 		if (caps.bc)                   return tex_format_bc6h_rgbuf;
 		return tex_format_none;
 	}
 	if (!tex_format_is_ldr_source(src_format)) return tex_format_none;
-	// Tiny LDR images are usually palettes or pixel art, where a block blends
-	// unrelated texels, and they'd save at most 16KB anyway.
-	if ((int64_t)width * height <= 64 * 64) return tex_format_none;
 
-	// Normals are reserved for a two channel format, until then they're data.
-	bool srgb = (hints & tex_hint_srgb) && !(hints & tex_hint_normal);
+	// The format settled color space already. Normals are reserved for a two
+	// channel format, until then they're data.
+	bool srgb = src_format == tex_format_rgba32_srgb && !(flags & tex_data_normal);
 	if (caps.astc) {
 		if (quality) return srgb ? tex_format_astc4x4_rgba_srgb : tex_format_astc4x4_rgba;
 		else         return srgb ? tex_format_astc6x6_rgba_srgb : tex_format_astc6x6_rgba;
 	}
 	if (caps.bc) {
-		bool alpha = src_alpha && !(hints & tex_hint_opaque);
-		if (quality || (alpha && !(hints & tex_hint_cutout))) return srgb ? tex_format_bc7_rgba_srgb : tex_format_bc7_rgba;
+		bool alpha = src_alpha && !(flags & tex_data_opaque);
+		if (quality || (alpha && !(flags & tex_data_cutout))) return srgb ? tex_format_bc7_rgba_srgb : tex_format_bc7_rgba;
 		if (alpha) return srgb ? tex_format_bc1_rgba_srgb : tex_format_bc1_rgba;
 		else       return srgb ? tex_format_bc1_rgb_srgb  : tex_format_bc1_rgb;
 	}

@@ -395,18 +395,38 @@ namespace StereoKit
 		/// <param name="shader">The shader to use for the model's materials!
 		/// If null, this will
 		/// automatically determine the best shader available to use.</param>
-		/// <param name="texHints">Compression for the model's textures. Only
-		/// the compression hints are used here, since the model already knows
-		/// which textures are color, data, or normals. TexHint.None uses the
+		/// <param name="texFlags">Compression for the model's textures. Only
+		/// the compression flags are used here, since the model already knows
+		/// which textures are color, data, or normals. TexData.None uses the
 		/// default compression.</param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading sooner.
+		/// </param>
 		/// <returns>Always returns a valid Model created from the file, check
 		/// the AssetState to see if a failure occurred.</returns>
-		public static Model FromFile(string file, Shader shader = null, int loadPriority = 10, TexHint texHints = TexHint.None)
+		public static Model FromFile(string file, Shader shader = null, TexData texFlags = TexData.None, int loadPriority = 10)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_file(file, final, loadPriority, texHints);
+			IntPtr inst = NativeAPI.model_create_file(file, final, loadPriority, texFlags);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
+
+		/// <summary>Loads a list of mesh and material subsets from a .obj,
+		/// .stl, .ply (ASCII), .gltf, .glb, or .svg file. Textures use the
+		/// default compression.</summary>
+		/// <param name="file">Name of the file to load! This gets prefixed
+		/// with the StereoKit asset folder if no drive letter is specified
+		/// in the path.</param>
+		/// <param name="shader">The shader to use for the model's materials!
+		/// If null, this will automatically determine the best shader
+		/// available to use.</param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading sooner.
+		/// </param>
+		/// <returns>Always returns a valid Model created from the file, check
+		/// the AssetState to see if a failure occurred.</returns>
+		public static Model FromFile(string file, Shader shader, int loadPriority)
+			=> FromFile(file, shader, TexData.None, loadPriority);
 
 		/// <summary>Loads a list of mesh and material subsets from a .obj,
 		/// .stl, .ply (ASCII), .gltf, .glb, or .svg file stored in memory. Note
@@ -421,18 +441,41 @@ namespace StereoKit
 		/// <param name="shader">The shader to use for the model's materials!
 		/// If null, this will automatically determine the best shader 
 		/// available to use.</param>
-		/// <param name="texHints">Compression for the model's textures. Only
-		/// the compression hints are used here, since the model already knows
-		/// which textures are color, data, or normals. TexHint.None uses the
+		/// <param name="texFlags">Compression for the model's textures. Only
+		/// the compression flags are used here, since the model already knows
+		/// which textures are color, data, or normals. TexData.None uses the
 		/// default compression.</param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading sooner.
+		/// </param>
 		/// <returns>Always returns a valid Model created from the file, check
 		/// the AssetState to see if a failure occurred.</returns>
-		public static Model FromMemory(string filename, in byte[] data, Shader shader = null, int loadPriority = 10, TexHint texHints = TexHint.None)
+		public static Model FromMemory(string filename, in byte[] data, Shader shader = null, TexData texFlags = TexData.None, int loadPriority = 10)
 		{
 			IntPtr final = shader == null ? IntPtr.Zero : shader._inst;
-			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final, loadPriority, texHints);
+			IntPtr inst = NativeAPI.model_create_mem(filename, data, (UIntPtr)data.Length, final, loadPriority, texFlags);
 			return inst == IntPtr.Zero ? null : new Model(inst);
 		}
+
+		/// <summary>Loads a list of mesh and material subsets from a .obj,
+		/// .stl, .ply (ASCII), .gltf, .glb, or .svg file stored in memory.
+		/// Textures use the default compression.</summary>
+		/// <param name="filename">StereoKit still uses the filename of the
+		/// data for format discovery, but not asset Id creation. If you
+		/// don't have a real filename for the data, just pass in an
+		/// extension with a leading '.' character here, like ".glb".</param>
+		/// <param name="data">The binary data of a model file, this is NOT
+		/// a raw array of vertex and index data!</param>
+		/// <param name="shader">The shader to use for the model's materials!
+		/// If null, this will automatically determine the best shader
+		/// available to use.</param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading sooner.
+		/// </param>
+		/// <returns>Always returns a valid Model created from the file, check
+		/// the AssetState to see if a failure occurred.</returns>
+		public static Model FromMemory(string filename, in byte[] data, Shader shader, int loadPriority)
+			=> FromMemory(filename, data, shader, TexData.None, loadPriority);
 
 		/// <summary>Creates a single mesh subset Model using the indicated
 		/// Mesh and Material! An id will be automatically generated for this

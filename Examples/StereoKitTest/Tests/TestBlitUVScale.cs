@@ -16,7 +16,7 @@ class TestBlitUVScale : ITest
 			blue, blue, blue, blue,
 			blue, blue, blue, blue, };
 
-		Tex source = Tex.FromColors(src, 4, 4, TexHint.None);
+		Tex source = Tex.FromColors(src, 4, 4, TexData.None | TexData.Blocking | TexData.Uncompressed);
 		source.SampleMode = TexSample.Point;
 
 		Material mat = new Material(Shader.Find("default/shader_blit"));

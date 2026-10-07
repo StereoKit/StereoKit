@@ -1104,6 +1104,68 @@ asset_step_ asset_step_task(int32_t affinity_mask) {
 
 ///////////////////////////////////////////
 
+struct asset_run_blocking_t {
+	asset_task_t* task;
+	bool32_t      ran;
+};
+
+static bool32_t assets_run_blocking_job(void* data) {
+	asset_run_blocking_t* run  = (asset_run_blocking_t*)data;
+	asset_task_t*         task = run->task;
+	run->ran = true;
+
+	// Active like any running task, so wait/signal can find it
+	ft_mutex_lock(asset_thread_task_mtx);
+	task->running_thread = ft_id_current();
+	asset_active_tasks.add(task);
+	atomic_increment(&asset_tasks_processing);
+	asset_tasks_priority = assets_calculate_current_priority();
+	ft_mutex_unlock(asset_thread_task_mtx);
+
+	while (task->action_curr < task->action_count) {
+		asset_action_result_ result = task->actions[task->action_curr].fn(task, task->asset, task->load_data);
+		if (result == asset_action_wait) {
+			// Web work resolves after this stack unwinds, so the queue finishes it
+			if (assets_park_task(task)) return false;
+			result = asset_action_fail;
+		}
+		if (result == asset_action_fail) {
+			if (task->on_failure != nullptr) task->on_failure(task->asset, task->load_data);
+			break;
+		}
+		if (result == asset_action_done) task->action_curr += 1;
+	}
+	assets_complete_task(task);
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool32_t assets_run_blocking(asset_task_t src_task) {
+	if (src_task.depends_on != nullptr) {
+		log_warn("assets_run_blocking doesn't wait on dependencies, queueing the task instead.");
+		assets_add_task(src_task);
+		return false;
+	}
+
+	asset_task_t *task = sk_malloc_t(asset_task_t, 1);
+	memcpy(task, &src_task, sizeof(asset_task_t));
+	assets_addref(task->asset);
+
+	asset_run_blocking_t run = { task, false };
+	bool32_t finished = assets_execute_blocking(assets_run_blocking_job, &run);
+	if (!run.ran) {
+		// Shutdown refused the job, so nothing else will clean this up
+		if (task->on_failure != nullptr) task->on_failure(task->asset, task->load_data);
+		if (task->free_data  != nullptr) task->free_data (task->asset, task->load_data);
+		assets_releaseref_threadsafe(task->asset);
+		sk_free(task);
+	}
+	return finished;
+}
+
+///////////////////////////////////////////
+
 void asset_step_blocking_job() {
 	// Process all blocking jobs - these are synchronous waits so prioritize them
 	while (true) {

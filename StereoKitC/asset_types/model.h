@@ -40,24 +40,24 @@ struct _model_t {
 	bool32_t                bounds_dirty;
 };
 
-bool modelfmt_gltf_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_hint_ tex_hints, void **out_format_data);
-bool modelfmt_gltf_meshes  (model_t model, const char *filename, shader_t shader, int32_t priority, tex_hint_ tex_hints, void *format_data);
+bool modelfmt_gltf_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_data_ tex_flags, void **out_format_data);
+bool modelfmt_gltf_meshes  (model_t model, const char *filename, shader_t shader, int32_t priority, tex_data_ tex_flags, void *format_data);
 void modelfmt_gltf_free    (void *format_data);
 
-bool modelfmt_obj_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_hint_ tex_hints, void **out_format_data);
-bool modelfmt_obj_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, tex_hint_ tex_hints, void *format_data);
+bool modelfmt_obj_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_data_ tex_flags, void **out_format_data);
+bool modelfmt_obj_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, tex_data_ tex_flags, void *format_data);
 void modelfmt_obj_free     (void *format_data);
 
-bool modelfmt_stl_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_hint_ tex_hints, void **out_format_data);
-bool modelfmt_stl_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, tex_hint_ tex_hints, void *format_data);
+bool modelfmt_stl_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_data_ tex_flags, void **out_format_data);
+bool modelfmt_stl_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, tex_data_ tex_flags, void *format_data);
 void modelfmt_stl_free     (void *format_data);
 
-bool modelfmt_ply_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_hint_ tex_hints, void **out_format_data);
-bool modelfmt_ply_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, tex_hint_ tex_hints, void *format_data);
+bool modelfmt_ply_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_data_ tex_flags, void **out_format_data);
+bool modelfmt_ply_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, tex_data_ tex_flags, void *format_data);
 void modelfmt_ply_free     (void *format_data);
 
-bool modelfmt_svg_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_hint_ tex_hints, void **out_format_data);
-bool modelfmt_svg_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, tex_hint_ tex_hints, void *format_data);
+bool modelfmt_svg_metadata (model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_data_ tex_flags, void **out_format_data);
+bool modelfmt_svg_meshes   (model_t model, const char *filename, shader_t shader, int32_t priority, tex_data_ tex_flags, void *format_data);
 void modelfmt_svg_free     (void *format_data);
 
 // Single mesh formats parse into vertex data the caller owns, so Mesh can

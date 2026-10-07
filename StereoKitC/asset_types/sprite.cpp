@@ -178,7 +178,7 @@ sprite_t sprite_create(tex_t image, sprite_type_ type, const char *atlas_id) {
 
 sprite_t sprite_create_file(const char *filename, sprite_type_ type, const char *atlas_id) {
 	// Sprites are small and read up close, so they stay pixel exact.
-	tex_t image = tex_create_file(filename, tex_hint_srgb | tex_hint_uncompressed);
+	tex_t image = tex_create_file(filename, tex_data_srgb | tex_data_uncompressed);
 	if (image == nullptr) return nullptr;
 
 	tex_set_address(image, tex_address_clamp);

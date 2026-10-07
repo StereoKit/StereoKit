@@ -145,7 +145,7 @@ tex_t dev_texture(const char *id, color128 base_color, float contrast_boost) {
 		}
 	}
 
-	tex_set_colors(result, size, size, data);
+	tex_set_colors(result, size, size, data, tex_data_immediate);
 	sk_free(data);
 
 	return result;
@@ -193,7 +193,7 @@ bool defaults_init() {
 
 	color32 black_3d = { 0, 0, 0, 0 };
 	sk_default_tex_3d = tex_create(tex_type_image_nomips | tex_type_volume, tex_format_rgba32);
-	tex_set_colors_3d       (sk_default_tex_3d, 1, 1, 1, &black_3d);
+	tex_set_colors_3d       (sk_default_tex_3d, 1, 1, 1, &black_3d, tex_data_immediate);
 	tex_set_id              (sk_default_tex_3d, default_id_tex_3d);
 	tex_set_loading_fallback(sk_default_tex_3d);
 	tex_set_error_fallback  (sk_default_tex_3d);

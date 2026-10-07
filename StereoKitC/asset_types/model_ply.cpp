@@ -103,7 +103,7 @@ static mesh_t ply_load_mesh(const void *file_data, size_t file_length, const cha
 
 ///////////////////////////////////////////
 
-bool modelfmt_ply_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t, tex_hint_, void **out_format_data) {
+bool modelfmt_ply_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t, tex_data_, void **out_format_data) {
 	material_t material = shader == nullptr
 		? material_find(default_id_material)
 		: material_create(shader);
@@ -120,7 +120,7 @@ bool modelfmt_ply_metadata(model_t model, const char *filename, const void *file
 
 ///////////////////////////////////////////
 
-bool modelfmt_ply_meshes(model_t model, const char *filename, shader_t, int32_t priority, tex_hint_, void *format_data) {
+bool modelfmt_ply_meshes(model_t model, const char *filename, shader_t, int32_t priority, tex_data_, void *format_data) {
 	simple_load_t *load = (simple_load_t *)format_data;
 
 	mesh_t mesh = ply_load_mesh(load->file_data, load->file_size, filename, priority);

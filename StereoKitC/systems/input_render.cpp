@@ -7,6 +7,7 @@
 #include "../stereokit.h"
 #include "input.h"
 #include "input_render.h"
+#include "../asset_types/texture_.h"
 #include "../hands/input_hand.h"
 #include "../libraries/array.h"
 #include "../xr_backends/openxr.h"
@@ -65,7 +66,7 @@ bool input_render_init() {
 	gradient_destroy(color_grad);
 
 	tex_t gradient_tex = tex_create(tex_type_image, tex_format_rgba32_linear);
-	tex_set_colors (gradient_tex, 16, 16, gradient);
+	tex_set_colors (gradient_tex, 16, 16, gradient, tex_data_immediate);
 	tex_set_address(gradient_tex, tex_address_clamp);
 	material_set_texture     (hand_mat, "diffuse", gradient_tex);
 	material_set_queue_offset(hand_mat, 10);

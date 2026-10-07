@@ -65,19 +65,19 @@ namespace StereoKit
 
 		// tex_set_colors overloads for different array types
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] Color32[] data);
+		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] Color32[] data, TexData flags, TexFormat data_format, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] Color[] data);
+		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] Color[] data, TexData flags, TexFormat data_format, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] byte[] data);
+		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] byte[] data, TexData flags, TexFormat data_format, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] ushort[] data);
+		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] ushort[] data, TexData flags, TexFormat data_format, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] float[] data);
+		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] float[] data, TexData flags, TexFormat data_format, int priority);
 
 		// tex_set_colors_3d overload for byte[] (single-channel volumes, SDFs, etc.)
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors_3d(IntPtr texture, int width, int height, int depth, [In] byte[] data);
+		public static extern void tex_set_colors_3d(IntPtr texture, int width, int height, int depth, [In] byte[] data, TexData flags, TexFormat data_format, int priority);
 
 		// render_list_draw_now overloads - a single camera + projection passes
 		// by reference (ABI-equivalent to a 1-element array pointer) so the
@@ -107,11 +107,11 @@ namespace StereoKit
 
 		// tex_create_mem with byte array
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern IntPtr tex_create_mem([In] byte[] data, UIntPtr data_size, TexHint hints, int priority);
+		public static extern IntPtr tex_create_mem([In] byte[] data, UIntPtr data_size, TexData flags, int priority);
 
 		// tex_set_mem overload with byte[] data
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_mem(IntPtr texture, [In] byte[] data, UIntPtr data_size, TexHint hints, [MarshalAs(UnmanagedType.Bool)] bool blocking, int priority);
+		public static extern void tex_set_mem(IntPtr texture, [In] byte[] data, UIntPtr data_size, TexData flags, int priority);
 
 
 		// tex_add_zbuffer with byte array
@@ -120,7 +120,7 @@ namespace StereoKit
 
 		// tex_set_color_arr_mips overload accepting an array of per-layer pointers
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_color_arr_mips(IntPtr texture, int width, int height, [In] IntPtr[] array_data, int array_count, int mip_count, int multisample);
+		public static extern void tex_set_color_arr_mips(IntPtr texture, int width, int height, [In] IntPtr[] array_data, int array_count, int mip_count, int multisample, TexData flags, TexFormat data_format, int priority);
 
 		// shader_create_mem with byte array
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
@@ -128,7 +128,7 @@ namespace StereoKit
 
 		// model_create_mem with byte array data
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern IntPtr model_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, [In] byte[] data, UIntPtr data_size, IntPtr shader, int priority, TexHint tex_hints);
+		public static extern IntPtr model_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string filename_utf8, [In] byte[] data, UIntPtr data_size, IntPtr shader, int priority, TexData tex_flags);
 
 		// sound_write_samples with IntPtr (for native buffers)
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]

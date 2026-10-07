@@ -140,7 +140,7 @@ class TestNodes : ITest
 
 	bool TestAddNode()
 	{
-		Model model = Model.FromFile("Radio.glb").Copy();
+		Model model = Model.FromFile("Radio.glb", null, TexData.Uncompressed).Copy();
 		int count       = model.Nodes.Count;
 		int visualCount = model.Visuals.Count;
 		ModelNode node1 = model.AddNode("New Node", Matrix.Identity);

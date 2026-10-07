@@ -315,7 +315,7 @@ static void ast_foreign_body(void* arg) {
 	color32 colors[16 * 16];
 	for (int32_t i = 0; i < 16 * 16; i++)
 		colors[i] = color32{ 255, 0, 255, 255 };
-	tex_set_colors(job->tex, 16, 16, colors);
+	tex_set_colors(job->tex, 16, 16, colors, tex_data_blocking | tex_data_uncompressed);
 	atomic_store_i32_rel(&job->done, 1);
 }
 #if defined(_WIN32)

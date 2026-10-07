@@ -4,7 +4,9 @@
 
 namespace sk {
 
-const tex_hint_ tex_hint_policy_mask = tex_hint_uncompressed | tex_hint_quality | tex_hint_small;
+const tex_data_ tex_data_policy_mask = tex_data_uncompressed | tex_data_quality | tex_data_small;
+// Uploads that must land before the call returns, exactly as given.
+const tex_data_ tex_data_immediate   = tex_data_blocking | tex_data_uncompressed;
 
 void        tex_set_zbuffer      (tex_t texture, tex_t depth_texture);
 void        tex_set_options      (tex_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, tex_sample_comp_ compare = tex_sample_comp_none, int32_t anisotropy_level = 4);

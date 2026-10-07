@@ -14,6 +14,8 @@ const tex_type_ tex_type_transient_internal = (tex_type_)(1 << 30);
 // ATTACHMENT_OPTIMAL layout between passes. XR swapchain images need this.
 const tex_type_ tex_type_attachment_internal = (tex_type_)(1 << 29);
 
+struct tex_load_t;
+
 struct _tex_t {
 	asset_header_t   header;
 	tex_t            fallback;
@@ -26,6 +28,10 @@ struct _tex_t {
 	int32_t          depth;
 	tex_format_      format;
 	uint64_t         meta_hash;
+	tex_format_      data_format;    // what uploads arrive as, `format` may be its compressed form
+	bool32_t         data_mips;      // tex_type_mips as created, before a block format strips it
+	tex_load_t*      upload_pending; // atomic, newest async upload not yet started
+	int32_t          upload_queued;  // atomic, 1 while one owner drains upload_pending
 
 	tex_type_        type;
 	tex_sample_      sample_mode;

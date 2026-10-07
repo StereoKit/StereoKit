@@ -276,9 +276,6 @@ class DemoHands : ITest
 
 	private void ColorizeFingers(int size, bool transparent, Gradient horizontal, Gradient vertical)
 	{
-		Tex tex = new Tex(TexType.Image, TexFormat.Rgba32Linear);
-		tex.AddressMode = TexAddress.Clamp;
-
 		Color32[] pixels = new Color32[size*size];
 		for (int y = 0; y < size; y++)
 		{
@@ -289,7 +286,8 @@ class DemoHands : ITest
 				pixels[x+y*size] = v*h;
 			}
 		}
-		tex.SetColors(size, size, pixels);
+		Tex tex = Tex.FromColors(pixels, size, size, TexData.None);
+		tex.AddressMode = TexAddress.Clamp;
 
 		Default.MaterialHand[MatParamName.DiffuseTex] = tex;
 		Default.MaterialHand.Transparency = transparent

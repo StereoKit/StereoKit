@@ -1,6 +1,7 @@
 #include "sdf.h"
 #include "../sk_math.h"
 #include "../sk_memory.h"
+#include "../asset_types/texture_.h"
 
 #include <stdio.h>
 
@@ -76,7 +77,7 @@ tex_t sdf_create_tex(int32_t width, int32_t height, float (*sdf)(vec2 pt), float
 			data[x + yoff] = {255,255,255,(uint8_t)(lerp * 255)};
 		}
 	}
-	tex_t result = tex_create_color32(data, width, height, tex_hint_none);
+	tex_t result = tex_create_color32(data, width, height, tex_data_none | tex_data_immediate);
 	sk_free(data);
 	return result;
 }
