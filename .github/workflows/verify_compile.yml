@@ -19,14 +19,35 @@ jobs:
     - name: Get Cache
       uses: actions/cache@v3
       with:
-        key: DependencyCache
+        key: DependencyCache-win32-${{ hashFiles('CMakeLists.txt') }}
+        restore-keys: |
+          DependencyCache-win32-
         path: |
           .deps_cache
 
     - name: Build Native Win32 x64
       run: |
-        cmake --preset Win32_x64_Release_Fast
+        cmake --preset Win32_x64_Release_Fast -DSK_BUILD_TESTS=ON
         cmake --build --preset Win32_x64_Release_Fast
+
+    - name: Install software Vulkan driver (Dozen)
+      # GitHub-hosted Windows runners have no GPU/Vulkan ICD. This installs
+      # Mesa's Dozen driver (Vulkan-on-D3D12), which works via WARP with no
+      # GPU required -- the Windows analog of Linux's mesa-vulkan-drivers.
+      run: winget install --id Microsoft.OpenCLGLVulkanCompatibilityPack -e --silent --accept-package-agreements --accept-source-agreements
+
+    - name: Run SKTests
+      run: ./bin/intermediate/Win32_x64_Fast/Release/SKTests.exe
+      shell: bash
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Run Tests
+      working-directory: Examples/StereoKitTest
+      run: dotnet run -c Release -- -headless -test
 
   native-macos:
     runs-on: macos-14
@@ -40,7 +61,9 @@ jobs:
     - name: Get Cache
       uses: actions/cache@v3
       with:
-        key: DependencyCache
+        key: DependencyCache-macos-${{ hashFiles('CMakeLists.txt') }}
+        restore-keys: |
+          DependencyCache-macos-
         path: |
           .deps_cache
 
@@ -48,6 +71,14 @@ jobs:
       run: |
         cmake --preset MacOS_Arm64_Release_Fast
         cmake --build --preset MacOS_Arm64_Release_Fast
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Build Sample Project
+      run: dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Release
 
   native-linux-android-dotnet:
     runs-on: ubuntu-22.04
@@ -61,19 +92,24 @@ jobs:
     - name: Get Cache
       uses: actions/cache@v4
       with:
-        key: DependencyCache
+        key: DependencyCache-linux-${{ hashFiles('CMakeLists.txt') }}
+        restore-keys: |
+          DependencyCache-linux-
         path: |
           .deps_cache
     
     - name: Install Prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get install clang llvm lld ninja-build pkg-config libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libxi-dev libfontconfig-dev libwayland-dev libxkbcommon-dev libdecor-0-dev
+        sudo apt-get install clang llvm lld ninja-build pkg-config libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libxi-dev libfontconfig-dev libwayland-dev libxkbcommon-dev libdecor-0-dev mesa-vulkan-drivers
 
     - name: Build Native Linux x64
       run: |
-        cmake --preset Linux_x64_Debug_Fast
+        cmake --preset Linux_x64_Debug_Fast -DSK_BUILD_TESTS=ON
         cmake --build --preset Linux_x64_Debug_Fast
+
+    - name: Run SKTests
+      run: ./bin/intermediate/Linux_x64_Debug_Fast/SKTests
 
     - name: Set up Android NDK
       uses: nttld/setup-ndk@v1.4.2
@@ -104,8 +140,9 @@ jobs:
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
-      with: 
-        dotnet-version: 7.0.x
+      with:
+        dotnet-version: 10.0.x
 
-    - name: Build Sample Project
-      run: dotnet build Examples/StereoKitTest/StereoKitTest.csproj -c Debug
+    - name: Run Tests
+      working-directory: Examples/StereoKitTest
+      run: dotnet run -c Release -- -headless -test
