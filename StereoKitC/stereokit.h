@@ -1662,7 +1662,9 @@ typedef enum tex_type_ {
 	tex_type_mips          = 1 << 4,
 	/*This texture's data will be updated frequently from the
 	  CPU (not renders)! This ensures the graphics card stores it
-	  someplace where writes are easy to do quickly.*/
+	  someplace where writes are easy to do quickly. Dynamic textures
+	  are never compressed, since compression would have to run again
+	  on every update.*/
 	tex_type_dynamic       = 1 << 5,
 	/*This texture contains depth data, not color data! It is writeable and
 	  readable. This makes it great for shadowmaps or other textures that need to
@@ -1820,6 +1822,7 @@ SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load
 SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data,                                                                   tex_data_ flags sk_default(tex_data_srgb), tex_format_ data_format sk_default(tex_format_none), int32_t priority sk_default(10));
 SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1), tex_data_ flags sk_default(tex_data_srgb), tex_format_ data_format sk_default(tex_format_none), int32_t priority sk_default(10));
 SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), tex_data_ flags sk_default(tex_data_srgb), tex_format_ data_format sk_default(tex_format_none), int32_t priority sk_default(10));
+SK_API void         tex_set_size            (tex_t texture, int32_t width, int32_t height, int32_t depth sk_default(1), int32_t array_count sk_default(1), int32_t multisample sk_default(1));
 SK_API void         tex_set_colors_3d       (tex_t texture, int32_t width, int32_t height, int32_t depth, void *data,                                                    tex_data_ flags sk_default(tex_data_srgb), tex_format_ data_format sk_default(tex_format_none), int32_t priority sk_default(10));
 SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, tex_data_ flags sk_default(tex_data_srgb), int32_t priority sk_default(10));
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));

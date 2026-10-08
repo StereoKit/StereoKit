@@ -68,6 +68,7 @@ array_t<asset_header_t *>      assets_load_events = {};
 
 array_t<asset_thread_t>asset_threads         = {};
 bool32_t               asset_thread_enabled  = false;
+bool32_t               assets_accepting_refs = false; // outlives the workers, releases count until the final sweep
 array_t<asset_task_t*> asset_thread_tasks    = {};
 ft_mutex_t             asset_thread_task_mtx = {};
 int32_t                asset_tasks_finished  = 0;
@@ -168,23 +169,43 @@ void assets_unique_name(asset_type_ type, const char *root_name, char *dest, int
 
 ///////////////////////////////////////////
 
-asset_header_t* assets_allocate_no_add(asset_type_ type, const char** out_type_str) {
-	size_t      size      = sizeof(asset_header_t);
-	const char* type_name = "asset";
+static const char* assets_type_name(asset_type_ type) {
 	switch(type) {
-	case asset_type_mesh:            size = sizeof(_mesh_t );           type_name = "mesh";            break;
-	case asset_type_tex:             size = sizeof(_tex_t);             type_name = "tex";             break;
-	case asset_type_shader:          size = sizeof(_shader_t);          type_name = "shader";          break;
-	case asset_type_material:        size = sizeof(_material_t);        type_name = "material";        break;
-	case asset_type_model:           size = sizeof(_model_t);           type_name = "model";           break;
-	case asset_type_font:            size = sizeof(_font_t);            type_name = "font";            break;
-	case asset_type_sprite:          size = sizeof(_sprite_t);          type_name = "sprite";          break;
-	case asset_type_sound:           size = sizeof(_sound_t);           type_name = "sound";           break;
-	case asset_type_anchor:          size = sizeof(_anchor_t);          type_name = "anchor";          break;
-	case asset_type_render_list:     size = sizeof(_render_list_t);     type_name = "render_list";     break;
-	case asset_type_compute:         size = sizeof(_compute_t);         type_name = "compute";         break;
-	case asset_type_compute_buffer:  size = sizeof(_compute_buffer_t);  type_name = "compute_buffer";  break;
-	case asset_type_material_buffer: size = sizeof(_material_buffer_t); type_name = "material_buffer"; break;
+	case asset_type_mesh:            return "mesh";
+	case asset_type_tex:             return "tex";
+	case asset_type_shader:          return "shader";
+	case asset_type_material:        return "material";
+	case asset_type_model:           return "model";
+	case asset_type_font:            return "font";
+	case asset_type_sprite:          return "sprite";
+	case asset_type_sound:           return "sound";
+	case asset_type_anchor:          return "anchor";
+	case asset_type_render_list:     return "render_list";
+	case asset_type_compute:         return "compute";
+	case asset_type_compute_buffer:  return "compute_buffer";
+	case asset_type_material_buffer: return "material_buffer";
+	default:                         return "asset";
+	}
+}
+
+///////////////////////////////////////////
+
+asset_header_t* assets_allocate_no_add(asset_type_ type, const char** out_type_str) {
+	size_t size = sizeof(asset_header_t);
+	switch(type) {
+	case asset_type_mesh:            size = sizeof(_mesh_t );           break;
+	case asset_type_tex:             size = sizeof(_tex_t);             break;
+	case asset_type_shader:          size = sizeof(_shader_t);          break;
+	case asset_type_material:        size = sizeof(_material_t);        break;
+	case asset_type_model:           size = sizeof(_model_t);           break;
+	case asset_type_font:            size = sizeof(_font_t);            break;
+	case asset_type_sprite:          size = sizeof(_sprite_t);          break;
+	case asset_type_sound:           size = sizeof(_sound_t);           break;
+	case asset_type_anchor:          size = sizeof(_anchor_t);          break;
+	case asset_type_render_list:     size = sizeof(_render_list_t);     break;
+	case asset_type_compute:         size = sizeof(_compute_t);         break;
+	case asset_type_compute_buffer:  size = sizeof(_compute_buffer_t);  break;
+	case asset_type_material_buffer: size = sizeof(_material_buffer_t); break;
 	default: log_err("Unimplemented asset type!"); abort();
 	}
 
@@ -195,7 +216,7 @@ asset_header_t* assets_allocate_no_add(asset_type_ type, const char** out_type_s
 	assets_addref(header);
 
 	if (out_type_str)
-		*out_type_str = type_name;
+		*out_type_str = assets_type_name(type);
 
 	return header;
 }
@@ -251,7 +272,7 @@ void assets_addref(asset_header_t *asset) {
 void assets_releaseref(asset_header_t *asset) {
 	// Check if we've shut down the asset system and have already destroyed any
 	// lingering assets (or haven't started the asset system yet).
-	if (asset_thread_enabled == false)
+	if (assets_accepting_refs == false)
 		return;
 
 	// Manage the reference count
@@ -273,7 +294,7 @@ void assets_releaseref_threadsafe(void *asset) {
 
 	// Check if we've shut down the asset system and have already destroyed any
 	// lingering assets (or haven't started the asset system yet).
-	if (asset_thread_enabled == false)
+	if (assets_accepting_refs == false)
 		return;
 
 	// Manage the reference count
@@ -480,7 +501,8 @@ bool assets_init() {
 #if !defined(__EMSCRIPTEN__)
 	asset_threads.resize(3);
 #endif
-	asset_thread_enabled = true;
+	asset_thread_enabled  = true;
+	assets_accepting_refs = true;
 	for (int32_t i = 0; i < asset_threads.capacity; i++)
 	{
 		asset_threads.add({});
@@ -575,7 +597,9 @@ void assets_step() {
 
 ///////////////////////////////////////////
 
-void assets_shutdown() {
+void assets_drain() {
+	if (asset_thread_enabled == false) return;
+
 	// Signal asset threads to drain remaining tasks and exit. Use a single
 	// loop for all threads so we keep calling assets_step while any thread
 	// is still running — the old per-thread sequential loop could miss
@@ -610,6 +634,18 @@ void assets_shutdown() {
 		}
 	}
 	asset_threads.free();
+}
+
+///////////////////////////////////////////
+
+void assets_shutdown() {
+	assets_drain();
+
+	// Systems shutting down after the drain can still queue work, and with
+	// the workers gone it runs here.
+	while (asset_thread_tasks.count > 0)
+		assets_step();
+	assets_accepting_refs = false;
 
 	// Fail any blocking jobs the workers never got to, then wait for their
 	// foreign threads to leave before the primitives get destroyed below.
@@ -795,6 +831,8 @@ int64_t assets_task_sort(asset_task_t *task) { return task->sort; }
 void assets_add_task(asset_task_t src_task) {
 	asset_task_t *task = sk_malloc_t(asset_task_t, 1);
 	memcpy(task, &src_task, sizeof(asset_task_t));
+	task->time_submitted = stm_now();
+	task->time_working   = 0;
 	assets_addref(task->asset);
 
 	if (task->depends_on == task->asset) {
@@ -1045,6 +1083,14 @@ void assets_complete_task(asset_task_t* task) {
 	if (task->asset->state >= asset_state_loaded)
 		assets_notify_loaded(task->asset);
 
+	// Debug timing, uncomment to see where load time goes
+	//log_diagf("Asset task for %s '%s' %s in %.2fms, %.2fms of it working",
+	//	assets_type_name(task->asset->type),
+	//	task->asset->id_text ? task->asset->id_text : "",
+	//	task->asset->state >= 0 ? "finished" : "failed",
+	//	stm_ms(stm_since(task->time_submitted)),
+	//	stm_ms(task->time_working));
+
 	ft_mutex_lock(asset_thread_task_mtx);
 	asset_active_tasks.remove(asset_active_tasks.index_of(task));
 	atomic_increment(&asset_tasks_finished);
@@ -1072,9 +1118,11 @@ asset_step_ asset_step_task(int32_t affinity_mask) {
 
 	// An errored dependency skips the action and takes the failure path.
 	// on_failure owns the resulting state: a refresh may want to stay loaded.
+	uint64_t             start  = stm_now();
 	asset_action_result_ result = task->dep_failed
 		? asset_action_fail
 		: task->actions[task->action_curr].fn(task, task->asset, task->load_data);
+	task->time_working += stm_since(start);
 
 	if (result == asset_action_wait) {
 		if (assets_park_task(task))
@@ -1123,7 +1171,9 @@ static bool32_t assets_run_blocking_job(void* data) {
 	ft_mutex_unlock(asset_thread_task_mtx);
 
 	while (task->action_curr < task->action_count) {
+		uint64_t             start  = stm_now();
 		asset_action_result_ result = task->actions[task->action_curr].fn(task, task->asset, task->load_data);
+		task->time_working += stm_since(start);
 		if (result == asset_action_wait) {
 			// Web work resolves after this stack unwinds, so the queue finishes it
 			if (assets_park_task(task)) return false;
@@ -1150,6 +1200,8 @@ bool32_t assets_run_blocking(asset_task_t src_task) {
 
 	asset_task_t *task = sk_malloc_t(asset_task_t, 1);
 	memcpy(task, &src_task, sizeof(asset_task_t));
+	task->time_submitted = stm_now();
+	task->time_working   = 0;
 	assets_addref(task->asset);
 
 	asset_run_blocking_t run = { task, false };

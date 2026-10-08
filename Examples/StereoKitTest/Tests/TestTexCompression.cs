@@ -78,6 +78,22 @@ class TestTexCompression : ITest
 		Tex fromMemory = new Tex();
 		fromMemory.SetMemory(floor, TexData.Srgb | TexData.Blocking);
 		Tests.Test(() => fromMemory.AssetState == AssetState.Loaded);
+
+		// Copy without flags keeps its old uncompressed behavior, with flags it
+		// compresses, and `into` lands the copy in an existing texture
+		Tex target = Tex.RenderTarget(256, 256);
+		Tex plain  = target.Copy();
+		Tex baked  = target.Copy(TexType.Image, TexFormat.None, TexData.Srgb | TexData.Quality);
+		Tex dest   = new Tex();
+		target.Copy(TexType.Image, TexFormat.None, TexData.Srgb | TexData.Quality, dest);
+		Tests.Test(() => plain.Format == TexFormat.Rgba32);
+		Tests.Test(() => compressed ? IsCompressedSrgb(baked.Format) : baked.Format == TexFormat.Rgba32);
+		Tests.Test(() => dest.Format == baked.Format && dest.AssetState == AssetState.Loaded);
+
+		// The Model overload for older positional calls still loads
+		Model positional = Model.FromFile("Radio.glb", null, 10);
+		Assets.BlockForPriority(int.MaxValue);
+		Tests.Test(() => positional.AssetState == AssetState.Loaded);
 	}
 
 	public void Shutdown() { }

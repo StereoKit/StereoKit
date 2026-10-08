@@ -1112,7 +1112,7 @@ void render_check_screenshots() {
 		// The MSAA surface only ever feeds resolve_tex, so it's transient. The
 		// readback below reads the resolve, never this.
 		tex_t color_surface = tex_create(tex_type_image_nomips | tex_type_rendertarget | tex_type_transient_internal, local.screenshot_list[i].tex_format);
-		tex_set_color_arr(color_surface, w, h, nullptr, 1, 8);
+		tex_set_size(color_surface, w, h, 1, 1, 8);
 		// Passed as the DEPTH format, not the color one: only depth targets
 		// get input attachment usage, which postfx needs to read depth.
 		tex_t depth_surface = tex_create_rendertarget(w, h, 8, tex_format_none, tex_get_supported_depth_format(render_preferred_depth_fmt(), true, 8));

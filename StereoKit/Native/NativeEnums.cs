@@ -974,7 +974,9 @@ namespace StereoKit
 		Mips         = 1 << 4,
 		/// <summary>This texture's data will be updated frequently from the
 		/// CPU (not renders)! This ensures the graphics card stores it
-		/// someplace where writes are easy to do quickly.</summary>
+		/// someplace where writes are easy to do quickly. Dynamic textures
+		/// are never compressed, since compression would have to run again
+		/// on every update.</summary>
 		Dynamic      = 1 << 5,
 		/// <summary>This texture contains depth data, not color data! It is writeable and
 		/// readable. This makes it great for shadowmaps or other textures that need to

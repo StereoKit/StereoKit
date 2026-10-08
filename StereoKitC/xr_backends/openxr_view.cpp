@@ -384,14 +384,10 @@ bool32_t xr_view_type_valid(XrViewConfigurationType type) {
 
 void openxr_views_destroy() {
 	openxr_step_time_reset();
-	// Wait for all GPU work to complete before destroying swapchain resources.
-	// The textures have ImageViews/Framebuffers that may still be referenced
-	// by in-flight command buffers, and OpenXR swapchain images can't be
-	// destroyed while in use. The device may not exist yet, since cleanup can
-	// run during an early failed openxr_create_system probe, before skr_init.
-	VkDevice vk_device = skr_get_vk_device();
-	if (vk_device != VK_NULL_HANDLE)
-		vkDeviceWaitIdle(vk_device);
+	// Only this thread's frames use the swapchains, and vkDeviceWaitIdle would
+	// race asset threads on the queue. A no-op before skr_init.
+	skr_future_t last = skr_future_get();
+	skr_future_wait(&last);
 
 	for (int32_t i = 0; i < xr_displays.count; i++) {
 		device_display_delete(&xr_displays[i]);

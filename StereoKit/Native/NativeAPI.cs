@@ -299,6 +299,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_colors(IntPtr texture, int width, int height, IntPtr data, TexData flags, TexFormat data_format, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_color_arr(IntPtr texture, int width, int height, IntPtr array_data, int array_count, int multisample, TexData flags, TexFormat data_format, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_color_arr_mips(IntPtr texture, int width, int height, IntPtr array_data, int array_count, int mip_count, int multisample, TexData flags, TexFormat data_format, int priority);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_size(IntPtr texture, int width, int height, int depth, int array_count, int multisample);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_colors_3d(IntPtr texture, int width, int height, int depth, IntPtr data, TexData flags, TexFormat data_format, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_mem(IntPtr texture, IntPtr data, UIntPtr data_size, TexData flags, int priority);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_add_zbuffer(IntPtr texture, TexFormat format);

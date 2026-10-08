@@ -14,6 +14,7 @@
 #include "sh_tests.h"
 #include "texcompress_tests.h"
 #include "spatial_tests.h"
+#include "tex_tests.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -42,6 +43,7 @@ int main(int argc, char* argv[]) {
 	if (all || has_flag(argc, argv, "-shtest"))          failures += sh_tests_run();
 	if (all || has_flag(argc, argv, "-texcompresstest")) failures += texcompress_tests_run();
 	if (all || has_flag(argc, argv, "-spatialtest"))     failures += spatial_tests_run();
+	if (all || has_flag(argc, argv, "-textest"))         failures += tex_tests_run();
 
 	if (has_flag(argc, argv, "-audiobench")) failures += audio_bench_run();
 

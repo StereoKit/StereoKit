@@ -274,7 +274,7 @@ namespace StereoKit
 		/// <param name="depth">Depth in pixels (number of slices).</param>
 		/// <param name="data">An array of width*height*depth bytes.</param>
 		public void SetColors(int width, int height, int depth, in byte[] data)
-			=> NativeAPI.tex_set_colors_3d(_inst, width, height, depth, data, Immediate, TexFormat.None, 10);
+			=> SetColors(width, height, depth, data, Immediate);
 		/// <summary>Set the texture's pixels using a color array! This
 		/// function should only be called on textures with a format of
 		/// Rgba32 or Rgba32Linear. You can call this as many times as you'd
@@ -291,13 +291,8 @@ namespace StereoKit
 		/// of `width*height`.</param>
 		public void SetColors(int width, int height, in Color32[] data)
 		{
-			TexFormat format = Format;
-			if (format != TexFormat.Rgba32 && format != TexFormat.Rgba32Linear)
-			{
-				Log.Err($"Can't set a {format} format texture from Color32 data!");
-				return;
-			}
-			NativeAPI.tex_set_colors(_inst, width, height, data, Immediate, TexFormat.None, 10);
+			if (FormatIs(TexFormat.Rgba32, TexFormat.Rgba32Linear, "Color32"))
+				SetColors(width, height, data, Immediate);
 		}
 		/// <summary>Set the texture's pixels using a color array! This
 		/// function should only be called on textures with a format of Rgba128.
@@ -314,12 +309,8 @@ namespace StereoKit
 		/// of `width*height`.</param>
 		public void SetColors(int width, int height, in Color[] data)
 		{
-			if (Format != TexFormat.Rgba128)
-			{
-				Log.Err($"Can't set a {Format} format texture from Color data!");
-				return;
-			}
-			NativeAPI.tex_set_colors(_inst, width, height, data, Immediate, TexFormat.None, 10);
+			if (FormatIs(TexFormat.Rgba128, TexFormat.Rgba128, "Color"))
+				SetColors(width, height, data, Immediate);
 		}
 		/// <summary>Set the texture's pixels using a scalar array! This
 		/// function should only be called on textures with a format of R8.
@@ -335,9 +326,7 @@ namespace StereoKit
 		/// <param name="data">An array of 8 bit values, should be a length
 		/// of `width*height`.</param>
 		public void SetColors(int width, int height, in byte[] data)
-		{
-			NativeAPI.tex_set_colors(_inst, width, height, data, Immediate, TexFormat.None, 10);
-		}
+			=> SetColors(width, height, data, Immediate);
 		/// <summary>Set the texture's pixels using a scalar array! This
 		/// function should only be called on textures with a format of R16.
 		/// You can call this as many times as you'd like, even with different
@@ -353,13 +342,8 @@ namespace StereoKit
 		/// of `width*height`.</param>
 		public void SetColors(int width, int height, in ushort[] data)
 		{
-			TexFormat format = Format;
-			if (format != TexFormat.R16 && format != TexFormat.Rgba64)
-			{
-				Log.Err($"Can't set a {format} format texture from ushort data!");
-				return;
-			}
-			NativeAPI.tex_set_colors(_inst, width, height, data, Immediate, TexFormat.None, 10);
+			if (FormatIs(TexFormat.R16, TexFormat.Rgba64, "ushort"))
+				SetColors(width, height, data, Immediate);
 		}
 		/// <summary>Set the texture's pixels using a scalar array! This
 		/// function should only be called on textures with a format of R32.
@@ -376,12 +360,8 @@ namespace StereoKit
 		/// of `width*height`.</param>
 		public void SetColors(int width, int height, in float[] data)
 		{
-			if (Format != TexFormat.R32)
-			{
-				Log.Err($"Can't set a {Format} format texture from Color data!");
-				return;
-			}
-			NativeAPI.tex_set_colors(_inst, width, height, data, Immediate, TexFormat.None, 10);
+			if (FormatIs(TexFormat.R32, TexFormat.R32, "float"))
+				SetColors(width, height, data, Immediate);
 		}
 		/// <summary>Set the texture's pixels for a multi-layer and/or
 		/// mip-mapped texture, using an array of pointers. Each pointer in
@@ -426,13 +406,8 @@ namespace StereoKit
 		/// rendertarget textures.</param>
 		public void SetColors(int width, int height, in Color32[][] arrayData, int mipCount, int multisample = 1)
 		{
-			TexFormat format = Format;
-			if (format != TexFormat.Rgba32 && format != TexFormat.Rgba32Linear)
-			{
-				Log.Err($"Can't set a {format} format texture from Color32 data!");
-				return;
-			}
-			SetColorsPinned(width, height, arrayData, mipCount, multisample, Immediate, TexFormat.None, 10);
+			if (FormatIs(TexFormat.Rgba32, TexFormat.Rgba32Linear, "Color32"))
+				SetColorsPinned(width, height, arrayData, mipCount, multisample, Immediate, TexFormat.None, 10);
 		}
 		/// <summary>Set the texture's pixels for a multi-layer and/or
 		/// mip-mapped texture using a jagged byte array. Each entry in
@@ -453,6 +428,14 @@ namespace StereoKit
 		/// rendertarget textures.</param>
 		public void SetColors(int width, int height, in byte[][] arrayData, int mipCount, int multisample = 1)
 			=> SetColorsPinned(width, height, arrayData, mipCount, multisample, Immediate, TexFormat.None, 10);
+
+		bool FormatIs(TexFormat a, TexFormat b, string dataType)
+		{
+			TexFormat format = Format;
+			if (format == a || format == b) return true;
+			Log.Err($"Can't set a {format} format texture from {dataType} data!");
+			return false;
+		}
 
 		void SetColorsPinned<T>(int width, int height, T[][] arrayData, int mipCount, int multisample, TexData flags, TexFormat dataFormat, int priority) where T : struct
 		{
@@ -678,7 +661,11 @@ namespace StereoKit
 			=> NativeAPI.tex_get_hardware_buffer(_inst);
 
 		/// <summary>Retrieve the color data of the texture from the GPU. This
-		/// can be a very slow operation, so use it cautiously.</summary>
+		/// can be a very slow operation, so use it cautiously. Textures are
+		/// compressed by default, and a compressed texture gives back its raw
+		/// compressed blocks rather than pixels, so check Tex.Format. Load or
+		/// set a texture with TexData.Uncompressed if you plan to read its
+		/// pixels.</summary>
 		/// <typeparam name="T">This should be a struct or basic type used to
 		/// represent your color/pixel data. Structs should use
 		/// `[StructLayout(LayoutKind.Sequential)]`.</typeparam>
@@ -698,7 +685,11 @@ namespace StereoKit
 		}
 
 		/// <summary>Retrieve the color data of the texture from the GPU. This
-		/// can be a very slow operation, so use it cautiously.</summary>
+		/// can be a very slow operation, so use it cautiously. Textures are
+		/// compressed by default, and a compressed texture gives back its raw
+		/// compressed blocks rather than pixels, so check Tex.Format. Load or
+		/// set a texture with TexData.Uncompressed if you plan to read its
+		/// pixels.</summary>
 		/// <typeparam name="T">This should be a struct or basic type used to
 		/// represent your color/pixel data. Structs should use
 		/// `[StructLayout(LayoutKind.Sequential)]`.</typeparam>
@@ -748,7 +739,22 @@ namespace StereoKit
 		/// fragments that are drawn for each pixel to reduce sparkling /
 		/// aliasing artifacts.</param>
 		public void SetSize(int width, int height, int arrayCount = 1, int msaa = 1)
-			=> NativeAPI.tex_set_color_arr(_inst, width, height, IntPtr.Zero, arrayCount, msaa, Immediate, TexFormat.None, 10);
+			=> NativeAPI.tex_set_size(_inst, width, height, 1, arrayCount, msaa);
+		/// <summary>Set the texture's size without providing any color data.
+		/// This overload also takes a depth, for Volume textures.</summary>
+		/// <param name="width">Width in pixels of the texture. Powers of two
+		/// are generally best!</param>
+		/// <param name="height">Height in pixels of the texture. Powers of
+		/// two are generally best!</param>
+		/// <param name="depth">Depth in pixels, only used by Volume
+		/// textures. Use 1 for everything else.</param>
+		/// <param name="arrayCount">How many surfaces are in this texture? A
+		/// normal texture only has 1. Volume textures ignore this.</param>
+		/// <param name="msaa">Multisample anti-aliasing, this is only
+		/// important for render target type textures! Volume textures ignore
+		/// this.</param>
+		public void SetSize(int width, int height, int depth, int arrayCount, int msaa)
+			=> NativeAPI.tex_set_size(_inst, width, height, depth, arrayCount, msaa);
 
 		/// <summary>Only applicable if this texture is a rendertarget!
 		/// This creates and attaches a zbuffer surface to the texture for
@@ -830,6 +836,15 @@ namespace StereoKit
 			IntPtr tex = NativeAPI.tex_create_cubemap_file(cubemapFile, flags, loadPriority);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
+		/// <summary>Loads a cubemap from an equirectangular image or a
+		/// cubemap image file.</summary>
+		/// <param name="cubemapFile">The image file to load.</param>
+		/// <param name="sRGBData">Is the data sRGB color data? This is the
+		/// same as TexData.Srgb.</param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading
+		/// sooner.</param>
+		/// <returns>A cubemap texture asset.</returns>
 		[Obsolete("Use the TexData overload. A sRGBData of true is TexData.Srgb, false is TexData.None.")]
 		public static Tex FromCubemap(string cubemapFile, bool sRGBData, int loadPriority = 10)
 			=> FromCubemap(cubemapFile, (sRGBData ? TexData.Srgb : TexData.None), loadPriority);
@@ -882,6 +897,14 @@ namespace StereoKit
 			IntPtr inst = NativeAPI.tex_create_file(file, flags, loadPriority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+		/// <summary>Loads an image file into a texture.</summary>
+		/// <param name="file">The image file to load.</param>
+		/// <param name="sRGBData">Is the data sRGB color data? This is the
+		/// same as TexData.Srgb.</param>
+		/// <param name="loadPriority">The priority sort order for this asset
+		/// in the async loading system. Lower values mean loading
+		/// sooner.</param>
+		/// <returns>A texture asset.</returns>
 		[Obsolete("Use the TexData overload. A sRGBData of true is TexData.Srgb, false is TexData.None.")]
 		public static Tex FromFile(string file, bool sRGBData, int loadPriority = 10)
 			=> FromFile(file, (sRGBData ? TexData.Srgb : TexData.None), loadPriority);
@@ -908,6 +931,16 @@ namespace StereoKit
 			IntPtr inst = NativeAPI.tex_create_file_arr(files, files.Length, flags, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+		/// <summary>Loads several same-sized image files into one array
+		/// texture.</summary>
+		/// <param name="files">The image files to load, one per
+		/// layer.</param>
+		/// <param name="sRGBData">Is the data sRGB color data? This is the
+		/// same as TexData.Srgb.</param>
+		/// <param name="priority">The priority sort order for this asset in
+		/// the async loading system. Lower values mean loading
+		/// sooner.</param>
+		/// <returns>An array texture asset.</returns>
 		[Obsolete("Use the TexData overload. A sRGBData of true is TexData.Srgb, false is TexData.None.")]
 		public static Tex FromFiles(string[] files, bool sRGBData, int priority = 10)
 			=> FromFiles(files, (sRGBData ? TexData.Srgb : TexData.None), priority);
@@ -931,6 +964,16 @@ namespace StereoKit
 			IntPtr inst = NativeAPI.tex_create_mem(imageFileData, (UIntPtr)imageFileData.Length, flags, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+		/// <summary>Loads an image file stored in memory into a
+		/// texture.</summary>
+		/// <param name="imageFileData">The binary data of an image file, this
+		/// is NOT a raw RGB color array!</param>
+		/// <param name="sRGBData">Is the data sRGB color data? This is the
+		/// same as TexData.Srgb.</param>
+		/// <param name="priority">The priority sort order for this asset in
+		/// the async loading system. Lower values mean loading
+		/// sooner.</param>
+		/// <returns>A texture asset.</returns>
 		[Obsolete("Use the TexData overload. A sRGBData of true is TexData.Srgb, false is TexData.None.")]
 		public static Tex FromMemory(in byte[] imageFileData, bool sRGBData, int priority = 10)
 			=> FromMemory(imageFileData, (sRGBData ? TexData.Srgb : TexData.None), priority);
@@ -1078,6 +1121,16 @@ namespace StereoKit
 			IntPtr inst = NativeAPI.tex_create_cubemap_files(cubeFaceFiles_xxyyzz, flags, priority);
 			return inst == IntPtr.Zero ? null : new Tex(inst);
 		}
+		/// <summary>Loads a cubemap from 6 image files, one per
+		/// face.</summary>
+		/// <param name="cubeFaceFiles_xxyyzz">The 6 face images, in +X -X +Y
+		/// -Y +Z -Z order.</param>
+		/// <param name="sRGBData">Is the data sRGB color data? This is the
+		/// same as TexData.Srgb.</param>
+		/// <param name="priority">The priority sort order for this asset in
+		/// the async loading system. Lower values mean loading
+		/// sooner.</param>
+		/// <returns>A cubemap texture asset.</returns>
 		[Obsolete("Use the TexData overload. A sRGBData of true is TexData.Srgb, false is TexData.None.")]
 		public static Tex FromCubemapFile(string[] cubeFaceFiles_xxyyzz, bool sRGBData, int priority = 10)
 			=> FromCubemapFile(cubeFaceFiles_xxyyzz, (sRGBData ? TexData.Srgb : TexData.None), priority);

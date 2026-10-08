@@ -63,22 +63,6 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
 		public static extern IntPtr sound_create_mem([MarshalAs(UnmanagedType.LPUTF8Str)] string id, [In] byte[] in_arr_data, UIntPtr data_size);
 
-		// tex_set_colors overloads for different array types
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] Color32[] data, TexData flags, TexFormat data_format, int priority);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] Color[] data, TexData flags, TexFormat data_format, int priority);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] byte[] data, TexData flags, TexFormat data_format, int priority);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] ushort[] data, TexData flags, TexFormat data_format, int priority);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors(IntPtr texture, int width, int height, [In] float[] data, TexData flags, TexFormat data_format, int priority);
-
-		// tex_set_colors_3d overload for byte[] (single-channel volumes, SDFs, etc.)
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)]
-		public static extern void tex_set_colors_3d(IntPtr texture, int width, int height, int depth, [In] byte[] data, TexData flags, TexFormat data_format, int priority);
-
 		// render_list_draw_now overloads - a single camera + projection passes
 		// by reference (ABI-equivalent to a 1-element array pointer) so the
 		// common single-view call path doesn't have to allocate a temporary

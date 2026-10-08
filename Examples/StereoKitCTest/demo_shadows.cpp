@@ -55,7 +55,7 @@ void demo_shadows_init() {
 
 	// Create shadow map texture (depth target)
 	shadow_map = tex_create(tex_type_depthtarget, tex_format_depth16);
-	tex_set_colors     (shadow_map, shadow_map_resolution, shadow_map_resolution, nullptr);
+	tex_set_size       (shadow_map, shadow_map_resolution, shadow_map_resolution);
 	tex_set_sample     (shadow_map, tex_sample_linear);
 	tex_set_sample_comp(shadow_map, tex_sample_comp_less_or_eq);
 	tex_set_address    (shadow_map, tex_address_clamp);

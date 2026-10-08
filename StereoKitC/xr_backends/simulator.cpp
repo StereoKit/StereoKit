@@ -227,8 +227,7 @@ void simulator_step_begin() {
 		// Native window destroyed (screen off, app backgrounded) — VkSurfaceKHR is now invalid
 		case ska_event_window_hidden:
 			log_diag("Window hidden - destroying surface");
-			vkDeviceWaitIdle(skr_get_vk_device());
-			skr_surface_destroy(&sim_skr_surface);
+			skr_surface_destroy(&sim_skr_surface); // idles the device itself, under the queue locks
 			frame_pacer_reset(&sim_pacer);
 			break;
 		// New native window available — recreate Vulkan surface
@@ -369,7 +368,6 @@ void simulator_step_end() {
 
 	// Resize AFTER frame_end (not mid-frame) to avoid command buffer ref_count imbalance
 	if (acquire == skr_acquire_surface_lost) {
-		vkDeviceWaitIdle(skr_get_vk_device());
 		skr_surface_destroy(&sim_skr_surface);
 		frame_pacer_reset(&sim_pacer);
 	} else if (skr_surface_is_valid(&sim_skr_surface)) {

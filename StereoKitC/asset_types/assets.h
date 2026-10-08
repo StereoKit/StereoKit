@@ -71,6 +71,8 @@ struct asset_task_t {
 	uint64_t             wait_id;          // nonzero from wait_prepare until the signal lands
 	bool32_t             signal_beat_park; // ...so assets_park_task re-queues instead of parking
 	ft_id_t              running_thread;   // stamped at acquire, backs assets_task_signal's contract check
+	uint64_t             time_submitted;   // stm ticks, stamped when the task enters the system
+	uint64_t             time_working;     // stm ticks spent inside actions
 };
 
 void*       assets_find               (const char* id, asset_type_ type);
@@ -88,6 +90,7 @@ void        assets_shutdown_check     ();
 char*       assets_file               (const char *file_name);
 bool        assets_init               ();
 void        assets_step               ();
+void        assets_drain              ();
 void        assets_shutdown           ();
 void        assets_on_load            (asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context);
 void        assets_on_load_remove     (asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context));
