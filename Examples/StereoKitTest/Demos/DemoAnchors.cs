@@ -13,8 +13,27 @@ class DemoAnchors : ITest
 
 	public bool Enabled => true;
 
-	public void Initialize() => anchors.AddRange(Anchor.Anchors);
-	public void Shutdown  () => anchors.Clear();
+	bool wasRequested;
+
+	public void Initialize()
+	{
+		// Another demo may have used Spatial.Disable, which overrides Anchor's own request
+		wasRequested = Spatial.IsRequested(SpatialCapability.Anchor);
+		Spatial.Request(SpatialCapability.Anchor);
+		foreach (Anchor a in Anchor.Anchors) Track(a);
+	}
+	public void Shutdown()
+	{
+		if (!wasRequested) Spatial.Disable(SpatialCapability.Anchor);
+		anchors.Clear();
+	}
+
+	// Each enumeration makes new Anchor objects, so Name is what identifies them
+	void Track(Anchor anchor)
+	{
+		if (!anchors.Exists(a => a.Name == anchor.Name))
+			anchors.Add(anchor);
+	}
 
 	Pose pose = Demo.contentPose.Pose;
 	public void Step()
@@ -53,7 +72,7 @@ class DemoAnchors : ITest
 			if (anchor != null)
 			{
 				anchor.TrySetPersistent(true);
-				anchors.Add(anchor);
+				Track(anchor);
 			}
 			else Log.Warn("Failed to create an anchor!");
 		}
@@ -86,9 +105,12 @@ class DemoAnchors : ITest
 		if (selected != null)
 			Mesh.Cube.Draw(Material.UIBox, selected.Pose.ToMatrix(0.1f));
 
-		// Log to the console whenever a new anchor is discovered.
+		// Persisted anchors can be discovered well after this demo starts
 		foreach (Anchor a in Anchor.NewAnchors)
+		{
 			Log.Info($"New anchor: {a.Name}");
+			Track(a);
+		}
 
 		Demo.ShowSummary(title, description,
 			new Bounds(V.XY0(-0.075f, 0.02f), V.XYZ(.45f, .38f, 0.1f)));
