@@ -19,7 +19,7 @@ OPENXR_DEFINE_FN_STATIC(XR_EXT_FUNCTIONS);
 struct xr_future_callback_t {
 	XrFutureEXT future;
 	void*       context;
-	void      (*on_finish)(void* context, XrFutureEXT future);
+	void      (*on_finish)(void* context, XrFutureEXT future, XrResult poll_result);
 };
 struct xr_future_state_t {
 	bool available;
@@ -75,34 +75,31 @@ void xr_ext_future_step_begin(void*) {
 	XrFuturePollInfoEXT   info   = { XR_TYPE_FUTURE_POLL_INFO_EXT };
 	XrFuturePollResultEXT result = { XR_TYPE_FUTURE_POLL_RESULT_EXT };
 	for (int32_t i = 0; i < local.callbacks.count; i++) {
-		const xr_future_callback_t* cb = &local.callbacks[i];
-		info.future = cb->future;
+		xr_future_callback_t cb = local.callbacks[i];
+		info.future = cb.future;
 
 		XrResult poll = xrPollFutureEXT(xr_instance, &info, &result);
-		if (XR_FAILED(poll)) {
-			// A dead future will never complete, no point polling it forever
-			log_warnf("%s [%s]", "xrPollFutureEXT", openxr_string(poll));
+		if (XR_FAILED(poll)) log_warnf("%s [%s]", "xrPollFutureEXT", openxr_string(poll));
+		if (XR_FAILED(poll) || result.state == XR_FUTURE_STATE_READY_EXT) {
+			// Callbacks can add futures, so this one leaves the list first
 			local.callbacks.remove(i);
 			i--;
-			continue;
-		}
-		if (result.state == XR_FUTURE_STATE_READY_EXT) {
-			cb->on_finish(cb->context, cb->future);
-			local.callbacks.remove(i);
-			i--;
+			cb.on_finish(cb.context, cb.future, poll);
 		}
 	}
 }
 
 ///////////////////////////////////////////
 
-void xr_ext_future_on_finish(XrFutureEXT future, void(*on_finish)(void* context, XrFutureEXT future), void* context) {
-	if (!local.available)
+void xr_ext_future_on_finish(XrFutureEXT future, void(*on_finish)(void* context, XrFutureEXT future, XrResult poll_result), void* context) {
+	if (!local.available) {
+		on_finish(context, future, XR_ERROR_EXTENSION_NOT_PRESENT);
 		return;
+	}
 
 	// Ready futures finish right away, the rest poll at the start of each frame
 	if (xr_ext_future_check(future)) {
-		on_finish(context, future);
+		on_finish(context, future, XR_SUCCESS);
 	} else {
 		local.callbacks.add({ future, context, on_finish });
 	}

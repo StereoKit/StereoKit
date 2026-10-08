@@ -47,6 +47,11 @@ class DemoSpatialEntity : ITest
 
 		prevRequested = Spatial.Requested;
 		Spatial.Request(Spatial.Capabilities);
+
+		// Restores saved anchors, and ones storage no longer has leave via Removed
+		if (Spatial.IsSupported(SpatialCapability.Anchor, SpatialComponent.Persistence))
+			foreach (Guid id in SavedAnchorIds.Ids)
+				SpatialEntity.FindAnchor(id);
 	}
 
 	public void Shutdown()
@@ -104,8 +109,8 @@ class DemoSpatialEntity : ITest
 		UI.PopEnabled();
 
 		UI.PushEnabled(SavedAnchorIds.Count > 0);
-		if (UI.Button($"Forget Saved ({SavedAnchorIds.Count})"))
-			SavedAnchorIds.Forget();
+		if (UI.Button($"Unpersist Saved ({SavedAnchorIds.Count})"))
+			SavedAnchorIds.UnpersistAll();
 		UI.PopEnabled();
 		UI.WindowEnd();
 
@@ -115,6 +120,8 @@ class DemoSpatialEntity : ITest
 		// like a destroyed anchor, so their saved id goes with them.
 		foreach (SpatialEntity entity in SpatialEntity.Removed)
 		{
+			// Lookups that were never drawn have no Visual, but still carry their Guid
+			if (entity.TryGetGuid(out Guid id)) SavedAnchorIds.Remove(id);
 			if (visuals.TryGetValue(entity, out Visual vis)) TrackSavedId(vis, Guid.Empty);
 			visuals.Remove(entity);
 		}
@@ -169,7 +176,9 @@ class DemoSpatialEntity : ITest
 			{
 				entity.TryGetGuid(out Guid persistId);
 				vis.anchorLabel = persistId == Guid.Empty ? "anchor" : persistId.ToString().Substring(0, 8);
-				TrackSavedId(vis, persistId);
+				// Named anchors are kept by StereoKit's name store, so the file skips them
+				if (entity.TryGetName(out _)) SavedAnchorIds.Remove(persistId);
+				else                          TrackSavedId(vis, persistId);
 			}
 			Text.Add(vis.anchorLabel, anchorPose.ToMatrix(), Pivot.TopCenter);
 		}
@@ -248,7 +257,7 @@ class DemoSpatialEntity : ITest
 	}
 }
 
-// Guids only mean something if you keep them! This remembers every
+// Guids only mean something if you keep them! This remembers every unnamed
 // anchor the app has persisted, so they can be restored or cleaned up in a
 // later session.
 static class SavedAnchorIds
@@ -264,7 +273,7 @@ static class SavedAnchorIds
 
 	// Unpersist works from just the id, so this also cleans up anchors from
 	// earlier sessions that haven't been found again.
-	public static void Forget()
+	public static void UnpersistAll()
 	{
 		foreach (Guid id in Load())
 			SpatialEntity.Unpersist(id);
