@@ -789,14 +789,15 @@ bool openxr_poll_events() {
 					result = false;
 				} else {
 					xr_has_session = true;
-					xr_time        = changed->time;
+					// An event time isn't promised to be locatable, so keep the current time if it's not
+					if (changed->time > 0) xr_time = changed->time;
 					log_diag("OpenXR session began.");
 
 					// FoV normally updates right before drawing, but we need
 					// it to be available as soon as the session begins, for
 					// apps that are listening to sk_app_focus changing to
 					// determine if FoV is ready.
-					openxr_views_update_fov(changed->time);
+					openxr_views_update_fov(xr_time);
 
 					// After session begins, we want to break out of the
 					// polling loop so we can call ext_management_evt_session_ready
@@ -820,19 +821,21 @@ bool openxr_poll_events() {
 			origin_mode_         origin        = sk_get_settings_ref()->origin;
 			bool                 recentered    = moved == XR_REFERENCE_SPACE_TYPE_LOCAL;
 			bool                 head_relative = origin == origin_mode_local || origin == origin_mode_floor;
+			// Android XR sends -1 for an immediate change, which isn't a locatable time
+			XrTime               change_time   = pending->changeTime > 0 ? pending->changeTime : xr_time;
 			// Head-relative modes sample the head into their offset, so a recenter must
 			// re-sample even when our base space didn't move. #715
 			bool resample_origin = moved == xr_app_space_type || (recentered && head_relative);
 			if (resample_origin) {
 				XrSpace new_space = {};
-				if (openxr_try_get_app_space(xr_session, origin, pending->changeTime, &xr_app_space_type, &world_origin_offset, &new_space)) {
+				if (openxr_try_get_app_space(xr_session, origin, change_time, &xr_app_space_type, &world_origin_offset, &new_space)) {
 					if (xr_app_space) xrDestroySpace(xr_app_space);
 					xr_app_space = new_space;
 				}
 			}
 			// Bounds are reported in app space, so they shift with either one.
 			if (resample_origin || moved == XR_REFERENCE_SPACE_TYPE_STAGE)
-				xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, pending->changeTime);
+				xr_has_bounds = openxr_get_stage_bounds(&xr_bounds_size, &xr_bounds_pose_local, change_time);
 		} break;
 		default: break;
 		}
