@@ -180,6 +180,13 @@ namespace StereoKit
 		/// overridden via `Renderer.OverrideCaptureFilter`.</summary>
 		public static RenderLayer CaptureFilter => NativeAPI.render_get_capture_filter();
 
+		/// <summary>How much GPU memory the renderer holds right now, and
+		/// what it's being used for: textures, render targets, meshes, and
+		/// buffers. This is useful for keeping an eye on an app's footprint,
+		/// especially on standalone headsets, where GPU memory comes out of
+		/// the same RAM every running app shares.</summary>
+		public static GPUMemory GPUMemory => NativeAPI.render_get_gpu_memory();
+
 		/// <summary>This is the gamma space color the renderer will clear
 		/// the screen to when beginning to draw a new frame.</summary>
 		public static Color ClearColor

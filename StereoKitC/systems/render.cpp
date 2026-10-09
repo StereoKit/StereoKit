@@ -732,6 +732,25 @@ bool32_t render_has_capture_filter() {
 
 ///////////////////////////////////////////
 
+gpu_memory_t render_get_gpu_memory() {
+	skr_mem_stats_t stats;
+	skr_mem_get_stats(&stats);
+
+	gpu_memory_t result = {};
+	result.reserved_bytes     = stats.reserved_bytes;
+	result.used_bytes         = stats.used_bytes;
+	result.peak_bytes         = stats.peak_used_bytes;
+	result.texture_bytes      = stats.category_bytes[skr_mem_category_texture];
+	result.target_bytes       = stats.category_bytes[skr_mem_category_target];
+	result.mesh_bytes         = stats.category_bytes[skr_mem_category_geometry];
+	result.buffer_bytes       = stats.category_bytes[skr_mem_category_buffer];
+	result.budget_bytes       = stats.budget_bytes;
+	result.device_usage_bytes = stats.device_usage_bytes;
+	return result;
+}
+
+///////////////////////////////////////////
+
 void render_global_texture_internal(int32_t register_slot, tex_t texture) {
 	if (local.global_textures[register_slot] == texture) return;
 

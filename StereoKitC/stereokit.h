@@ -2471,6 +2471,38 @@ typedef enum projection_ {
 	projection_ortho = 1
 } projection_;
 
+/*GPU memory held by StereoKit's renderer, from
+  render_get_gpu_memory. This covers what StereoKit allocates itself, not
+  swapchain images, which belong to the XR runtime or the OS. On devices that
+  share memory between the CPU and GPU, like standalone headsets, this is
+  still the right number to watch, as it comes out of the same RAM other apps
+  need.*/
+typedef struct gpu_memory_t {
+	/*Bytes the renderer holds from the driver. Allocations are packed into
+	  larger blocks, so this is a little above used_bytes.*/
+	uint64_t reserved_bytes;
+	/*Bytes bound to live textures, meshes and buffers.*/
+	uint64_t used_bytes;
+	/*The highest used_bytes has been since startup.*/
+	uint64_t peak_bytes;
+	/*Bytes of used_bytes in textures that hold image data, like loaded
+	  images and cubemaps.*/
+	uint64_t texture_bytes;
+	/*Bytes of used_bytes in render targets, depth buffers and compute
+	  textures.*/
+	uint64_t target_bytes;
+	/*Bytes of used_bytes in mesh vertex and index data.*/
+	uint64_t mesh_bytes;
+	/*Bytes of used_bytes in material and compute buffers.*/
+	uint64_t buffer_bytes;
+	/*How much GPU memory the driver suggests this app stays under, or 0 if
+	  the driver can't say. Many standalone headsets can't.*/
+	uint64_t budget_bytes;
+	/*GPU memory this app is using according to the driver, counting
+	  allocations outside StereoKit too, or 0 if the driver can't say.*/
+	uint64_t device_usage_bytes;
+} gpu_memory_t;
+
 //TODO: for v0.4, rename render_set_clip and render_set_fov to indicate they are only for perspective
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
 SK_API void                  render_get_clip       (float* out_near_plane, float* out_far_plane);
@@ -2498,6 +2530,7 @@ SK_API float                 render_get_viewport_scaling(void);
 SK_API void                  render_set_multisample(int32_t display_tex_multisample);
 SK_API int32_t               render_get_multisample(void);
 SK_API void                  render_override_capture_filter(bool32_t use_override_filter, render_layer_ layer_filter sk_default(render_layer_all));
+SK_API gpu_memory_t          render_get_gpu_memory (void);
 SK_API render_layer_         render_get_capture_filter     (void);
 SK_API bool32_t              render_has_capture_filter     (void);
 SK_API void                  render_set_clear_color(color128 color_gamma);

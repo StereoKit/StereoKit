@@ -653,6 +653,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_multisample(int display_tex_multisample);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          render_get_multisample();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_override_capture_filter([MarshalAs(UnmanagedType.Bool)] bool use_override_filter, RenderLayer layer_filter);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern GPUMemory    render_get_gpu_memory();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern RenderLayer  render_get_capture_filter();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         render_has_capture_filter();
