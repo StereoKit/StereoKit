@@ -2342,12 +2342,12 @@ namespace StereoKit
 		PlaneTracking = 1 << 1,
 		/// <summary>Detection and tracking of QR codes, including their decoded
 		/// data.</summary>
-		QrCode       = 1 << 2,
+		QRCode       = 1 << 2,
 		/// <summary>Detection and tracking of Micro QR codes, including their decoded
 		/// data.</summary>
-		MicroQr      = 1 << 3,
+		MicroQR      = 1 << 3,
 		/// <summary>Detection and tracking of ArUco fiducial markers.</summary>
-		Aruco        = 1 << 4,
+		ArUco        = 1 << 4,
 		/// <summary>Detection and tracking of AprilTag fiducial markers.</summary>
 		AprilTag     = 1 << 5,
 	}
@@ -2469,11 +2469,11 @@ namespace StereoKit
 		/// <summary>Not a marker.</summary>
 		None         = 0,
 		/// <summary>A QR code, data is typically a decoded string.</summary>
-		QrCode       = 1,
+		QRCode       = 1,
 		/// <summary>A Micro QR code, data is typically a decoded string.</summary>
-		MicroQr      = 2,
+		MicroQR      = 2,
 		/// <summary>An ArUco fiducial marker, identified by its numeric id.</summary>
-		Aruco        = 3,
+		ArUco        = 3,
 		/// <summary>An AprilTag fiducial marker, identified by its numeric id.</summary>
 		AprilTag     = 4,
 	}
@@ -2482,7 +2482,7 @@ namespace StereoKit
 	/// size of the markers, and how many unique marker ids it contains. The
 	/// tracker can only detect markers from the dictionary it's configured
 	/// for.</summary>
-	public enum ArucoDict {
+	public enum ArUcoDict {
 		/// <summary>Let StereoKit pick, currently 4x4, 50 ids.</summary>
 		Default      = 0,
 		/// <summary>4x4 grid, 50 unique ids.</summary>

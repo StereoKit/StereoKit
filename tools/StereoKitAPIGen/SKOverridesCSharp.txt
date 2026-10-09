@@ -21,6 +21,13 @@ gpu_memory_t GPUMemory
 spatial_component_bounds2d Bounds2D
 spatial_component_bounds3d Bounds3D
 spatial_component_mesh2d   Mesh2D
+spatial_capability_qr_code  QRCode
+spatial_capability_micro_qr MicroQR
+marker_type_qr_code         QRCode
+marker_type_micro_qr        MicroQR
+spatial_capability_aruco    ArUco
+marker_type_aruco           ArUco
+aruco_dict_                 ArUcoDict
 # Byte order differs from System.Guid, so this converts by hand
 sk_uuid_t NativeUuid
 

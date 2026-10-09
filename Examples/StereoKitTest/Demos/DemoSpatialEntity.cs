@@ -32,9 +32,9 @@ class DemoSpatialEntity : ITest
 	static readonly (SpatialCapability cap, string name)[] capNames = {
 		(SpatialCapability.Anchor,        "Anchors"),
 		(SpatialCapability.PlaneTracking, "Plane Tracking"),
-		(SpatialCapability.QrCode,        "QR Codes"),
-		(SpatialCapability.MicroQr,       "Micro QR Codes"),
-		(SpatialCapability.Aruco,         "ArUco Markers"),
+		(SpatialCapability.QRCode,        "QR Codes"),
+		(SpatialCapability.MicroQR,       "Micro QR Codes"),
+		(SpatialCapability.ArUco,         "ArUco Markers"),
 		(SpatialCapability.AprilTag,      "AprilTags"),
 	};
 

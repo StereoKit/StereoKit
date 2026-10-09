@@ -87,9 +87,18 @@ static bool spt_finding(sk_uuid_t id) {
 	return false;
 }
 
+// What the backend's next update snapshot says about an app-created anchor
+static void spt_report(spatial_entity_t entity, spatial_tracking_ tracking) {
+	spatial_ingest_t in = {};
+	in.entity   = entity;
+	in.tracking = tracking;
+	spatial_backend_ingest(spatial_capability_anchor, &in, 1);
+}
+
 // Unnamed, so these tests cover persistence without touching the name store
 static spatial_entity_t spt_create_persisted() {
 	spatial_entity_t e = spatial_entity_create_anchor(pose_identity, nullptr, 0);
+	spt_report(e, spatial_tracking_tracking);
 	spatial_entity_persist(e);
 	return e;
 }
@@ -98,10 +107,18 @@ static spatial_entity_t spt_create_persisted() {
 
 static void spt_test_create_persisted() {
 	spt_reset();
-	spatial_entity_t e = spt_create_persisted();
+	spatial_entity_t e = spatial_entity_create_anchor(pose_identity, nullptr, 0);
+	spatial_entity_persist(e);
 	SPT_CHECK(e != 0 && spatial_entity_get_status(e) == spatial_status_pending, "persisting a new anchor starts Pending");
-	SPT_CHECK(spt.persist_count == 1 && spt.persists[0] == e,                  "a tracked anchor persists right away");
+	SPT_CHECK(spt.persist_count == 0,                                           "a new anchor waits for the runtime to report it before persisting");
+	SPT_CHECK(spatial_entity_get_tracked(e) == button_state_inactive,           "a new anchor is untracked until the runtime reports it");
 	SPT_CHECK(!spt_in_new(e),                                                   "app-created entities skip New the frame they're made");
+
+	spt_report(e, spatial_tracking_paused);
+	SPT_CHECK(spt.persist_count == 0,                         "a paused anchor keeps waiting to persist");
+	spt_report(e, spatial_tracking_tracking);
+	SPT_CHECK(spatial_entity_get_tracked(e) == (button_state_active | button_state_just_active), "the runtime's first tracking report starts tracking");
+	SPT_CHECK(spt.persist_count == 1 && spt.persists[0] == e, "an anchor persists once the runtime reports it tracking");
 
 	sk_step(nullptr);
 	SPT_CHECK(spt_in_new(e), "app-created entities show up in New the following frame");
@@ -295,6 +312,7 @@ static void spt_test_names() {
 	spatial_names_clear();
 
 	spatial_entity_t a = spatial_entity_create_anchor(pose_identity, "spt_table", 0);
+	spt_report(a, spatial_tracking_tracking);
 	SPT_CHECK(spt.persist_count == 1,                          "a named anchor persists");
 	SPT_CHECK(spatial_entity_find_anchor("spt_table") == a,    "a name finds its anchor before the persist lands");
 	spatial_backend_set_persist(a, spt_uuid(30));
@@ -303,6 +321,7 @@ static void spt_test_names() {
 	spatial_entity_t b = spatial_entity_create_anchor(pose_identity, "spt_table", 0);
 	SPT_CHECK(spt_in_removed(a) && spt.unpersist_count == 1 && spt_uuid_eq(spt.unpersists[0].id, spt_uuid(30)), "a new anchor takes the name, and the old one is destroyed");
 	SPT_CHECK(spatial_entity_find_anchor("spt_table") == b,    "the name finds the new anchor");
+	spt_report(b, spatial_tracking_tracking);
 	spatial_backend_set_persist(b, spt_uuid(31));
 	SPT_CHECK(spt_named("spt_table", spt_uuid(31)),            "the name moves to the new anchor's uuid");
 

@@ -10,7 +10,7 @@ namespace StereoKit
 	/// `Request` what you need. Capabilities start up asynchronously, and
 	/// may need a permission first, so `Running` tells you which ones have
 	/// actually started. Marker settings like `SetMarkerSize` and
-	/// `ArucoDictionary` are best set before requesting, since changing
+	/// `ArUcoDictionary` are best set before requesting, since changing
 	/// them restarts that capability's tracking.</summary>
 	public static class Spatial
 	{
@@ -135,12 +135,12 @@ namespace StereoKit
 		public static bool GetMarkerStationary(MarkerType type)
 			=> NativeAPI.spatial_get_marker_stationary(type);
 
-		/// <summary>Which family of ArUco markers `SpatialCapability.Aruco`
+		/// <summary>Which family of ArUco markers `SpatialCapability.ArUco`
 		/// looks for. Markers from other dictionaries aren't detected, so
 		/// this must match the markers you printed! Default lets StereoKit
 		/// pick. Changing it while ArUco markers are being tracked restarts
 		/// that tracking.</summary>
-		public static ArucoDict ArucoDictionary {
+		public static ArUcoDict ArUcoDictionary {
 			get => NativeAPI.spatial_get_aruco_dictionary();
 			set => NativeAPI.spatial_set_aruco_dictionary(value); }
 
