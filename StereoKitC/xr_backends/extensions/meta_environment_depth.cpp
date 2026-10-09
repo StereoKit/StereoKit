@@ -383,7 +383,7 @@ void xr_ext_meta_environment_depth_update_frame(XrTime display_time) {
 	void*         image_ptr   = (void*)(uintptr_t)local.images[image_info.swapchainIndex].image;
 
 	if (!local.depth_tex_initialized) {
-		tex_set_surface(local.depth_tex, image_ptr, tex_type_image_nomips, native_fmt, width, height, array_count, 1, false);
+		tex_set_surface(local.depth_tex, image_ptr, tex_type_image_nomips, native_fmt, width, height, array_count, 1);
 		local.depth_tex_initialized = true;
 	} else {
 		skr_tex_external_update_t update = {};

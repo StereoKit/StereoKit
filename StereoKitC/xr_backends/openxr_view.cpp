@@ -522,15 +522,12 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 
 		// Update or set the native textures
 		for (uint32_t back = 0; back < sc_color->backbuffer_count; back++) {
-			// OpenXR swapchain images are owned by the runtime, not the
-			// application - they get destroyed when xrDestroySwapchain is
-			// called, so we pass owned=false here.
 			void *native_surface_col = (void*)sc_color->backbuffers[back].image;
-			tex_set_surface(sc_color->textures[back], native_surface_col, (tex_type_)(tex_type_rendertarget | tex_type_attachment_internal), xr_preferred_color_format, sc_color->width, sc_color->height, array_count, 1, false);
+			tex_set_surface(sc_color->textures[back], native_surface_col, (tex_type_)(tex_type_rendertarget | tex_type_attachment_internal), xr_preferred_color_format, sc_color->width, sc_color->height, array_count, 1);
 
 			if (has_depth_sc) {
 				void *native_surface_depth = (void*)sc_depth->backbuffers[back].image;
-				tex_set_surface(sc_depth->textures[back], native_surface_depth, (tex_type_)(tex_type_zbuffer | tex_type_attachment_internal), xr_preferred_depth_format, sc_depth->width, sc_depth->height, array_count, 1, false);
+				tex_set_surface(sc_depth->textures[back], native_surface_depth, (tex_type_)(tex_type_zbuffer | tex_type_attachment_internal), xr_preferred_depth_format, sc_depth->width, sc_depth->height, array_count, 1);
 				tex_set_zbuffer(sc_color->textures[back], sc_depth->textures[back]);
 			} else {
 				// Provide a write-only depth buffer for z-testing when

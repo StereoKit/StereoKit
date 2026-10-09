@@ -584,7 +584,6 @@ tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data, int32_t p
 
 tex_t tex_create(tex_type_ type, tex_format_ format) {
 	tex_t result = (tex_t)assets_allocate(asset_type_tex);
-	result->owned  = true;
 	result->type   = type;
 	result->format = format;
 	result->address_mode = tex_address_wrap;
@@ -946,13 +945,10 @@ tex_t tex_get_zbuffer(tex_t texture) {
 
 ///////////////////////////////////////////
 
-void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample, bool32_t owned) {
-	// Always destroy old GPU resources when valid - skr_tex_destroy handles
-	// is_external internally to decide whether to destroy the VkImage.
+void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample) {
+	// The native image is always borrowed, so this only frees our view of the old one
 	if (skr_tex_is_valid(&texture->gpu_tex))
 		skr_tex_destroy(&texture->gpu_tex);
-
-	texture->owned = owned;
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
@@ -966,7 +962,6 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 		info.sampler       = tex_get_skr_sampler(texture);
 		info.multisample   = multisample;
 		info.array_layers  = surface_count;
-		info.owns_image    = owned;
 
 		// Swapchain images arrive in, and must be handed back in, the
 		// attachment layout. They're not readable, so render passes end there.

@@ -17,7 +17,6 @@ const tex_type_ tex_type_attachment_internal = (tex_type_)(1 << 29);
 struct _tex_t {
 	asset_header_t   header;
 	tex_t            fallback;
-	bool32_t         owned;
 
 	// Metadata fields - kept for quick CPU access
 	// TODO: can get rid of some maybe?
