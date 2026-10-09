@@ -185,14 +185,12 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 	// Find the skeleton for the mesh
 	bone_tr_ct = (int32_t)node->skin->joints_count;
 	bone_trs   = sk_malloc_t(matrix, bone_tr_ct);
-	if (node->skin->inverse_bind_matrices != nullptr) { 
-		cgltf_buffer_view *buff      = node->skin->inverse_bind_matrices->buffer_view;
-		size_t             offset    = buff->offset + node->skin->inverse_bind_matrices->offset;
-		uint8_t           *attr_data = ((uint8_t *)buff->buffer->data) + offset;
-
-		memcpy(bone_trs, attr_data, sizeof(matrix) *bone_tr_ct);
+	if (node->skin->inverse_bind_matrices != nullptr) {
+		// Through cgltf rather than the raw buffer: EXT_meshopt_compression
+		// decodes into the view, leaving the view's buffer a dataless fallback
+		cgltf_size floats = cgltf_accessor_unpack_floats(node->skin->inverse_bind_matrices, bone_trs[0].m, (cgltf_size)bone_tr_ct * 16);
 		for (int32_t i = 0; i < bone_tr_ct; i++) {
-			bone_trs[i] = matrix_invert(bone_trs[i]);
+			bone_trs[i] = (cgltf_size)(i + 1) * 16 <= floats ? matrix_invert(bone_trs[i]) : matrix_identity;
 		}
 	} else {
 		for (int32_t i = 0; i < bone_tr_ct; i++) {
@@ -481,7 +479,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		}
 	}
 
-	if (!has_normals) {
+	if (!has_normals && p->type == cgltf_primitive_type_triangles) {
 		mesh_calculate_normals(VERT_FORMAT_DEFAULT, verts, vert_count, inds, (int32_t)ind_count);
 	}
 
@@ -1068,6 +1066,22 @@ bool modelfmt_gltf_metadata(model_t model, const char *filename, const void *fil
 	}
 
 	gltf_meshopt_decode(load->data);
+
+	// A view still without bytes was compressed by an extension we can't
+	// decode (KHR_meshopt_compression, say), and its fallback buffer is empty
+	for (cgltf_size i = 0; i < load->data->buffer_views_count; i++) {
+		if (cgltf_buffer_view_data(&load->data->buffer_views[i]) != nullptr) continue;
+
+		char required[256] = "";
+		for (cgltf_size e = 0; e < load->data->extensions_required_count; e++) {
+			size_t len = strlen(required);
+			snprintf(required + len, sizeof(required) - len, "%s%s", e > 0 ? ", " : "", load->data->extensions_required[e]);
+		}
+		log_warnf("[%s] can't load: its buffer data needs a compression extension StereoKit doesn't support. Required extensions: %s", filename, required);
+		cgltf_free(load->data);
+		sk_free(load);
+		return false;
+	}
 
 	// Build the node hierarchy with materials (no textures) and no meshes
 	for (cgltf_size i = 0; i < load->data->nodes_count; i++) {
