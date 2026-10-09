@@ -626,6 +626,11 @@ namespace StereoKit
 
 		///////////////////////////////////////////
 
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern FutureState  future_check(Future future);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern FutureState  future_wait(Future future);
+
+		///////////////////////////////////////////
+
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_clip(float near_plane, float far_plane);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_get_clip(out float out_near_plane, out float out_far_plane);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_fov(float vertical_field_of_view_degrees);
@@ -654,6 +659,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          render_get_multisample();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_override_capture_filter([MarshalAs(UnmanagedType.Bool)] bool use_override_filter, RenderLayer layer_filter);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern GPUMemory    render_get_gpu_memory();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Future       render_gpu_future();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern RenderLayer  render_get_capture_filter();
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         render_has_capture_filter();
@@ -941,8 +947,8 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_set_marker_stationary(MarkerType type, [MarshalAs(UnmanagedType.Bool)] bool stationary);
 		[return: MarshalAs(UnmanagedType.Bool)]
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         spatial_get_marker_stationary(MarkerType type);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_set_aruco_dictionary(ArucoDict dictionary);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ArucoDict    spatial_get_aruco_dictionary();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_set_aruco_dictionary(ArUcoDict dictionary);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern ArUcoDict    spatial_get_aruco_dictionary();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         spatial_set_april_tag_dictionary(AprilTagDict dictionary);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern AprilTagDict spatial_get_april_tag_dictionary();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          spatial_entity_get_count(SpatialComponent with_components);

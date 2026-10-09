@@ -1160,7 +1160,7 @@ struct tex_reflection_job_t {
 static bool32_t tex_sh_resolve(tex_t texture, bool32_t block) {
 	if (!texture->sh_pending) return texture->light_info != nullptr;
 	if      (block) skr_future_wait(&texture->sh_future);
-	else if (!skr_future_check(&texture->sh_future)) return false;
+	else if (skr_future_check(&texture->sh_future) == skr_future_state_pending) return false;
 
 	if (texture->light_info == nullptr)
 		texture->light_info = sk_malloc_t(spherical_harmonics_t, 1);

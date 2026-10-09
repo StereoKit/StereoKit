@@ -64,7 +64,7 @@ void sensor_readback_update(tex_t gpu_tex, int32_t width, int32_t height, int32_
 	if (readback.pending_readback_count == array_count) {
 		bool all_done = true;
 		for (int32_t i = 0; i < array_count; i++) {
-			if (!skr_future_check(&readback.pending_readback[i].future)) {
+			if (skr_future_check(&readback.pending_readback[i].future) == skr_future_state_pending) {
 				all_done = false;
 				break;
 			}

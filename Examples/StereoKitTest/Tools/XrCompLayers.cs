@@ -127,6 +127,9 @@ namespace StereoKit.Framework
 		{
 			if (_inst.Enabled == false) return;
 
+			// OpenXR requires GPU work on the swapchain to finish first,
+			// including the runtime's barriers on StereoKit's queue.
+			Renderer.GPUFuture().Wait();
 			_inst.xrDestroySwapchain(swapchain);
 		}
 
@@ -388,6 +391,13 @@ namespace StereoKit.Framework
 
 			public void Release()
 				=> _inst.xrReleaseSwapchainImage(handle, IntPtr.Zero);
+
+			public void Destroy()
+			{
+				_images = null;
+				XrCompLayers.DestroySwapchain(handle);
+				handle = default;
+			}
 		}
 		#endregion
 	}

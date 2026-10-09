@@ -2503,6 +2503,32 @@ typedef struct gpu_memory_t {
 	uint64_t device_usage_bytes;
 } gpu_memory_t;
 
+/*A handle to work that finishes later, like GPU commands that are still
+  running. Any thread can check on it with future_check, or block until
+  it's done with future_wait. Futures never need releasing, and a
+  zero-initialized future is invalid and counts as done.*/
+typedef struct future_t {
+	void*    _slot;
+	uint64_t _generation;
+} future_t;
+
+/*Where a future's work is at. Negative values are failures, so
+  `state < 0` catches any of them.*/
+typedef enum future_state_ {
+	/*The work couldn't complete, like work still pending when StereoKit
+	  shut down. The operation itself may say more about why.*/
+	future_state_failed  = -1,
+	/*Not a valid future, like 0. This counts as done.*/
+	future_state_none    = 0,
+	/*The work is still in progress.*/
+	future_state_pending = 1,
+	/*The work has finished.*/
+	future_state_ready   = 2,
+} future_state_;
+
+SK_API future_state_         future_check          (future_t future);
+SK_API future_state_         future_wait           (future_t future);
+
 //TODO: for v0.4, rename render_set_clip and render_set_fov to indicate they are only for perspective
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
 SK_API void                  render_get_clip       (float* out_near_plane, float* out_far_plane);
@@ -2531,6 +2557,7 @@ SK_API void                  render_set_multisample(int32_t display_tex_multisam
 SK_API int32_t               render_get_multisample(void);
 SK_API void                  render_override_capture_filter(bool32_t use_override_filter, render_layer_ layer_filter sk_default(render_layer_all));
 SK_API gpu_memory_t          render_get_gpu_memory (void);
+SK_API future_t              render_gpu_future     (void);
 SK_API render_layer_         render_get_capture_filter     (void);
 SK_API bool32_t              render_has_capture_filter     (void);
 SK_API void                  render_set_clear_color(color128 color_gamma);

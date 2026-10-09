@@ -42,6 +42,8 @@ class DemoLayers : ITest
 
 	public void Shutdown()
 	{
+		swapchain?.Destroy();
+		swapchain = null;
 	}
 
 	public void Step()

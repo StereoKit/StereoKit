@@ -187,6 +187,13 @@ namespace StereoKit
 		/// the same RAM every running app shares.</summary>
 		public static GPUMemory GPUMemory => NativeAPI.render_get_gpu_memory();
 
+		/// <summary>A Future that finishes once all GPU work submitted so far
+		/// is done, including work from other threads and the XR runtime.
+		/// Wait on it before freeing something the GPU may still be using,
+		/// like an OpenXR swapchain. Any thread may call this.</summary>
+		/// <returns>A Future for all GPU work submitted so far.</returns>
+		public static Future GPUFuture() => NativeAPI.render_gpu_future();
+
 		/// <summary>This is the gamma space color the renderer will clear
 		/// the screen to when beginning to draw a new frame.</summary>
 		public static Color ClearColor

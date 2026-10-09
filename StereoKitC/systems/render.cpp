@@ -1092,7 +1092,7 @@ void render_check_pending_readbacks() {
 		render_pending_readback_t* pending = &local.pending_readbacks[i];
 
 		// Check if readback is complete
-		if (!skr_future_check(&pending->readback.future)) {
+		if (skr_future_check(&pending->readback.future) == skr_future_state_pending) {
 			continue; // Not ready yet
 		}
 

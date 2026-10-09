@@ -451,6 +451,8 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/systems/render.cpp
   StereoKitC/systems/frame_pacer.h
   StereoKitC/systems/frame_pacer.cpp
+  StereoKitC/systems/future.h
+  StereoKitC/systems/future.cpp
   StereoKitC/systems/render_pipeline.h
   StereoKitC/systems/render_pipeline.cpp
   StereoKitC/systems/lighting.h
@@ -992,6 +994,8 @@ if (SK_BUILD_TESTS AND NOT ANDROID AND NOT SK_BUILD_SHARED_LIBS)
     tools/tests/sh_tests.cpp
     tools/tests/spatial_tests.h
     tools/tests/spatial_tests.cpp
+    tools/tests/future_tests.h
+    tools/tests/future_tests.cpp
   )
 
   # See the StereoKitCTest note: pin the standard so u8 literals stay char.

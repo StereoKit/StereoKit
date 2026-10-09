@@ -1392,6 +1392,20 @@ namespace StereoKit
 		Ortho        = 1,
 	}
 
+	/// <summary>Where a future's work is at. Negative values are failures, so
+	/// `state &lt; 0` catches any of them.</summary>
+	public enum FutureState {
+		/// <summary>The work couldn't complete, like work still pending when StereoKit
+		/// shut down. The operation itself may say more about why.</summary>
+		Failed       = -1,
+		/// <summary>Not a valid future, like 0. This counts as done.</summary>
+		None         = 0,
+		/// <summary>The work is still in progress.</summary>
+		Pending      = 1,
+		/// <summary>The work has finished.</summary>
+		Ready        = 2,
+	}
+
 	/// <summary>Controls whether a RenderList holds asset references for the items it
 	/// contains. Tracked lists are safe to keep around across frames at the cost
 	/// of an addref/releaseref pair per item.</summary>

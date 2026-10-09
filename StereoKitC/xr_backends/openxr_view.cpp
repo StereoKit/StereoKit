@@ -68,6 +68,8 @@ struct swapchain_t {
 	tex_t               *textures;
 	bool32_t             acquired;
 };
+// Callers wait on render_gpu_future first, since xrDestroySwapchain needs all
+// GPU work on it done, including the runtime's barriers on our queue.
 void swapchain_delete(swapchain_t *swapchain) {
 	for (size_t s = 0; s < swapchain->backbuffer_count; s++)
 		tex_release(swapchain->textures[s]);
@@ -103,6 +105,7 @@ struct device_display_t {
 void device_display_delete(device_display_t *display) {
 	if (display->render_surface >= 0)
 		render_pipeline_surface_destroy(display->render_surface);
+	future_wait(render_gpu_future());
 	swapchain_delete(&display->swapchain_color);
 	swapchain_delete(&display->swapchain_depth);
 	sk_free(display->view_xr);
@@ -384,14 +387,6 @@ bool32_t xr_view_type_valid(XrViewConfigurationType type) {
 
 void openxr_views_destroy() {
 	openxr_step_time_reset();
-	// Wait for all GPU work to complete before destroying swapchain resources.
-	// The textures have ImageViews/Framebuffers that may still be referenced
-	// by in-flight command buffers, and OpenXR swapchain images can't be
-	// destroyed while in use. The device may not exist yet, since cleanup can
-	// run during an early failed openxr_create_system probe, before skr_init.
-	VkDevice vk_device = skr_get_vk_device();
-	if (vk_device != VK_NULL_HANDLE)
-		vkDeviceWaitIdle(vk_device);
 
 	for (int32_t i = 0; i < xr_displays.count; i++) {
 		device_display_delete(&xr_displays[i]);
@@ -489,6 +484,8 @@ bool openxr_display_swapchain_update(device_display_t *display) {
 	// multisample changes don't require swapchain recreation.
 	bool has_depth_sc = xr_ext_composition_depth_available();
 	if (w != sc_color->width || h != sc_color->height) {
+		// Recreating deletes the old swapchains, see swapchain_delete
+		if (sc_color->handle) future_wait(render_gpu_future());
 
 		if (!openxr_create_swapchain(sc_color, display->type, true, array_count, xr_preferred_color_format, w, h)) return false;
 		if (has_depth_sc) {

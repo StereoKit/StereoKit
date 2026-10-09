@@ -79,7 +79,6 @@ void xr_ext_future_step_begin(void*) {
 		info.future = cb.future;
 
 		XrResult poll = xrPollFutureEXT(xr_instance, &info, &result);
-		if (XR_FAILED(poll)) log_warnf("%s [%s]", "xrPollFutureEXT", openxr_string(poll));
 		if (XR_FAILED(poll) || result.state == XR_FUTURE_STATE_READY_EXT) {
 			// Callbacks can add futures, so this one leaves the list first
 			local.callbacks.remove(i);
