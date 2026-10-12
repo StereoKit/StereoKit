@@ -1398,7 +1398,7 @@ namespace StereoKit
 		/// <summary>The work couldn't complete, like work still pending when StereoKit
 		/// shut down. The operation itself may say more about why.</summary>
 		Failed       = -1,
-		/// <summary>Not a valid future, like 0. This counts as done.</summary>
+		/// <summary>Not a valid future, like a zero-initialized one. This counts as done.</summary>
 		None         = 0,
 		/// <summary>The work is still in progress.</summary>
 		Pending      = 1,

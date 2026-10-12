@@ -744,6 +744,7 @@ gpu_memory_t render_get_gpu_memory() {
 	result.target_bytes       = stats.category_bytes[skr_mem_category_target];
 	result.mesh_bytes         = stats.category_bytes[skr_mem_category_geometry];
 	result.buffer_bytes       = stats.category_bytes[skr_mem_category_buffer];
+	result.transient_bytes    = stats.category_bytes[skr_mem_category_frame] + stats.category_bytes[skr_mem_category_staging];
 	result.budget_bytes       = stats.budget_bytes;
 	result.device_usage_bytes = stats.device_usage_bytes;
 	return result;

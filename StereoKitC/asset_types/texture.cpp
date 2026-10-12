@@ -952,32 +952,35 @@ void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_
 
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
-
-	if (native_surface != nullptr) {
-		skr_tex_external_info_t info = {};
-		info.image         = (VkImage)native_surface;
-		info.format        = skr_tex_fmt_from_native((uint32_t)native_fmt);
-		info.flags         = tex_type_to_skr_flags(type);
-		info.size          = { width, height, 1 };
-		info.sampler       = tex_get_skr_sampler(texture);
-		info.multisample   = multisample;
-		info.array_layers  = surface_count;
-
-		// Swapchain images arrive in, and must be handed back in, the
-		// attachment layout. They're not readable, so render passes end there.
-		if (type & tex_type_attachment_internal) {
-			info.current_layout = (type & tex_type_zbuffer)
-				? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-				: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		}
-
-		skr_tex_create_external_vk(info, &texture->gpu_tex);
-	} else {
-		texture->gpu_tex = {};
-	}
-
 	texture->width  = width;
 	texture->height = height;
+
+	// No surface detaches, leaving the texture as it was fresh from tex_create
+	if (native_surface == nullptr) {
+		texture->gpu_tex      = {};
+		texture->header.state = asset_state_none;
+		tex_set_fallback(texture, _tex_get_loading_fallback(texture));
+		return;
+	}
+
+	skr_tex_external_info_t info = {};
+	info.image         = (VkImage)native_surface;
+	info.format        = skr_tex_fmt_from_native((uint32_t)native_fmt);
+	info.flags         = tex_type_to_skr_flags(type);
+	info.size          = { width, height, 1 };
+	info.sampler       = tex_get_skr_sampler(texture);
+	info.multisample   = multisample;
+	info.array_layers  = surface_count;
+
+	// Swapchain images arrive in, and must be handed back in, the
+	// attachment layout. They're not readable, so render passes end there.
+	if (type & tex_type_attachment_internal) {
+		info.current_layout = (type & tex_type_zbuffer)
+			? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	}
+
+	skr_tex_create_external_vk(info, &texture->gpu_tex);
 
 	texture->header.state = skr_tex_is_valid(&texture->gpu_tex)
 		? asset_state_loaded
@@ -1105,10 +1108,7 @@ void tex_destroy(tex_t tex) {
 	if (tex->sh_pending)
 		skr_buffer_destroy(&tex->sh_buffer);
 	sk_free(tex->light_info);
-	// Always destroy GPU resources when valid - skr_tex_destroy checks is_external
-	// internally to decide whether to destroy the VkImage (external images like
-	// OpenXR swapchains won't have their VkImage destroyed, but ImageViews and
-	// Framebuffers that we created will still be cleaned up).
+	// Images from tex_set_surface are borrowed, so this frees only our views of them
 	if (skr_tex_is_valid(&tex->gpu_tex)) {
 		skr_tex_destroy(&tex->gpu_tex);
 	}

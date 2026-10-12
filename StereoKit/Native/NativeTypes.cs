@@ -87,32 +87,33 @@ namespace StereoKit
 		public Color32 color;
 	}
 
-	/// <summary>GPU memory held by StereoKit's renderer, from
-	/// render_get_gpu_memory. This covers what StereoKit allocates itself, not
-	/// swapchain images, which belong to the XR runtime or the OS. On devices that
-	/// share memory between the CPU and GPU, like standalone headsets, this is
-	/// still the right number to watch, as it comes out of the same RAM other apps
-	/// need.</summary>
+	/// <summary>GPU memory held by StereoKit's renderer. This covers what StereoKit
+	/// allocates itself, not swapchain images, which belong to the XR runtime or
+	/// the OS. On devices that share memory between the CPU and GPU, like
+	/// standalone headsets, this is still the right number to watch, as it comes
+	/// out of the same RAM other apps need.</summary>
 	[StructLayout(LayoutKind.Sequential)]
 	public partial struct GPUMemory
 	{
 		/// <summary>Bytes the renderer holds from the driver. Allocations are packed into
-		/// larger blocks, so this is a little above used_bytes.</summary>
+		/// larger blocks, so this is a little above the used bytes.</summary>
 		public ulong reservedBytes;
-		/// <summary>Bytes bound to live textures, meshes and buffers.</summary>
+		/// <summary>Bytes bound to live resources, the total of the categories below.</summary>
 		public ulong usedBytes;
-		/// <summary>The highest used_bytes has been since startup.</summary>
+		/// <summary>The highest the used bytes have been since startup.</summary>
 		public ulong peakBytes;
-		/// <summary>Bytes of used_bytes in textures that hold image data, like loaded
-		/// images and cubemaps.</summary>
+		/// <summary>Used bytes in textures that hold image data, like loaded images and
+		/// cubemaps.</summary>
 		public ulong textureBytes;
-		/// <summary>Bytes of used_bytes in render targets, depth buffers and compute
-		/// textures.</summary>
+		/// <summary>Used bytes in render targets, depth buffers and compute textures.</summary>
 		public ulong targetBytes;
-		/// <summary>Bytes of used_bytes in mesh vertex and index data.</summary>
+		/// <summary>Used bytes in mesh vertex and index data.</summary>
 		public ulong meshBytes;
-		/// <summary>Bytes of used_bytes in material and compute buffers.</summary>
+		/// <summary>Used bytes in material and compute buffers.</summary>
 		public ulong bufferBytes;
+		/// <summary>Used bytes in short-lived memory, like per-frame scratch space and
+		/// copies of data still uploading. This spikes while assets load.</summary>
+		public ulong transientBytes;
 		/// <summary>How much GPU memory the driver suggests this app stays under, or 0 if
 		/// the driver can't say. Many standalone headsets can't.</summary>
 		public ulong budgetBytes;

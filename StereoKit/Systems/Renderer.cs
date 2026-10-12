@@ -190,7 +190,8 @@ namespace StereoKit
 		/// <summary>A Future that finishes once all GPU work submitted so far
 		/// is done, including work from other threads and the XR runtime.
 		/// Wait on it before freeing something the GPU may still be using,
-		/// like an OpenXR swapchain. Any thread may call this.</summary>
+		/// like an OpenXR swapchain. Draws queued this frame aren't covered
+		/// until the frame renders. Any thread may call this.</summary>
 		/// <returns>A Future for all GPU work submitted so far.</returns>
 		public static Future GPUFuture() => NativeAPI.render_gpu_future();
 

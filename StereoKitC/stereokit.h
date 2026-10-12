@@ -2471,30 +2471,31 @@ typedef enum projection_ {
 	projection_ortho = 1
 } projection_;
 
-/*GPU memory held by StereoKit's renderer, from
-  render_get_gpu_memory. This covers what StereoKit allocates itself, not
-  swapchain images, which belong to the XR runtime or the OS. On devices that
-  share memory between the CPU and GPU, like standalone headsets, this is
-  still the right number to watch, as it comes out of the same RAM other apps
-  need.*/
+/*GPU memory held by StereoKit's renderer. This covers what StereoKit
+  allocates itself, not swapchain images, which belong to the XR runtime or
+  the OS. On devices that share memory between the CPU and GPU, like
+  standalone headsets, this is still the right number to watch, as it comes
+  out of the same RAM other apps need.*/
 typedef struct gpu_memory_t {
 	/*Bytes the renderer holds from the driver. Allocations are packed into
-	  larger blocks, so this is a little above used_bytes.*/
+	  larger blocks, so this is a little above the used bytes.*/
 	uint64_t reserved_bytes;
-	/*Bytes bound to live textures, meshes and buffers.*/
+	/*Bytes bound to live resources, the total of the categories below.*/
 	uint64_t used_bytes;
-	/*The highest used_bytes has been since startup.*/
+	/*The highest the used bytes have been since startup.*/
 	uint64_t peak_bytes;
-	/*Bytes of used_bytes in textures that hold image data, like loaded
-	  images and cubemaps.*/
+	/*Used bytes in textures that hold image data, like loaded images and
+	  cubemaps.*/
 	uint64_t texture_bytes;
-	/*Bytes of used_bytes in render targets, depth buffers and compute
-	  textures.*/
+	/*Used bytes in render targets, depth buffers and compute textures.*/
 	uint64_t target_bytes;
-	/*Bytes of used_bytes in mesh vertex and index data.*/
+	/*Used bytes in mesh vertex and index data.*/
 	uint64_t mesh_bytes;
-	/*Bytes of used_bytes in material and compute buffers.*/
+	/*Used bytes in material and compute buffers.*/
 	uint64_t buffer_bytes;
+	/*Used bytes in short-lived memory, like per-frame scratch space and
+	  copies of data still uploading. This spikes while assets load.*/
+	uint64_t transient_bytes;
 	/*How much GPU memory the driver suggests this app stays under, or 0 if
 	  the driver can't say. Many standalone headsets can't.*/
 	uint64_t budget_bytes;
@@ -2518,7 +2519,7 @@ typedef enum future_state_ {
 	/*The work couldn't complete, like work still pending when StereoKit
 	  shut down. The operation itself may say more about why.*/
 	future_state_failed  = -1,
-	/*Not a valid future, like 0. This counts as done.*/
+	/*Not a valid future, like a zero-initialized one. This counts as done.*/
 	future_state_none    = 0,
 	/*The work is still in progress.*/
 	future_state_pending = 1,

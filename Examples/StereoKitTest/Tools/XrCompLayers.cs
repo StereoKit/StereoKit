@@ -394,6 +394,7 @@ namespace StereoKit.Framework
 
 			public void Destroy()
 			{
+				foreach (Tex tex in _images) tex.SetNativeSurface(IntPtr.Zero);
 				_images = null;
 				XrCompLayers.DestroySwapchain(handle);
 				handle = default;
