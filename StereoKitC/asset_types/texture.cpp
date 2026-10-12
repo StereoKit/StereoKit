@@ -584,7 +584,6 @@ tex_t tex_create_mem(void *data, size_t data_size, bool32_t srgb_data, int32_t p
 
 tex_t tex_create(tex_type_ type, tex_format_ format) {
 	tex_t result = (tex_t)assets_allocate(asset_type_tex);
-	result->owned  = true;
 	result->type   = type;
 	result->format = format;
 	result->address_mode = tex_address_wrap;
@@ -946,43 +945,42 @@ tex_t tex_get_zbuffer(tex_t texture) {
 
 ///////////////////////////////////////////
 
-void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample, bool32_t owned) {
-	// Always destroy old GPU resources when valid - skr_tex_destroy handles
-	// is_external internally to decide whether to destroy the VkImage.
+void tex_set_surface(tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample) {
+	// The native image is always borrowed, so this only frees our view of the old one
 	if (skr_tex_is_valid(&texture->gpu_tex))
 		skr_tex_destroy(&texture->gpu_tex);
 
-	texture->owned = owned;
-
 	texture->type   = type;
 	texture->format = tex_get_tex_format(native_fmt);
-
-	if (native_surface != nullptr) {
-		skr_tex_external_info_t info = {};
-		info.image         = (VkImage)native_surface;
-		info.format        = skr_tex_fmt_from_native((uint32_t)native_fmt);
-		info.flags         = tex_type_to_skr_flags(type);
-		info.size          = { width, height, 1 };
-		info.sampler       = tex_get_skr_sampler(texture);
-		info.multisample   = multisample;
-		info.array_layers  = surface_count;
-		info.owns_image    = owned;
-
-		// Swapchain images arrive in, and must be handed back in, the
-		// attachment layout. They're not readable, so render passes end there.
-		if (type & tex_type_attachment_internal) {
-			info.current_layout = (type & tex_type_zbuffer)
-				? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-				: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		}
-
-		skr_tex_create_external_vk(info, &texture->gpu_tex);
-	} else {
-		texture->gpu_tex = {};
-	}
-
 	texture->width  = width;
 	texture->height = height;
+
+	// No surface detaches, leaving the texture as it was fresh from tex_create
+	if (native_surface == nullptr) {
+		texture->gpu_tex      = {};
+		texture->header.state = asset_state_none;
+		tex_set_fallback(texture, _tex_get_loading_fallback(texture));
+		return;
+	}
+
+	skr_tex_external_info_t info = {};
+	info.image         = (VkImage)native_surface;
+	info.format        = skr_tex_fmt_from_native((uint32_t)native_fmt);
+	info.flags         = tex_type_to_skr_flags(type);
+	info.size          = { width, height, 1 };
+	info.sampler       = tex_get_skr_sampler(texture);
+	info.multisample   = multisample;
+	info.array_layers  = surface_count;
+
+	// Swapchain images arrive in, and must be handed back in, the
+	// attachment layout. They're not readable, so render passes end there.
+	if (type & tex_type_attachment_internal) {
+		info.current_layout = (type & tex_type_zbuffer)
+			? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	}
+
+	skr_tex_create_external_vk(info, &texture->gpu_tex);
 
 	texture->header.state = skr_tex_is_valid(&texture->gpu_tex)
 		? asset_state_loaded
@@ -1110,10 +1108,7 @@ void tex_destroy(tex_t tex) {
 	if (tex->sh_pending)
 		skr_buffer_destroy(&tex->sh_buffer);
 	sk_free(tex->light_info);
-	// Always destroy GPU resources when valid - skr_tex_destroy checks is_external
-	// internally to decide whether to destroy the VkImage (external images like
-	// OpenXR swapchains won't have their VkImage destroyed, but ImageViews and
-	// Framebuffers that we created will still be cleaned up).
+	// Images from tex_set_surface are borrowed, so this frees only our views of them
 	if (skr_tex_is_valid(&tex->gpu_tex)) {
 		skr_tex_destroy(&tex->gpu_tex);
 	}
@@ -1160,7 +1155,7 @@ struct tex_reflection_job_t {
 static bool32_t tex_sh_resolve(tex_t texture, bool32_t block) {
 	if (!texture->sh_pending) return texture->light_info != nullptr;
 	if      (block) skr_future_wait(&texture->sh_future);
-	else if (!skr_future_check(&texture->sh_future)) return false;
+	else if (skr_future_check(&texture->sh_future) == skr_future_state_pending) return false;
 
 	if (texture->light_info == nullptr)
 		texture->light_info = sk_malloc_t(spherical_harmonics_t, 1);
