@@ -331,8 +331,9 @@ typedef struct ui_slider_data_t {
 	button_state_ focus_state;
 	/*The current active/pressed state of the slider.*/
 	button_state_ active_state;
-	/*The id of the interactor that is interacting with this slider, or -1 if none.*/
-	int32_t       interactor;
+	/*The interactor hovering over or pressing this slider, or the none
+	  interactor (-1) when nothing is.*/
+	interactor_t  interactor;
 } ui_slider_data_t;
 
 SK_API void     ui_quadrant_size_verts  (vert_t *ref_arr_vertices, int32_t vertex_count, float overflow_percent);

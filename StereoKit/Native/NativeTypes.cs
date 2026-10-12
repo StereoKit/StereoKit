@@ -287,8 +287,9 @@ namespace StereoKit
 		public BtnState focusState;
 		/// <summary>The current active/pressed state of the slider.</summary>
 		public BtnState activeState;
-		/// <summary>The id of the interactor that is interacting with this slider, or -1 if none.</summary>
-		public int interactor;
+		/// <summary>The interactor hovering over or pressing this slider, or the none
+		/// interactor (-1) when nothing is.</summary>
+		public Interactor interactor;
 	}
 
 }

@@ -58,6 +58,7 @@ namespace StereoKit.Framework
 		float measureWidth  = 0;     // Width the cached heights were measured against.
 		float cachedScroll  = -1;    // Scroll value the visible list was built for.
 		bool  viewDirty     = true;
+		DragScrollState dragState;
 
 		DiagGraph fpsGraph     = new DiagGraph(0, 0);
 		DiagGraph cpuPerfGraph = new DiagGraph(0, 0);
@@ -198,6 +199,10 @@ namespace StereoKit.Framework
 				stickBottom = scroll >= scrollMax - 0.0001f;
 			UI.LayoutPop();
 
+			Vec3 start = UI.LayoutAt;
+			if (DragScroll("drag", start, V.XY(textWidth, viewHeight), ref scroll, scrollMax, viewHeight / viewLines, ref dragState))
+				stickBottom = !dragState.dragging && scroll >= scrollMax - 0.0001f;
+
 			// Rebuild the cached visible list only when the scroll or content moved.
 			scroll = Math.Clamp(scroll, 0, scrollMax);
 			if (scroll != cachedScroll || viewDirty)
@@ -207,7 +212,6 @@ namespace StereoKit.Framework
 				viewDirty    = false;
 			}
 
-			Vec3 start = UI.LayoutAt;
 			UI.LayoutReserve(V.XY(width, viewHeight));
 
 			// Text.Add's 'size' is also its clip rectangle, and it's computed from
@@ -231,6 +235,76 @@ namespace StereoKit.Framework
 					Text.Add(item.count.ToString(), badgeTr, badgeBox, TextFit.Clip, styleInfo, Pivot.TopRight, Align.TopRight, 0, line.y);
 			}
 			UI.LayoutPop();
+		}
+
+		/// <summary>Per-area state for DragScroll. Zero-initialized is ready to
+		/// use.</summary>
+		public struct DragScrollState
+		{
+			public bool  dragging; // A finger is holding the content right now.
+			public float velocity; // Scroll speed (m/s), kept after release so flicks coast.
+			public float prevY;    // Finger's offset (m) from the area top last frame, while dragging.
+		}
+
+		/// <summary>Phone-style scrolling for a rectangle of window content:
+		/// poke and drag to move it 1:1 with the finger, flick to coast, or
+		/// use a mouse wheel or thumbstick while pointing at it. Call it inside
+		/// a window, before drawing the content.</summary>
+		/// <param name="id">Id for the scroll area, unique within the window.</param>
+		/// <param name="at">Window-relative top-left corner of the area.</param>
+		/// <param name="size">Size of the area in meters.</param>
+		/// <param name="scroll">Content offset in meters, 0 shows the top.
+		/// Clamped to 0-scrollMax.</param>
+		/// <param name="scrollMax">Content height minus the area height.</param>
+		/// <param name="lineHeight">Wheel notches scroll 3 of these, a full
+		/// thumbstick 30 per second.</param>
+		/// <param name="state">This area's state, kept between frames.</param>
+		/// <returns>True if the user moved the scroll this frame.</returns>
+		public static bool DragScroll(string id, Vec3 at, Vec2 size, ref float scroll, float scrollMax, float lineHeight, ref DragScrollState state)
+		{
+			float dt     = Time.StepUnscaledf;
+			Vec2  finger = V.XY(0, size.y / 2); // Centered, so secondary motion can move it either way
+			UI.SliderBehavior(at, size, UI.StackHash(id), ref finger, Vec2.Zero, V.XY(0, size.y), Vec2.Zero, Vec2.Zero, UIConfirm.Push, out UISliderData drag);
+			state.dragging = drag.activeState.IsActive();
+
+			// A wheel notch and a full thumbstick each move the slider 2% of its
+			// range, the stick doing so every frame.
+			float secondary = (finger.y - size.y / 2) / (size.y * 0.02f);
+			if (!state.dragging && secondary != 0)
+			{
+				scroll += drag.interactor.SecondaryDims == 1
+					? secondary * 3  * lineHeight       // Mouse wheel
+					: secondary * 30 * lineHeight * dt; // Thumbstick
+				scroll         = Math.Clamp(scroll, 0, scrollMax);
+				state.velocity = 0;
+				return true;
+			}
+
+			if (state.dragging)
+			{
+				if (drag.activeState.IsJustActive())
+				{
+					state.velocity = 0;
+				}
+				else
+				{
+					float delta = state.prevY - finger.y; // Dragging down reveals content above
+					scroll += delta;
+					if (dt > 0) state.velocity += (delta / dt - state.velocity) * 0.5f;
+				}
+				scroll      = Math.Clamp(scroll, 0, scrollMax);
+				state.prevY = finger.y;
+				return true;
+			}
+
+			if (state.velocity == 0) return drag.activeState.IsJustInactive();
+
+			scroll         += state.velocity * dt;
+			state.velocity *= MathF.Exp(-4 * dt);
+			if (Math.Abs(state.velocity) < 0.01f || scroll <= 0 || scroll >= scrollMax)
+				state.velocity = 0;
+			scroll = Math.Clamp(scroll, 0, scrollMax);
+			return true;
 		}
 
 		void DrawGraphs()
@@ -258,7 +332,7 @@ namespace StereoKit.Framework
 				UI.LayoutReserve(graphSize);
 				UI.SameLine();
 			}
-			Graph(ref fpsGraph,     "Frame (ms)", Time.Stepf*1000);
+			Graph(ref fpsGraph,     "Frame (ms)", Time.StepUnscaledf*1000);
 			Graph(ref cpuPerfGraph, "CPU (ms)",   Time.PerfCPUus / 1000.0f);
 			Graph(ref gpuPerfGraph, "GPU (ms)",   Time.PerfGPUus / 1000.0f);
 			Graph(ref vramGraph,    "VRAM (MB)",  mem.usedBytes * mb, sampleVram);
