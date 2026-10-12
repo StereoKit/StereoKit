@@ -62,6 +62,8 @@ namespace StereoKit.Framework
 		DiagGraph fpsGraph     = new DiagGraph(0, 0);
 		DiagGraph cpuPerfGraph = new DiagGraph(0, 0);
 		DiagGraph gpuPerfGraph = new DiagGraph(0, 0);
+		DiagGraph vramGraph    = new DiagGraph(0, 0, "F1", false);
+		float     vramSampled  = 0; // Time.Totalf of the last VRAM sample.
 
 		public LogWindow()
 		{
@@ -239,12 +241,19 @@ namespace StereoKit.Framework
 			cpuPerfGraph.max  = frameMs * 1.5f;
 			gpuPerfGraph.max  = frameMs * 1.5f;
 
-			float thirdWidth = (UI.LayoutRemaining.x - UI.Settings.gutter*2) / 3.0f;
-			Vec2  graphSize  = V.XY(thirdWidth, UI.LineHeight);
+			const float mb  = 1.0f / (1024 * 1024);
+			GPUMemory   mem = Renderer.GPUMemory;
+			vramGraph.max = mem.peakBytes * mb * 1.5f;
+			// Memory moves slowly, so fewer samples stretch the graph over ~20s
+			bool sampleVram = vramSampled == 0 || Time.Totalf - vramSampled >= 0.2f;
+			if (sampleVram) vramSampled = Time.Totalf;
 
-			void Graph(ref DiagGraph graph, string label, float ms)
+			float quarterWidth = (UI.LayoutRemaining.x - UI.Settings.gutter*3) / 4.0f;
+			Vec2  graphSize    = V.XY(quarterWidth, UI.LineHeight);
+
+			void Graph(ref DiagGraph graph, string label, float value, bool sample = true)
 			{
-				graph.Add(ms);
+				if (sample) graph.Add(value);
 				graph.Draw(styleGraph, label, UI.LayoutAt + V.XYZ(0,0,-0.004f), graphSize);
 				UI.LayoutReserve(graphSize);
 				UI.SameLine();
@@ -252,6 +261,7 @@ namespace StereoKit.Framework
 			Graph(ref fpsGraph,     "Frame (ms)", Time.Stepf*1000);
 			Graph(ref cpuPerfGraph, "CPU (ms)",   Time.PerfCPUus / 1000.0f);
 			Graph(ref gpuPerfGraph, "GPU (ms)",   Time.PerfGPUus / 1000.0f);
+			Graph(ref vramGraph,    "VRAM (MB)",  mem.usedBytes * mb, sampleVram);
 		}
 
 		struct DiagGraph
@@ -262,13 +272,17 @@ namespace StereoKit.Framework
 			public float min;
 			public float max;
 			float       avg;
+			string      format;
+			bool        smooth;
 
-			public DiagGraph(float min, float max)
+			public DiagGraph(float min, float max, string format = "F3", bool smooth = true)
 			{
-				this.min = min;
-				this.max = max;
+				this.min    = min;
+				this.max    = max;
+				this.format = format;
+				this.smooth = smooth;
 				curr = 0;
-				avg  = 0;
+				avg  = float.NaN; // The first sample seeds it, rather than ramping up from 0
 
 				buffer = new float[100];
 				points = new LinePoint[100];
@@ -283,7 +297,7 @@ namespace StereoKit.Framework
 			{
 				buffer[curr] = value;
 				curr = (curr + 1) % buffer.Length;
-				avg = avg + (value - avg) * 0.1f;
+				avg = float.IsNaN(avg) || !smooth ? value : avg + (value - avg) * 0.1f;
 			}
 
 			public void Draw(TextStyle style, string label, Vec3 at, Vec2 size)
@@ -302,7 +316,7 @@ namespace StereoKit.Framework
 				}
 				Lines.Add(points);
 
-				string display = $"{label} {avg:F3}";
+				string display = $"{label} {avg.ToString(format)}";
 				Text.Add(((int)max).ToString(), Matrix.TS(at.x-size.x, at.y,        at.z, textScale), V.XY(labelWidth*textScale, 1), TextFit.Overflow, style, Pivot.TopLeft,    Align.TopLeft);
 				Text.Add(((int)min).ToString(), Matrix.TS(at.x-size.x, at.y-size.y, at.z, textScale), V.XY(labelWidth*textScale, 1), TextFit.Overflow, style, Pivot.BottomLeft, Align.BottomLeft);
 				Text.Add(display,               Matrix.TS(at.x,        at.y,        at.z, textScale),                                                  style, Pivot.TopLeft,    Align.TopLeft);
