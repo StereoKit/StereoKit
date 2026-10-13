@@ -124,14 +124,14 @@ class DocSpatialEntity : ITest
 	}
 	/// :End:
 
-	/// :CodeSample: SpatialEntity.MarkerText SpatialEntity.Pose SpatialEntity.Tracked SpatialEntity.New SpatialEntity.NewWith SpatialCapability.QrCode
+	/// :CodeSample: SpatialEntity.MarkerText SpatialEntity.Pose SpatialEntity.Tracked SpatialEntity.New SpatialEntity.NewWith SpatialCapability.QRCode
 	/// ### Reading QR codes
-	public void StartQrCodes()
+	public void StartQRCodes()
 	{
-		Spatial.Request(SpatialCapability.QrCode);
+		Spatial.Request(SpatialCapability.QRCode);
 	}
 
-	public void StepQrCodes()
+	public void StepQRCodes()
 	{
 		// New lists each entity exactly once, on the frame it appears
 		foreach (SpatialEntity code in SpatialEntity.NewWith(SpatialComponent.Marker))
@@ -146,25 +146,25 @@ class DocSpatialEntity : ITest
 	}
 	/// :End:
 
-	/// :CodeSample: SpatialEntity.TryGetMarker Spatial.ArucoDictionary Spatial.AprilTagDictionary Spatial.SetMarkerSize Spatial.SetMarkerStationary ArucoDict SpatialCapability.Aruco
+	/// :CodeSample: SpatialEntity.TryGetMarker Spatial.ArUcoDictionary Spatial.AprilTagDictionary Spatial.SetMarkerSize Spatial.SetMarkerStationary ArUcoDict SpatialCapability.ArUco
 	/// ### Finding an ArUco marker by id
 	/// The dictionary must match the markers you printed, or they won't be
 	/// detected. AprilTags work the same way, via `AprilTagDictionary`.
-	public void StartAruco()
+	public void StartArUco()
 	{
-		Spatial.ArucoDictionary = ArucoDict.Dict4x4_50;
+		Spatial.ArUcoDictionary = ArUcoDict.Dict4x4_50;
 		// A 10cm printed marker, used by runtimes that support known sizes
-		Spatial.SetMarkerSize(MarkerType.Aruco, 0.1f);
+		Spatial.SetMarkerSize(MarkerType.ArUco, 0.1f);
 		// Markers taped to a wall can have their pose refined over time
-		Spatial.SetMarkerStationary(MarkerType.Aruco, true);
-		Spatial.Request(SpatialCapability.Aruco);
+		Spatial.SetMarkerStationary(MarkerType.ArUco, true);
+		Spatial.Request(SpatialCapability.ArUco);
 	}
 
 	static bool FindMarker(uint id, out Pose pose)
 	{
 		foreach (SpatialEntity marker in SpatialEntity.With(SpatialComponent.Marker))
 		{
-			if (marker.TryGetMarker(out MarkerType type, out uint markerId) && type == MarkerType.Aruco && markerId == id)
+			if (marker.TryGetMarker(out MarkerType type, out uint markerId) && type == MarkerType.ArUco && markerId == id)
 				return marker.TryGetBounds2D(out pose, out _);
 		}
 		pose = Pose.Identity;
@@ -241,8 +241,8 @@ class DocSpatialEntity : ITest
 	{
 		prevRequested = Spatial.Requested;
 		StartPlanes();
-		StartQrCodes();
-		StartAruco();
+		StartQRCodes();
+		StartArUco();
 		LoadAnchor();
 	}
 
@@ -251,7 +251,7 @@ class DocSpatialEntity : ITest
 		DrawPlanes();
 		StepAnchor();
 		StepSavedAnchors();
-		StepQrCodes();
+		StepQRCodes();
 		StepPlaneMeshes();
 		foreach (SpatialEntity plane in SpatialEntity.With(SpatialComponent.Polygon))
 			DrawOutline(plane);

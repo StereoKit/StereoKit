@@ -19,7 +19,6 @@ struct tex_upload_t;
 struct _tex_t {
 	asset_header_t   header;
 	tex_t            fallback;
-	bool32_t         owned;
 
 	// Metadata fields - kept for quick CPU access
 	// TODO: can get rid of some maybe?

@@ -35,8 +35,8 @@ namespace sk {
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_time_init    (void*);
-void       xr_ext_time_shutdown(void*);
+xr_system_ xr_ext_time_pre_session(void*, XrBaseHeader*);
+void       xr_ext_time_shutdown   (void*);
 
 ///////////////////////////////////////////
 
@@ -44,14 +44,15 @@ void xr_ext_time_register() {
 	xr_system_t sys = {};
 	sys.required = true;
 	sys.request_exts[sys.request_ext_count++] = XR_TIME_EXTENSION;
-	sys.evt_initialize = { xr_ext_time_init };
-	sys.evt_shutdown   = { xr_ext_time_shutdown };
+	sys.evt_pre_session = { xr_ext_time_pre_session };
+	sys.evt_shutdown    = { xr_ext_time_shutdown    };
 	ext_management_sys_register(sys);
 }
 
 ///////////////////////////////////////////
 
-xr_system_ xr_ext_time_init(void*) {
+// Session begin can need a fallback xr_time, and that comes before evt_initialize
+xr_system_ xr_ext_time_pre_session(void*, XrBaseHeader*) {
 	// This extension is CRITICAL for SK's code, so if we fail to get
 	// everything we need to work, we'll fail initialization!
 	if (!backend_openxr_ext_enabled(XR_TIME_EXTENSION))

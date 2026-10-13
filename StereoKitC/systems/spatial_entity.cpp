@@ -694,7 +694,7 @@ static void persist_reconcile(spatial_record_t* rec) {
 	else if (rec->life == record_life_pending_find && !persisted) record_leave(rec, record_life_lost);
 }
 
-// Until anchors are running, a pending anchor sits untracked at its requested pose
+// A new anchor sits untracked at its requested pose until the runtime reports it
 static void record_try_create(spatial_record_t* rec) {
 	if ((local.supported & spatial_capability_anchor) == 0) { record_leave(rec, record_life_failed); return; }
 	if (local.create_anchor == nullptr || (local.running & spatial_capability_anchor) == 0) return;
@@ -716,7 +716,6 @@ static void record_try_create(spatial_record_t* rec) {
 
 	rec->life       = record_life_live;
 	rec->backend_id = id;
-	rec->tracked    = (button_state_)(button_state_active | button_state_just_active);
 	local.list_version++;
 	persist_reconcile(rec);
 }

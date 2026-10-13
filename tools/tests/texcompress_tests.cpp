@@ -84,6 +84,8 @@ static void tct_test_hdr() {
 	TCT_CHECK(tct_pick(tex_data_none,  tct_bc,   false, tex_format_rg11b10) == tex_format_bc6h_rgbuf,        "HDR on BC is BC6H");
 	TCT_CHECK(tct_pick(tex_data_small, tct_astc, false, tex_format_rg11b10) == tex_format_astc8x8_rgba_hdr,  "small HDR on ASTC is 8x8 HDR");
 	TCT_CHECK(tct_pick(tex_data_none,  tct_astc, false, tex_format_rg11b10) == tex_format_none,              "quality HDR on ASTC stays uncompressed");
+	TCT_CHECK(tct_pick(tex_data_none,  tct_astc, false, tex_format_rg11b10, tex_type_image | tex_type_cubemap, 256, 6) == tex_format_astc8x8_rgba_hdr, "quality HDR cubemaps on ASTC are 8x8 HDR");
+	TCT_CHECK(tct_pick(tex_data_none,  tct_both, false, tex_format_rg11b10, tex_type_image | tex_type_cubemap, 256, 6) == tex_format_bc6h_rgbuf,       "quality HDR cubemaps prefer BC6H over ASTC 8x8");
 	TCT_CHECK(tct_pick(tex_data_small, tex_compress_caps_t{ true, false, false }, false, tex_format_rg11b10) == tex_format_none, "no ASTC HDR support stays uncompressed");
 	TCT_CHECK(tct_pick(tex_data_small, tct_both, false, tex_format_rg11b10) == tex_format_astc8x8_rgba_hdr, "small HDR prefers ASTC 8x8 over BC6H");
 	TCT_CHECK(tct_pick(tex_data_none, tct_bc, true, tex_format_rgba128) == tex_format_bc6h_rgbuf,  "float RGBA is an HDR source");

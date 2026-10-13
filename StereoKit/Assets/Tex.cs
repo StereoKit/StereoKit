@@ -580,13 +580,15 @@ namespace StereoKit
 		public void SetMemory(in byte[] imageFileData, bool sRGBData, bool blocking = false, int priority = 10)
 			=> SetMemory(imageFileData, (sRGBData ? TexData.Srgb : TexData.None) | (blocking ? TexData.Blocking : TexData.None), priority);
 
-		/// <summary>This function is dependent on the graphics backend! It
-		/// will take a texture resource for the current graphics backend (D3D
-		/// or GL) and wrap it in a StereoKit texture for use within StereoKit.
-		/// This is a bit of an advanced feature.</summary>
-		/// <param name="nativeTexture">For D3D, this should be an
-		/// ID3D11Texture2D*, and for GL, this should be a uint32_t from a
-		/// glGenTexture call, coerced into the IntPtr.</param>
+		/// <summary>Wraps a native texture from the graphics backend, a
+		/// `VkImage` on Vulkan, so StereoKit can draw with it or render to it.
+		/// StereoKit only borrows the image, and never destroys it. To free it
+		/// safely, detach it by passing `IntPtr.Zero`, then destroy the image
+		/// once `Renderer.GPUFuture()` completes. This is a bit of an advanced
+		/// feature.</summary>
+		/// <param name="nativeTexture">A `VkImage` handle, cast to an
+		/// IntPtr. `IntPtr.Zero` detaches the current image, leaving this Tex
+		/// empty like a freshly created one.</param>
 		/// <param name="type">The image flags that tell SK how to treat the
 		/// texture, this should match up with the settings the texture was
 		/// originally created with. If SK can figure the appropriate settings,
@@ -608,20 +610,21 @@ namespace StereoKit
 		/// should match up with the settings the texture was originally
 		/// created with. If SK can figure the appropriate settings, it _may_
 		/// override the value provided here.</param>
-		/// <param name="owned">Should ownership of this texture resource be
-		/// passed on to StereoKit? If so, StereoKit may delete it when it's
-		/// finished with it. If this is not desired, pass in false.</param>
-		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1, bool owned=true)
-			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, 1, owned);
+		public void SetNativeSurface(IntPtr nativeTexture, TexType type=TexType.Image, long native_fmt=0, int width=0, int height=0, int surface_count=1)
+			=> NativeAPI.tex_set_surface(_inst, nativeTexture, type, native_fmt, width, height, surface_count, 1);
+
+		/// <summary>StereoKit no longer takes ownership of native textures,
+		/// it always borrows them and `owned` is ignored. Use the overload
+		/// without `owned`.</summary>
+		[Obsolete("StereoKit always borrows native textures now, so owned is ignored. Drop the owned argument, and destroy the image yourself once Renderer.GPUFuture() completes after detaching it with IntPtr.Zero.")]
+		public void SetNativeSurface(IntPtr nativeTexture, TexType type, long native_fmt, int width, int height, int surface_count, bool owned)
+			=> SetNativeSurface(nativeTexture, type, native_fmt, width, height, surface_count);
 
 		/// <summary>This will return the texture's native resource for use
-		/// with external libraries. For D3D, this will be an ID3D11Texture2D*,
-		/// and for GL, this will be a uint32_t from a glGenTexture call,
-		/// coerced into the IntPtr. This call will block execution until the
-		/// texture is loaded, if it is not already.</summary>
-		/// <returns>For D3D, this will be an ID3D11Texture2D*, and for GL,
-		/// this will be a uint32_t from a glGenTexture call, coerced into the
-		/// IntPtr.</returns>
+		/// with external libraries, a `VkImage` on Vulkan. This call will
+		/// block execution until the texture is loaded, if it is not
+		/// already.</summary>
+		/// <returns>A `VkImage` handle, cast to an IntPtr.</returns>
 		public IntPtr GetNativeSurface()
 			=> NativeAPI.tex_get_surface(_inst);
 

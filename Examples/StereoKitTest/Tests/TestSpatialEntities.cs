@@ -19,7 +19,7 @@ class TestSpatialEntities : ITest
 	SpatialCapability prevRequested;
 	Dictionary<SpatialEntity, Mesh> mesh2ds = new Dictionary<SpatialEntity, Mesh>();
 
-	static readonly MarkerType[] markerTypes = { MarkerType.QrCode, MarkerType.MicroQr, MarkerType.Aruco, MarkerType.AprilTag };
+	static readonly MarkerType[] markerTypes = { MarkerType.QRCode, MarkerType.MicroQR, MarkerType.ArUco, MarkerType.AprilTag };
 	// Size changes restart marker tracking, so sliders only apply on release
 	float[] markerSizesCm = new float[markerTypes.Length];
 
@@ -81,29 +81,29 @@ class TestSpatialEntities : ITest
 
 	bool TestMarkerSettings()
 	{
-		float        prevSize       = Spatial.GetMarkerSize(MarkerType.QrCode);
-		bool         prevStationary = Spatial.GetMarkerStationary(MarkerType.Aruco);
-		ArucoDict    prevAruco      = Spatial.ArucoDictionary;
+		float        prevSize       = Spatial.GetMarkerSize(MarkerType.QRCode);
+		bool         prevStationary = Spatial.GetMarkerStationary(MarkerType.ArUco);
+		ArUcoDict    prevArUco      = Spatial.ArUcoDictionary;
 		AprilTagDict prevApril      = Spatial.AprilTagDictionary;
 
-		Spatial.SetMarkerSize      (MarkerType.QrCode, 0.05f);
-		Spatial.SetMarkerStationary(MarkerType.Aruco,  true);
-		Spatial.ArucoDictionary    = ArucoDict.Dict5x5_100;
+		Spatial.SetMarkerSize      (MarkerType.QRCode, 0.05f);
+		Spatial.SetMarkerStationary(MarkerType.ArUco,  true);
+		Spatial.ArUcoDictionary    = ArUcoDict.Dict5x5_100;
 		Spatial.AprilTagDictionary = AprilTagDict.Tag16h5;
 		bool result =
-			Spatial.GetMarkerSize      (MarkerType.QrCode)  == 0.05f &&
-			Spatial.GetMarkerSize      (MarkerType.MicroQr) == 0     && // Settings are per type
-			Spatial.GetMarkerStationary(MarkerType.Aruco)            &&
+			Spatial.GetMarkerSize      (MarkerType.QRCode)  == 0.05f &&
+			Spatial.GetMarkerSize      (MarkerType.MicroQR) == 0     && // Settings are per type
+			Spatial.GetMarkerStationary(MarkerType.ArUco)            &&
 			!Spatial.GetMarkerStationary(MarkerType.AprilTag)        &&
-			Spatial.ArucoDictionary    == ArucoDict.Dict5x5_100      &&
+			Spatial.ArUcoDictionary    == ArUcoDict.Dict5x5_100      &&
 			Spatial.AprilTagDictionary == AprilTagDict.Tag16h5;
 
-		Spatial.SetMarkerSize(MarkerType.QrCode, -1);
-		result &= Spatial.GetMarkerSize(MarkerType.QrCode) == 0; // Negative sizes mean unknown
+		Spatial.SetMarkerSize(MarkerType.QRCode, -1);
+		result &= Spatial.GetMarkerSize(MarkerType.QRCode) == 0; // Negative sizes mean unknown
 
-		Spatial.SetMarkerSize      (MarkerType.QrCode, prevSize);
-		Spatial.SetMarkerStationary(MarkerType.Aruco,  prevStationary);
-		Spatial.ArucoDictionary    = prevAruco;
+		Spatial.SetMarkerSize      (MarkerType.QRCode, prevSize);
+		Spatial.SetMarkerStationary(MarkerType.ArUco,  prevStationary);
+		Spatial.ArUcoDictionary    = prevArUco;
 		Spatial.AprilTagDictionary = prevApril;
 		return result;
 	}
@@ -208,8 +208,8 @@ class TestSpatialEntities : ITest
 				Spatial.SetMarkerStationary(type, stationary);
 			UI.PopId();
 		}
-		if (UI.Button($"ArUco {Spatial.ArucoDictionary}"))
-			Spatial.ArucoDictionary = (ArucoDict)(((int)Spatial.ArucoDictionary + 1) % ((int)ArucoDict.Dict7x7_1000 + 1));
+		if (UI.Button($"ArUco {Spatial.ArUcoDictionary}"))
+			Spatial.ArUcoDictionary = (ArUcoDict)(((int)Spatial.ArUcoDictionary + 1) % ((int)ArUcoDict.Dict7x7_1000 + 1));
 		UI.SameLine();
 		if (UI.Button($"AprilTag {Spatial.AprilTagDictionary}"))
 			Spatial.AprilTagDictionary = (AprilTagDict)(((int)Spatial.AprilTagDictionary + 1) % ((int)AprilTagDict.Tag36h11 + 1));

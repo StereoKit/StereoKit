@@ -509,12 +509,12 @@ static void persistence_create_contexts() {
 		}
 
 		local.persist_pending++;
-		xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future) {
+		xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future, XrResult poll) {
 			XrSpatialPersistenceScopeEXT scope = (XrSpatialPersistenceScopeEXT)(intptr_t)context;
 			local.persist_pending--;
 
 			XrCreateSpatialPersistenceContextCompletionEXT completion = { XR_TYPE_CREATE_SPATIAL_PERSISTENCE_CONTEXT_COMPLETION_EXT };
-			XrResult result = xrCreateSpatialPersistenceContextCompleteEXT(xr_session, future, &completion);
+			XrResult result = XR_FAILED(poll) ? poll : xrCreateSpatialPersistenceContextCompleteEXT(xr_session, future, &completion);
 			if (XR_FAILED(result) || XR_FAILED(completion.futureResult) || completion.createResult != XR_SPATIAL_PERSISTENCE_CONTEXT_RESULT_SUCCESS_EXT) {
 				log_warnf("%s [%s]", "xrCreateSpatialPersistenceContextAsyncEXT", openxr_string(XR_FAILED(result) ? result : completion.futureResult));
 				if (scope == XR_SPATIAL_PERSISTENCE_SCOPE_LOCAL_ANCHORS_EXT) persistence_lost();
@@ -785,12 +785,12 @@ static void slot_create(int32_t slot_idx) {
 	slot->state      = slot_state_creating;
 	slot->create_ctx = ctx;
 
-	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future) {
+	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future, XrResult poll) {
 		slot_create_ctx_t* ctx  = (slot_create_ctx_t*)context;
 		slot_t*            slot = &local.slots[ctx->slot_idx];
 
 		XrCreateSpatialContextCompletionEXT completion = { XR_TYPE_CREATE_SPATIAL_CONTEXT_COMPLETION_EXT };
-		XrResult result = xrCreateSpatialContextCompleteEXT(xr_session, future, &completion);
+		XrResult result = XR_FAILED(poll) ? poll : xrCreateSpatialContextCompleteEXT(xr_session, future, &completion);
 		int32_t  slot_idx = ctx->slot_idx;
 		sk_free(ctx);
 		slot->create_ctx = nullptr;
@@ -863,7 +863,7 @@ static void slot_discover(int32_t slot_idx, const sk_uuid_t* persist_ids, int32_
 	}
 	slot->discovery_active = true;
 
-	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future) {
+	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future, XrResult poll) {
 		int32_t slot_idx = (int32_t)(intptr_t)context;
 		slot_t* slot     = &local.slots[slot_idx];
 		slot->discovery_active = false;
@@ -874,7 +874,7 @@ static void slot_discover(int32_t slot_idx, const sk_uuid_t* persist_ids, int32_
 		completion_info.time      = xr_time;
 		completion_info.future    = future;
 
-		XrResult result = xrCreateSpatialDiscoverySnapshotCompleteEXT(slot->context, &completion_info, &completion);
+		XrResult result = XR_FAILED(poll) ? poll : xrCreateSpatialDiscoverySnapshotCompleteEXT(slot->context, &completion_info, &completion);
 
 		// Slot was asked to stop while this future was in flight
 		if (slot->state == slot_state_stopping) {
@@ -1371,11 +1371,11 @@ static void xr_spatial_persist(spatial_entity_id_t id, spatial_entity_t entity) 
 		return;
 	}
 
-	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future) {
+	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future, XrResult poll) {
 		spatial_entity_t entity = (spatial_entity_t)(uintptr_t)context;
 
 		XrPersistSpatialEntityCompletionEXT completion = { XR_TYPE_PERSIST_SPATIAL_ENTITY_COMPLETION_EXT };
-		XrResult result = xrPersistSpatialEntityCompleteEXT(local.persist_write_ctx, future, &completion);
+		XrResult result = XR_FAILED(poll) ? poll : xrPersistSpatialEntityCompleteEXT(local.persist_write_ctx, future, &completion);
 		if (XR_FAILED(result) || XR_FAILED(completion.futureResult) || completion.persistResult != XR_SPATIAL_PERSISTENCE_CONTEXT_RESULT_SUCCESS_EXT) {
 			log_warnf("Persisting a spatial entity failed [%s, result %d]", openxr_string(XR_FAILED(result) ? result : completion.futureResult), (int)completion.persistResult);
 			spatial_backend_persist_failed(entity);
@@ -1401,11 +1401,11 @@ static void xr_spatial_unpersist(spatial_entity_t entity, sk_uuid_t persist_id) 
 		return;
 	}
 
-	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future) {
+	xr_ext_future_on_finish(future, [](void* context, XrFutureEXT future, XrResult poll) {
 		spatial_entity_t entity = (spatial_entity_t)(uintptr_t)context;
 
 		XrUnpersistSpatialEntityCompletionEXT completion = { XR_TYPE_UNPERSIST_SPATIAL_ENTITY_COMPLETION_EXT };
-		XrResult result = xrUnpersistSpatialEntityCompleteEXT(local.persist_write_ctx, future, &completion);
+		XrResult result = XR_FAILED(poll) ? poll : xrUnpersistSpatialEntityCompleteEXT(local.persist_write_ctx, future, &completion);
 		if (XR_FAILED(result) || XR_FAILED(completion.futureResult) || completion.unpersistResult != XR_SPATIAL_PERSISTENCE_CONTEXT_RESULT_SUCCESS_EXT) {
 			log_warnf("Unpersisting a spatial entity failed [%s, result %d]", openxr_string(XR_FAILED(result) ? result : completion.futureResult), (int)completion.unpersistResult);
 			spatial_backend_unpersist_failed(entity);

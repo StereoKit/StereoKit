@@ -11,7 +11,8 @@
 namespace sk {
 
 void xr_ext_future_register ();
-void xr_ext_future_on_finish(XrFutureEXT future, void(*on_finish)(void* context, XrFutureEXT future), void* context);
+// on_finish always runs once, with a failed poll_result if the future died.
+void xr_ext_future_on_finish(XrFutureEXT future, void(*on_finish)(void* context, XrFutureEXT future, XrResult poll_result), void* context);
 bool xr_ext_future_check    (XrFutureEXT future);
 
 }

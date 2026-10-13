@@ -473,10 +473,12 @@ bool mesh_calculate_normals(int32_t format_id, void *verts, int32_t vert_count, 
 	// Normals accumulate in a dense 16 byte array, partial width stores
 	// into the vertices themselves would cripple the SIMD here.
 	XMFLOAT4* acc = sk_malloc_zero_t(XMFLOAT4, vert_count);
-	for (int32_t i = 0; i < ind_count; i+=3) {
+	// Indices come from files, so only whole triangles that stay in range count
+	for (int32_t i = 0; i + 2 < ind_count; i+=3) {
 		vind_t   i1 = inds[i  ];
 		vind_t   i2 = inds[i+1];
 		vind_t   i3 = inds[i+2];
+		if (i1 >= (vind_t)vert_count || i2 >= (vind_t)vert_count || i3 >= (vind_t)vert_count) continue;
 		XMVECTOR p2 = xm_load_v3(pos_base + i2*pos_stride);
 		// Unnormalized cross product length is twice the triangle's area,
 		// which gives us area weighted normals for free!

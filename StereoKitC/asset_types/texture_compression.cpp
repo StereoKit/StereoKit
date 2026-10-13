@@ -337,6 +337,9 @@ tex_format_ tex_compress_pick(tex_data_ flags, tex_data_ default_policy, tex_typ
 	if (tex_format_is_hdr_source(src_format)) {
 		if (!quality && caps.astc_hdr) return tex_format_astc8x8_rgba_hdr;
 		if (caps.bc)                   return tex_format_bc6h_rgbuf;
+		// Uncompressed HDR cubemaps are too large, so quality settles for 8x8.
+		// TODO: a higher quality ASTC HDR block size, for cubemaps and images.
+		if ((type & tex_type_cubemap) && caps.astc_hdr) return tex_format_astc8x8_rgba_hdr;
 		return tex_format_none;
 	}
 	if (!tex_format_is_ldr_source(src_format)) return tex_format_none;

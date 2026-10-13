@@ -76,6 +76,15 @@ void gltf_add_warning(gltf_warnings_t *warnings, const char *fmt, ...) {
 
 ///////////////////////////////////////////
 
+// Null when the accessor has no bufferView, which glTF defines as all zeros
+const uint8_t* gltf_accessor_data(const cgltf_accessor* accessor) {
+	return accessor->buffer_view
+		? cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset
+		: nullptr;
+}
+
+///////////////////////////////////////////
+
 bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const char *filename) {
 	if (node->skin == nullptr)
 		return false;
@@ -94,7 +103,7 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 	for (size_t a = 0; a < p->attributes_count; a++) {
 		const cgltf_attribute*attr           = &p->attributes[a];
 		const cgltf_accessor* accessor       =  p->attributes[a].data;
-		const uint8_t*        source_buff    = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
+		const uint8_t*        source_buff    = gltf_accessor_data    (accessor);
 		const cgltf_size      component_num  = cgltf_num_components  (accessor->type);
 		const cgltf_size      component_size = cgltf_component_size  (accessor->component_type);
 
@@ -105,6 +114,8 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 
 			if (accessor->is_sparse) {
 				log_errf("[%s] Sparse joints not implemented", filename);
+			} else if (source_buff == nullptr) {
+				// No bufferView means all zeros, which bone_ids already is
 			} else if (accessor->component_type == cgltf_component_type_r_16u) {
 				cgltf_size com_bytes = component_num * component_size;
 				for (cgltf_size i = 0; i < accessor->count; i++)
@@ -185,14 +196,12 @@ bool gltf_parseskin(mesh_t sk_mesh, cgltf_node *node, int primitive_id, const ch
 	// Find the skeleton for the mesh
 	bone_tr_ct = (int32_t)node->skin->joints_count;
 	bone_trs   = sk_malloc_t(matrix, bone_tr_ct);
-	if (node->skin->inverse_bind_matrices != nullptr) { 
-		cgltf_buffer_view *buff      = node->skin->inverse_bind_matrices->buffer_view;
-		size_t             offset    = buff->offset + node->skin->inverse_bind_matrices->offset;
-		uint8_t           *attr_data = ((uint8_t *)buff->buffer->data) + offset;
-
-		memcpy(bone_trs, attr_data, sizeof(matrix) *bone_tr_ct);
+	if (node->skin->inverse_bind_matrices != nullptr) {
+		// Through cgltf rather than the raw buffer: EXT_meshopt_compression
+		// decodes into the view, leaving the view's buffer a dataless fallback
+		cgltf_size floats = cgltf_accessor_unpack_floats(node->skin->inverse_bind_matrices, bone_trs[0].m, (cgltf_size)bone_tr_ct * 16);
 		for (int32_t i = 0; i < bone_tr_ct; i++) {
-			bone_trs[i] = matrix_invert(bone_trs[i]);
+			bone_trs[i] = (cgltf_size)(i + 1) * 16 <= floats ? matrix_invert(bone_trs[i]) : matrix_identity;
 		}
 	} else {
 		for (int32_t i = 0; i < bone_tr_ct; i++) {
@@ -271,11 +280,11 @@ void gltf_meshopt_decode(cgltf_data* gltf_data) {
 
 void gltf_view_to_vert_f(void* destination_buffer, size_t dest_step, size_t vert_offset, cgltf_accessor *accessor) {
 	uint8_t*       destination = ((uint8_t*)destination_buffer) + vert_offset;
-	const uint8_t* source_buff = cgltf_buffer_view_data(accessor->buffer_view) + accessor->offset;
+	const uint8_t* source_buff = gltf_accessor_data(accessor);
 
 	cgltf_size component_num  = cgltf_num_components(accessor->type);
 	cgltf_size component_size = cgltf_component_size(accessor->component_type);
-	bool standard_path = accessor->is_sparse ||
+	bool standard_path = source_buff == nullptr || accessor->is_sparse ||
 		(accessor->type == cgltf_type_mat3 && component_size == 2) ||
 		(accessor->type == cgltf_type_mat3 && component_size == 1) ||
 		(accessor->type == cgltf_type_mat2 && component_size == 1);
@@ -324,7 +333,7 @@ void gltf_view_to_vert_f(void* destination_buffer, size_t dest_step, size_t vert
 		cgltf_float *floats = sk_malloc_t(cgltf_float, count);
 		cgltf_accessor_unpack_floats(accessor, floats, count);
 
-		cgltf_size com_bytes = component_num * component_size;
+		cgltf_size com_bytes = component_num * sizeof(cgltf_float);
 		for (cgltf_size i = 0; i < accessor->count; i++)
 			memcpy(&destination[i * dest_step], &floats[i * component_num], com_bytes);
 		sk_free(floats);
@@ -368,7 +377,7 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	bool has_lightmap_uvs = false;
 	for (size_t a = 0; a < p->attributes_count; a++) {
 		cgltf_attribute* attr = &p->attributes[a];
-		const uint8_t*   buff = cgltf_buffer_view_data(attr->data->buffer_view) + attr->data->offset;
+		const uint8_t*   buff = gltf_accessor_data(attr->data);
 		
 		// Make sure we have memory for our verts
 		if (vert_count < (int32_t)attr->data->count) {
@@ -400,13 +409,13 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 		} else if (attr->type == cgltf_attribute_type_color) {
 			if (attr->index != 0) {
 				gltf_add_warning(warnings, "Too many vertex <~YLW>%s<~clr> channels! Only one supported, the rest will be ignored.", "color");
-			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_8u && attr->data->type == cgltf_type_vec4) {
+			} else if (buff && !attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_8u && attr->data->type == cgltf_type_vec4) {
 				// Ideal case is vec4 uint8_t colors
 				for (size_t v = 0; v < attr->data->count; v++) {
 					color32 *col = (color32 *)(buff + (attr->data->stride * v));
 					verts[v].col = *col;
 				}
-			} else if (!attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec4) {
+			} else if (buff && !attr->data->is_sparse && attr->data->component_type == cgltf_component_type_r_32f && attr->data->type == cgltf_type_vec4) {
 				// vec4 float colors are also pretty straightforward
 				for (size_t v = 0; v < attr->data->count; v++) {
 					color128 *col = (color128 *)(buff + (attr->data->stride * v));
@@ -453,35 +462,13 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 	} else {
 		// Extract indices from the index buffer
 		ind_count = p->indices->count;
-		inds      = sk_malloc_t(vind_t, ind_count);
+		inds      = sk_malloc_zero_t(vind_t, ind_count);
 
-		const uint8_t* buff = cgltf_buffer_view_data(p->indices->buffer_view) + p->indices->offset;
-		if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_8u) {
-			for (size_t v = 0; v < ind_count; v++) {
-				uint8_t *ind = (uint8_t *)(buff + (p->indices->stride * v));
-				inds[v] = *ind;
-			}
-		} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_16u) {
-			for (size_t v = 0; v < ind_count; v++) {
-				uint16_t *ind = (uint16_t *)(buff + (p->indices->stride * v));
-				inds[v] = *ind;
-			}
-		} else if (!p->indices->is_sparse && p->indices->component_type == cgltf_component_type_r_32u) {
-			if (p->indices->stride == sizeof(uint32_t)) {
-				// Fast path!
-				memcpy(inds, buff, ind_count * sizeof(uint32_t));
-			} else {
-				for (size_t v = 0; v < ind_count; v++) {
-					uint32_t *ind = (uint32_t *)(buff + (p->indices->stride * v));
-					inds[v] = *ind;
-				}
-			}
-		} else {
-			gltf_add_warning(warnings, "Unimplemented vertex index format: %d", p->indices->component_type);
-		}
+		if (cgltf_accessor_unpack_indices(p->indices, inds, ind_count) != ind_count)
+			gltf_add_warning(warnings, "Sparse or missing vertex indices aren't supported");
 	}
 
-	if (!has_normals) {
+	if (!has_normals && p->type == cgltf_primitive_type_triangles) {
 		mesh_calculate_normals(VERT_FORMAT_DEFAULT, verts, vert_count, inds, (int32_t)ind_count);
 	}
 
@@ -1073,6 +1060,22 @@ bool modelfmt_gltf_metadata(model_t model, const char *filename, const void *fil
 	}
 
 	gltf_meshopt_decode(load->data);
+
+	// A view still without bytes failed to decode, or was compressed by an
+	// extension we can't decode (KHR_meshopt_compression, say)
+	for (cgltf_size i = 0; i < load->data->buffer_views_count; i++) {
+		if (cgltf_buffer_view_data(&load->data->buffer_views[i]) != nullptr) continue;
+
+		char required[256] = "";
+		for (cgltf_size e = 0; e < load->data->extensions_required_count; e++) {
+			size_t len = strlen(required);
+			snprintf(required + len, sizeof(required) - len, "%s%s", e > 0 ? ", " : "", load->data->extensions_required[e]);
+		}
+		log_warnf("[%s] can't load: some buffer data is corrupt or needs a compression extension StereoKit doesn't support. Required extensions: %s", filename, required);
+		cgltf_free(load->data);
+		sk_free(load);
+		return false;
+	}
 
 	// Build the node hierarchy with materials (no textures) and no meshes
 	for (cgltf_size i = 0; i < load->data->nodes_count; i++) {

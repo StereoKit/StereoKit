@@ -1810,7 +1810,7 @@ SK_API bool32_t     tex_gen_mips            (tex_t texture);
 SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API const char*  tex_get_id              (const tex_t texture);
 SK_API void         tex_set_fallback        (tex_t texture, tex_t fallback);
-SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample sk_default(1), bool32_t owned sk_default(true));
+SK_API void         tex_set_surface         (tex_t texture, void *native_surface, tex_type_ type, int64_t native_fmt, int32_t width, int32_t height, int32_t surface_count, int32_t multisample sk_default(1));
 SK_API void*        tex_get_surface         (tex_t texture);
 SK_API tex_t        tex_create_from_hardware_buffer(void *hardware_buffer, bool32_t owns_buffer sk_default(false));
 SK_API void*        tex_get_hardware_buffer (tex_t texture);
@@ -2516,6 +2516,65 @@ typedef enum projection_ {
 	projection_ortho = 1
 } projection_;
 
+/*GPU memory held by StereoKit's renderer. This covers what StereoKit
+  allocates itself, not swapchain images, which belong to the XR runtime or
+  the OS. On devices that share memory between the CPU and GPU, like
+  standalone headsets, this is still the right number to watch, as it comes
+  out of the same RAM other apps need.*/
+typedef struct gpu_memory_t {
+	/*Bytes the renderer holds from the driver. Allocations are packed into
+	  larger blocks, so this is a little above the used bytes.*/
+	uint64_t reserved_bytes;
+	/*Bytes bound to live resources, the total of the categories below.*/
+	uint64_t used_bytes;
+	/*The highest the used bytes have been since startup.*/
+	uint64_t peak_bytes;
+	/*Used bytes in textures that hold image data, like loaded images and
+	  cubemaps.*/
+	uint64_t texture_bytes;
+	/*Used bytes in render targets, depth buffers and compute textures.*/
+	uint64_t target_bytes;
+	/*Used bytes in mesh vertex and index data.*/
+	uint64_t mesh_bytes;
+	/*Used bytes in material and compute buffers.*/
+	uint64_t buffer_bytes;
+	/*Used bytes in short-lived memory, like per-frame scratch space and
+	  copies of data still uploading. This spikes while assets load.*/
+	uint64_t transient_bytes;
+	/*How much GPU memory the driver suggests this app stays under, or 0 if
+	  the driver can't say. Many standalone headsets can't.*/
+	uint64_t budget_bytes;
+	/*GPU memory this app is using according to the driver, counting
+	  allocations outside StereoKit too, or 0 if the driver can't say.*/
+	uint64_t device_usage_bytes;
+} gpu_memory_t;
+
+/*A handle to work that finishes later, like GPU commands that are still
+  running. Any thread can check on it with future_check, or block until
+  it's done with future_wait. Futures never need releasing, and a
+  zero-initialized future is invalid and counts as done.*/
+typedef struct future_t {
+	void*    _slot;
+	uint64_t _generation;
+} future_t;
+
+/*Where a future's work is at. Negative values are failures, so
+  `state < 0` catches any of them.*/
+typedef enum future_state_ {
+	/*The work couldn't complete, like work still pending when StereoKit
+	  shut down. The operation itself may say more about why.*/
+	future_state_failed  = -1,
+	/*Not a valid future, like a zero-initialized one. This counts as done.*/
+	future_state_none    = 0,
+	/*The work is still in progress.*/
+	future_state_pending = 1,
+	/*The work has finished.*/
+	future_state_ready   = 2,
+} future_state_;
+
+SK_API future_state_         future_check          (future_t future);
+SK_API future_state_         future_wait           (future_t future);
+
 //TODO: for v0.4, rename render_set_clip and render_set_fov to indicate they are only for perspective
 SK_API void                  render_set_clip       (float near_plane sk_default(0.08f), float far_plane sk_default(50));
 SK_API void                  render_get_clip       (float* out_near_plane, float* out_far_plane);
@@ -2543,6 +2602,8 @@ SK_API float                 render_get_viewport_scaling(void);
 SK_API void                  render_set_multisample(int32_t display_tex_multisample);
 SK_API int32_t               render_get_multisample(void);
 SK_API void                  render_override_capture_filter(bool32_t use_override_filter, render_layer_ layer_filter sk_default(render_layer_all));
+SK_API gpu_memory_t          render_get_gpu_memory (void);
+SK_API future_t              render_gpu_future     (void);
 SK_API render_layer_         render_get_capture_filter     (void);
 SK_API bool32_t              render_has_capture_filter     (void);
 SK_API void                  render_set_clear_color(color128 color_gamma);

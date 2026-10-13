@@ -65,6 +65,7 @@ internal class TestTextures : ITest
 		Tests.Test(CheckTextureFormats);
 		Tests.Test(CheckTextureRead);
 		Tests.Test(CheckBlankTex);
+		Tests.Test(CheckNativeDetach);
 		Tests.Test(CheckBlockingSize);
 		Tests.Test(CheckArrayTex);
 		Tests.Test(CheckArrayCubemap);
@@ -155,6 +156,23 @@ internal class TestTextures : ITest
 		if (blank.AssetState != AssetState.None)
 			return false;
 		return true;
+	}
+
+	bool CheckNativeDetach()
+	{
+		// Borrows another Tex's VkImage, so this is Vulkan only
+		if (Backend.Graphics != BackendGraphics.Vulkan) return true;
+
+		Tex source  = Tex.GenColor(Color.White, 2, 2);
+		Tex wrapped = new Tex();
+		wrapped.SetNativeSurface(source.GetNativeSurface(), TexType.ImageNomips, 43 /*VK_FORMAT_R8G8B8A8_SRGB*/, 2, 2);
+		if (wrapped.AssetState != AssetState.Loaded) return false;
+
+		// Detaching leaves the Tex like a blank one, and the source untouched
+		wrapped.SetNativeSurface(IntPtr.Zero);
+		return wrapped.AssetState == AssetState.None
+			&& wrapped.Width      == 0
+			&& source .AssetState == AssetState.Loaded;
 	}
 
 	bool CheckBlockingSize()
