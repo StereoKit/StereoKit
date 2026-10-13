@@ -7,7 +7,7 @@
 #define STBI_MALLOC sk::sk_malloc
 #define STBI_REALLOC sk::sk_realloc
 #define STBI_FREE sk::_sk_free
-#if defined (_M_ARM)
+#if defined(_M_ARM) || defined(_M_ARM64) || defined(__aarch64__)
 #define STBI_NEON
 #endif
 #include "stb_image.h"

@@ -536,6 +536,106 @@ int qoi_info(const void *data, int size, qoi_desc *desc) {
 	return 1;
 }
 
+/* StereoKit addition: faster 4 channel decode. Pixels live in 16 bit lanes of a
+64 bit int, so channel deltas add and wrap without carrying into each other. */
+
+#define QOI_LANES     0x00ff00ff00ff00ffULL
+#define QOI_LANE_HASH (11ULL | 7ULL << 16 | 5ULL << 32 | 3ULL << 48)
+
+#define QOI_ROW(F, r) \
+	F((r)+ 0), F((r)+ 1), F((r)+ 2), F((r)+ 3), F((r)+ 4), F((r)+ 5), F((r)+ 6), F((r)+ 7), \
+	F((r)+ 8), F((r)+ 9), F((r)+10), F((r)+11), F((r)+12), F((r)+13), F((r)+14), F((r)+15)
+#define QOI_DELTA(dr, dg, db) \
+	((unsigned long long)(unsigned char)(dr) | (unsigned long long)(unsigned char)(dg) << 16 | (unsigned long long)(unsigned char)(db) << 32)
+#define QOI_DELTA_NONE(b) 0
+#define QOI_DELTA_DIFF(b) QOI_DELTA((((b) >> 4) & 3) - 2, (((b) >> 2) & 3) - 2, ((b) & 3) - 2)
+#define QOI_DELTA_LUMA(b) QOI_DELTA(((b) & 0x3f) - 40, ((b) & 0x3f) - 32, ((b) & 0x3f) - 40)
+#define QOI_DELTA_RB(b)   ((unsigned long long)((b) >> 4) | (unsigned long long)((b) & 0x0f) << 32)
+
+/* Indexed by an op's first byte, zero for ops that aren't diff or luma */
+static const unsigned long long qoi_delta_op[256] = {
+	QOI_ROW(QOI_DELTA_NONE, 0x00), QOI_ROW(QOI_DELTA_NONE, 0x10), QOI_ROW(QOI_DELTA_NONE, 0x20), QOI_ROW(QOI_DELTA_NONE, 0x30),
+	QOI_ROW(QOI_DELTA_DIFF, 0x40), QOI_ROW(QOI_DELTA_DIFF, 0x50), QOI_ROW(QOI_DELTA_DIFF, 0x60), QOI_ROW(QOI_DELTA_DIFF, 0x70),
+	QOI_ROW(QOI_DELTA_LUMA, 0x80), QOI_ROW(QOI_DELTA_LUMA, 0x90), QOI_ROW(QOI_DELTA_LUMA, 0xa0), QOI_ROW(QOI_DELTA_LUMA, 0xb0),
+};
+/* A luma op's second byte, with a zeroed upper half for every other op */
+static const unsigned long long qoi_delta_rb[512] = {
+	QOI_ROW(QOI_DELTA_RB, 0x00), QOI_ROW(QOI_DELTA_RB, 0x10), QOI_ROW(QOI_DELTA_RB, 0x20), QOI_ROW(QOI_DELTA_RB, 0x30),
+	QOI_ROW(QOI_DELTA_RB, 0x40), QOI_ROW(QOI_DELTA_RB, 0x50), QOI_ROW(QOI_DELTA_RB, 0x60), QOI_ROW(QOI_DELTA_RB, 0x70),
+	QOI_ROW(QOI_DELTA_RB, 0x80), QOI_ROW(QOI_DELTA_RB, 0x90), QOI_ROW(QOI_DELTA_RB, 0xa0), QOI_ROW(QOI_DELTA_RB, 0xb0),
+	QOI_ROW(QOI_DELTA_RB, 0xc0), QOI_ROW(QOI_DELTA_RB, 0xd0), QOI_ROW(QOI_DELTA_RB, 0xe0), QOI_ROW(QOI_DELTA_RB, 0xf0),
+};
+
+static unsigned long long qoi_lanes_spread(unsigned int v) {
+	unsigned long long x = v;
+	x = (x | x << 16) & 0x0000ffff0000ffffULL;
+	return (x | x << 8) & QOI_LANES;
+}
+
+static unsigned int qoi_lanes_pack(unsigned long long x) {
+	x |= x >> 8;
+	return (unsigned int)(x & 0xffff) | (unsigned int)((x >> 16) & 0xffff0000);
+}
+
+static unsigned int qoi_lanes_hash(unsigned long long x) {
+	return (unsigned int)((x * QOI_LANE_HASH) >> 48) & 0x3f;
+}
+
+/* Packs pixels little-endian, as on every platform StereoKit targets */
+static void qoi_decode_rgba(const unsigned char *bytes, int size, unsigned int *out, unsigned int count) {
+	const unsigned char *p    = bytes + QOI_HEADER_SIZE;
+	const unsigned char *end  = bytes + size - (int)sizeof(qoi_padding);
+	unsigned int        *o    = out;
+	unsigned int        *oend = out + count;
+	unsigned long long   index[64];
+	unsigned long long   px   = 255ULL << 48;
+	unsigned int         px32 = 0xff000000;
+	QOI_ZEROARR(index);
+
+	while (o < oend && p < end) {
+		unsigned int b1 = p[0];
+		if (b1 < QOI_OP_RUN) {
+			/* Index is loaded either way, so the pick compiles to a select */
+			unsigned int       luma = b1 >> 7;
+			unsigned long long nd   = (px + qoi_delta_op[b1] + qoi_delta_rb[(luma ^ 1) << 8 | p[1]]) & QOI_LANES;
+			unsigned long long ni   = index[b1 & 0x3f];
+			px = b1 < QOI_OP_DIFF ? ni : nd;
+			p += 1 + luma;
+		}
+		else if (b1 < QOI_OP_RGB) {
+			unsigned int run = (b1 & 0x3f) + 1;
+			unsigned int i;
+			index[qoi_lanes_hash(px)] = px;
+			if (oend - o >= 64) {
+				/* Fixed size chunks vectorize, and no run needs more than 64 */
+				unsigned int *run_end = o + run;
+				do {
+					for (i = 0; i < 16; i++) o[i] = px32;
+					o += 16;
+				} while (o < run_end);
+				o = run_end;
+			} else {
+				if (run > (unsigned int)(oend - o)) run = (unsigned int)(oend - o);
+				for (i = 0; i < run; i++) o[i] = px32;
+				o += run;
+			}
+			p += 1;
+			continue;
+		}
+		else {
+			unsigned int v;
+			memcpy(&v, p + 1, 4);
+			if (b1 == QOI_OP_RGB) { v = (v & 0x00ffffff) | (px32 & 0xff000000); p += 4; }
+			else                  {                                              p += 5; }
+			px = qoi_lanes_spread(v);
+		}
+		index[qoi_lanes_hash(px)] = px;
+		px32 = qoi_lanes_pack(px);
+		*o++ = px32;
+	}
+	while (o < oend) *o++ = px32;
+}
+
 void *qoi_decode(const void *data, int size, qoi_desc *desc, int channels) {
 	const unsigned char *bytes;
 	unsigned int header_magic;
@@ -579,6 +679,11 @@ void *qoi_decode(const void *data, int size, qoi_desc *desc, int channels) {
 	pixels = (unsigned char *) QOI_MALLOC(px_len);
 	if (!pixels) {
 		return NULL;
+	}
+
+	if (channels == 4) {
+		qoi_decode_rgba(bytes, size, (unsigned int *)pixels, desc->width * desc->height);
+		return pixels;
 	}
 
 	QOI_ZEROARR(index);
