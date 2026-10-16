@@ -14,7 +14,7 @@
 #include <openxr/openxr.h>
 #include <stdint.h>
 
-// StereoKitC builds with XR_NO_PROTOTYPES, this is the only loader export we call directly.
+// Built with XR_NO_PROTOTYPES, so this is the only loader export we call.
 extern "C" XRAPI_ATTR XrResult XRAPI_CALL xrGetInstanceProcAddr(XrInstance instance, const char* name, PFN_xrVoidFunction* function);
 
 typedef struct XR_MAY_ALIAS XrBaseHeader {
@@ -43,6 +43,7 @@ inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_ne
 namespace sk {
 
 // Loaded via xrGetInstanceProcAddr to skip the loader's per-call trampolines.
+// Init fails if any of these won't load, so only OpenXR 1.0 core belongs here.
 #define OPENXR_PRE_INSTANCE_FUNCTIONS(_) \
 	_(xrEnumerateApiLayerProperties) \
 	_(xrEnumerateInstanceExtensionProperties) \

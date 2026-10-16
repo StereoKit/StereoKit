@@ -31,7 +31,7 @@ option(SK_LOCAL_SK_APP                 "Build using a local version of sk_app, i
 option(SK_PROFILE                      "Build with Tracy profiler enabled." OFF)
 option(SK_STRIP_DEBUG_SYMBOLS          "Strip debug symbols from the shared library. Disable on Android to keep symbols embedded for native debugging." ON)
 option(SK_USE_SVSL                     "Compile shaders with skshaderc's SVSL backend instead of the glslang HLSL pipeline." OFF)
-option(SK_THIN_LTO                     "Clang only, Release builds use ThinLTO. Links several times faster, for a slightly larger binary." OFF)
+option(SK_THIN_LTO                     "Clang only, Release builds use ThinLTO. Links several times faster, for slightly slower code." OFF)
 option(FORCE_COLORED_OUTPUT            "Always produce ANSI-colored output (GNU/Clang only)." OFF)
 
 # Distribute copies feed C# builds and NuGet packing, only meaningful when
@@ -310,7 +310,7 @@ endif()
 if (ANDROID AND SK_DYNAMIC_OPENXR)
   target_compile_definitions(StereoKitC PRIVATE SK_DYNAMIC_OPENXR)
 endif()
-# OpenXR calls go through xrGetInstanceProcAddr pointers, see xr_backends/openxr.h
+# OpenXR calls use xrGetInstanceProcAddr pointers, see xr_backends/openxr.h
 target_compile_definitions(StereoKitC PRIVATE XR_NO_PROTOTYPES)
 
 # Core
@@ -735,19 +735,19 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     endif()
   endif()
   if (MINGW)
-    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections )
+    set(SK_RELEASE_COMPILE -g -O3)
     set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id)
   elseif(APPLE)
-    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections ${SK_LTO})
+    set(SK_RELEASE_COMPILE -g -O3 ${SK_LTO})
     set(SK_RELEASE_LINK    -Wl,-dead_strip ${SK_LTO_LINK})
   else()
-    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections ${SK_LTO})
+    set(SK_RELEASE_COMPILE -g -O3 ${SK_LTO})
     set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id ${SK_LTO_LINK})
   endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   # /OPT settings need to be specified explicitly because we're also generating
   # /DEBUG pdbs, which disables them by default.
-  set(SK_RELEASE_COMPILE /O2 /DNDEBUG /Zi /Gy /Gw /GL)
+  set(SK_RELEASE_COMPILE /O2 /DNDEBUG /Zi /Gy /GL)
   set(SK_RELEASE_LINK    /DEBUG /INCREMENTAL:NO /OPT:REF /OPT:LBR /OPT:ICF=2 /LTCG ) # See: https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170
 endif()
 

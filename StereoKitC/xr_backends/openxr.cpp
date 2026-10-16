@@ -156,7 +156,7 @@ void openxr_show_ext_table(array_t<const char*> exts_request, array_t<char*> ext
 ///////////////////////////////////////////
 
 bool openxr_load_pre_instance_functions() {
-	// xr_instance is still null here, which is what these loader functions expect
+	// xr_instance is still null, as these loader functions expect
 	OPENXR_LOAD_FN_RETURN(OPENXR_PRE_INSTANCE_FUNCTIONS, false);
 	return true;
 }
@@ -670,7 +670,7 @@ void openxr_set_origin_offset(pose_t offset) {
 
 void openxr_cleanup() {
 	if (xr_instance) {
-		// Extensions release their handles through the instance, so they go first
+		// Extension handles live under the instance, so they go first
 		ext_management_evt_shutdown();
 
 		openxr_views_destroy();
