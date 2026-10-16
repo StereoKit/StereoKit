@@ -76,11 +76,16 @@ pose_t               xr_bounds_pose_local = pose_identity;
 
 XrReferenceSpaceType xr_refspace;
 
+OPENXR_DEFINE_FN(OPENXR_PRE_INSTANCE_FUNCTIONS)
+OPENXR_DEFINE_FN(OPENXR_CORE_FUNCTIONS)
+
 ///////////////////////////////////////////
 
-bool32_t openxr_try_get_app_space(XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset, XrSpace *out_app_space);
-void     openxr_list_layers      (array_t<char*>* ref_available_layers, array_t<const char*>* ref_request_layers);
-bool     openxr_blank_frame      ();
+bool32_t openxr_try_get_app_space          (XrSession session, origin_mode_ mode, XrTime time, XrReferenceSpaceType *out_space_type, pose_t* out_space_offset, XrSpace *out_app_space);
+void     openxr_list_layers                (array_t<char*>* ref_available_layers, array_t<const char*>* ref_request_layers);
+bool     openxr_blank_frame                ();
+bool     openxr_load_pre_instance_functions();
+bool     openxr_load_core_functions        ();
 
 ///////////////////////////////////////////
 
@@ -150,6 +155,21 @@ void openxr_show_ext_table(array_t<const char*> exts_request, array_t<char*> ext
 
 ///////////////////////////////////////////
 
+bool openxr_load_pre_instance_functions() {
+	// xr_instance is still null, as these loader functions expect
+	OPENXR_LOAD_FN_RETURN(OPENXR_PRE_INSTANCE_FUNCTIONS, false);
+	return true;
+}
+
+///////////////////////////////////////////
+
+bool openxr_load_core_functions() {
+	OPENXR_LOAD_FN_RETURN(OPENXR_CORE_FUNCTIONS, false);
+	return true;
+}
+
+///////////////////////////////////////////
+
 bool openxr_create_system() {
 	if (xr_system_created == true) return xr_system_success;
 	xr_system_success = false;
@@ -158,6 +178,12 @@ bool openxr_create_system() {
 	// Loader initialization must come before even instance data is enumerated
 	if (xr_ext_loader_init() == xr_system_fail_critical) {
 		log_warnf("OpenXR initialization failed during event: %s", "Loader Initialization");
+		openxr_cleanup();
+		return false;
+	}
+
+	if (!openxr_load_pre_instance_functions()) {
+		log_warnf("OpenXR initialization failed during event: %s", "Loader Function Loading");
 		openxr_cleanup();
 		return false;
 	}
@@ -211,6 +237,10 @@ bool openxr_create_system() {
 	}
 
 	XrResult result = xrCreateInstance(&create_info, &xr_instance);
+	if (XR_SUCCEEDED(result) && xr_instance != XR_NULL_HANDLE && !openxr_load_core_functions()) {
+		log_warnf("OpenXR initialization failed during event: %s", "Core Function Loading");
+		result = XR_ERROR_FUNCTION_UNSUPPORTED;
+	}
 
 	// If we succeeded, log some infor g about our setup.
 	if (XR_SUCCEEDED(result) && xr_instance != XR_NULL_HANDLE) {
@@ -640,6 +670,8 @@ void openxr_set_origin_offset(pose_t offset) {
 
 void openxr_cleanup() {
 	if (xr_instance) {
+		// Extension handles live under the instance, so they go first
+		ext_management_evt_shutdown();
 
 		openxr_views_destroy();
 
@@ -649,6 +681,8 @@ void openxr_cleanup() {
 		if (xr_app_space  != XR_NULL_HANDLE) { xrDestroySpace   (xr_app_space ); xr_app_space  = {}; }
 		if (xr_session    != XR_NULL_HANDLE) { xrDestroySession (xr_session   ); xr_session    = {}; }
 		if (xr_instance   != XR_NULL_HANDLE) { xrDestroyInstance(xr_instance  ); xr_instance   = {}; }
+
+		OPENXR_CLEAR_FN(OPENXR_CORE_FUNCTIONS);
 	}
 }
 
