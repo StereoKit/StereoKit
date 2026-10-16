@@ -32,5 +32,6 @@ bool ext_management_evt_session_ready      ();
 void ext_management_evt_step_begin         ();
 void ext_management_evt_step_end           ();
 void ext_management_evt_poll_event         (const XrEventDataBuffer* event_data);
+void ext_management_evt_shutdown           ();
 
 }

@@ -16,11 +16,12 @@
     },
     {
       "name":        "Fast",
-      "description": "Disable tests for faster builds",
+      "description": "Disable tests and use ThinLTO for faster builds",
       "hidden":      true,
       "inherits":    ["SVSL"],
       "cacheVariables": {
-        "SK_BUILD_TESTS": "OFF"
+        "SK_BUILD_TESTS": "OFF",
+        "SK_THIN_LTO":    "ON"
       }
     },
     {

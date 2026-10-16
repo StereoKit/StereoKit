@@ -313,13 +313,19 @@ void ext_management_evt_session_begin(XrSessionBeginInfo* ref_session_info) {
 
 ///////////////////////////////////////////
 
-void ext_management_cleanup() {
-
+void ext_management_evt_shutdown() {
 	// Call shutdown in reverse order. Just in case.
 	for (int32_t i = local.callbacks_shutdown.count-1; i >= 0; i--) {
 		const context_callback_t* sys = &local.callbacks_shutdown[i];
 		sys->callback(sys->context);
 	}
+	local.callbacks_shutdown.free();
+}
+
+///////////////////////////////////////////
+
+void ext_management_cleanup() {
+	ext_management_evt_shutdown();
 
 	// Some of these lists are in charge of allocated memory
 	for (int32_t i =0; i<local.exts_all_m      .count; i++) sk_free(local.exts_all_m      [i]);

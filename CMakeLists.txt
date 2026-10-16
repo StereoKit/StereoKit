@@ -31,6 +31,7 @@ option(SK_LOCAL_SK_APP                 "Build using a local version of sk_app, i
 option(SK_PROFILE                      "Build with Tracy profiler enabled." OFF)
 option(SK_STRIP_DEBUG_SYMBOLS          "Strip debug symbols from the shared library. Disable on Android to keep symbols embedded for native debugging." ON)
 option(SK_USE_SVSL                     "Compile shaders with skshaderc's SVSL backend instead of the glslang HLSL pipeline." OFF)
+option(SK_THIN_LTO                     "Clang only, Release builds use ThinLTO. Links several times faster, for slightly slower code." OFF)
 option(FORCE_COLORED_OUTPUT            "Always produce ANSI-colored output (GNU/Clang only)." OFF)
 
 # Distribute copies feed C# builds and NuGet packing, only meaningful when
@@ -118,9 +119,6 @@ if (ANDROID)
   # Align to 16kb as per Android recommendations
   # https://developer.android.com/guide/practices/page-sizes
   set(SK_LINKER_FLAGS "-Wl,-z,max-page-size=16384")
-  if(CMAKE_ANDROID_ARCH_ABI STREQUAL "x86_64")
-    add_compile_options(-mavx -mf16c)
-  endif()
 elseif (APPLE)
   # macOS-specific settings
   set(MACOS_LIBS
@@ -128,11 +126,6 @@ elseif (APPLE)
     "-framework Cocoa"
     "-framework CoreText"
     "-framework IOKit" )
-
-  # Apple Silicon uses arm64, Intel Macs use x86_64
-  if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    add_compile_options(-mavx -mf16c)
-  endif()
 
 elseif (UNIX)
   # Linux-specific settings
@@ -142,10 +135,6 @@ elseif (UNIX)
     Xfixes
     fontconfig )
 
-  if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64)$")
-    add_compile_options(-mavx -mf16c)
-  endif()
-
 elseif(WIN32)
   add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
   if (MSVC)
@@ -153,9 +142,6 @@ elseif(WIN32)
     Comdlg32)
   else()
     # MinGW/GCC cross-compile settings
-    # GCC spills 256-bit ymm with 32-byte-aligned vmovdqa, but only ever gets the
-    # 16 bytes Win64 guarantees, so keep it on 128-bit vectors. See GCC #54412.
-    add_compile_options(-mavx -mf16c -mprefer-vector-width=128)
     # Static runtime linking is applied per-target to StereoKitC only (see below)
     # Executables use the runtime from the DLL to avoid duplicate symbol errors
   endif()
@@ -176,6 +162,14 @@ endif()
 # down where the target is created.
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Lets the linker drop the dependencies' unused code and data, not just ours.
+# MSVC's /O2 already implies /Gy for functions, /Gw adds data.
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  add_compile_options("$<$<CONFIG:Release>:-ffunction-sections;-fdata-sections>")
+elseif(MSVC)
+  add_compile_options("$<$<CONFIG:Release>:/Gw>")
+endif()
+
 # See: https://github.com/cpm-cmake/CPM.cmake
 include("cmake/CPM.cmake")
 
@@ -193,7 +187,10 @@ if (SK_BUILD_OPENXR_LOADER)
     "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
   )
   target_compile_options(openxr_loader PRIVATE ${SK_WARNING_FLAG})
-  
+
+  # Roughly halves the loader's compile time, with no size change under LTO.
+  set_target_properties(openxr_loader PROPERTIES UNITY_BUILD ON)
+
   # OpenXR-SDK pins the loader to the dynamic CRT (/MD) when it's built as a
   # static lib, which collides (LNK2038) with our static-CRT build. Re-assert
   # our runtime on the target so both sides match.
@@ -219,6 +216,11 @@ target_compile_options(meshoptimizer PRIVATE ${SK_WARNING_FLAG})
 # from us. STATIC rather than OBJECT so --exclude-libs below keeps ZSTD_* private.
 add_library(zstd_decompress STATIC StereoKitC/libraries/zstddeclib.c)
 target_compile_options(zstd_decompress PRIVATE ${SK_WARNING_FLAG})
+# Keep one copy of each decode loop instead of 2-3 size-heavy variants.
+target_compile_definitions(zstd_decompress PRIVATE
+  HUF_FORCE_DECOMPRESS_X1
+  ZSTD_FORCE_DECOMPRESS_SEQUENCES_SHORT
+  DYNAMIC_BMI2=0)
 
 #### Tracy Profiler - https://github.com/wolfpld/tracy ####
 
@@ -308,6 +310,8 @@ endif()
 if (ANDROID AND SK_DYNAMIC_OPENXR)
   target_compile_definitions(StereoKitC PRIVATE SK_DYNAMIC_OPENXR)
 endif()
+# OpenXR calls use xrGetInstanceProcAddr pointers, see xr_backends/openxr.h
+target_compile_definitions(StereoKitC PRIVATE XR_NO_PROTOTYPES)
 
 # Core
 target_sources(StereoKitC PRIVATE
@@ -673,9 +677,10 @@ if (NOT MSVC)
 
     if (SK_BUILD_SHARED_LIBS AND SK_STRIP_DEBUG_SYMBOLS)
       set(SK_SEPARATE_DBG ON)
+      # Symbol names live on in the .dbg, found through the debuglink
       add_custom_command(TARGET StereoKitC POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:StereoKitC> $<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT}
-        COMMAND ${CMAKE_STRIP} --strip-debug $<TARGET_FILE:StereoKitC>
+        COMMAND ${CMAKE_STRIP} --strip-all $<TARGET_FILE:StereoKitC>
         COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE_DIR:StereoKitC>/$<TARGET_FILE_PREFIX:StereoKitC>$<TARGET_FILE_BASE_NAME:StereoKitC>${SK_BIN_DEBUG_EXT} $<TARGET_FILE:StereoKitC>
       )
     endif()
@@ -718,20 +723,31 @@ endif()
 
 # Compiler options for all the targets, now that they're all present
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  set(SK_LTO      -flto)
+  set(SK_LTO_LINK -flto)
+  if (SK_THIN_LTO AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # The cache lets a one-file change relink in under a second.
+    set(SK_LTO -flto=thin)
+    if (APPLE)
+      set(SK_LTO_LINK -flto=thin -Wl,-cache_path_lto,${CMAKE_BINARY_DIR}/thinlto_cache)
+    else()
+      set(SK_LTO_LINK -flto=thin -Wl,--thinlto-cache-dir=${CMAKE_BINARY_DIR}/thinlto_cache)
+    endif()
+  endif()
   if (MINGW)
-    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections )
+    set(SK_RELEASE_COMPILE -g -O3)
     set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id)
   elseif(APPLE)
-    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
-    set(SK_RELEASE_LINK    -Wl,-dead_strip -flto)
+    set(SK_RELEASE_COMPILE -g -O3 ${SK_LTO})
+    set(SK_RELEASE_LINK    -Wl,-dead_strip ${SK_LTO_LINK})
   else()
-    set(SK_RELEASE_COMPILE -g -O3 -fdata-sections -ffunction-sections -flto)
-    set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id -flto)
+    set(SK_RELEASE_COMPILE -g -O3 ${SK_LTO})
+    set(SK_RELEASE_LINK    -Wl,--gc-sections -Wl,--build-id ${SK_LTO_LINK})
   endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
   # /OPT settings need to be specified explicitly because we're also generating
   # /DEBUG pdbs, which disables them by default.
-  set(SK_RELEASE_COMPILE /O2 /DNDEBUG /Zi /Gy /Gw /GL)
+  set(SK_RELEASE_COMPILE /O2 /DNDEBUG /Zi /Gy /GL)
   set(SK_RELEASE_LINK    /DEBUG /INCREMENTAL:NO /OPT:REF /OPT:LBR /OPT:ICF=2 /LTCG ) # See: https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170
 endif()
 
@@ -850,7 +866,7 @@ if(SK_DISTRIBUTE)
     if (SK_STRIP_DEBUG_SYMBOLS AND NOT MSVC AND NOT APPLE)
       set(SK_OPENXR_LOADER_DIST_SRC "${CMAKE_CURRENT_BINARY_DIR}/$<TARGET_FILE_NAME:openxr_loader>.stripped")
       add_custom_command(TARGET StereoKitC POST_BUILD
-        COMMAND ${CMAKE_STRIP} --strip-debug -o "${SK_OPENXR_LOADER_DIST_SRC}" "$<TARGET_FILE:openxr_loader>" )
+        COMMAND ${CMAKE_STRIP} --strip-all -o "${SK_OPENXR_LOADER_DIST_SRC}" "$<TARGET_FILE:openxr_loader>" )
     endif()
     add_custom_command(TARGET StereoKitC POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/${SK_DISTRIBUTE_FOLDER}/bin/${SK_BIN_OS}/${SK_ARCH}/$<CONFIG>/standard"
