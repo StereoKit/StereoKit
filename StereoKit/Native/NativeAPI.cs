@@ -312,6 +312,7 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_gen_cubemap_sh(in SphericalHarmonics lookup, int face_size, float light_spot_size_pct, float light_spot_intensity);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_gen_cubemap_reflection(IntPtr source_cubemap, IntPtr into, int max_resolution);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexFormat    tex_get_format(IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexFormat    tex_get_input_format(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_width(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_height(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_depth(IntPtr texture);

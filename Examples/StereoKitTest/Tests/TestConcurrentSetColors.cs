@@ -37,7 +37,7 @@ class TestConcurrentSetColors : ITest
 				colors[i].b = (byte)(r.Next() % 255);
 				colors[i].a = 255;
 			}
-			tex.SetColors(size, size, colors);
+			tex.SetColors(size, size, colors, TexFormat.Rgba32, TexData.Blocking | TexData.CompressNone);
 		}
 	}
 

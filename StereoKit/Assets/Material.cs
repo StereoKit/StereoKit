@@ -306,7 +306,9 @@ namespace StereoKit
 			set
 			{
 				// TODO: v0.4 Remove this backwards compatibility code
+#pragma warning disable CS0618 // TexScale is obsolete, but still has to work
 				if (parameter == MatParamName.TexScale) this["tex_trans"] = new Vec4( 0, 0, (float)value, (float)value);
+#pragma warning restore CS0618
 				else                                    this[MaterialParamString(parameter)] = value;
 			}
 		}

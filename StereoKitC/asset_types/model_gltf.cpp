@@ -53,7 +53,7 @@ matrix     gltf_build_node_matrix     (cgltf_node *curr);
 matrix     gltf_build_world_matrix    (cgltf_node *curr, cgltf_node *root);
 void       gltf_add_warning           (gltf_warnings_t *warnings, const char *fmt, ...);
 material_t gltf_parsematerial         (cgltf_data *data, cgltf_material *material, const char *filename, shader_t shader, gltf_warnings_t *warnings);
-void       gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, const char *filename, int32_t priority, tex_data_ tex_policy, gltf_warnings_t *warnings);
+void       gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, const char *filename, int32_t priority, tex_data_ tex_flags, gltf_warnings_t *warnings);
 void       gltf_parse_extras          (model_t model, model_node_id node, const char* extras_json, size_t extras_size);
 
 ///////////////////////////////////////////
@@ -674,7 +674,7 @@ static void gltf_material_id(char *id, size_t id_size, const char *filename, cgl
 
 ///////////////////////////////////////////
 
-void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, const char *filename, int32_t priority, tex_data_ tex_policy, gltf_warnings_t *warnings) {
+void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, const char *filename, int32_t priority, tex_data_ tex_flags, gltf_warnings_t *warnings) {
 	if (material == nullptr) return;
 
 	char id[512];
@@ -691,9 +691,9 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 	const int32_t pri_detail    = priority + 3;
 
 	// Content comes from the slot, the model only picks the compression.
-	const tex_data_ hint_color  = tex_policy | tex_data_srgb;
-	const tex_data_ hint_data   = tex_policy;
-	const tex_data_ hint_normal = tex_policy | tex_data_normal;
+	const tex_data_ flags_color  = tex_flags | tex_data_srgb;
+	const tex_data_ flags_data   = tex_flags;
+	const tex_data_ flags_normal = tex_flags | tex_data_normal;
 
 	cgltf_texture *tex = nullptr;
 	if (material->has_pbr_metallic_roughness) {
@@ -701,7 +701,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			gltf_set_material_transform(result, &material->pbr_metallic_roughness.base_color_texture);
 			tex_t slot_default = material_get_default_tex(result, "diffuse");
-			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, hint_color, pri_diffuse, warnings, slot_default);
+			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, flags_color, pri_diffuse, warnings, slot_default);
 			tex_release(slot_default);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
@@ -712,7 +712,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
 		if (tex != nullptr && material_has_param(result, "metal", material_param_texture)) {
 			tex_t slot_default = material_get_default_tex(result, "metal");
-			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, hint_data, pri_detail, warnings, slot_default);
+			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, flags_data, pri_detail, warnings, slot_default);
 			tex_release(slot_default);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "metal", parse_tex);
@@ -724,7 +724,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			gltf_set_material_transform(result, &material->pbr_specular_glossiness.diffuse_texture);
 			tex_t slot_default = material_get_default_tex(result, "diffuse");
-			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, hint_color, pri_diffuse, warnings, slot_default);
+			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, flags_color, pri_diffuse, warnings, slot_default);
 			tex_release(slot_default);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
@@ -736,7 +736,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {
 		tex_t slot_default = material_get_default_tex(result, "normal");
-		tex_t parse_tex    = gltf_parsetexture(data, tex, filename, hint_normal, pri_detail, warnings, slot_default);
+		tex_t parse_tex    = gltf_parsetexture(data, tex, filename, flags_normal, pri_detail, warnings, slot_default);
 		tex_release(slot_default);
 		if (parse_tex != nullptr) {
 			material_set_texture(result, "normal", parse_tex);
@@ -748,7 +748,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 	const char* param = is_lightmap ? "lightmap" : "occlusion";
 	if (tex != nullptr && material_has_param(result, param, material_param_texture)) {
 		tex_t slot_default = material_get_default_tex(result, param);
-		tex_t parse_tex    = gltf_parsetexture(data, tex, filename, is_lightmap ? hint_color : hint_data, pri_occlusion, warnings, slot_default);
+		tex_t parse_tex    = gltf_parsetexture(data, tex, filename, is_lightmap ? flags_color : flags_data, pri_occlusion, warnings, slot_default);
 		tex_release(slot_default);
 		if (parse_tex != nullptr) {
 			material_set_texture(result, param, parse_tex);
@@ -762,7 +762,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 		gltf_set_material_transform(result, &material->emissive_texture);
 		int32_t pri_emissive = hacked_unlit ? pri_diffuse : pri_emission;
 		tex_t   slot_default = material_get_default_tex(result, param);
-		tex_t   parse_tex    = gltf_parsetexture(data, tex, filename, hint_color, pri_emissive, warnings, slot_default);
+		tex_t   parse_tex    = gltf_parsetexture(data, tex, filename, flags_color, pri_emissive, warnings, slot_default);
 		tex_release(slot_default);
 		if (parse_tex != nullptr) {
 			material_set_texture(result, param, parse_tex);

@@ -533,8 +533,8 @@ static void assets_step_tasks(double budget_ms) {
 
 	// Without workers the main thread is the loader, so it runs as much of the
 	// queue as fits the budget instead of one action per frame. Heavy work is
-	// deliberately capped at one acquisition per frame: a single slice can be
-	// near budget-sized, and an unsliced action can overrun it entirely.
+	// deliberately capped at one acquisition per frame, since a single slice can
+	// be near budget-sized, and an unsliced action can overrun it entirely.
 	uint64_t start    = stm_now();
 	bool     advanced = false;
 	bool     first    = true;
@@ -983,7 +983,7 @@ bool32_t assets_task_signal(uint64_t wait_id, void (*deliver)(asset_task_t *task
 	if (wait_id == 0) return false;
 
 	ft_mutex_lock(asset_thread_task_mtx);
-	// Parked is the expected home: deliver, then re-queue by sort.
+	// Parked is the expected home, so deliver and then re-queue by sort.
 	for (int32_t i = 0; i < asset_parked_tasks.count; i++) {
 		asset_task_t *task = asset_parked_tasks[i];
 		if (task->wait_id != wait_id) continue;
@@ -1004,14 +1004,14 @@ bool32_t assets_task_signal(uint64_t wait_id, void (*deliver)(asset_task_t *task
 		assets_wake_workers();
 		return true;
 	}
-	// Not parked yet: the signal came from the initiating action's own stack,
+	// Not parked yet, so the signal came from the initiating action's own stack,
 	// or beat the park's arrival. Flag the task to skip the park; delivery is
 	// safe by the contract in the header.
 	for (int32_t i = 0; i < asset_active_tasks.count; i++) {
 		asset_task_t *task = asset_active_tasks[i];
 		if (task->wait_id != wait_id) continue;
 
-		// Contract check, as above: any other thread races the running action
+		// Contract check as above, any other thread races the running action
 		if (!ft_id_equal(ft_id_current(), task->running_thread))
 			log_err("assets_task_signal: an active task may only be signaled from its own action");
 
@@ -1020,7 +1020,7 @@ bool32_t assets_task_signal(uint64_t wait_id, void (*deliver)(asset_task_t *task
 		ft_mutex_unlock(asset_thread_task_mtx);
 		return true;
 	}
-	// Otherwise stale: the task already completed, or failed at shutdown.
+	// Otherwise the id is stale, the task already completed or failed at shutdown.
 	ft_mutex_unlock(asset_thread_task_mtx);
 	return false;
 }
@@ -1029,7 +1029,7 @@ bool32_t assets_task_signal(uint64_t wait_id, void (*deliver)(asset_task_t *task
 
 // A completion can outlive its task, so it carries the wait id, and the
 // stale-id check in assets_task_signal is what guards the read struct's
-// lifetime: deliver only runs while the task, and so its load_data, is alive.
+// lifetime, since deliver only runs while the task and its load_data live.
 // When the task is already gone, the bytes have no home and are dropped.
 struct asset_read_ctx_t {
 	uint64_t           wait_id;
@@ -1346,7 +1346,7 @@ void assets_block_for_priority(int32_t priority) {
 		curr_priority = assets_current_task_priority();
 
 #if defined(SK_OS_WEB)
-		// See assets_block_until: parked work can't finish inside one frame
+		// See assets_block_until. Parked work can't finish inside one frame
 		// in a browser, so a pass that steps nothing never will.
 		if (assets_step_did_work == false && curr_priority <= priority && curr_priority != INT_MAX) {
 			log_err("Can't block for assets on the web, they're waiting on work that needs the frame to end. Load asynchronously instead.");

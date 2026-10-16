@@ -54,12 +54,12 @@ class TestModel : ITest
 		asyncGltf.Draw(Matrix.T(0, 0, -1));
 
 		// -- Copy a model that's still loading --
-		asyncSource      = Model.FromFile("Radio.glb", null, TexData.Uncompressed);
+		asyncSource      = Model.FromFile("Radio.glb", null, TexData.CompressNone);
 		copyWhileLoading = asyncSource.Copy();
 		Tests.Test(TestCopyWhileLoadingState);
 
 		// -- Animated model --
-		animModel = Model.FromFile("Cosmonaut.glb", null, TexData.Uncompressed);
+		animModel = Model.FromFile("Cosmonaut.glb", null, TexData.CompressNone);
 		animModel.OnLoaded += m => animOnLoadedFired = true;
 
 		// -- Node manipulation on a procedural model --

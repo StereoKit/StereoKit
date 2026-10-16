@@ -315,7 +315,7 @@ static void ast_foreign_body(void* arg) {
 	color32 colors[16 * 16];
 	for (int32_t i = 0; i < 16 * 16; i++)
 		colors[i] = color32{ 255, 0, 255, 255 };
-	tex_set_colors(job->tex, 16, 16, colors, tex_data_blocking | tex_data_uncompressed);
+	tex_set_colors(job->tex, 16, 16, colors, tex_data_blocking | tex_data_compress_none);
 	atomic_store_i32_rel(&job->done, 1);
 }
 #if defined(_WIN32)
@@ -484,7 +484,7 @@ int asset_tests_run() {
 	tex_release(dep);
 	tex_release(dependent);
 
-	// A task parked on a wait drains the same way: its signal is never coming,
+	// A task parked on a wait drains the same way. Its signal is never coming,
 	// so shutdown routes it through on_failure rather than hanging on it.
 	tex_t parked = tex_create(tex_type_image, tex_format_rgba32);
 	static const asset_action_t parked_actions[] = { { ast_action_parks } };

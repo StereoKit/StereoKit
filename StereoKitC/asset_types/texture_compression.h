@@ -30,13 +30,13 @@ struct tex_compress_caps_t {
 	bool32_t bc;       // BC1, BC7, and BC6H
 };
 
-SK_API tex_compress_caps_t tex_compress_caps  ();
+tex_compress_caps_t tex_compress_caps  ();
 // Encodes every mip the source has, adding none. Invalid on failure.
-       skr_tex_t           tex_compress_gpu   (skr_tex_t* source, tex_format_ format, skr_tex_sampler_t sampler);
+skr_tex_t           tex_compress_gpu   (skr_tex_t* source, tex_format_ format, skr_tex_sampler_t sampler);
 // The format a loaded image should end up in, or tex_format_none to keep the
-// source. SK_API here and on caps is for the SKTests harness.
-SK_API tex_format_         tex_compress_pick  (tex_data_ flags, tex_data_ default_policy, tex_type_ type, tex_format_ src_format, bool32_t src_alpha, int32_t width, int32_t height, int32_t array_count, tex_compress_caps_t caps);
+// source.
+tex_format_         tex_compress_pick  (tex_data_ flags, tex_data_ default_policy, tex_type_ type, tex_format_ src_format, bool32_t src_alpha, int32_t width, int32_t height, int32_t array_count, tex_compress_caps_t caps);
 // Whether an image file can carry alpha, from its header alone.
-SK_API bool32_t            tex_image_has_alpha(const void* data, size_t data_size);
+bool32_t            tex_image_has_alpha(const void* data, size_t data_size);
 
 }

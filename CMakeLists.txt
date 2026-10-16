@@ -241,6 +241,11 @@ set(SKR_ENABLE_STATIC_ANALYSIS OFF CACHE BOOL "Faster build" FORCE)
 set(SKR_BUILD_EXAMPLES OFF CACHE BOOL "Faster build" FORCE)
 set(SKR_BUILD_KTX2 ON CACHE BOOL "KTX2 texture loading" FORCE)
 set(SKR_BUILD_TEXENC ON CACHE BOOL "GPU texture compression" FORCE)
+# sk_texenc picks encoders by CPU, which would give Android x64 BC.
+if (ANDROID)
+  set(SK_TEXENC_BC   OFF CACHE BOOL "Android is ASTC only" FORCE)
+  set(SK_TEXENC_ASTC ON  CACHE BOOL "Android is ASTC only" FORCE)
+endif()
 # If we're only using the SVSL shader compiler, we can drop glslang from
 # skshaderc and save ourselves a lot of binary size and build time!
 if (SK_USE_SVSL)

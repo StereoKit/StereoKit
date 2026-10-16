@@ -11,7 +11,7 @@ class DemoNodes : ITest
 	string title       = "Model Nodes";
 	string description = "ModelNode API lets...";
 
-	Model radio     = Model.FromFile("Radio.glb", null, TexData.Uncompressed);
+	Model radio     = Model.FromFile("Radio.glb", null, TexData.CompressNone);
 	Pose  radioPose = Demo.contentPose.Pose;
 	Pose  radioPowerPose;
 	Pose  radioSpeakerPose;

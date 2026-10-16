@@ -97,8 +97,7 @@ void        assets_on_load_remove     (asset_header_t *asset, void (*on_load)(as
 void        assets_on_load_remove_all (asset_header_t *asset);
 // For work that finishes an asset outside the task system.
 void        assets_notify_loaded      (asset_header_t *asset);
-// SK_API so the SKTests harness can reach it from the shared library.
-SK_API bool assets_on_asset_thread    ();
+bool        assets_on_asset_thread    ();
 
 // An action that starts external work (a fetch, a GPU readback) calls
 // wait_prepare, hands the id to whatever completion will fire, and returns
@@ -107,9 +106,9 @@ SK_API bool assets_on_asset_thread    ();
 // home. deliver runs with the task's load_data under the scheduler's lock, so
 // keep it to short copies, and may only signal from the initiating action's
 // own stack or from the main thread while parked. Other threads would race
-// the running action. SK_API for the SKTests harness, as above.
-SK_API uint64_t assets_task_wait_prepare(asset_task_t *task);
-SK_API bool32_t assets_task_signal      (uint64_t wait_id, void (*deliver)(asset_task_t *task, void *load_data, void *context) = nullptr, void *context = nullptr);
+// the running action.
+uint64_t    assets_task_wait_prepare  (asset_task_t *task);
+bool32_t    assets_task_signal        (uint64_t wait_id, void (*deliver)(asset_task_t *task, void *load_data, void *context) = nullptr, void *context = nullptr);
 
 typedef enum asset_read_ {
 	asset_read_in_flight = 0, // also how a request that hasn't started reads
@@ -127,8 +126,8 @@ struct asset_file_read_t {
 	size_t      size;
 };
 
-// The wait/signal plumbing for reading a file from a task action: starts the
-// read on the first call, and the caller parks on in_flight. The arrival
+// The wait/signal plumbing for reading a file from a task action. It starts
+// the read on the first call, and the caller parks on in_flight. The arrival
 // signal re-runs the action, which lands back here and sees the result.
 asset_read_ assets_task_read_file(asset_task_t *task, const char *filename, asset_file_read_t *read);
 

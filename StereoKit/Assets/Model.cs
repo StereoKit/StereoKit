@@ -396,9 +396,10 @@ namespace StereoKit
 		/// If null, this will
 		/// automatically determine the best shader available to use.</param>
 		/// <param name="texFlags">Compression for the model's textures. Only
-		/// the compression flags are used here, since the model already knows
-		/// which textures are color, data, or normals. TexData.None uses the
-		/// default compression.</param>
+		/// the compression flags and Blocking are used here, since the model
+		/// already knows which textures are color, data, or normals.
+		/// TexData.None uses the default compression, and Blocking loads the
+		/// model and its textures before returning.</param>
 		/// <param name="loadPriority">The priority sort order for this asset
 		/// in the async loading system. Lower values mean loading sooner.
 		/// </param>
@@ -442,9 +443,10 @@ namespace StereoKit
 		/// If null, this will automatically determine the best shader 
 		/// available to use.</param>
 		/// <param name="texFlags">Compression for the model's textures. Only
-		/// the compression flags are used here, since the model already knows
-		/// which textures are color, data, or normals. TexData.None uses the
-		/// default compression.</param>
+		/// the compression flags and Blocking are used here, since the model
+		/// already knows which textures are color, data, or normals.
+		/// TexData.None uses the default compression, and Blocking loads the
+		/// model and its textures before returning.</param>
 		/// <param name="loadPriority">The priority sort order for this asset
 		/// in the async loading system. Lower values mean loading sooner.
 		/// </param>

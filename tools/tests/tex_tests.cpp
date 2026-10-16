@@ -123,7 +123,7 @@ struct tst_foreign_load_t {
 };
 static void tst_foreign_load(void* arg) {
 	tst_foreign_load_t* job = (tst_foreign_load_t*)arg;
-	tex_t        tex   = tex_create_file(tst_qoi_path_foreign, tex_data_srgb | tex_data_uncompressed | tex_data_blocking);
+	tex_t        tex   = tex_create_file(tst_qoi_path_foreign, tex_data_srgb | tex_data_compress_none | tex_data_blocking);
 	asset_state_ state = tex_asset_state(tex);
 	job->tex = tex;
 	atomic_store_i32_rel((int32_t*)&job->state_on_return, (int32_t)state);
@@ -146,7 +146,7 @@ static void tst_blocking_model() {
 	if (fp == nullptr) { log_warnf("[tex_test] skipping the model test, no %s", path); return; }
 	fclose(fp);
 
-	model_t model = model_create_file(path, nullptr, 10, tex_data_uncompressed | tex_data_blocking);
+	model_t model = model_create_file(path, nullptr, 10, tex_data_compress_none | tex_data_blocking);
 	TST_CHECK(model_asset_state(model) == asset_state_loaded, "a blocking model load is loaded on return");
 
 	bool    all_loaded = true;
@@ -221,7 +221,7 @@ static void tst_dynamic() {
 	tex_t tex = tex_create(tex_type_image_nomips | tex_type_dynamic, tex_format_rgba32);
 	for (int32_t i = 0; i < 20; i++) {
 		tst_fill(px, size * size, color32{ (uint8_t)(100 + i), 0, 0, 255 });
-		tex_set_colors(tex, size, size, px, tex_data_srgb | tex_data_quality);
+		tex_set_colors(tex, size, size, px, tex_data_srgb | tex_data_compress_quality);
 		sk_step(nullptr);
 	}
 	assets_block_for_priority(INT32_MAX);
@@ -238,11 +238,80 @@ static void tst_data_format() {
 	tst_fill(ldr, size * size, color32{ 1, 2, 3, 255 });
 
 	tex_t tex = tex_create(tex_type_image_nomips, tex_format_rgba32);
-	tex_set_colors(tex, size, size, hdr, tex_data_uncompressed | tex_data_blocking, tex_format_rgba128);
+	tex_set_colors(tex, size, size, hdr, tex_data_compress_none | tex_data_blocking, tex_format_rgba128);
 	TST_CHECK(tex_get_format(tex) == tex_format_rgba128, "an explicit data format changes an uncompressed texture's format");
-	tex_set_colors(tex, size, size, ldr, tex_data_uncompressed | tex_data_blocking);
+	tex_set_colors(tex, size, size, ldr, tex_data_compress_none | tex_data_blocking);
 	TST_CHECK(tex_get_format(tex) == tex_format_rgba32,  "an explicit data format doesn't stick to later calls");
 	TST_CHECK(tst_read_first(tex, size).b == 3,          "data in the creation format reads back after a format change");
+	TST_CHECK(tex_get_input_format(tex) == tex_format_rgba32, "an explicit data format doesn't change the input format");
+	tex_release(tex);
+}
+
+static void tst_formatless() {
+	const int32_t size = 16;
+	color32 a[size * size];
+	color32 b[size * size];
+	tst_fill(a, size * size, color32{ 10, 0, 0, 255 });
+	tst_fill(b, size * size, color32{ 20, 0, 0, 255 });
+
+	tex_t tex = tex_create(tex_type_image_nomips, tex_format_none);
+	tex_set_colors(tex, size, size, a, tex_data_blocking | tex_data_compress_none, tex_format_rgba32);
+	TST_CHECK(tex_get_format(tex) == tex_format_rgba32, "a format-less texture takes data with an explicit format");
+	TST_CHECK(tex_get_input_format(tex) == tex_format_none, "an explicit data format leaves a format-less texture format-less");
+	tex_set_colors(tex, size, size, b, tex_data_blocking | tex_data_compress_none);
+	TST_CHECK(tst_read_first(tex, size).r == 10, "a format-less texture refuses data without a format");
+	tex_set_size(tex, size * 2, size * 2);
+	TST_CHECK(tex_get_width(tex) == size, "a format-less texture refuses a resize");
+	tex_release(tex);
+}
+
+static void tst_dynamic_format() {
+	const int32_t size = 16;
+	color32 ldr[size * size];
+	float   hdr[size * size * 4];
+	tst_fill(ldr, size * size, color32{ 30, 0, 0, 255 });
+	for (int32_t i = 0; i < size * size * 4; i++) hdr[i] = 0.5f;
+
+	tex_t tex = tex_create(tex_type_image_nomips | tex_type_dynamic, tex_format_rgba32);
+	tex_set_colors(tex, size, size, ldr, tex_data_blocking | tex_data_compress_none);
+	tex_set_colors(tex, size, size, hdr, tex_data_blocking | tex_data_compress_none, tex_format_rgba128);
+	TST_CHECK(tex_get_format(tex) == tex_format_rgba32 && tst_read_first(tex, size).r == 30, "a dynamic texture refuses data in another format");
+	tst_fill(ldr, size * size, color32{ 31, 0, 0, 255 });
+	tex_set_colors(tex, size, size, ldr, tex_data_blocking | tex_data_compress_none, tex_format_rgba32);
+	TST_CHECK(tst_read_first(tex, size).r == 31, "a dynamic texture takes data in its own format");
+	tex_release(tex);
+}
+
+static void tst_color128() {
+	const int32_t size = 16;
+	color128 px[size * size];
+	color128 back[size * size];
+	for (int32_t i = 0; i < size * size; i++) px[i] = color128{ 2, 0.5f, 0, 1 };
+
+	tex_t hdr = tex_create_color128(px, size, size, tex_data_blocking | tex_data_compress_none);
+	TST_CHECK(tex_get_format(hdr) == tex_format_rgba128, "color128 data keeps full precision");
+	tex_get_data(hdr, back, sizeof(back), 0);
+	TST_CHECK(back[0].r == 2 && back[0].g == 0.5f, "color128 data over 1 reads back unclamped");
+	tex_release(hdr);
+
+	tex_t srgb = tex_create_color128(px, size, size, tex_data_srgb | tex_data_blocking | tex_data_compress_none);
+	tex_get_data(srgb, back, sizeof(back), 0);
+	TST_CHECK(back[0].g > 0.21f && back[0].g < 0.22f, "sRGB color128 data converts to linear");
+	tex_release(srgb);
+}
+
+static void tst_ktx2() {
+	char path[1024];
+	tst_asset_path("metal_plate_diff.ktx2", path, sizeof(path));
+	tex_t tex = tex_create_file(path, tex_data_srgb | tex_data_blocking);
+	TST_CHECK(tex_asset_state(tex) == asset_state_loaded && tex_get_mips(tex) == 9, "a KTX2 mip chain loads whole");
+	TST_CHECK(tex_get_input_format(tex) == tex_format_rgba32, "a KTX2 file's input format is plain color, not blocks");
+
+	const int32_t size = 16;
+	color32 px[size * size];
+	tst_fill(px, size * size, color32{ 40, 0, 0, 255 });
+	tex_set_colors(tex, size, size, px, tex_data_blocking | tex_data_compress_none);
+	TST_CHECK(tex_get_format(tex) == tex_format_rgba32 && tst_read_first(tex, size).r == 40, "data set on a KTX2 texture lands as plain color");
 	tex_release(tex);
 }
 
@@ -270,28 +339,28 @@ static void tst_order() {
 	tst_fill(px, size * size, color32{ 40, 50, 60, 255 });
 
 	tex_t resized = tex_create(tex_type_image_nomips | tex_type_rendertarget, tex_format_rgba32);
-	tex_set_colors(resized, size, size, px, tex_data_srgb | tex_data_uncompressed);
+	tex_set_colors(resized, size, size, px, tex_data_srgb | tex_data_compress_none);
 	tex_set_size  (resized, 128, 96);
 	assets_block_for_priority(INT32_MAX);
 	TST_CHECK(tex_get_width(resized) == 128 && tex_get_height(resized) == 96, "a resize isn't undone by an earlier async upload");
 	tex_release(resized);
 
-	tex_t loading = tex_create_file(tst_qoi_path_order, tex_data_srgb | tex_data_uncompressed);
-	tex_set_colors(loading, size, size, px, tex_data_srgb | tex_data_uncompressed | tex_data_blocking);
+	tex_t loading = tex_create_file(tst_qoi_path_order, tex_data_srgb | tex_data_compress_none);
+	tex_set_colors(loading, size, size, px, tex_data_srgb | tex_data_compress_none | tex_data_blocking);
 	assets_block_for_priority(INT32_MAX);
 	TST_CHECK(tex_get_width(loading) == size && tst_read_first(loading, size).g == 50, "data set during a file load isn't replaced by the file");
 	tex_release(loading);
 
-	tex_t failing = tex_create_file("tex_tests_missing_order.qoi", tex_data_srgb | tex_data_uncompressed);
-	tex_set_colors(failing, size, size, px, tex_data_srgb | tex_data_uncompressed | tex_data_blocking);
+	tex_t failing = tex_create_file("tex_tests_missing_order.qoi", tex_data_srgb | tex_data_compress_none);
+	tex_set_colors(failing, size, size, px, tex_data_srgb | tex_data_compress_none | tex_data_blocking);
 	assets_block_for_priority(INT32_MAX);
 	TST_CHECK(tex_asset_state(failing) == asset_state_loaded, "a failed load doesn't mark data set after it as failed");
 	tex_release(failing);
 
 	tex_t src  = tex_create_rendertarget(64, 64, 1, tex_format_rgba32, tex_format_none);
 	tex_t dest = tex_create(tex_type_image_nomips, tex_format_rgba32);
-	tex_set_colors(dest, size, size, px, tex_data_srgb | tex_data_uncompressed);
-	tex_copy(src, tex_type_image_nomips, tex_format_none, tex_data_uncompressed, dest);
+	tex_set_colors(dest, size, size, px, tex_data_srgb | tex_data_compress_none);
+	tex_copy(src, tex_type_image_nomips, tex_format_none, tex_data_compress_none, dest);
 	assets_block_for_priority(INT32_MAX);
 	TST_CHECK(tex_get_width(dest) == 64, "a copy isn't replaced by an earlier async upload");
 	tex_release(dest);
@@ -315,8 +384,8 @@ static void tst_stress_body(void* arg) {
 	for (int32_t i = 0; i < 40; i++) {
 		tst_fill(px, size * size, color32{ (uint8_t)job->id, (uint8_t)i, 0, 255 });
 		tex_data_ flags = (i % 3 == 0)
-			? tex_data_srgb | tex_data_uncompressed | tex_data_blocking
-			: tex_data_srgb | tex_data_uncompressed;
+			? tex_data_srgb | tex_data_compress_none | tex_data_blocking
+			: tex_data_srgb | tex_data_compress_none;
 		tex_set_colors(job->tex, size, size, px, flags);
 	}
 	atomic_store_i32_rel(&job->done, 1);
@@ -354,7 +423,7 @@ static void tst_swap_while_drawn() {
 	color32* px = (color32*)malloc(sizeof(color32) * size * size);
 	tex_t      tex  = tex_create(tex_type_image_nomips, tex_format_rgba32);
 	tst_fill(px, size * size, color32{ 0, 0, 0, 255 });
-	tex_set_colors(tex, size, size, px, tex_data_srgb | tex_data_uncompressed | tex_data_blocking);
+	tex_set_colors(tex, size, size, px, tex_data_srgb | tex_data_compress_none | tex_data_blocking);
 
 	material_t base = material_find(default_id_material);
 	material_t mat  = material_copy(base);
@@ -363,7 +432,7 @@ static void tst_swap_while_drawn() {
 
 	for (int32_t f = 0; f < 240; f++) {
 		tst_fill(px, size * size, color32{ (uint8_t)f, 0, 0, 255 });
-		tex_set_colors(tex, size, size, px, tex_data_srgb | tex_data_uncompressed);
+		tex_set_colors(tex, size, size, px, tex_data_srgb | tex_data_compress_none);
 		render_add_mesh(quad, mat, matrix_t({ 0, 0, -0.5f }));
 		sk_step(nullptr);
 	}
@@ -410,6 +479,10 @@ int tex_tests_run() {
 		tst_volume();
 		tst_dynamic();
 		tst_data_format();
+		tst_formatless();
+		tst_dynamic_format();
+		tst_color128();
+		tst_ktx2();
 		tst_release_pending();
 		tst_order();
 		tst_mixed_threads();

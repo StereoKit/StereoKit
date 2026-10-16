@@ -80,7 +80,7 @@ tex_t tex_loading_texture_cubemap = nullptr;
 tex_t tex_error_texture_3d        = nullptr;
 tex_t tex_loading_texture_3d      = nullptr;
 
-int32_t tex_compression_default = tex_data_quality; // a tex_data_, atomic since loads read it off-thread
+int32_t tex_compression_default = tex_data_compress_quality; // a tex_data_, atomic since loads read it off-thread
 
 tex_t _tex_get_loading_fallback(tex_t texture) {
 	if (texture->type & tex_type_volume)  return tex_loading_texture_3d;
@@ -98,6 +98,23 @@ tex_t _tex_get_error_fallback(tex_t texture) {
 
 bool tex_format_is_compressed(tex_format_ format) {
 	return format >= tex_format_bc1_rgb_srgb && format <= tex_format_atc_rgba;
+}
+
+///////////////////////////////////////////
+
+static tex_format_ tex_format_uncompressed(tex_format_ format) {
+	if (!tex_format_is_compressed(format)) return format;
+	switch (format) {
+	case tex_format_bc6h_rgbuf:        case tex_format_bc6h_rgbf:
+	case tex_format_astc8x8_rgba_hdr:  return tex_format_rgba128;
+	case tex_format_bc1_rgb_srgb:      case tex_format_bc1_rgba_srgb:
+	case tex_format_bc2_rgba_srgb:     case tex_format_bc3_rgba_srgb:
+	case tex_format_bc7_rgba_srgb:     case tex_format_etc1_rgb_srgb:
+	case tex_format_etc2_rgba_srgb:    case tex_format_pvrtc1_rgb_srgb:
+	case tex_format_pvrtc1_rgba_srgb:  case tex_format_pvrtc2_rgba_srgb:
+	case tex_format_astc4x4_rgba_srgb: case tex_format_astc6x6_rgba_srgb: return tex_format_rgba32_srgb;
+	default:                           return tex_format_rgba32_linear;
+	}
 }
 
 ///////////////////////////////////////////
@@ -462,7 +479,7 @@ static void tex_load_meta(tex_t tex, tex_load_t* data, int32_t width, int32_t he
 	tex_format_ format = tex_load_pick(data, width, height, array_count);
 	if (tex_write_newer(atomic_load_i32(&tex->write_issued), data->write)) return;
 	tex->type        = data->type;
-	tex->data_format = data->color_format;
+	tex->data_format = tex_format_uncompressed(data->color_format);
 	tex_set_meta(tex, width, height, 1, format);
 }
 
@@ -489,6 +506,15 @@ asset_action_result_ tex_load_arr_files(asset_task_t *task, asset_header_t *asse
 
 // The largest mips dominate transcode cost, the rest finish in one slice.
 static const int32_t tex_ktx2_solo_mips = 2;
+
+// A decode that disagrees with the earlier header parse means something has
+// gone very wrong.
+static bool tex_load_parse_matches(const tex_load_t* data, tex_format_ format, int32_t width, int32_t height, int32_t mip_count) {
+	return data->color_format    == format &&
+	       data->color_width     == width  &&
+	       data->color_height    == height &&
+	       data->color_mip_count == mip_count;
+}
 
 asset_action_result_ tex_load_arr_parse(asset_task_t *task, asset_header_t *asset, void *job_data) {
 	profiler_zone();
@@ -519,12 +545,9 @@ asset_action_result_ tex_load_arr_parse(asset_task_t *task, asset_header_t *asse
 					data->error = asset_state_error_unsupported;
 					goto end;
 				}
-				// Validate against the meta pass up front, so a mismatch never
-				// spends a single level of transcode.
-				if (data->color_format    != format ||
-					data->color_width     != width  ||
-					data->color_height    != height ||
-					data->color_mip_count != mip_count) {
+				// Validate up front, so a mismatch never spends a single level
+				// of transcode.
+				if (!tex_load_parse_matches(data, format, width, height, mip_count)) {
 					log_warnf(tex_msg_inconsistent_parse, data->file_names[i]);
 					data->error = asset_state_error;
 					goto end;
@@ -554,13 +577,7 @@ asset_action_result_ tex_load_arr_parse(asset_task_t *task, asset_header_t *asse
 		}
 		data->parse_array_count += array_count;
 
-		// Make sure the data in this image matches what we extracted in
-		// earlier phases of texture creation. If it doesn't, then something
-		// has gone very wrong!
-		if (data->color_format    != format ||
-			data->color_width     != width  ||
-			data->color_height    != height ||
-			data->color_mip_count != mip_count) {
+		if (!tex_load_parse_matches(data, format, width, height, mip_count)) {
 			log_warnf(tex_msg_inconsistent_parse, data->file_names[i]);
 			data->error = asset_state_error;
 			goto end;
@@ -972,13 +989,24 @@ tex_t tex_create_color32(color32 *data, int32_t width, int32_t height, tex_data_
 ///////////////////////////////////////////
 
 tex_t tex_create_color128(color128 *data, int32_t width, int32_t height, tex_data_ flags) {
-	tex_t    result = tex_create(tex_type_image, (flags & tex_data_srgb) ? tex_format_rgba32 : tex_format_rgba32_linear);
-	color32 *color  = sk_malloc_t(color32, width * height);
-	for (int32_t i = 0; i < width*height; i++)
-		color[i] = color_to_32(data[i]);
-	tex_set_colors(result, width, height, color, flags);
+	tex_t result = tex_create(tex_type_image, tex_format_rgba128);
+	if (!(flags & tex_data_srgb)) {
+		tex_set_colors(result, width, height, data, flags);
+		return result;
+	}
 
-	sk_free(color);
+	// Float formats are always linear, so gamma space colors convert first,
+	// on the same curve the GPU decodes sRGB formats with.
+	color128 *linear = sk_malloc_t(color128, width * height);
+	for (int32_t i = 0; i < width*height; i++) {
+		float c[3] = { data[i].r, data[i].g, data[i].b };
+		for (int32_t ch = 0; ch < 3; ch++)
+			c[ch] = c[ch] <= 0.04045f ? c[ch] / 12.92f : powf((c[ch] + 0.055f) / 1.055f, 2.4f);
+		linear[i] = { c[0], c[1], c[2], data[i].a };
+	}
+	tex_set_colors(result, width, height, linear, flags);
+
+	sk_free(linear);
 	return result;
 }
 
@@ -1286,7 +1314,7 @@ tex_t tex_copy(const tex_t texture, tex_type_ type, tex_format_ format, tex_data
 
 	tex_write_begin_now(dest);
 	dest->type        = type;
-	dest->data_format = src_format;
+	dest->data_format = tex_format_is_compressed(copy_format) ? texture->data_format : copy_format;
 	tex_land(dest, result, texture->width, texture->height, 1, result_format);
 	if (cube) dest->sh_dirty = true;
 	tex_write_end(dest);
@@ -1578,6 +1606,7 @@ void tex_on_load_remove(tex_t texture, void (*on_load)(tex_t texture, void *cont
 struct tex_reflection_job_t {
 	tex_t   source;
 	int32_t max_resolution;
+	int32_t write;         // from tex_write_issue, when the reflection was requested
 	bool    fresh;         // dest was created for this job, so it may error out
 	bool    has_source_sh; // source_sh was snapshotted at queue time
 	spherical_harmonics_t source_sh;
@@ -1756,6 +1785,24 @@ static void _tex_set_color_flat(tex_t texture, tex_format_ format, int32_t width
 
 ///////////////////////////////////////////
 
+// The format incoming data is in, or none after logging why the texture
+// can't take it.
+static tex_format_ tex_resolve_data_format(tex_t texture, tex_format_ data_format) {
+	tex_format_ format = data_format != tex_format_none ? data_format : texture->data_format;
+	if (format == tex_format_none) {
+		log_errf("Texture '%s' has no format, so its data needs one passed alongside it.", tex_get_id(texture));
+		return tex_format_none;
+	}
+	// Dynamic textures promise in-place updates, which a new format would break
+	if ((texture->type & tex_type_dynamic) && texture->format != tex_format_none && format != texture->format) {
+		log_errf("Dynamic texture '%s' can't take data in a different format than it was made with.", tex_get_id(texture));
+		return tex_format_none;
+	}
+	return format;
+}
+
+///////////////////////////////////////////
+
 // Sizing a rendertarget, depth buffer, or empty volume has nothing to copy or
 // encode, so it happens right away. Pixels still waiting to upload are dropped.
 static void tex_resize(tex_t texture, int32_t width, int32_t height, int32_t depth, int32_t array_count, int32_t multisample, tex_format_ format) {
@@ -1777,7 +1824,9 @@ static void tex_resize(tex_t texture, int32_t width, int32_t height, int32_t dep
 void tex_set_size(tex_t texture, int32_t width, int32_t height, int32_t depth, int32_t array_count, int32_t multisample) {
 	if (depth > 1 && !(texture->type & tex_type_volume))
 		log_warn("tex_set_size: only volume textures have depth, it will be ignored.");
-	tex_resize(texture, width, height, depth, array_count, multisample, texture->data_format);
+	tex_format_ format = tex_resolve_data_format(texture, tex_format_none);
+	if (format == tex_format_none) return;
+	tex_resize(texture, width, height, depth, array_count, multisample, format);
 }
 
 ///////////////////////////////////////////
@@ -1896,7 +1945,8 @@ void tex_set_color_arr_mips(tex_t texture, int32_t width, int32_t height, void**
 		log_warn("Use tex_set_colors_3d for volume textures, not tex_set_colors / tex_set_color_arr.");
 		return;
 	}
-	tex_format_ format = data_format != tex_format_none ? data_format : texture->data_format;
+	tex_format_ format = tex_resolve_data_format(texture, data_format);
+	if (format == tex_format_none) return;
 	if (array_data == nullptr || array_data[0] == nullptr) tex_resize        (texture, width, height, 1, array_count, multisample, format);
 	else                                                   tex_upload_submit (texture, tex_upload_create(texture, width, height, 1, array_data, array_count, mip_count, multisample, format, flags), priority);
 }
@@ -2039,7 +2089,8 @@ void tex_set_colors_3d(tex_t texture, int32_t width, int32_t height, int32_t dep
 		log_warn("Use tex_set_colors / tex_set_color_arr for non-volume textures, not tex_set_colors_3d.");
 		return;
 	}
-	tex_format_ format = data_format != tex_format_none ? data_format : texture->data_format;
+	tex_format_ format = tex_resolve_data_format(texture, data_format);
+	if (format == tex_format_none) return;
 	if (data == nullptr) tex_resize        (texture, width, height, depth, 1, 1, format);
 	else                 tex_upload_submit (texture, tex_upload_create(texture, width, height, depth, &data, 1, 1, 1, format, flags), priority);
 }
@@ -2101,6 +2152,13 @@ void tex_set_options(tex_t texture, tex_sample_ sample, tex_address_ address_mod
 tex_format_ tex_get_format(tex_t texture) {
 	assets_block_until(&texture->header, asset_state_loaded_meta);
 	return texture->format;
+}
+
+///////////////////////////////////////////
+
+tex_format_ tex_get_input_format(tex_t texture) {
+	assets_block_until(&texture->header, asset_state_loaded_meta);
+	return texture->data_format;
 }
 
 ///////////////////////////////////////////
@@ -2287,17 +2345,17 @@ void tex_set_meta(tex_t texture, int32_t width, int32_t height, int32_t depth, t
 ///////////////////////////////////////////
 
 void tex_get_data(tex_t texture, void* out_data, size_t out_data_size, int32_t mip_level) {
-	if (mip_level > tex_get_mips(texture)) {
+	assets_block_until(&texture->header, asset_state_loaded);
+
+	if (mip_level < 0 || mip_level >= tex_get_mips(texture)) {
 		log_warn("Cannot retrieve invalid mip-level!");
 		return;
 	}
 
-	assets_block_until(&texture->header, asset_state_loaded);
-
 	static int32_t warned_compressed = 0;
 	if (tex_format_is_compressed(texture->format) && atomic_load_i32(&warned_compressed) == 0) {
 		atomic_store_i32(&warned_compressed, 1);
-		log_warnf("'%s' is block compressed, so its data comes back as compressed blocks. Load it with tex_data_uncompressed to read pixels.", tex_get_id(texture));
+		log_warnf("'%s' is block compressed, so its data comes back as compressed blocks. Load it with tex_data_compress_none to read pixels.", tex_get_id(texture));
 	}
 
 	struct tex_data_job_t {
@@ -2673,6 +2731,13 @@ static asset_action_result_ tex_reflection_generate(asset_task_t*, asset_header_
 		return asset_action_fail;
 	}
 
+	if (!tex_write_try_begin(dest)) return tex_write_busy();
+	if (!tex_write_claim(dest, job->write)) {
+		// Content set after this reflection was requested already landed
+		tex_write_end(dest);
+		return asset_action_done;
+	}
+
 	// Shape follows the source, now that its metadata is available.
 	// Halving to the cap keeps base texels on whole source texel blocks.
 	if (job->fresh) {
@@ -2709,6 +2774,7 @@ static asset_action_result_ tex_reflection_generate(asset_task_t*, asset_header_
 			&new_tex);
 		if (err != skr_err_success) {
 			log_err("tex_gen_cubemap_reflection failed to create the reflection texture.");
+			tex_write_end(dest);
 			return asset_action_fail;
 		}
 
@@ -2757,6 +2823,7 @@ static asset_action_result_ tex_reflection_generate(asset_task_t*, asset_header_
 
 	tex_set_fallback(dest, nullptr);
 	dest->header.state = asset_state_loaded;
+	tex_write_end(dest);
 	return asset_action_done;
 }
 
@@ -2806,6 +2873,7 @@ tex_t tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into, int32_t max_r
 	tex_reflection_job_t* job = sk_malloc_zero_t(tex_reflection_job_t, 1);
 	job->source         = source_cubemap;
 	job->max_resolution = max_resolution;
+	job->write          = tex_write_issue(dest);
 	job->fresh          = into == nullptr;
 	// Snapshot the source's lighting on this thread; the task runs on an
 	// asset thread, where reading the live field would race a concurrent set.

@@ -182,49 +182,22 @@ bool ktx2_info(void* data, size_t data_size, tex_type_* ref_image_type, tex_form
 ///////////////////////////////////////////
 
 bool ktx2_decode(void* data, size_t data_size, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data) {
-	ktx2_reader_t reader = {};
-	ktx2_plan_t   plan   = {};
-	if (!ktx2_prepare(data, data_size, &reader, &plan)) return false;
+	void*         all   = nullptr;
+	ktx2_slice_t* slice = ktx2_decode_begin(data, data_size, ref_image_type, out_format, out_width, out_height, out_array_count, out_mip_count, &all);
+	if (slice == nullptr) return false;
 
-	ktx2_info_t info       = ktx2_get_info(&reader);
-	int32_t     images     = ktx2_image_count(&info);
-	tex_format_ format     = texture_compression_format(plan.format);
-	skr_vec3i_t base_size  = { info.width, info.height, 1 };
-	uint64_t    image_size = 0;
-	for (int32_t mip = 0; mip < plan.mip_count; mip++)
-		image_size += skr_tex_calc_mip_size((skr_tex_fmt_)format, base_size, mip);
+	int32_t level   = 0;
+	bool    done    = false;
+	bool    success = true;
+	while (success && !done)
+		success = ktx2_decode_step(slice, &level, &done);
+	ktx2_decode_end(slice);
 
-	// sk_ktx2 sizes the mip chain independently of sk_renderer, so a mismatch
-	// here means one of the two is wrong about the format, not about this file.
-	if (image_size * images != plan.data_bytes) {
-		log_errf("KTX2 size disagreement for %s: sk_ktx2 says %" PRIu64 " bytes, sk_renderer says %" PRIu64, ktx2_fmt_str(plan.format), (uint64_t)plan.data_bytes, image_size * images);
-		return false;
-	}
-
-	// Scratch is ours rather than the library's so both allocations go through
-	// sk_malloc and stay accountable.
-	void*        all     = sk_malloc(plan.data_bytes);
-	void*        scratch = plan.scratch_bytes > 0 ? sk_malloc(plan.scratch_bytes) : nullptr;
-	ktx2_result_ result  = ktx2_transcode(&plan, all, plan.data_bytes, scratch);
-	sk_free(scratch);
-	if (result != ktx2_result_success) {
-		log_warnf("KTX2 transcode failed: %s", ktx2_result_str(result));
+	if (!success) {
 		sk_free(all);
 		return false;
 	}
-
-	// Already mip-major with images within a level, which is the layout both the
-	// GPU and tex_load_image_data want, so it hands over untouched.
 	*out_data = all;
-
-	*out_format      = format;
-	*out_width       = info.width;
-	*out_height      = info.height;
-	*out_mip_count   = plan.mip_count;
-	*out_array_count = images;
-	// tex_type_ is a bit field, and the caller may already have set mips,
-	// dynamic or rendertarget on it. Assigning here would drop those.
-	if (info.face_count > 1) *ref_image_type |= tex_type_cubemap;
 	return true;
 }
 
@@ -261,7 +234,8 @@ ktx2_slice_t* ktx2_decode_begin(void* data, size_t data_size, tex_type_* ref_ima
 	slice->format    = texture_compression_format(slice->plan.format);
 	slice->base_size = { info.width, info.height, 1 };
 
-	// See ktx2_decode: a disagreement means one side is wrong about the format
+	// sk_ktx2 sizes the mip chain independently of sk_renderer, so a mismatch
+	// here means one of the two is wrong about the format, not about this file.
 	uint64_t image_size = 0;
 	for (int32_t mip = 0; mip < slice->plan.mip_count; mip++)
 		image_size += skr_tex_calc_mip_size((skr_tex_fmt_)slice->format, slice->base_size, mip);
@@ -271,6 +245,8 @@ ktx2_slice_t* ktx2_decode_begin(void* data, size_t data_size, tex_type_* ref_ima
 		return nullptr;
 	}
 
+	// Scratch is ours rather than the library's so it goes through sk_malloc
+	// and stays accountable.
 	slice->out     = (uint8_t*)sk_malloc(slice->plan.data_bytes);
 	slice->scratch = slice->plan.scratch_bytes > 0 ? sk_malloc(slice->plan.scratch_bytes) : nullptr;
 
@@ -280,6 +256,8 @@ ktx2_slice_t* ktx2_decode_begin(void* data, size_t data_size, tex_type_* ref_ima
 	*out_height      = info.height;
 	*out_mip_count   = slice->plan.mip_count;
 	*out_array_count = slice->images;
+	// tex_type_ is a bit field, and the caller may already have set mips,
+	// dynamic or rendertarget on it. Assigning here would drop those.
 	if (info.face_count > 1) *ref_image_type |= tex_type_cubemap;
 	return slice;
 }
@@ -324,8 +302,8 @@ static bool tex_format_is_hdr_source(tex_format_ format) {
 tex_format_ tex_compress_pick(tex_data_ flags, tex_data_ default_policy, tex_type_ type, tex_format_ src_format, bool32_t src_alpha, int32_t width, int32_t height, int32_t array_count, tex_compress_caps_t caps) {
 	tex_data_ policy = flags & tex_data_policy_mask;
 	if (policy == tex_data_none) policy = default_policy & tex_data_policy_mask;
-	if (policy == tex_data_none || (policy & tex_data_uncompressed)) return tex_format_none;
-	bool quality = (policy & tex_data_quality) != 0;
+	if (policy == tex_data_none || (policy & tex_data_compress_none)) return tex_format_none;
+	bool quality = (policy & tex_data_compress_quality) != 0;
 
 	// GPU written or CPU updated textures can't be block compressed.
 	const tex_type_ refuse = tex_type_rendertarget | tex_type_depth | tex_type_depthtarget | tex_type_dynamic | tex_type_compute | tex_type_volume;
@@ -334,12 +312,13 @@ tex_format_ tex_compress_pick(tex_data_ flags, tex_data_ default_policy, tex_typ
 	// Formats need at least one whole block, and 8x8 is the largest.
 	if (width < 8 || height < 8)                                  return tex_format_none;
 
+	// A device uses one family, ASTC when it can, so formats never mix.
+	bool alpha = src_alpha && !(flags & tex_data_opaque);
 	if (tex_format_is_hdr_source(src_format)) {
-		if (!quality && caps.astc_hdr) return tex_format_astc8x8_rgba_hdr;
-		if (caps.bc)                   return tex_format_bc6h_rgbuf;
-		// Uncompressed HDR cubemaps are too large, so quality settles for 8x8.
-		// TODO: a higher quality ASTC HDR block size, for cubemaps and images.
-		if ((type & tex_type_cubemap) && caps.astc_hdr) return tex_format_astc8x8_rgba_hdr;
+		// TODO: a higher quality ASTC HDR block size than 8x8.
+		if (caps.astc) return caps.astc_hdr ? tex_format_astc8x8_rgba_hdr : tex_format_none;
+		// BC6H has no alpha channel.
+		if (caps.bc && !alpha) return tex_format_bc6h_rgbuf;
 		return tex_format_none;
 	}
 	if (!tex_format_is_ldr_source(src_format)) return tex_format_none;
@@ -352,7 +331,6 @@ tex_format_ tex_compress_pick(tex_data_ flags, tex_data_ default_policy, tex_typ
 		else         return srgb ? tex_format_astc6x6_rgba_srgb : tex_format_astc6x6_rgba;
 	}
 	if (caps.bc) {
-		bool alpha = src_alpha && !(flags & tex_data_opaque);
 		if (quality || (alpha && !(flags & tex_data_cutout))) return srgb ? tex_format_bc7_rgba_srgb : tex_format_bc7_rgba;
 		if (alpha) return srgb ? tex_format_bc1_rgba_srgb : tex_format_bc1_rgba;
 		else       return srgb ? tex_format_bc1_rgb_srgb  : tex_format_bc1_rgb;

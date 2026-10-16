@@ -36,7 +36,7 @@ class TestFromThread : ITest
 
 			Color32[] colors = [ Color.White, Color.White, Color.White, Color.White ];
 			Tex tex = Tex.FromColors(colors, 2, 2);
-			tex.SetColors(2, 2, colors);
+			tex.SetColors(2, 2, colors, TexFormat.Rgba32, TexData.Blocking | TexData.CompressNone);
 
 			material[MatParamName.DiffuseTex] = tex;
 

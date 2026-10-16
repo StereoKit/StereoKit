@@ -1020,12 +1020,12 @@ namespace StereoKit
 		Cutout       = 1 << 3,
 		/// <summary>Never compress this texture. Use this for textures you read back on
 		/// the CPU, or small images that need to stay pixel exact.</summary>
-		Uncompressed = 1 << 8,
+		CompressNone = 1 << 8,
 		/// <summary>Compress this texture, preferring quality over size. This wins over
-		/// small, and uncompressed wins over this.</summary>
-		Quality      = 1 << 9,
+		/// compress_small, and compress_none wins over this.</summary>
+		CompressQuality = 1 << 9,
 		/// <summary>Compress this texture, preferring a small size over quality.</summary>
-		Small        = 1 << 10,
+		CompressSmall = 1 << 10,
 		/// <summary>Finish the work before the call returns, so the texture is loaded (or
 		/// failed) right away. Without this, the work happens on the asset system,
 		/// and the texture keeps its previous content until the new content is

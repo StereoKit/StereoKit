@@ -1692,35 +1692,35 @@ SK_MakeFlag(tex_type_);
 typedef enum tex_data_ {
 	/*Linear data, like roughness, metalness, or a mask. Compression follows
 	  the default, and the call is asynchronous.*/
-	tex_data_none         = 0,
+	tex_data_none              = 0,
 	/*Color data stored in sRGB, which is what most color images are. This
 	  only applies where the data's format isn't already known, like when
 	  decoding an image file. This has the same value `true` had for the
 	  older sRGB bool parameter.*/
-	tex_data_srgb         = 1 << 0,
+	tex_data_srgb              = 1 << 0,
 	/*A tangent space normal map. This is reserved for dedicated normal map
 	  compression, and is treated like linear data for now.*/
-	tex_data_normal       = 1 << 1,
+	tex_data_normal            = 1 << 1,
 	/*The alpha channel is unused, so StereoKit may pick a format without
 	  one.*/
-	tex_data_opaque       = 1 << 2,
+	tex_data_opaque            = 1 << 2,
 	/*Alpha is only a cutout mask, so 1 bit of alpha is enough.*/
-	tex_data_cutout       = 1 << 3,
+	tex_data_cutout            = 1 << 3,
 	/*Never compress this texture. Use this for textures you read back on
 	  the CPU, or small images that need to stay pixel exact.*/
-	tex_data_uncompressed = 1 << 8,
+	tex_data_compress_none     = 1 << 8,
 	/*Compress this texture, preferring quality over size. This wins over
-	  small, and uncompressed wins over this.*/
-	tex_data_quality      = 1 << 9,
+	  compress_small, and compress_none wins over this.*/
+	tex_data_compress_quality  = 1 << 9,
 	/*Compress this texture, preferring a small size over quality.*/
-	tex_data_small        = 1 << 10,
+	tex_data_compress_small    = 1 << 10,
 	/*Finish the work before the call returns, so the texture is loaded (or
 	  failed) right away. Without this, the work happens on the asset system,
 	  and the texture keeps its previous content until the new content is
 	  ready. Asynchronous calls copy your data first, so blocking avoids that
 	  copy, which can be worthwhile for large uploads from a thread that can
 	  afford to wait. On the main thread, blocking can cause a hitch.*/
-	tex_data_blocking     = 1 << 16,
+	tex_data_blocking          = 1 << 16,
 } tex_data_;
 SK_MakeFlag(tex_data_);
 
@@ -1835,6 +1835,7 @@ SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gra
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
 SK_API tex_t        tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into sk_default(nullptr), int32_t max_resolution sk_default(64));
 SK_API tex_format_  tex_get_format          (tex_t texture);
+SK_API tex_format_  tex_get_input_format    (tex_t texture);
 SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
 SK_API int32_t      tex_get_depth           (tex_t texture);

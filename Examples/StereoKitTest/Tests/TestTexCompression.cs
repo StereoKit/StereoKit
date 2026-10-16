@@ -1,4 +1,5 @@
 using StereoKit;
+using System;
 
 // Loaded textures compress on the GPU unless they opt out. The exact format
 // depends on what the device samples, so these check families and the
@@ -15,12 +16,12 @@ class TestTexCompression : ITest
 		// From memory, so no other test's copy of these files is shared.
 		byte[] floor = Platform.ReadFileBytes("floor.png");
 		byte[] metal = Platform.ReadFileBytes("metal_plate_metal.jpg");
-		Tex quality      = Tex.FromMemory(floor, TexData.Srgb | TexData.Quality);
-		Tex small        = Tex.FromMemory(floor, TexData.Srgb | TexData.Small);
-		Tex uncompressed = Tex.FromMemory(floor, TexData.Srgb | TexData.Uncompressed);
-		Tex data         = Tex.FromMemory(metal, TexData.None | TexData.Quality);
+		Tex quality      = Tex.FromMemory(floor, TexData.Srgb | TexData.CompressQuality);
+		Tex small        = Tex.FromMemory(floor, TexData.Srgb | TexData.CompressSmall);
+		Tex uncompressed = Tex.FromMemory(floor, TexData.Srgb | TexData.CompressNone);
+		Tex data         = Tex.FromMemory(metal, TexData.None | TexData.CompressQuality);
 		Tex sky          = Tex.FromCubemap("old_depot.hdr");
-		_helmet          = Model.FromFile("DamagedHelmet.gltf", null, TexData.Quality);
+		_helmet          = Model.FromFile("DamagedHelmet.gltf", null, TexData.CompressQuality);
 		Assets.BlockForPriority(int.MaxValue);
 
 		bool compressed = quality.Format != TexFormat.Rgba32;
@@ -39,7 +40,7 @@ class TestTexCompression : ITest
 
 		// Opting a whole app out applies to anything loaded after.
 		TexData prevDefault = Tex.DefaultCompression;
-		Tex.DefaultCompression = TexData.Uncompressed;
+		Tex.DefaultCompression = TexData.CompressNone;
 		Tex optedOut = Tex.FromMemory(floor);
 		Assets.BlockForPriority(int.MaxValue);
 		Tests.Test(() => optedOut.Format == TexFormat.Rgba32);
@@ -60,7 +61,7 @@ class TestTexCompression : ITest
 
 		// With TexData, pixels compress like files, and Format is final on return
 		Tex procedural = new Tex(TexType.Image, TexFormat.Rgba32);
-		procedural.SetColors(256, 256, pixels, TexData.Srgb | TexData.Quality);
+		procedural.SetColors(256, 256, pixels, TexFormat.Rgba32, TexData.CompressQuality);
 		TexFormat proceduralFormat = procedural.Format;
 		Assets.BlockForPriority(int.MaxValue);
 		Tests.Test(() => compressed ? IsCompressedSrgb(proceduralFormat) : proceduralFormat == TexFormat.Rgba32);
@@ -72,7 +73,7 @@ class TestTexCompression : ITest
 		// Full precision data is an HDR source
 		float[] hdr = new float[256 * 256 * 4];
 		for (int i = 0; i < hdr.Length; i++) hdr[i] = 2.0f;
-		Tex floats = Tex.FromData(hdr, TexFormat.Rgba128, 256, 256, TexData.None | TexData.Blocking);
+		Tex floats = Tex.FromColors(hdr, 256, 256, TexFormat.Rgba128, TexData.None | TexData.Blocking);
 		Tests.Test(() => compressed ? floats.Format == TexFormat.Bc6hRgbuf || floats.Format == TexFormat.Astc8x8RgbaHdr || floats.Format == TexFormat.Rgba128 : floats.Format == TexFormat.Rgba128);
 
 		Tex fromMemory = new Tex();
@@ -83,15 +84,44 @@ class TestTexCompression : ITest
 		// compresses, and `into` lands the copy in an existing texture
 		Tex target = Tex.RenderTarget(256, 256);
 		Tex plain  = target.Copy();
-		Tex baked  = target.Copy(TexType.Image, TexFormat.None, TexData.Srgb | TexData.Quality);
+		Tex baked  = target.Copy(TexType.Image, TexFormat.None, TexData.Srgb | TexData.CompressQuality);
 		Tex dest   = new Tex();
-		target.Copy(TexType.Image, TexFormat.None, TexData.Srgb | TexData.Quality, dest);
+		target.Copy(TexType.Image, TexFormat.None, TexData.Srgb | TexData.CompressQuality, dest);
 		Tests.Test(() => plain.Format == TexFormat.Rgba32);
 		Tests.Test(() => compressed ? IsCompressedSrgb(baked.Format) : baked.Format == TexFormat.Rgba32);
 		Tests.Test(() => dest.Format == baked.Format && dest.AssetState == AssetState.Loaded);
 
+		// Data lands on a compressed texture
+		Tex reused = Tex.FromMemory(floor, TexData.Srgb | TexData.Blocking);
+		reused.SetColors(256, 256, pixels, TexFormat.Rgba32, TexData.Blocking | TexData.CompressNone);
+		Tests.Test(() => reused.Format == TexFormat.Rgba32 && reused.InputFormat == TexFormat.Rgba32);
+
+		// Dynamic textures only take data in their own format
+		Tex dynamic = new Tex(TexType.ImageNomips | TexType.Dynamic, TexFormat.Rgba32);
+		dynamic.SetColors(256, 256, pixels, TexFormat.Rgba32, TexData.Blocking | TexData.CompressNone);
+		dynamic.SetColors(256, 256, new Color[256 * 256], TexFormat.Rgba128, TexData.Blocking | TexData.CompressNone);
+		Tests.Test(() => dynamic.Format == TexFormat.Rgba32);
+
+		// Full precision colors keep values over 1, and sRGB ones convert to
+		// linear rather than clamping to 8 bits
+		Color[] bright = new Color[16 * 16];
+		for (int i = 0; i < bright.Length; i++) bright[i] = new Color(2, 0.5f, 0, 1);
+		Tex fullLinear = Tex.FromColors(bright, 16, 16, TexData.None | TexData.CompressNone | TexData.Blocking);
+		Tex fullSrgb   = Tex.FromColors(bright, 16, 16, TexData.Srgb | TexData.CompressNone | TexData.Blocking);
+		Tests.Test(() => fullLinear.Format == TexFormat.Rgba128 && fullLinear.GetColorData<Color>()[0].r == 2);
+		Tests.Test(() => MathF.Abs(fullSrgb.GetColorData<Color>()[0].g - 0.214f) < 0.002f);
+
+		// Constructors match their From* counterparts
+		byte[] raw = new byte[64 * 64 * 4];
+		Tex ctorColors = new Tex(pixels, 256, 256, TexData.Srgb | TexData.Blocking);
+		Tex ctorRaw    = new Tex(raw, 64, 64, TexFormat.Rgba32Linear, TexData.None | TexData.Blocking);
+		Tex fromRaw    = Tex.FromColors(raw, 64, 64, TexFormat.Rgba32Linear, TexData.None | TexData.Blocking);
+		Tests.Test(() => ctorColors.Format == blocking.Format);
+		Tests.Test(() => ctorRaw.Format == fromRaw.Format && ctorRaw.InputFormat == TexFormat.Rgba32Linear);
+		Tests.Test(() => new Tex("floor.png").Format == Tex.FromFile("floor.png").Format);
+
 		// The Model overload for older positional calls still loads
-		Model positional = Model.FromFile("Radio.glb", null, 10);
+		Model positional = Model.FromFile("DamagedHelmet.gltf", null, 10);
 		Assets.BlockForPriority(int.MaxValue);
 		Tests.Test(() => positional.AssetState == AssetState.Loaded);
 	}

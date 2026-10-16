@@ -30,9 +30,9 @@ cull_ cull_mode;
 
 ///////////////////////////////////////////
 
-void demo_bvh_load_model(const char* filename) {
+void demo_bvh_load_model(const char* filename, tex_data_ tex_flags = tex_data_none) {
 	model_release(model_to_intersect);
-	model_to_intersect = model_create_file(filename);
+	model_to_intersect = model_create_file(filename, nullptr, 10, tex_flags);
 
 	log_infof("%d nodes", model_node_count(model_to_intersect));
 	for (int i = 0; i < model_node_count(model_to_intersect); i++)
@@ -70,7 +70,8 @@ void demo_bvh_init() {
 	ray_material = material_copy(material_find(default_id_material));
 	material_set_color(ray_material, "color", color128{1.0f,0.5f,0.0f,1.0f});
 
-	demo_bvh_load_model("Radio.glb");
+	// The radio's textures are a palette atlas, which compression would smear.
+	demo_bvh_load_model("Radio.glb", tex_data_compress_none);
 
 	cull_mode = cull_back;
 }

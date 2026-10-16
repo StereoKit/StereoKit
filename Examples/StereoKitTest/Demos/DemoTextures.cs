@@ -58,7 +58,7 @@ class DemoTextures : ITest
 
 		// Turn the pixels into a texture! Compression would blur
 		// thin grid lines like these, so this one opts out.
-		Tex gridTex = Tex.FromColors(colors, width, height, TexData.Srgb | TexData.Uncompressed);
+		Tex gridTex = Tex.FromColors(colors, width, height, TexData.Srgb | TexData.CompressNone);
 
 		// Use point sampling to ensure that the grid lines are
 		// crisp and sharp, not blended with the pixels around it.
