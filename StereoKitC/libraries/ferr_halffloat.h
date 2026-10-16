@@ -3,14 +3,19 @@
 // Tools for working with IEEE-754 half precision floating point values, used
 // by GPU color formats like r16b16g16a16
 
-// On some compilers this will require enabling some SIMD features
-// CMake: add_compile_options(-mavx -mf16c)
+// The x86 path needs F16C, which these functions enable for themselves, so the
+// rest of the program doesn't need to be compiled with AVX.
 
 #include <stdint.h>
 
 #if defined(_M_AMD64) || defined(__x86_64__) || defined(_M_IX86) || defined(__i386__)
 	#define FHF_ARCH_X86
 	#include <immintrin.h>
+	#if defined(__GNUC__) || defined(__clang__)
+		#define FHF_X86_TARGET __attribute__((target("avx,f16c")))
+	#else
+		#define FHF_X86_TARGET
+	#endif
 #elif (defined(_M_ARM64) || defined(__aarch64__) || defined(_M_ARM) || defined(__arm__)) && defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
 	// Note: ARM64 has native f16 support in ARMv8.2+, older ARM requires software
 	// conversion, which is why we also guard on FP16_VECTOR_ARITHMETIC
@@ -26,21 +31,21 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-inline float fhf_f16_to_f32_x1(uint16_t f) {
+FHF_X86_TARGET inline float fhf_f16_to_f32_x1(uint16_t f) {
 	// 1/8th utilization of this SIMD operation, extremely unoptimal!
 	__m128i halfs  = _mm_cvtsi32_si128(f);
 	__m128  floats = _mm_cvtph_ps(halfs);
 	return _mm_cvtss_f32(floats);
 }
 
-inline void fhf_f16_to_f32_x4(const uint16_t* f_x4, float* out_f_x4) {
+FHF_X86_TARGET inline void fhf_f16_to_f32_x4(const uint16_t* f_x4, float* out_f_x4) {
 	// 4/8th utilization of this SIMD operation, unoptimal!
 	__m128i halfs  = _mm_loadl_epi64((__m128i*)f_x4);
 	__m128  floats = _mm_cvtph_ps(halfs);
 	_mm_storeu_ps(out_f_x4, floats);
 }
 
-inline void fhf_f16_to_f32_x8(const uint16_t* f_x8, float* out_f_x8) {
+FHF_X86_TARGET inline void fhf_f16_to_f32_x8(const uint16_t* f_x8, float* out_f_x8) {
 	// Full utilization
 	__m128i halfs  = _mm_loadu_si128((__m128i*)f_x8);
 	__m256  floats = _mm256_cvtph_ps(halfs);
@@ -49,20 +54,20 @@ inline void fhf_f16_to_f32_x8(const uint16_t* f_x8, float* out_f_x8) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-inline uint16_t fhf_f32_to_f16_x1(float f) {
+FHF_X86_TARGET inline uint16_t fhf_f32_to_f16_x1(float f) {
 	// 1/4th utilization of this SIMD operation, unoptimal!
 	__m128  floats = _mm_set_ss(f);
 	__m128i halfs  = _mm_cvtps_ph(floats, 0);
 	return (uint16_t)_mm_cvtsi128_si32(halfs);
 }
 
-inline void fhf_f32_to_f16_x4(const float* f_x4, uint16_t* out_f_x4) {
+FHF_X86_TARGET inline void fhf_f32_to_f16_x4(const float* f_x4, uint16_t* out_f_x4) {
 	__m128  floats = _mm_loadu_ps(f_x4);
 	__m128i halfs  = _mm_cvtps_ph(floats, 0);
 	_mm_storel_epi64((__m128i*)out_f_x4, halfs);
 }
 
-inline void fhf_f32_to_f16_x8(const float* f_x8, uint16_t* out_f_x8) {
+FHF_X86_TARGET inline void fhf_f32_to_f16_x8(const float* f_x8, uint16_t* out_f_x8) {
 	__m256  floats = _mm256_loadu_ps(f_x8);
 	__m128i halfs  = _mm256_cvtps_ph(floats, 0);
 	_mm_storeu_si128((__m128i*)out_f_x8, halfs);

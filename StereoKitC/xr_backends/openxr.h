@@ -14,6 +14,9 @@
 #include <openxr/openxr.h>
 #include <stdint.h>
 
+// StereoKitC builds with XR_NO_PROTOTYPES, this is the only loader export we call directly.
+extern "C" XRAPI_ATTR XrResult XRAPI_CALL xrGetInstanceProcAddr(XrInstance instance, const char* name, PFN_xrVoidFunction* function);
+
 typedef struct XR_MAY_ALIAS XrBaseHeader {
 	XrStructureType             type;
 	const void* XR_MAY_ALIAS    next;
@@ -28,6 +31,8 @@ inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_ne
 // multiple spots.
 #define _OPENXR_DEFINE_FN(name) PFN_##name name;
 #define OPENXR_DEFINE_FN(list) list(_OPENXR_DEFINE_FN)
+#define _OPENXR_DECLARE_FN(name) extern PFN_##name name;
+#define OPENXR_DECLARE_FN(list) list(_OPENXR_DECLARE_FN)
 #define _OPENXR_CLEAR_FN(name) name = nullptr;
 #define OPENXR_CLEAR_FN(list) list(_OPENXR_CLEAR_FN)
 #define _OPENXR_DEFINE_FN_STATIC(name) static PFN_##name name;
@@ -36,6 +41,58 @@ inline void xr_insert_next(XrBaseHeader *xr_base, XrBaseHeader *xr_next) { xr_ne
 #define OPENXR_LOAD_FN_RETURN(list, failure_result) do { bool result = true; list(_OPENXR_LOAD_FN_RESULT); if (!result) return failure_result; } while(0);
 
 namespace sk {
+
+// Loaded via xrGetInstanceProcAddr to skip the loader's per-call trampolines.
+#define OPENXR_PRE_INSTANCE_FUNCTIONS(_) \
+	_(xrEnumerateApiLayerProperties) \
+	_(xrEnumerateInstanceExtensionProperties) \
+	_(xrCreateInstance)
+#define OPENXR_CORE_FUNCTIONS(_) \
+	_(xrDestroyInstance) \
+	_(xrGetInstanceProperties) \
+	_(xrPollEvent) \
+	_(xrGetSystem) \
+	_(xrGetSystemProperties) \
+	_(xrEnumerateEnvironmentBlendModes) \
+	_(xrCreateSession) \
+	_(xrDestroySession) \
+	_(xrBeginSession) \
+	_(xrEndSession) \
+	_(xrEnumerateReferenceSpaces) \
+	_(xrCreateReferenceSpace) \
+	_(xrGetReferenceSpaceBoundsRect) \
+	_(xrCreateActionSpace) \
+	_(xrLocateSpace) \
+	_(xrDestroySpace) \
+	_(xrEnumerateViewConfigurations) \
+	_(xrEnumerateViewConfigurationViews) \
+	_(xrEnumerateSwapchainFormats) \
+	_(xrCreateSwapchain) \
+	_(xrDestroySwapchain) \
+	_(xrEnumerateSwapchainImages) \
+	_(xrAcquireSwapchainImage) \
+	_(xrWaitSwapchainImage) \
+	_(xrReleaseSwapchainImage) \
+	_(xrWaitFrame) \
+	_(xrBeginFrame) \
+	_(xrEndFrame) \
+	_(xrLocateViews) \
+	_(xrStringToPath) \
+	_(xrCreateActionSet) \
+	_(xrDestroyActionSet) \
+	_(xrCreateAction) \
+	_(xrSuggestInteractionProfileBindings) \
+	_(xrAttachSessionActionSets) \
+	_(xrGetCurrentInteractionProfile) \
+	_(xrGetActionStateBoolean) \
+	_(xrGetActionStateFloat) \
+	_(xrGetActionStateVector2f) \
+	_(xrSyncActions) \
+	_(xrApplyHapticFeedback) \
+	_(xrStopHapticFeedback)
+
+OPENXR_DECLARE_FN(OPENXR_PRE_INSTANCE_FUNCTIONS)
+OPENXR_DECLARE_FN(OPENXR_CORE_FUNCTIONS)
 
 typedef enum xr_system_ {
 	xr_system_succeed       = 1,
