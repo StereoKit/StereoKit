@@ -368,6 +368,8 @@ bool32_t tex_load_arr_upload(asset_task_t *, asset_header_t *asset, void *job_da
 
 void tex_load_on_failure(asset_header_t *asset, void *) {
 	tex_t tex = (tex_t)asset;
+	// Load actions set a specific error first, a skipped task arrives without one
+	if (tex->header.state >= asset_state_none) tex->header.state = asset_state_error;
 	tex_set_fallback(tex, _tex_get_error_fallback(tex));
 }
 

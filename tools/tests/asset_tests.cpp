@@ -40,8 +40,10 @@ static int ast_failures = 0;
 // dep_state_at_run snapshots the dependency the moment the action runs.
 struct ast_ctx_t {
 	asset_header_t* dep;             // dependency observed by the action
+	int32_t         started;         // times ast_action_load_slow began
 	int32_t         ran;             // times the action executed
 	int32_t         failed;          // times on_failure executed
+	int32_t         freed;           // times free_data executed
 	int32_t         hold;            // ast_action_hold spins until set
 	int32_t         timed_out;       // ast_action_hold gave up waiting
 	int32_t         dep_state_at_run;
@@ -61,6 +63,7 @@ static bool32_t ast_action_load(asset_task_t*, asset_header_t* asset, void* data
 }
 
 static bool32_t ast_action_load_slow(asset_task_t* task, asset_header_t* asset, void* data) {
+	atomic_increment(&((ast_ctx_t*)data)->started);
 	ast_sleep_ms(100);
 	return ast_action_load(task, asset, data);
 }
@@ -93,12 +96,17 @@ static void ast_on_failure(asset_header_t* asset, void* data) {
 	atomic_increment(&((ast_ctx_t*)data)->failed);
 }
 
+static void ast_free_data(asset_header_t*, void* data) {
+	atomic_increment(&((ast_ctx_t*)data)->freed);
+}
+
 ///////////////////////////////////////////
 
 static void ast_add_task(tex_t asset, ast_ctx_t* ctx, const asset_load_action_t* actions, int32_t action_count, tex_t depends_on, asset_state_ depends_state) {
 	asset_task_t task  = {};
 	task.asset         = ast_header(asset);
 	task.load_data     = ctx;
+	task.free_data     = ast_free_data;
 	task.on_failure    = ast_on_failure;
 	task.actions       = (asset_load_action_t*)actions;
 	task.action_count  = action_count;
@@ -358,6 +366,63 @@ static void ast_test_blocking_job_foreign_thread() {
 
 ///////////////////////////////////////////
 
+// Ends the session. Contexts live here so they outlast sk_shutdown.
+static void ast_test_shutdown() {
+	// A task mid-action at shutdown finishes, while a queued one that can't
+	// start yet is abandoned through on_failure without running.
+	tex_t in_flight = tex_create(tex_type_image, tex_format_rgba32);
+	tex_t dep       = tex_create(tex_type_image, tex_format_rgba32);
+	tex_t gated     = tex_create(tex_type_image, tex_format_rgba32);
+	ast_header(dep)->state = asset_state_loading;
+
+	static const asset_load_action_t slow_actions[] = { ast_action_load_slow };
+	static const asset_load_action_t load_actions[] = { ast_action_load };
+	ast_ctx_t in_flight_ctx = {};
+	ast_ctx_t gated_ctx     = {};
+	gated_ctx.dep = ast_header(dep);
+	ast_add_task(in_flight, &in_flight_ctx, slow_actions, 1, nullptr, asset_state_none);
+	ast_add_task(gated,     &gated_ctx,     load_actions, 1, dep,     asset_state_loaded);
+	AST_CHECK(ast_wait(&in_flight_ctx.started, 1, 3000), "in-flight task started before shutdown");
+
+	assets_stop_workers();
+
+	AST_CHECK(atomic_load_i32_acq(&in_flight_ctx.ran) == 1,     "shutdown lets an in-flight task finish");
+	AST_CHECK(atomic_load_i32_acq(&gated_ctx.failed)  == 1,     "shutdown routes an unstarted task through on_failure");
+	AST_CHECK(atomic_load_i32_acq(&gated_ctx.ran)     == 0,     "unstarted task never runs the action");
+	AST_CHECK(atomic_load_i32_acq(&gated_ctx.freed)   == 1,     "unstarted task's load data is freed");
+	AST_CHECK(ast_header(gated)->refs == 1,                     "unstarted task released its asset ref");
+
+	// Loads queued after the stop are refused, so the log_err below this is
+	// expected output.
+	tex_t     late     = tex_create(tex_type_image, tex_format_rgba32);
+	ast_ctx_t late_ctx = {};
+	ast_header(late)->state = asset_state_loading;
+	ast_add_task(late, &late_ctx, load_actions, 1, nullptr, asset_state_none);
+	AST_CHECK(late_ctx.failed == 1 && late_ctx.ran == 0,        "late task is refused through on_failure");
+	AST_CHECK(late_ctx.freed  == 1,                             "late task's load data is freed");
+	AST_CHECK(ast_header(late)->state == asset_state_error,     "late task's asset doesn't sit loading");
+	AST_CHECK(ast_header(late)->refs  == 1,                     "late task released its asset ref");
+
+	// Nothing services blocking jobs anymore, so a foreign thread must get
+	// turned away rather than wait forever.
+	ast_foreign_t job = {};
+	job.tex = tex_create(tex_type_image, tex_format_rgba32);
+	ast_thread_t thread = ast_foreign_start(&job);
+	bool         done   = ast_wait(&job.done, 1, 10000);
+	AST_CHECK(done, "blocking job from a foreign thread is refused after stop");
+	if (done) ast_foreign_join(thread);
+
+	tex_release(job.tex);
+	tex_release(late);
+	tex_release(in_flight);
+	tex_release(dep);
+	tex_release(gated);
+
+	sk_shutdown();
+}
+
+///////////////////////////////////////////
+
 int asset_tests_run() {
 	sk_settings_t settings = {};
 	settings.app_name      = "StereoKitC Asset Tests";
@@ -376,24 +441,7 @@ int asset_tests_run() {
 	ast_test_dep_never_loading ();
 	ast_test_self_dependency   ();
 	ast_test_blocking_job_foreign_thread();
-
-	// Shutdown with a never-resolving dependency must not hang the drain,
-	// and the dependent takes its failure path. ctx must outlive sk_shutdown.
-	tex_t dep       = tex_create(tex_type_image, tex_format_rgba32);
-	tex_t dependent = tex_create(tex_type_image, tex_format_rgba32);
-	ast_header(dep)->state = asset_state_loading;
-
-	static const asset_load_action_t dependent_actions[] = { ast_action_load };
-	ast_ctx_t ctx = {};
-	ctx.dep = ast_header(dep);
-	ast_add_task(dependent, &ctx, dependent_actions, 1, dep, asset_state_loaded);
-	tex_release(dep);
-	tex_release(dependent);
-
-	sk_shutdown();
-
-	AST_CHECK(atomic_load_i32_acq(&ctx.failed) == 1, "shutdown routes unresolved gate through on_failure");
-	AST_CHECK(atomic_load_i32_acq(&ctx.ran)    == 0, "unresolved gate never runs the action");
+	ast_test_shutdown          ();
 
 	if (ast_failures == 0) log_info("[asset_test] all tests passed!");
 	else                   log_errf("[asset_test] %d checks failed!", ast_failures);

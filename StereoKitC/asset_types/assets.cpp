@@ -53,6 +53,7 @@ struct asset_thread_t {
 
 array_t<asset_header_t *>      assets = {};
 ft_mutex_t                     assets_lock = {};
+bool32_t                       assets_alive = false; // refcounting live, outlasts the workers
 array_t<asset_header_t *>      assets_multithread_destroy = {};
 ft_mutex_t                     assets_multithread_destroy_lock = {};
 ft_mutex_t                     assets_job_lock = {};
@@ -81,10 +82,20 @@ array_t<asset_task_t*> asset_active_tasks    = {};
 
 int32_t         asset_thread                    (void *);
 void            assets_wake_workers             ();
+void            assets_abandon_task             (asset_task_t* task);
 bool            asset_step_task                 ();
 void            asset_step_blocking_job         ();
 int32_t         assets_calculate_current_priority();
 asset_header_t* assets_allocate_no_add          (asset_type_ type, const char** out_type_str);
+
+///////////////////////////////////////////
+
+// The registry and its locks only exist between sk_init and sk_shutdown.
+static bool assets_session_check() {
+	if (assets_alive) return true;
+	log_err("Assets are only usable between sk_init and sk_shutdown!");
+	return false;
+}
 
 ///////////////////////////////////////////
 
@@ -95,6 +106,8 @@ void *assets_find(const char *id, asset_type_ type) {
 ///////////////////////////////////////////
 
 void *assets_find(id_hash_t id, asset_type_ type) {
+	if (!assets_session_check()) return nullptr;
+
 	void* result = nullptr;
 	ft_mutex_lock(assets_lock);
 	for (int32_t i = 0; i < assets.count; i++) {
@@ -110,6 +123,8 @@ void *assets_find(id_hash_t id, asset_type_ type) {
 ///////////////////////////////////////////
 
 asset_find_ assets_find_or_create(const char* id, asset_type_ type, void** out_asset) {
+	if (!assets_session_check()) { *out_asset = nullptr; return asset_find_created; }
+
 	id_hash_t   hash   = hash_string(id);
 	asset_find_ result = asset_find_created;
 	ft_mutex_lock(assets_lock);
@@ -184,6 +199,8 @@ asset_header_t* assets_allocate_no_add(asset_type_ type, const char** out_type_s
 ///////////////////////////////////////////
 
 void *assets_allocate(asset_type_ type) {
+	if (!assets_session_check()) return nullptr;
+
 	const char*     type_name;
 	asset_header_t* header = assets_allocate_no_add(type, &type_name);
 
@@ -232,7 +249,7 @@ void assets_addref(asset_header_t *asset) {
 void assets_releaseref(asset_header_t *asset) {
 	// Check if we've shut down the asset system and have already destroyed any
 	// lingering assets (or haven't started the asset system yet).
-	if (asset_thread_enabled == false)
+	if (assets_alive == false)
 		return;
 
 	// Manage the reference count
@@ -254,7 +271,7 @@ void assets_releaseref_threadsafe(void *asset) {
 
 	// Check if we've shut down the asset system and have already destroyed any
 	// lingering assets (or haven't started the asset system yet).
-	if (asset_thread_enabled == false)
+	if (assets_alive == false)
 		return;
 
 	// Manage the reference count
@@ -452,6 +469,7 @@ bool assets_init() {
 	assets_load_event_lock          = ft_mutex_create();
 	asset_tasks_available           = ft_condition_create();
 	assets_blocking_available       = ft_condition_create();
+	assets_alive                    = true;
 
 	texture_compression_init();
 
@@ -526,11 +544,11 @@ void assets_step() {
 
 ///////////////////////////////////////////
 
-void assets_shutdown() {
-	// Signal asset threads to drain remaining tasks and exit. Use a single
-	// loop for all threads so we keep calling assets_step while any thread
-	// is still running — the old per-thread sequential loop could miss
-	// queued work from threads that exited while waiting on another.
+void assets_stop_workers() {
+	if (asset_thread_enabled == false) return;
+
+	// Signal asset threads to exit after their current task. Keep stepping
+	// until every thread is out, since any of them may still queue work.
 	asset_thread_enabled = false;
 	assets_wake_workers();
 	bool any_running = true;
@@ -545,8 +563,19 @@ void assets_shutdown() {
 	}
 	asset_threads.free();
 
-	// Fail any blocking jobs the workers never got to, then wait for their
-	// foreign threads to leave before the primitives get destroyed below.
+	// Abandon unstarted tasks, shutdown shouldn't wait on loads nobody sees.
+	ft_mutex_lock(asset_thread_task_mtx);
+	array_t<asset_task_t*> leftover = asset_thread_tasks;
+	asset_thread_tasks = {};
+	atomic_store_i32(&asset_tasks_processing, atomic_load_i32(&asset_tasks_processing) - leftover.count);
+	asset_tasks_priority = assets_calculate_current_priority();
+	ft_mutex_unlock(asset_thread_task_mtx);
+	for (int32_t i = 0; i < leftover.count; i++)
+		assets_abandon_task(leftover[i]);
+	leftover.free();
+
+	// Fail any blocking jobs the workers never got to. Later callers see
+	// the flag under this lock and refuse instead of queueing.
 	ft_mutex_lock(assets_job_lock);
 	for (int32_t i = 0; i < assets_blocking_jobs.count; i++) {
 		assets_blocking_jobs[i]->success  = false;
@@ -556,6 +585,14 @@ void assets_shutdown() {
 	atomic_store_i32(&assets_blocking_count, 0);
 	ft_condition_broadcast(assets_blocking_available);
 	ft_mutex_unlock(assets_job_lock);
+}
+
+///////////////////////////////////////////
+
+void assets_shutdown() {
+	assets_stop_workers();
+
+	// Wait for foreign threads to leave before the primitives get destroyed.
 	while (atomic_load_i32(&assets_blocking_waiters) > 0)
 		ft_yield();
 
@@ -567,6 +604,7 @@ void assets_shutdown() {
 	// lot of these due to GC based asset releases.
 	// Destroy in reverse, as assets_destroy will _remove_ the item from the
 	// assets array on destroy!
+	assets_alive = false;
 	for (int32_t i = assets.count-1; i >= 0; i--) {
 		// mark as no refs, or assets_destroy will not be pleased.
 		assets[i]->refs = 0;
@@ -608,9 +646,6 @@ bool32_t assets_execute_blocking(bool32_t(*asset_job)(void *data), void *data) {
 	if (skr_thread_is_initialized()) {
 		return asset_job(data);
 	} else {
-		// Refuse rather than queue a job the drained workers will never run
-		if (asset_thread_enabled == false) return false;
-
 		// This thread outlives the job, so the stack is a fine home for it.
 		// The waiter count keeps shutdown from destroying the primitives
 		// here until this thread is fully out of them.
@@ -618,18 +653,21 @@ bool32_t assets_execute_blocking(bool32_t(*asset_job)(void *data), void *data) {
 		job.asset_job = asset_job;
 		job.data      = data;
 
+		// Refuse rather than queue a job the stopped workers will never run.
+		// The re-check under the lock closes the race with the stop's fail pass.
 		atomic_increment(&assets_blocking_waiters);
-		ft_mutex_lock(assets_job_lock);
-		assets_blocking_jobs.add(&job);
-		atomic_increment(&assets_blocking_count);
+		if (asset_thread_enabled) {
+			ft_mutex_lock(assets_job_lock);
+			if (asset_thread_enabled) {
+				assets_blocking_jobs.add(&job);
+				atomic_increment(&assets_blocking_count);
+				assets_wake_workers();
 
-		// Wake up asset threads to process the job
-		assets_wake_workers();
-
-		// Sleep until an asset thread signals the job is finished
-		while (job.finished == false)
-			ft_condition_wait(assets_blocking_available, assets_job_lock);
-		ft_mutex_unlock(assets_job_lock);
+				while (job.finished == false)
+					ft_condition_wait(assets_blocking_available, assets_job_lock);
+			}
+			ft_mutex_unlock(assets_job_lock);
+		}
 		atomic_decrement(&assets_blocking_waiters);
 
 		return job.success;
@@ -738,15 +776,39 @@ void assets_add_task(asset_task_t src_task) {
 	if (task->depends_on != nullptr)
 		assets_addref(task->depends_on);
 
-	ft_mutex_lock(asset_thread_task_mtx);
-	int32_t idx = asset_thread_tasks.binary_search(assets_task_sort, task->sort);
-	if (idx < 0) idx = ~idx;
-	asset_thread_tasks.insert(idx, task);
-	atomic_increment(&asset_tasks_processing);
-	asset_tasks_priority = assets_calculate_current_priority();
-	ft_mutex_unlock(asset_thread_task_mtx);
+	// The unlocked check keeps us off a mutex that may not exist. The locked
+	// re-check means the stop's sweep can't miss a task that got in.
+	bool accepted = false;
+	if (asset_thread_enabled) {
+		ft_mutex_lock(asset_thread_task_mtx);
+		accepted = asset_thread_enabled;
+		if (accepted) {
+			int32_t idx = asset_thread_tasks.binary_search(assets_task_sort, task->sort);
+			if (idx < 0) idx = ~idx;
+			asset_thread_tasks.insert(idx, task);
+			atomic_increment(&asset_tasks_processing);
+			asset_tasks_priority = assets_calculate_current_priority();
+		}
+		ft_mutex_unlock(asset_thread_task_mtx);
+	}
+	if (!accepted) {
+		log_err("Can't load assets during shutdown!");
+		assets_abandon_task(task);
+		return;
+	}
 
 	assets_wake_workers();
+}
+
+///////////////////////////////////////////
+
+// For tasks that will never run, so their assets don't sit in a loading state.
+void assets_abandon_task(asset_task_t* task) {
+	if (task->on_failure != nullptr) task->on_failure(task->asset, task->load_data);
+	if (task->free_data  != nullptr) task->free_data (task->asset, task->load_data);
+	if (task->depends_on != nullptr) assets_releaseref_threadsafe(task->depends_on);
+	assets_releaseref_threadsafe(task->asset);
+	sk_free(task);
 }
 
 ///////////////////////////////////////////
@@ -772,13 +834,13 @@ typedef enum asset_dep_ {
 } asset_dep_;
 
 // Gates a task until its dependency reaches the requested state. Errors and
-// never-started (none) assets fail the gate open, shutdown forces all open.
+// never-started (none) assets fail the gate open.
 asset_dep_ asset_task_dep_check(const asset_task_t *task) {
 	if (task->depends_on == nullptr)                  return asset_dep_ready;
 	asset_state_ state = task->depends_on->state;
 	if (state <= asset_state_none)                    return asset_dep_failed;
 	if (state >= task->depends_state)                 return asset_dep_ready;
-	return asset_thread_enabled ? asset_dep_blocked : asset_dep_failed;
+	return asset_dep_blocked;
 }
 
 ///////////////////////////////////////////
@@ -928,7 +990,7 @@ int32_t asset_thread(void *thread_inst_obj) {
 
 	skr_thread_init();
 
-	while (asset_thread_enabled || asset_thread_tasks.count>0 || atomic_load_i32(&assets_blocking_count)>0) {
+	while (asset_thread_enabled) {
 		int32_t wake_gen = atomic_load_i32(&assets_wake_gen);
 		asset_step_blocking_job();
 		bool worked = asset_step_task();

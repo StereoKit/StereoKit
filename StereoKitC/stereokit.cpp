@@ -13,6 +13,7 @@
 #include "systems/_stereokit_systems.h"
 #include "systems/vert_format.h"
 #include "systems/frame_pacer.h"
+#include "asset_types/assets.h"
 #include "libraries/sokol_time.h"
 #include "libraries/ferr_thread.h"
 #include "libraries/ferr_hash.h"
@@ -182,6 +183,8 @@ void sk_shutdown() {
 void sk_shutdown_unsafe(void) {
 	log_show_any_fail_reason();
 
+	// Tasks still in flight use assets owned by systems, like Defaults.
+	assets_stop_workers   ();
 	systems_shutdown      ();
 	// The vertex format registry initializes with skr in platform_init, and
 	// must shut down with skr too — wherever skr_shutdown goes, this goes.
