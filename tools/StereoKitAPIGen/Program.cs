@@ -4,6 +4,7 @@ using StereoKitAPIGen;
 enum BindLang {
 	None,
 	CSharp,
+	Lua,
 	Zig,
 	All,
 }
@@ -41,6 +42,7 @@ class Program {
 		var lang           = BindLang.None;
 		var destFolder     = "";
 		var csOverrideFile = Path.Combine(root, "SKOverridesCSharp.txt");
+		var luaOverrideFile= Path.Combine(root, "SKOverridesLua.txt");
 		var zigOverrideFile= Path.Combine(root, "SKOverridesZig.txt");
 		var moduleFile     = Path.Combine(root, "SKModules.txt");
 
@@ -69,6 +71,11 @@ class Program {
 			else if (arg == "-ocs" || arg == "--override-csharp") {
 				if (curr + 1 >= args.Length) { Error("Missing file path for C# overrides"); return; }
 				csOverrideFile = args[++curr];
+				curr++;
+			}
+			else if (arg == "-olua" || arg == "--override-lua") {
+				if (curr + 1 >= args.Length) { Error("Missing file path for Lua overrides"); return; }
+				luaOverrideFile = args[++curr];
 				curr++;
 			}
 			else if (arg == "-ozig" || arg == "--override-zig") {
@@ -125,6 +132,15 @@ class Program {
 			BindCSharp.Bind(data, destFolder, csOverrides);
 		}
 
+		if (lang == BindLang.Lua || lang == BindLang.All) {
+			var luaOverrides = new NameOverrides();
+			luaOverrides.Load(luaOverrideFile);
+			string luaFolder = lang == BindLang.All
+				? Path.Combine(destFolder, "lua")
+				: destFolder;
+			BindLua.Bind(data, luaFolder, luaOverrides);
+		}
+
 		if (lang == BindLang.Zig || lang == BindLang.All) {
 			var zigOverrides = new NameOverrides();
 			zigOverrides.Load(zigOverrideFile);
@@ -150,8 +166,9 @@ Usage: {name} [options]
 Options:
   -f <path>       Input C header file (can specify multiple)
   -d <path>       Output directory for generated bindings
-  -l <lang>       Target language: CSharp, Zig, or All (default: CSharp)
+  -l <lang>       Target language: CSharp, Lua, Zig, or All (default: CSharp)
   -ocs <path>     C# name overrides file (default: SKOverridesCSharp.txt)
+  -olua <path>    Lua name overrides file (default: SKOverridesLua.txt)
   -ozig <path>    Zig name overrides file (default: SKOverridesZig.txt)
   -m <path>       Module prefix overrides file (default: SKModules.txt)
   -h, --help      Show this help message
