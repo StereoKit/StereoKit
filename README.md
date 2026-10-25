@@ -35,7 +35,7 @@ Interested in news and updates about StereoKit? Maybe just looking for some extr
 
 ## Platform Support
 
-StereoKit supports Meta Quest, Android XR, Windows Mixed Reality, Oculus Desktop, SteamVR, Varjo, Monado, and essentially everywhere OpenXR is!
+StereoKit supports Meta Quest, Android XR (and emulator), Windows Mixed Reality, Oculus Desktop, SteamVR, Varjo, Monado, and essentially everywhere OpenXR is!
 
 These are the binaries that currently ship in the NuGet package. StereoKit developers working from C/C++ should be fine to build any architecture from this list of platforms.
 
