@@ -184,7 +184,8 @@ void sk_shutdown() {
 void sk_shutdown_unsafe(void) {
 	log_show_any_fail_reason();
 
-	assets_drain          (); // Tasks can touch any system, so they finish before any shut down
+	// Tasks still in flight use assets owned by systems, like Defaults.
+	assets_stop_workers   ();
 	systems_shutdown      ();
 	// The vertex format registry initializes with skr in platform_init, and
 	// must shut down with skr too — wherever skr_shutdown goes, this goes.

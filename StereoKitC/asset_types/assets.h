@@ -59,7 +59,7 @@ struct asset_task_t {
 	asset_header_t      *asset;
 	void                *load_data;
 	void               (*free_data )(asset_header_t *asset, void *data);
-	void               (*on_failure)(asset_header_t *asset, void *data);
+	void               (*on_failure)(asset_header_t *asset, void *data); // also runs for tasks that never start
 	asset_action_t      *actions;
 	int32_t              action_count;
 	int32_t              action_curr;
@@ -90,7 +90,7 @@ void        assets_shutdown_check     ();
 char*       assets_file               (const char *file_name);
 bool        assets_init               ();
 void        assets_step               ();
-void        assets_drain              ();
+void        assets_stop_workers       ();
 void        assets_shutdown           ();
 void        assets_on_load            (asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context);
 void        assets_on_load_remove     (asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context));
