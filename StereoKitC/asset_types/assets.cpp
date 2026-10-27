@@ -875,6 +875,16 @@ int32_t assets_calculate_current_priority() {
 
 ///////////////////////////////////////////
 
+// The state that waiting and dependencies go by. A texture with a replacement
+// in flight is still showing old content, so it reads as loaded_meta.
+static asset_state_ assets_content_state(asset_header_t* asset) {
+	return asset->type == asset_type_tex
+		? tex_asset_state((tex_t)asset)
+		: asset->state;
+}
+
+///////////////////////////////////////////
+
 typedef enum asset_dep_ {
 	asset_dep_ready,
 	asset_dep_blocked,
@@ -885,7 +895,7 @@ typedef enum asset_dep_ {
 // never-started (none) assets fail the gate open, shutdown forces all open.
 asset_dep_ asset_task_dep_check(const asset_task_t *task) {
 	if (task->depends_on == nullptr)                  return asset_dep_ready;
-	asset_state_ state = task->depends_on->state;
+	asset_state_ state = assets_content_state(task->depends_on);
 	if (state <= asset_state_none)                    return asset_dep_failed;
 	if (state >= task->depends_state)                 return asset_dep_ready;
 	return asset_thread_enabled ? asset_dep_blocked : asset_dep_failed;
@@ -1300,7 +1310,8 @@ void assets_block_until(asset_t asset, asset_state_ state) {
 	// If we're past the required state already, drop out. asset_state_none and
 	// below (error states) means no loading is happening, so blocking will
 	// only put us in an infinite loop.
-	if (header->state >= state || header->state <= asset_state_none)
+	asset_state_ curr = assets_content_state(header);
+	if (curr >= state || curr <= asset_state_none)
 		return;
 
 	profiler_zone();
@@ -1310,16 +1321,17 @@ void assets_block_until(asset_t asset, asset_state_ state) {
 		return;
 	}
 
-	while (header->state < state && header->state >= 0) {
+	while (curr < state && curr >= 0) {
 		// Spin the GPU thread so the asset thread doesn't freeze up while
 		// we're waiting on it.
 		assets_step();
+		curr = assets_content_state(header);
 
 #if defined(SK_OS_WEB)
 		// In a browser, parked work (a fetch, a GPU readback) only resolves
 		// after this stack unwinds, so once that's all that remains, spinning
 		// here can never finish. Bail loudly instead of hanging the tab.
-		if (assets_step_did_work == false && header->state < state && header->state >= 0) {
+		if (assets_step_did_work == false && curr < state && curr >= 0) {
 			log_errf("Can't block for asset '%s' on the web, it's waiting on work that needs the frame to end. Load asynchronously instead.", header->id_text ? header->id_text : "[unnamed]");
 			return;
 		}

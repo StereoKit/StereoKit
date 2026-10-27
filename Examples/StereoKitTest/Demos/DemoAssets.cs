@@ -91,6 +91,7 @@ class DemoAssets : ITest
 				case Sprite   item: VisualizeSprite  (item); break;
 				case Model    item: VisualizeModel   (item); break;
 				case Sound    item: VisualizeSound   (item); break;
+				case Tex      item: VisualizeTex     (item); break;
 			}
 			UI.PopId();
 			UI.Label(string.IsNullOrEmpty(asset.Id) ? "(null)" : asset.Id, V.XY(UI.LayoutRemaining.x, 0));
@@ -141,6 +142,13 @@ class DemoAssets : ITest
 	{
 		if (UI.ButtonImg(">", Sprite.ArrowRight, UIBtnLayout.CenterNoText, V.XX(UI.LineHeight)))
 			item.Play(Hierarchy.ToWorld(UI.LayoutLast.center));
+		UI.SameLine();
+	}
+
+	void VisualizeTex(Tex item)
+	{
+		if (UI.ButtonImg("inspect", Sprite.ArrowRight, UIBtnLayout.CenterNoText, V.XX(UI.LineHeight)))
+			TextureInspector.Show(item);
 		UI.SameLine();
 	}
 	/// :End:

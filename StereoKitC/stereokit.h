@@ -1702,7 +1702,8 @@ typedef enum tex_data_ {
 	  compression, and is treated like linear data for now.*/
 	tex_data_normal            = 1 << 1,
 	/*The alpha channel is unused, so StereoKit may pick a format without
-	  one.*/
+	  one. HDR data with an alpha channel, like floating point colors, only
+	  compresses with this, since compressed HDR formats have no alpha.*/
 	tex_data_opaque            = 1 << 2,
 	/*Alpha is only a cutout mask, so 1 bit of alpha is enough.*/
 	tex_data_cutout            = 1 << 3,
@@ -1833,12 +1834,14 @@ SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int3
 SK_API tex_t        tex_gen_particle        (int32_t width, int32_t height, float roundness sk_default(1), gradient_t gradient_linear sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution);
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
-SK_API tex_t        tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into sk_default(nullptr), int32_t max_resolution sk_default(64));
+SK_API tex_t        tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into sk_default(nullptr), int32_t max_resolution sk_default(64), tex_data_ flags sk_default(tex_data_none));
 SK_API tex_format_  tex_get_format          (tex_t texture);
 SK_API tex_format_  tex_get_input_format    (tex_t texture);
 SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
 SK_API int32_t      tex_get_depth           (tex_t texture);
+SK_API int32_t      tex_get_array_count     (tex_t texture);
+SK_API tex_type_    tex_get_type            (tex_t texture);
 SK_API void         tex_set_sample          (tex_t texture, tex_sample_ sample sk_default(tex_sample_linear));
 SK_API tex_sample_  tex_get_sample          (tex_t texture);
 SK_API void             tex_set_sample_comp (tex_t texture, tex_sample_comp_ compare sk_default(tex_sample_comp_none));
@@ -2609,9 +2612,12 @@ SK_API render_layer_         render_get_capture_filter     (void);
 SK_API bool32_t              render_has_capture_filter     (void);
 SK_API void                  render_set_clear_color(color128 color_gamma);
 SK_API color128              render_get_clear_color(void);
-SK_API void                  render_global_texture     (int32_t register_slot, tex_t texture);
-SK_API tex_t                 render_get_global_texture (int32_t register_slot);
-SK_API void                  render_global_buffer      (int32_t register_slot, material_buffer_t buffer);
+SK_API void                  render_set_global_tex     (const char* name, tex_t texture);
+SK_API tex_t                 render_get_global_tex     (const char* name);
+SK_API void                  render_set_global_buffer  (const char* name, material_buffer_t buffer);
+SK_API SK_DEPRECATED void    render_global_texture     (int32_t register_slot, tex_t texture);
+SK_API SK_DEPRECATED tex_t   render_get_global_texture (int32_t register_slot);
+SK_API SK_DEPRECATED void    render_global_buffer      (int32_t register_slot, material_buffer_t buffer);
 SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t material,          const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));

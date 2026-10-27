@@ -1014,7 +1014,8 @@ namespace StereoKit
 		/// compression, and is treated like linear data for now.</summary>
 		Normal       = 1 << 1,
 		/// <summary>The alpha channel is unused, so StereoKit may pick a format without
-		/// one.</summary>
+		/// one. HDR data with an alpha channel, like floating point colors, only
+		/// compresses with this, since compressed HDR formats have no alpha.</summary>
 		Opaque       = 1 << 2,
 		/// <summary>Alpha is only a cutout mask, so 1 bit of alpha is enough.</summary>
 		Cutout       = 1 << 3,

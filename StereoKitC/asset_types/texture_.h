@@ -14,7 +14,7 @@ size_t      tex_format_size      (tex_format_ format, int32_t width, int32_t hei
 tex_format_ tex_get_tex_format   (int64_t native_fmt);
 int64_t     tex_fmt_to_native    (tex_format_ format);
 tex_format_ tex_get_supported_depth_format(tex_format_ preferred, bool needs_stencil, int32_t multisample);
-void        tex_set_meta         (tex_t texture, int32_t width, int32_t height, int32_t depth, tex_format_ format);
+void        tex_set_meta         (tex_t texture, int32_t width, int32_t height, int32_t depth, int32_t array_count, tex_format_ format);
 bool        tex_format_is_compressed(tex_format_ format);
 bool        tex_format_is_mippable  (tex_format_ format);
 bool        tex_format_has_alpha    (tex_format_ format);

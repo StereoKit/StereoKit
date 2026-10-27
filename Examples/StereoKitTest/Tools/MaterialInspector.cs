@@ -13,7 +13,6 @@ namespace StereoKit.Framework
 
 		Material                     material;
 		Dictionary<string, Material> texPreviews = new Dictionary<string, Material>();
-		bool                         visible;
 
 		public Pose pose;
 
@@ -23,9 +22,8 @@ namespace StereoKit.Framework
 		{
 			if (_inst == null)
 				_inst = SK.AddStepper<MaterialInspector>();
-			if (!_inst.visible) _inst.pose = UI.PopupPose();
+			if (_inst.material == null) _inst.pose = UI.PopupPose();
 			_inst.material = material;
-			_inst.visible  = true;
 			_inst.BuildTexPreviews();
 		}
 
@@ -50,9 +48,15 @@ namespace StereoKit.Framework
 		}
 		public void Shutdown() { if (_inst == this) _inst = null; }
 
+		void Close()
+		{
+			material = null;
+			texPreviews.Clear();
+		}
+
 		public void Step()
 		{
-			if (!visible || material == null) return;
+			if (material == null) return;
 
 			UI.WindowBegin("Material Inspector", ref pose, new Vec2(60 * U.cm, 0));
 			UI.LayoutPushCut(UICut.Left, 0.26f);
@@ -121,8 +125,14 @@ namespace StereoKit.Framework
 			Vec2 labelSize = new Vec2(UI.LineHeight * 3, UI.LineHeight);
 
 			UI.PanelBegin();
-			UI.Label($"Shader ({material.Shader?.Name ?? "(none)"})", new Vec2(UI.LayoutRemaining.x,0));
+			UI.Label($"Shader ({material.Shader?.Name ?? "(none)"})", new Vec2(UI.LayoutRemaining.x - UI.LineHeight - UI.Settings.gutter, 0));
 			UI.PanelEnd();
+			UI.SameLine();
+			if (UI.ButtonImg("close", Sprite.Close, UIBtnLayout.CenterNoText, V.XX(UI.LineHeight)))
+			{
+				Close();
+				return;
+			}
 			foreach (MatParamInfo p in material.GetAllParamInfo())
 			{
 				if (IsBuiltin(p.name)) continue;
@@ -211,7 +221,15 @@ namespace StereoKit.Framework
 
 			UI.SameLine();
 			if (tex != null)
+			{
+				UI.PushId(name);
+				if (UI.ButtonImg("inspect", Sprite.ArrowRight, UIBtnLayout.CenterNoText, V.XX(UI.LineHeight)))
+					TextureInspector.Show(tex);
+				UI.PopId();
+				UI.SameLine();
 				UI.Text($"{name}\n{tex.Width}x{tex.Height} {tex.Format}\n{tex?.Id ?? "(no id)"}");
+			}
+			else UI.Text($"{name}\n(default)");
 		}
 
 		void DrawChain()

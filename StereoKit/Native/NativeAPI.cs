@@ -310,12 +310,14 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_gen_particle(int width, int height, float roundness, IntPtr gradient_linear);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_gen_cubemap(IntPtr gradient, Vec3 gradient_dir, int resolution);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_gen_cubemap_sh(in SphericalHarmonics lookup, int face_size, float light_spot_size_pct, float light_spot_intensity);
-		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_gen_cubemap_reflection(IntPtr source_cubemap, IntPtr into, int max_resolution);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       tex_gen_cubemap_reflection(IntPtr source_cubemap, IntPtr into, int max_resolution, TexData flags);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexFormat    tex_get_format(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexFormat    tex_get_input_format(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_width(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_height(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_depth(IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern int          tex_get_array_count(IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexType      tex_get_type(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_sample(IntPtr texture, TexSample sample);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern TexSample    tex_get_sample(IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         tex_set_sample_comp(IntPtr texture, TexSampleComp compare);
@@ -669,6 +671,9 @@ namespace StereoKit
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern bool         render_has_capture_filter();
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_clear_color(Color color_gamma);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern Color        render_get_clear_color();
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_global_tex([MarshalAs(UnmanagedType.LPUTF8Str)] string name, IntPtr texture);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_global_tex([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_set_global_buffer([MarshalAs(UnmanagedType.LPUTF8Str)] string name, IntPtr buffer);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_global_texture(int register_slot, IntPtr texture);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern IntPtr       render_get_global_texture(int register_slot);
 		[DllImport(dll, CharSet = cSet, CallingConvention = call)] public static extern void         render_global_buffer(int register_slot, IntPtr buffer);

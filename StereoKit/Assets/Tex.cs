@@ -41,6 +41,14 @@ namespace StereoKit
 		/// array, and cubemap textures this is 1. This will be a blocking
 		/// call if AssetState is less than LoadedMeta. </summary>
 		public int Depth => NativeAPI.tex_get_depth(_inst);
+		/// <summary>The number of layers in this texture: 6 for a cubemap,
+		/// the layer count for a texture array, and 1 otherwise. This will
+		/// be a blocking call if AssetState is less than LoadedMeta.</summary>
+		public int ArrayCount => NativeAPI.tex_get_array_count(_inst);
+		/// <summary>The type flags this texture has, like whether it's a
+		/// cubemap, has mips, or is a rendertarget. This will be a blocking
+		/// call if AssetState is less than LoadedMeta.</summary>
+		public TexType Type => NativeAPI.tex_get_type(_inst);
 		/// <summary>The number of mip-map levels this texture has. This will
 		/// be 1 if the texture doesn't have mip mapping enabled. This will be
 		/// a blocking call if AssetState is less than LoadedMeta.</summary>
@@ -59,7 +67,10 @@ namespace StereoKit
 
 		/// <summary> Textures are loaded asyncronously, so this tells you the
 		/// current state of this texture! This also can tell if an error
-		/// occured, and what type of error it may have been. </summary>
+		/// occured, and what type of error it may have been. New data set on
+		/// a loaded texture reads as LoadedMeta until it lands. In the
+		/// meantime its metadata, like Format, already describes the new
+		/// data, while the previous pixels are still what draws. </summary>
 		public AssetState AssetState => NativeAPI.tex_asset_state(_inst);
 
 		/// <summary> This will override the default fallback texutre that gets
@@ -1437,10 +1448,16 @@ namespace StereoKit
 		/// <param name="maxResolution">Cap for the reflection texture's face
 		/// resolution when a new texture is created. Reflection data is
 		/// low frequency, so this can stay small.</param>
+		/// <param name="flags">Compression and Blocking are used here,
+		/// since a reflection is always opaque color in a known format.
+		/// TexData.None uses the default compression, and CompressNone
+		/// keeps the convolved texture as is, which can still be rendered
+		/// into. Blocking waits for the source to load and the reflection
+		/// to finish before returning.</param>
 		/// <returns>The reflection cubemap, or null on failure.</returns>
-		public static Tex GenCubemapReflection(Tex sourceCubemap, Tex into = null, int maxResolution = 64)
+		public static Tex GenCubemapReflection(Tex sourceCubemap, Tex into = null, int maxResolution = 64, TexData flags = TexData.None)
 		{
-			IntPtr tex = NativeAPI.tex_gen_cubemap_reflection(sourceCubemap?._inst ?? IntPtr.Zero, into?._inst ?? IntPtr.Zero, maxResolution);
+			IntPtr tex = NativeAPI.tex_gen_cubemap_reflection(sourceCubemap?._inst ?? IntPtr.Zero, into?._inst ?? IntPtr.Zero, maxResolution, flags);
 			return tex == IntPtr.Zero ? null : new Tex(tex);
 		}
 		#endregion

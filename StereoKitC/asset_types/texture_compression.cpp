@@ -308,17 +308,18 @@ tex_format_ tex_compress_pick(tex_data_ flags, tex_data_ default_policy, tex_typ
 	// GPU written or CPU updated textures can't be block compressed.
 	const tex_type_ refuse = tex_type_rendertarget | tex_type_depth | tex_type_depthtarget | tex_type_dynamic | tex_type_compute | tex_type_volume;
 	if (type & refuse)                                            return tex_format_none;
-	if (array_count != 1 && !(array_count == 6 && (type & tex_type_cubemap))) return tex_format_none;
+	if ((type & tex_type_cubemap) && array_count != 6)            return tex_format_none;
 	// Formats need at least one whole block, and 8x8 is the largest.
 	if (width < 8 || height < 8)                                  return tex_format_none;
 
 	// A device uses one family, ASTC when it can, so formats never mix.
 	bool alpha = src_alpha && !(flags & tex_data_opaque);
 	if (tex_format_is_hdr_source(src_format)) {
+		// Neither HDR encoder stores alpha.
+		if (alpha) return tex_format_none;
 		// TODO: a higher quality ASTC HDR block size than 8x8.
 		if (caps.astc) return caps.astc_hdr ? tex_format_astc8x8_rgba_hdr : tex_format_none;
-		// BC6H has no alpha channel.
-		if (caps.bc && !alpha) return tex_format_bc6h_rgbuf;
+		if (caps.bc)   return tex_format_bc6h_rgbuf;
 		return tex_format_none;
 	}
 	if (!tex_format_is_ldr_source(src_format)) return tex_format_none;
@@ -412,9 +413,7 @@ skr_tex_t tex_compress_gpu(skr_tex_t* source, tex_format_ format, skr_tex_sample
 	if (!tex_compress_encoder(format, &enc_fmt, &enc_flags))
 		return {};
 
-	return (source->flags & skr_tex_flags_cubemap)
-		? sk_texenc_cube(source, enc_fmt, enc_flags, sampler)
-		: sk_texenc_2d  (source, enc_fmt, enc_flags, sampler);
+	return sk_texenc_encode(source, enc_fmt, enc_flags, sampler);
 }
 
 }

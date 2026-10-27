@@ -25,6 +25,7 @@ struct _tex_t {
 	int32_t          width;
 	int32_t          height;
 	int32_t          depth;
+	int32_t          array_count;     // layers, 6 for a cubemap, known with the meta before gpu_tex exists
 	tex_format_      format;
 	uint64_t         meta_hash;
 	tex_format_      data_format;     // what uploads arrive as, `format` may be its compressed form
@@ -34,6 +35,7 @@ struct _tex_t {
 	int32_t          write_running;   // atomic, 1 while a thread writes gpu_tex, see tex_write_begin
 	int32_t          write_issued;    // atomic, number of the newest write requested
 	int32_t          write_landed;    // atomic, number of the newest write landed, set under write_running
+	int32_t          write_shown;     // atomic, newest write whose content is in place, set as a write ends
 
 	tex_type_        type;
 	tex_sample_      sample_mode;

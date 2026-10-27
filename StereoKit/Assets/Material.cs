@@ -516,9 +516,11 @@ namespace StereoKit
 		/// provided value. If no parameter is found, nothing happens, and
 		/// the value is not set!</summary>
 		/// <param name="name">Name of the shader parameter.</param>
-		/// <param name="value">New value for the parameter.</param>
+		/// <param name="value">New value for the parameter. Null returns the
+		/// texture to the shader's default, which a global texture set via
+		/// Renderer.SetGlobalTexture can fill.</param>
 		public void SetTexture(string name, Tex value)
-			=> NativeAPI.material_set_texture(_inst, name, value._inst);
+			=> NativeAPI.material_set_texture(_inst, name, value?._inst ?? IntPtr.Zero);
 
 		/// <summary>Sets a RW/StructuredBuffer or ByteAddressBuffer on the
 		/// shader. This is used to provide BIG arrays of data to the
@@ -670,12 +672,12 @@ namespace StereoKit
 		/// Matrix.Identity.</returns>
 		public Matrix GetMatrix(string name) => NativeAPI.material_get_matrix(_inst, name);
 
-		/// <summary>Gets the value of a shader parameter with the given name.
-		/// If no parameter is found, a default value of null will be returned.
-		/// </summary>
+		/// <summary>Gets the texture this Material has set for the shader
+		/// parameter with the given name. This is null if the parameter isn't
+		/// found, or if it's at the shader's default, where a global texture
+		/// may fill it instead. Use `HasParam` to tell those apart.</summary>
 		/// <param name="name">Name of the shader parameter.</param>
-		/// <returns>The parameter's value, if present, otherwise null.
-		/// </returns>
+		/// <returns>The texture this Material set, otherwise null.</returns>
 		public Tex GetTexture(string name) {
 			IntPtr result = NativeAPI.material_get_texture(_inst, name);
 			return result == IntPtr.Zero

@@ -139,14 +139,26 @@ struct render_action_viewpoint_t {
 	int32_t       post_process_count;
 };
 
+// sk_renderer matches global names on their first 31 characters
+typedef char render_global_name_t[32];
+
+struct render_global_t {
+	render_global_name_t name; // empty for deprecated register globals
+	int32_t              slot; // -1 for named globals
+	tex_t                tex;
+	material_buffer_t    buffer;
+};
+
 struct render_action_global_texture_t {
-	tex_t   texture;
-	int32_t slot;
+	render_global_name_t name;
+	int32_t              slot;
+	tex_t                texture;
 };
 
 struct render_action_global_buffer_t {
-	material_buffer_t buffer;
-	int32_t           slot;
+	render_global_name_t name;
+	int32_t              slot;
+	material_buffer_t    buffer;
 };
 
 struct render_action_compute_t {
@@ -194,13 +206,8 @@ struct render_state_t {
 	render_layer_           primary_filter;
 	render_layer_           capture_filter;
 	bool                    use_capture_filter;
-	// global_textures: used by the renderer, updated via action list during
-	// render_step
-	tex_t                   global_textures    [16];
-	// global_textures_app: tracks what the app has set, updated immediately
-	// for application queries
-	tex_t                   global_textures_app[16];
-	material_buffer_t       global_buffers     [16];
+	array_t<render_global_t> globals;     // what draws bind, updated through the action list
+	array_t<render_global_t> globals_app; // what the app last set, for render_get_global_tex
 
 	array_t<render_screenshot_t>       screenshot_list;
 	array_t<render_pending_readback_t> pending_readbacks;
@@ -217,6 +224,8 @@ static render_state_t local = {};
 void render_save_to_file(void* data, tex_format_ format, int width, int height, void* context);
 void render_list_add    (const render_item_t *item);
 void render_list_add_to (render_list_t list, const render_item_t *item);
+static void render_global_bind_tex   (const char* name, int32_t slot, tex_t             texture);
+static void render_global_bind_buffer(const char* name, int32_t slot, material_buffer_t buffer);
 
 ///////////////////////////////////////////
 
@@ -304,18 +313,19 @@ void render_shutdown() {
 	}
 	local.render_action_list.free();
 
-	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
-		tex_release(local.global_textures[i]);
-		local.global_textures[i] = nullptr;
+	for (int32_t i = 0; i < local.globals.count; i++) {
+		render_global_t* g = &local.globals[i];
+		render_global_bind_tex   (g->name, g->slot, nullptr);
+		render_global_bind_buffer(g->name, g->slot, nullptr);
+		tex_release            (g->tex);
+		material_buffer_release(g->buffer);
 	}
-	for (int32_t i = 0; i < _countof(local.global_textures_app); i++) {
-		tex_release(local.global_textures_app[i]);
-		local.global_textures_app[i] = nullptr;
+	for (int32_t i = 0; i < local.globals_app.count; i++) {
+		tex_release            (local.globals_app[i].tex);
+		material_buffer_release(local.globals_app[i].buffer);
 	}
-	for (int32_t i = 0; i < _countof(local.global_buffers); i++) {
-		material_buffer_release(local.global_buffers[i]);
-		local.global_buffers[i] = {};
-	}
+	local.globals    .free();
+	local.globals_app.free();
 	material_buffer_release(local.shader_globals);
 
 	skr_buffer_destroy     (&local.shader_blit);
@@ -752,20 +762,6 @@ gpu_memory_t render_get_gpu_memory() {
 
 ///////////////////////////////////////////
 
-void render_global_texture_internal(int32_t register_slot, tex_t texture) {
-	if (local.global_textures[register_slot] == texture) return;
-
-	if (local.global_textures[register_slot] != nullptr)
-		tex_release(local.global_textures[register_slot]);
-
-	local.global_textures[register_slot] = texture;
-
-	if (local.global_textures[register_slot] != nullptr)
-		tex_addref(local.global_textures[register_slot]);
-}
-
-///////////////////////////////////////////
-
 void render_queue_compute(compute_t compute, uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z) {
 	if (compute == nullptr) return;
 	compute_addref(compute);
@@ -781,69 +777,173 @@ void render_queue_compute(compute_t compute, uint32_t group_count_x, uint32_t gr
 
 ///////////////////////////////////////////
 
-void render_global_texture(int32_t register_slot, tex_t texture) {
-	if (register_slot < 0 || register_slot >= _countof(local.global_textures)) {
-		log_errf("render_global_texture: Register_slot should be 0-16. Received %d.", register_slot);
-		return;
-	}
+static void render_global_name(const char* name, render_global_name_t out_name) {
+	strncpy(out_name, name, sizeof(render_global_name_t) - 1);
+	out_name[sizeof(render_global_name_t) - 1] = '\0';
+}
 
-	// Update app tracking immediately for application queries
-	if (local.global_textures_app[register_slot] != texture) {
-		if (local.global_textures_app[register_slot] != nullptr)
-			tex_release(local.global_textures_app[register_slot]);
-		local.global_textures_app[register_slot] = texture;
-		if (texture != nullptr) tex_addref(texture);
-	}
+///////////////////////////////////////////
 
-	// Queue action for renderer update
+static int32_t render_global_find(const array_t<render_global_t>* globals, const char* name, int32_t slot) {
+	for (int32_t i = 0; i < globals->count; i++) {
+		if ((*globals)[i].slot == slot && strcmp((*globals)[i].name, name) == 0)
+			return i;
+	}
+	return -1;
+}
+
+///////////////////////////////////////////
+
+static render_global_t* render_global_get(array_t<render_global_t>* globals, const char* name, int32_t slot) {
+	int32_t idx = render_global_find(globals, name, slot);
+	if (idx < 0) {
+		render_global_t g = {};
+		render_global_name(name, g.name);
+		g.slot = slot;
+		idx    = globals->add(g);
+	}
+	return &(*globals)[idx];
+}
+
+///////////////////////////////////////////
+
+static void render_global_set_tex(array_t<render_global_t>* globals, const char* name, int32_t slot, tex_t texture) {
+	if (texture == nullptr && render_global_find(globals, name, slot) < 0) return;
+
+	render_global_t* g = render_global_get(globals, name, slot);
 	if (texture != nullptr) tex_addref(texture);
+	tex_release(g->tex);
+	g->tex = texture;
+	if (g->tex == nullptr && g->buffer == nullptr)
+		globals->remove((int32_t)(g - globals->data));
+}
 
+///////////////////////////////////////////
+
+static void render_global_set_buffer(array_t<render_global_t>* globals, const char* name, int32_t slot, material_buffer_t buffer) {
+	if (buffer == nullptr && render_global_find(globals, name, slot) < 0) return;
+
+	render_global_t* g = render_global_get(globals, name, slot);
+	if (buffer != nullptr) material_buffer_addref(buffer);
+	material_buffer_release(g->buffer);
+	g->buffer = buffer;
+	if (g->tex == nullptr && g->buffer == nullptr)
+		globals->remove((int32_t)(g - globals->data));
+}
+
+///////////////////////////////////////////
+
+static void render_global_bind_tex(const char* name, int32_t slot, tex_t texture) {
+	const skr_tex_t* gpu = texture == nullptr ? nullptr
+		: texture->fallback != nullptr        ? &texture->fallback->gpu_tex
+		:                                       &texture->gpu_tex;
+	if (slot < 0) skr_renderer_set_global_tex    (name, gpu);
+	else          skr_renderer_set_global_texture(slot, gpu);
+}
+
+///////////////////////////////////////////
+
+static void render_global_bind_buffer(const char* name, int32_t slot, material_buffer_t buffer) {
+	const skr_buffer_t* gpu = buffer != nullptr ? &buffer->buffer : nullptr;
+	if (slot < 0) skr_renderer_set_global_buffer   (name, gpu);
+	else          skr_renderer_set_global_constants(slot, gpu);
+}
+
+///////////////////////////////////////////
+
+static void render_global_queue_tex(const char* name, int32_t slot, tex_t texture) {
+	render_global_set_tex(&local.globals_app, name, slot, texture);
+
+	if (texture != nullptr) tex_addref(texture);
 	render_action_t action = {};
-	action.type = render_action_type_global_texture;
+	action.type                   = render_action_type_global_texture;
+	action.global_texture.slot    = slot;
 	action.global_texture.texture = texture;
-	action.global_texture.slot    = register_slot;
+	render_global_name(name, action.global_texture.name);
 	local.render_action_list.add(action);
 }
 
 ///////////////////////////////////////////
 
-tex_t render_get_global_texture(int32_t register_slot) {
-	if (register_slot < 0 || register_slot >= _countof(local.global_textures_app)) {
-		log_errf("render_get_global_texture: Register_slot should be 0-16. Received %d.", register_slot);
-		return nullptr;
-	}
-	tex_t result = local.global_textures_app[register_slot];
+static void render_global_queue_buffer(const char* name, int32_t slot, material_buffer_t buffer) {
+	if (buffer != nullptr) material_buffer_addref(buffer);
+	render_action_t action = {};
+	action.type                 = render_action_type_global_buffer;
+	action.global_buffer.slot   = slot;
+	action.global_buffer.buffer = buffer;
+	render_global_name(name, action.global_buffer.name);
+	local.render_action_list.add(action);
+}
+
+///////////////////////////////////////////
+
+// sk_renderer holds no ref, so it gets the new value before the old is released
+static void render_global_apply_tex(const render_action_global_texture_t* action) {
+	render_global_bind_tex(action->name, action->slot, action->texture);
+	render_global_set_tex (&local.globals, action->name, action->slot, action->texture);
+}
+
+///////////////////////////////////////////
+
+static void render_global_apply_buffer(const render_action_global_buffer_t* action) {
+	render_global_bind_buffer(action->name, action->slot, action->buffer);
+	render_global_set_buffer (&local.globals, action->name, action->slot, action->buffer);
+}
+
+///////////////////////////////////////////
+
+void render_set_global_tex(const char* name, tex_t texture) {
+	render_global_name_t key;
+	render_global_name(name, key);
+	render_global_queue_tex(key, -1, texture);
+}
+
+///////////////////////////////////////////
+
+tex_t render_get_global_tex(const char* name) {
+	render_global_name_t key;
+	render_global_name(name, key);
+	int32_t idx    = render_global_find(&local.globals_app, key, -1);
+	tex_t   result = idx >= 0 ? local.globals_app[idx].tex : nullptr;
 	if (result != nullptr) tex_addref(result);
 	return result;
 }
 
 ///////////////////////////////////////////
 
-void render_global_buffer_internal(int32_t register_slot, material_buffer_t buffer) {
-	if (register_slot >= 0) {
-		if (buffer)
-			material_buffer_addref(buffer);
-		if (local.global_buffers[register_slot] != nullptr)
-			material_buffer_release(local.global_buffers[register_slot]);
-		local.global_buffers[register_slot] = buffer;
+void render_set_global_buffer(const char* name, material_buffer_t buffer) {
+	render_global_name_t key;
+	render_global_name(name, key);
+	render_global_queue_buffer(key, -1, buffer);
+}
+
+///////////////////////////////////////////
+
+void render_global_texture(int32_t register_slot, tex_t texture) {
+	if (register_slot < 0 || register_slot >= 16) {
+		log_errf("render_global_texture: Register_slot should be 0-15. Received %d.", register_slot);
+		return;
 	}
+	render_global_queue_tex("", register_slot, texture);
+}
+
+///////////////////////////////////////////
+
+tex_t render_get_global_texture(int32_t register_slot) {
+	int32_t idx    = render_global_find(&local.globals_app, "", register_slot);
+	tex_t   result = idx >= 0 ? local.globals_app[idx].tex : nullptr;
+	if (result != nullptr) tex_addref(result);
+	return result;
 }
 
 ///////////////////////////////////////////
 
 void render_global_buffer(int32_t register_slot, material_buffer_t buffer) {
-	if ((register_slot >= 0 && register_slot < 3) || register_slot >= (sizeof(local.global_buffers) / sizeof(local.global_buffers[0]))) {
-		log_errf("render_global_buffer: bad slot id '%d', use 3-%d.", register_slot, (sizeof(local.global_buffers) / sizeof(local.global_buffers[0])) - 1);
+	if (register_slot < 3 || register_slot >= 16) {
+		log_errf("render_global_buffer: bad slot id '%d', use 3-15.", register_slot);
 		return;
 	}
-
-	if (buffer) material_buffer_addref(buffer);
-
-	render_action_t action = {};
-	action.type = render_action_type_global_buffer;
-	action.global_buffer.buffer = buffer;
-	action.global_buffer.slot   = register_slot;
-	local.render_action_list.add(action);
+	render_global_queue_buffer("", register_slot, buffer);
 }
 
 ///////////////////////////////////////////
@@ -928,7 +1028,8 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	// mip index for stereokit_pbr.hlsli's roughness curve, .w the constant
 	// term of its footprint mip clamp. 1.8006 = 4*sqrt(2)/pi: reflections
 	// rotate at 2x the normal, faces span pi/2, variance halves the square.
-	tex_t reflection_tex = local.global_textures[render_reflection_register];
+	int32_t reflection_idx = render_global_find(&local.globals, render_reflection_global, -1);
+	tex_t   reflection_tex = reflection_idx >= 0 ? local.globals[reflection_idx].tex : nullptr;
 	local.global_buffer.cubemap_i = reflection_tex != nullptr
 		? vec4{ (float)reflection_tex->width, (float)reflection_tex->height,
 		        reflection_tex->gpu_tex.mip_levels > 0 ? (float)(reflection_tex->gpu_tex.mip_levels - 1) : 0,
@@ -938,20 +1039,11 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 	// Upload shader globals
 	material_buffer_set_data(local.shader_globals, &local.global_buffer);
 
-	// Set global constant buffers for sk_renderer
-	for (int32_t i = 0; i < _countof(local.global_buffers); i++) {
-		if (local.global_buffers[i] != nullptr)
-			skr_renderer_set_global_constants(i, &local.global_buffers[i]->buffer);
-	}
-
-	// Set global textures for sk_renderer
-	for (int32_t i = 0; i < _countof(local.global_textures); i++) {
-		if (local.global_textures[i] != nullptr) {
-			skr_tex_t *tex = local.global_textures[i]->fallback == nullptr
-				? &local.global_textures[i]->gpu_tex
-				: &local.global_textures[i]->fallback->gpu_tex;
-			skr_renderer_set_global_texture(i, tex);
-		}
+	// Every draw, since fallbacks resolve and render targets need transitions
+	for (int32_t i = 0; i < local.globals.count; i++) {
+		const render_global_t* g = &local.globals[i];
+		render_global_bind_tex   (g->name, g->slot, g->tex);
+		render_global_bind_buffer(g->name, g->slot, g->buffer);
 	}
 
 	render_list_execute(list, filter, material_variant, 0, INT_MAX);
@@ -1273,8 +1365,8 @@ void render_action_list_execute() {
 		render_action_t* a = &local.render_action_list[i];
 		switch (a->type) {
 		case render_action_type_viewpoint:      render_draw_viewpoint(&a->viewpoint); break;
-		case render_action_type_global_buffer:  render_global_buffer_internal ( a->global_buffer .slot, a->global_buffer .buffer ); material_buffer_release(a->global_buffer .buffer ); break;
-		case render_action_type_global_texture: render_global_texture_internal( a->global_texture.slot, a->global_texture.texture); tex_release            (a->global_texture.texture); break;
+		case render_action_type_global_buffer:  render_global_apply_buffer(&a->global_buffer ); material_buffer_release(a->global_buffer .buffer ); break;
+		case render_action_type_global_texture: render_global_apply_tex   (&a->global_texture); tex_release            (a->global_texture.texture); break;
 		case render_action_type_compute:        compute_dispatch_now          ( a->compute       .compute, a->compute.groups[0], a->compute.groups[1], a->compute.groups[2]); compute_release(a->compute.compute); break;
 		default: break;
 		}

@@ -215,6 +215,29 @@ static void tst_volume() {
 	free(px);
 }
 
+static void tst_type_and_layers() {
+	const int32_t size = 8;
+	color32  px[size * size];
+	color32* layers[6] = { px, px, px, px, px, px };
+	tst_fill(px, size * size, color32{ 1, 2, 3, 255 });
+
+	tex_t flat = tex_create_color32(px, size, size, tex_data_blocking | tex_data_compress_none);
+	TST_CHECK(tex_get_array_count(flat) == 1 && (tex_get_type(flat) & tex_type_cubemap) == 0, "a 2D texture has one layer");
+
+	tex_t array = tex_create(tex_type_image_nomips, tex_format_rgba32);
+	tex_set_color_arr(array, size, size, (void**)layers, 3, 1, tex_data_blocking | tex_data_compress_none);
+	TST_CHECK(tex_get_array_count(array) == 3, "an array reports its layers");
+
+	tex_t cube = tex_create(tex_type_image_nomips | tex_type_cubemap, tex_format_rgba32);
+	TST_CHECK(tex_get_array_count(cube) == 6 && (tex_get_type(cube) & tex_type_cubemap) != 0, "a cubemap has six layers before its data lands");
+	tex_set_color_arr(cube, size, size, (void**)layers, 6, 1, tex_data_blocking | tex_data_compress_none);
+	TST_CHECK(tex_get_array_count(cube) == 6, "a cubemap has six layers");
+
+	tex_release(cube);
+	tex_release(array);
+	tex_release(flat);
+}
+
 static void tst_dynamic() {
 	const int32_t size = 32;
 	color32 px[size * size];
@@ -477,6 +500,7 @@ int tex_tests_run() {
 		tst_blocking_model();
 		tst_set_size();
 		tst_volume();
+		tst_type_and_layers();
 		tst_dynamic();
 		tst_data_format();
 		tst_formatless();

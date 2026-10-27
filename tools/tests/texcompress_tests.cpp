@@ -8,6 +8,8 @@
 
 // Internal compression helpers, reached through StereoKitC's include root.
 #include <asset_types/texture_compression.h>
+#include <asset_types/texture.h>
+#include <libraries/atomic_util.h>
 
 // The test builds its own image files, and StereoKitC keeps its copy of the
 // encoder private.
@@ -15,6 +17,7 @@
 #include <libraries/qoi.h>
 
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 
 using namespace sk;
@@ -94,7 +97,8 @@ static void tct_test_hdr() {
 	TCT_CHECK(tct_pick(tex_data_none, tct_bc, false, tex_format_rgba64f) == tex_format_bc6h_rgbuf, "half RGBA is an HDR source");
 	TCT_CHECK(tct_pick(tex_data_none, tct_bc, true,  tex_format_rgba128) == tex_format_none,       "HDR with alpha stays uncompressed on BC");
 	TCT_CHECK(tct_pick(tex_data_opaque, tct_bc, true, tex_format_rgba128) == tex_format_bc6h_rgbuf, "opaque HDR drops its alpha into BC6H");
-	TCT_CHECK(tct_pick(tex_data_none, tct_astc, true, tex_format_rgba128) == tex_format_astc8x8_rgba_hdr, "ASTC HDR keeps alpha");
+	TCT_CHECK(tct_pick(tex_data_none, tct_astc, true, tex_format_rgba128) == tex_format_none,       "HDR with alpha stays uncompressed on ASTC");
+	TCT_CHECK(tct_pick(tex_data_opaque, tct_astc, true, tex_format_rgba128) == tex_format_astc8x8_rgba_hdr, "opaque HDR drops its alpha into ASTC 8x8 HDR");
 	TCT_CHECK(tct_pick(tex_data_none, tct_bc, false, tex_format_r8)     == tex_format_none,        "single channel data stays uncompressed");
 }
 
@@ -109,7 +113,8 @@ static void tct_test_refusals() {
 	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32,  tex_type_image, 4)  == tex_format_none,              "LDR smaller than a block stays uncompressed");
 	TCT_CHECK(tct_pick(tex_data_none, tct_bc,   false, tex_format_rg11b10, tex_type_image, 32) == tex_format_bc6h_rgbuf, "small HDR still compresses");
 	TCT_CHECK(tct_pick(tex_data_none, tct_bc,   false, tex_format_rg11b10, tex_type_image, 4)  == tex_format_none,       "HDR smaller than a block stays uncompressed");
-	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32, tex_type_image, 256, 4) == tex_format_none, "texture arrays stay uncompressed for now");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32, tex_type_image, 256, 4) == tex_format_astc4x4_rgba_srgb, "texture arrays compress");
+	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32, tex_type_image | tex_type_cubemap, 256, 12) == tex_format_none, "cubemaps need exactly 6 layers");
 	TCT_CHECK(tct_pick(tex_data_srgb, tct_astc, false, tex_format_rgba32, tex_type_image_nomips | tex_type_cubemap, 256, 6) == tex_format_astc4x4_rgba_srgb, "cubemaps compress");
 }
 
@@ -259,6 +264,15 @@ static void tct_test_set_colors() {
 	color32* readback = (color32*)malloc(sizeof(color32) * small * small);
 	tex_get_data(latest, readback, sizeof(color32) * small * small, 0);
 	TCT_CHECK(readback[0].r == 31, "the last of many async updates wins");
+
+	// Holding the write lock keeps a replacement in flight, as a slow encode would
+	atomic_exchange_i32(&latest->write_running, 1);
+	tct_fill(pixels, small * small, color32{ 77, 0, 0, 255 });
+	tex_set_colors(latest, small, small, pixels, tex_data_srgb | tex_data_compress_none);
+	TCT_CHECK(tex_asset_state(latest) == asset_state_loaded_meta, "a loaded texture reads as loaded_meta while new data is in flight");
+	atomic_exchange_i32(&latest->write_running, 0);
+	tex_get_data(latest, readback, sizeof(color32) * small * small, 0);
+	TCT_CHECK(readback[0].r == 77 && tex_asset_state(latest) == asset_state_loaded, "reading data waits for a replacement to land");
 	free(readback);
 
 	// An explicit float format is an HDR source for this call
@@ -346,6 +360,124 @@ static void tct_test_copy() {
 
 ///////////////////////////////////////////
 
+// Arrays and cubes encode every layer and mip in one pass
+static void tct_test_layers() {
+	tex_compress_caps_t caps   = tex_compress_caps();
+	const int32_t       size   = 64;
+	const int32_t       layers = 4;
+	color32*            pixels[6];
+	for (int32_t l = 0; l < 6; l++) {
+		pixels[l] = (color32*)malloc(sizeof(color32) * size * size);
+		tct_fill(pixels[l], size * size, color32{ (uint8_t)(l * 40), 100, 200, 255 });
+	}
+
+	tex_format_ expect_array = tex_compress_pick(tex_data_srgb, tex_data_compress_quality, tex_type_image, tex_format_rgba32, true, size, size, layers, caps);
+	if (expect_array == tex_format_none) expect_array = tex_format_rgba32;
+	tex_t array = tex_create(tex_type_image, tex_format_rgba32);
+	tex_set_color_arr(array, size, size, (void**)pixels, layers, 1, tex_data_srgb | tex_data_blocking);
+	TCT_CHECK(tex_asset_state(array) == asset_state_loaded && tex_get_format(array) == expect_array, "a texture array compresses");
+	TCT_CHECK(tex_get_mips(array) == 7 && array->gpu_tex.layer_count == layers,                       "a compressed array keeps every layer and mip");
+	TCT_CHECK((array->gpu_tex.flags & skr_tex_flags_array) != 0,                                     "a compressed array is still an array");
+
+	tex_t array_copy = tex_copy(array, tex_type_image, tex_format_none, tex_data_srgb);
+	TCT_CHECK(tex_get_format(array_copy) == tex_get_format(array) && array_copy->gpu_tex.layer_count == layers, "an array copy keeps its layers and format");
+
+	tex_format_ expect_cube = tex_compress_pick(tex_data_srgb, tex_data_compress_quality, tex_type_image | tex_type_cubemap, tex_format_rgba32, true, size, size, 6, caps);
+	if (expect_cube == tex_format_none) expect_cube = tex_format_rgba32;
+	tex_t cube = tex_create(tex_type_image | tex_type_cubemap, tex_format_rgba32);
+	tex_set_color_arr(cube, size, size, (void**)pixels, 6, 1, tex_data_srgb | tex_data_blocking);
+	TCT_CHECK(tex_get_format(cube) == expect_cube && tex_get_mips(cube) == 7, "a cubemap with mips compresses every face and mip");
+	TCT_CHECK((cube->gpu_tex.flags & skr_tex_flags_cubemap) != 0,             "a compressed cubemap is still a cubemap");
+
+	tex_release(cube);
+	tex_release(array_copy);
+	tex_release(array);
+	for (int32_t l = 0; l < 6; l++) free(pixels[l]);
+}
+
+///////////////////////////////////////////
+
+static tex_t tct_hdr_cube(int32_t size, float scale) {
+	color128* faces[6];
+	for (int32_t f = 0; f < 6; f++) {
+		faces[f] = (color128*)malloc(sizeof(color128) * size * size);
+		for (int32_t i = 0; i < size * size; i++)
+			faces[f][i] = color128{ scale * (f + 1), scale * 0.5f * (i % size) / size, scale * (6 - f) * 0.25f, 1 };
+	}
+	tex_t cube = tex_create(tex_type_image_nomips | tex_type_cubemap, tex_format_rgba128);
+	tex_set_color_arr(cube, size, size, (void**)faces, 6, 1, tex_data_blocking | tex_data_compress_none);
+	for (int32_t f = 0; f < 6; f++) free(faces[f]);
+	return cube;
+}
+
+static bool tct_sh_close(spherical_harmonics_t a, spherical_harmonics_t b) {
+	for (int32_t i = 0; i < 9; i++) {
+		vec3 d = a.coefficients[i] - b.coefficients[i];
+		if (fabsf(d.x) > 1e-3f || fabsf(d.y) > 1e-3f || fabsf(d.z) > 1e-3f) return false;
+	}
+	return true;
+}
+
+static void tct_test_reflection() {
+	tex_compress_caps_t caps   = tex_compress_caps();
+	const int32_t       size   = 64;
+	tex_t               bright = tct_hdr_cube(128, 2.0f);
+	tex_t               dim    = tct_hdr_cube(128, 0.5f);
+
+	tex_format_ expect = tex_compress_pick(tex_data_opaque, tex_get_compression_default(), tex_type_image | tex_type_cubemap, tex_format_rgba128, false, size, size, 6, caps);
+	if (expect == tex_format_none) expect = tex_format_rgba128;
+
+	tex_t raw  = tex_gen_cubemap_reflection(bright, nullptr, size, tex_data_compress_none);
+	tex_t refl = tex_gen_cubemap_reflection(bright, nullptr, size);
+	assets_block_for_priority(INT32_MAX);
+	TCT_CHECK(tex_asset_state(refl) == asset_state_loaded && tex_get_format(refl) == expect, "reflections compress by default");
+	TCT_CHECK(tex_get_input_format(refl) == tex_format_rgba128 && tex_get_mips(refl) == 7,  "a compressed reflection keeps its convolution format as input, and every mip");
+	TCT_CHECK(tex_get_format(raw) == tex_format_rgba128 && (raw->type & tex_type_rendertarget) != 0, "CompressNone keeps a reflection convolved in place");
+	TCT_CHECK(tct_sh_close(tex_get_cubemap_lighting(refl), tex_get_cubemap_lighting(raw)), "compression doesn't change a reflection's lighting");
+
+	// Regenerating into the same texture, with the later request winning
+	tex_t dim_raw = tex_gen_cubemap_reflection(dim, nullptr, size, tex_data_compress_none);
+	tex_t again   = tex_gen_cubemap_reflection(bright, refl, size);
+	tex_t latest  = tex_gen_cubemap_reflection(dim,    refl, size);
+	assets_block_for_priority(INT32_MAX);
+	TCT_CHECK(again == refl && latest == refl,                                                  "regenerating returns the same reflection");
+	TCT_CHECK(tex_asset_state(refl) == asset_state_loaded && tex_get_format(refl) == expect,    "a compressed reflection regenerates compressed");
+	TCT_CHECK(tct_sh_close(tex_get_cubemap_lighting(refl), tex_get_cubemap_lighting(dim_raw)), "the latest regeneration wins");
+
+	tex_t uncompressed = tex_gen_cubemap_reflection(bright, refl, size, tex_data_compress_none);
+	assets_block_for_priority(INT32_MAX);
+	TCT_CHECK(uncompressed == refl && tex_get_format(refl) == tex_format_rgba128, "a compressed reflection can regenerate uncompressed");
+	TCT_CHECK(tct_sh_close(tex_get_cubemap_lighting(refl), tex_get_cubemap_lighting(raw)), "an uncompressed regeneration carries the new lighting");
+
+	// A source that fails to load leaves the previous reflection in place
+	tex_t missing      = tex_create_cubemap_file("tct_missing_cubemap.hdr");
+	tex_t from_missing = tex_gen_cubemap_reflection(missing, refl, size);
+	assets_block_for_priority(INT32_MAX);
+	TCT_CHECK(tex_asset_state(refl) == asset_state_loaded, "a regeneration from a failed source resolves, keeping the reflection loaded");
+	TCT_CHECK(tct_sh_close(tex_get_cubemap_lighting(refl), tex_get_cubemap_lighting(raw)), "a regeneration from a failed source keeps the previous lighting");
+	tex_release(from_missing);
+	tex_release(missing);
+
+	// Blocking finishes before returning, with no frame or asset stepping
+	tex_t blocked = tex_gen_cubemap_reflection(dim, nullptr, size, tex_data_blocking);
+	TCT_CHECK(tex_asset_state(blocked) == asset_state_loaded && tex_get_format(blocked) == expect, "a blocking reflection is loaded on return");
+	tex_t reblocked = tex_gen_cubemap_reflection(bright, blocked, size, tex_data_blocking);
+	TCT_CHECK(tct_sh_close(tex_get_cubemap_lighting(blocked), tex_get_cubemap_lighting(raw)), "a blocking regeneration lands on return");
+
+	tex_release(reblocked);
+	tex_release(blocked);
+	tex_release(uncompressed);
+	tex_release(latest);
+	tex_release(again);
+	tex_release(dim_raw);
+	tex_release(refl);
+	tex_release(raw);
+	tex_release(dim);
+	tex_release(bright);
+}
+
+///////////////////////////////////////////
+
 int texcompress_tests_run() {
 	tct_failures = 0;
 	log_info("[texcompress_test] Running texture compression tests");
@@ -365,6 +497,8 @@ int texcompress_tests_run() {
 		tct_test_gpu();
 		tct_test_set_colors();
 		tct_test_copy();
+		tct_test_layers();
+		tct_test_reflection();
 		sk_shutdown();
 	} else {
 		TCT_CHECK(false, "sk_init for the GPU tests");

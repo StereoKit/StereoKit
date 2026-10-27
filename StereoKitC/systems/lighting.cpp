@@ -131,7 +131,7 @@ static void check_pending_reflection() {
 		local.reflection = tex;
 
 		// Shaders read the reflection cubemap from the sk_cubemap global.
-		render_global_texture(render_reflection_register, local.reflection);
+		render_set_global_tex(render_reflection_global, local.reflection);
 	}
 }
 
