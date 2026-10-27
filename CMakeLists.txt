@@ -30,7 +30,6 @@ option(SK_LOCAL_SK_RENDERER            "Build using a local version of sk_render
 option(SK_LOCAL_SK_APP                 "Build using a local version of sk_app, instead of the latest release. This is useful for testing in-progress changes to sk_app." OFF)
 option(SK_PROFILE                      "Build with Tracy profiler enabled." OFF)
 option(SK_STRIP_DEBUG_SYMBOLS          "Strip debug symbols from the shared library. Disable on Android to keep symbols embedded for native debugging." ON)
-option(SK_USE_SVSL                     "Compile shaders with skshaderc's SVSL backend instead of the glslang HLSL pipeline." OFF)
 option(SK_THIN_LTO                     "Clang only, Release builds use ThinLTO. Links several times faster, for slightly slower code." OFF)
 option(FORCE_COLORED_OUTPUT            "Always produce ANSI-colored output (GNU/Clang only)." OFF)
 
@@ -96,11 +95,6 @@ endif()
 set(SK_SHADER_VERBOSITY "-si")
 if(CMAKE_VERBOSE_MAKEFILE)
   set(SK_SHADER_VERBOSITY "")
-endif()
-
-set(SK_SHADER_SVSL "")
-if(SK_USE_SVSL)
-  set(SK_SHADER_SVSL "-svsl")
 endif()
 
 ###########################################
@@ -248,18 +242,13 @@ if (ANDROID)
   set(SK_TEXENC_BC   OFF CACHE BOOL "Android is ASTC only" FORCE)
   set(SK_TEXENC_ASTC ON  CACHE BOOL "Android is ASTC only" FORCE)
 endif()
-# If we're only using the SVSL shader compiler, we can drop glslang from
-# skshaderc and save ourselves a lot of binary size and build time!
-if (SK_USE_SVSL)
-  set(SKSHADERC_ENABLE_GLSLANG OFF CACHE BOOL "Not needed with SVSL")
-else()
-  set(SKSHADERC_ENABLE_GLSLANG ON  CACHE BOOL "Required for HLSL shaders")
-endif()
+# SVSL compiles every shader, so glslang is only binary size and build time.
+set(SKSHADERC_ENABLE_GLSLANG OFF CACHE BOOL "Shaders compile with SVSL" FORCE)
 if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.10.26
+    GIT_TAG v2026.10.27
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to
@@ -647,7 +636,7 @@ set_target_properties(StereoKitC PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRE
 
 skshaderc_compile_headers(StereoKitC
   ${CMAKE_BINARY_DIR}/shaders/
-  "-e -O3 -f -z ${SK_SHADER_SVSL} ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+  "-e -O3 -f -z ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
   StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
   StereoKitC/shaders_builtin/shader_builtin_default.hlsl
   StereoKitC/shaders_builtin/shader_builtin_equirect.hlsl
@@ -974,7 +963,7 @@ if (SK_BUILD_TESTS)
 
   skshaderc_compile_headers( StereoKitCTest
     ${CMAKE_BINARY_DIR}/shaders/
-    "-e -O3 -f ${SK_SHADER_SVSL} ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
+    "-e -O3 -f ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
     Examples/StereoKitCTest/Shaders/skt_default_lighting.hlsl
     Examples/StereoKitCTest/Shaders/skt_light_only.hlsl
     Examples/StereoKitCTest/Shaders/skt_shadow.hlsl

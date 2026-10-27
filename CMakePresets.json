@@ -7,18 +7,9 @@
   },
   "configurePresets": [
     {
-      "name":        "SVSL",
-      "description": "Compile shaders with skshaderc's SVSL backend instead of the glslang HLSL pipeline",
-      "hidden":      true,
-      "cacheVariables": {
-        "SK_USE_SVSL": "ON"
-      }
-    },
-    {
       "name":        "Fast",
       "description": "Disable tests and use ThinLTO for faster builds",
       "hidden":      true,
-      "inherits":    ["SVSL"],
       "cacheVariables": {
         "SK_BUILD_TESTS": "OFF",
         "SK_THIN_LTO":    "ON"
@@ -86,7 +77,7 @@
     {
       "name":        "Win32_x64_Debug",
       "description": "Debug build for Win32 x64",
-      "inherits":    ["Win32_x64_Base", "SVSL"]
+      "inherits":    "Win32_x64_Base"
     },
     {
       "name":      "Win32_x64_Debug_Fast",
@@ -103,7 +94,7 @@
     {
       "name":        "Win32_Arm64_Debug",
       "description": "Debug build for Win32 Arm64",
-      "inherits":    ["Win32_Arm64_Base", "SVSL"]
+      "inherits":    "Win32_Arm64_Base"
     },
     {
       "name":      "Win32_Arm64_Debug_Fast",
@@ -161,7 +152,7 @@
     {
       "name":        "MinGW_x64_Debug",
       "description": "Debug cross-compile for Win32 x64 using MinGW",
-      "inherits":    ["MinGW_x64_Base", "BuildType_Debug", "SVSL"]
+      "inherits":    ["MinGW_x64_Base", "BuildType_Debug"]
     },
     {
       "name":      "MinGW_x64_Debug_Fast",
@@ -192,7 +183,7 @@
     {
       "name":        "MinGW_Arm64_Debug",
       "description": "Debug cross-compile for Win32 Arm64 using MinGW (requires llvm-mingw)",
-      "inherits":    ["MinGW_Arm64_Base", "BuildType_Debug", "SVSL"]
+      "inherits":    ["MinGW_Arm64_Base", "BuildType_Debug"]
     },
     {
       "name":      "MinGW_Arm64_Debug_Fast",
@@ -236,7 +227,7 @@
       "name":        "Linux_x64_Debug",
       "description": "Debug build for Linux x64",
       "hidden":      false,
-      "inherits":    ["Linux_x64", "SVSL"],
+      "inherits":    "Linux_x64",
       "binaryDir":   "${sourceDir}/bin/intermediate/Linux_x64_Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
@@ -283,7 +274,7 @@
       "name":        "Linux_Arm64_Debug",
       "description": "Debug build for Linux Arm64",
       "hidden":      false,
-      "inherits":    ["Linux_Arm64", "SVSL"],
+      "inherits":    "Linux_Arm64",
       "binaryDir":   "${sourceDir}/bin/intermediate/Linux_Arm64_Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
@@ -320,7 +311,7 @@
     {
       "name":        "MacOS_Arm64_Debug",
       "description": "Debug build for MacOS ARM64",
-      "inherits":    ["MacOS_Arm64_Base", "BuildType_Debug", "SVSL"],
+      "inherits":    ["MacOS_Arm64_Base", "BuildType_Debug"],
       "binaryDir":   "${sourceDir}/bin/intermediate/MacOS_Arm64_Debug"
     },
     {
@@ -366,7 +357,7 @@
     {
       "name":        "Android_Arm64_Debug",
       "description": "Debug build for Android ARM64",
-      "inherits":    ["Android_Arm64_Base", "BuildType_Debug", "SVSL"],
+      "inherits":    ["Android_Arm64_Base", "BuildType_Debug"],
       "binaryDir":   "${sourceDir}/bin/intermediate/Android_Arm64_Debug"
     },
     {
@@ -409,7 +400,7 @@
     {
       "name":        "Android_x64_Debug",
       "description": "Debug build for Android x64",
-      "inherits":    ["Android_x64_Base", "BuildType_Debug", "SVSL"],
+      "inherits":    ["Android_x64_Base", "BuildType_Debug"],
       "binaryDir":   "${sourceDir}/bin/intermediate/Android_x64_Debug"
     },
     {
