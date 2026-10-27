@@ -320,7 +320,13 @@ void ft_thread_name(ft_thread_t thread, const char* name) {
 	SetThreadDescription(thread, name_wide);
 	free(name_wide);
 #elif defined(__EMSCRIPTEN__)
+	// emscripten_set_thread_name only exists in -pthread builds, and a
+	// single-threaded wasm module has nothing to name.
+	#if defined(__EMSCRIPTEN_PTHREADS__)
 	emscripten_set_thread_name(thread, name);
+	#else
+	(void)thread; (void)name;
+	#endif
 #elif defined(__APPLE__)
 	// macOS pthread_setname_np only works on the current thread
 	if (pthread_equal(thread, pthread_self())) {

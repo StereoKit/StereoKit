@@ -2,6 +2,7 @@
 #include "../openxr.h"
 #include "ext_management.h"
 #include "light_estimation.h"
+#include "../../asset_types/texture_.h"
 
 #include "../../sk_memory.h"
 #include "../../systems/lighting.h"
@@ -524,7 +525,7 @@ bool xr_ext_light_estimation_fetch_reflection(tex_t ref_cubemap) {
 		faces[layer] = dst;
 	}
 
-	tex_set_color_arr(ref_cubemap, res, res, faces, 6);
+	tex_set_color_arr(ref_cubemap, res, res, faces, 6, 1, tex_data_immediate);
 	// The runtime's SH estimate describes this same capture, saving the
 	// first lighting query a GPU projection of the uploaded faces.
 	tex_set_cubemap_lighting(ref_cubemap, local.sh_data);

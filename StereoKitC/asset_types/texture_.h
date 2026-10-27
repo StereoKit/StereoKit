@@ -4,13 +4,20 @@
 
 namespace sk {
 
+const tex_data_ tex_data_policy_mask = tex_data_compress_none | tex_data_compress_quality | tex_data_compress_small;
+// Uploads that must land before the call returns, exactly as given.
+const tex_data_ tex_data_immediate   = tex_data_blocking | tex_data_compress_none;
+
 void        tex_set_zbuffer      (tex_t texture, tex_t depth_texture);
 void        tex_set_options      (tex_t texture, tex_sample_ sample = tex_sample_linear, tex_address_ address_mode = tex_address_wrap, tex_sample_comp_ compare = tex_sample_comp_none, int32_t anisotropy_level = 4);
 size_t      tex_format_size      (tex_format_ format, int32_t width, int32_t height);
 tex_format_ tex_get_tex_format   (int64_t native_fmt);
 int64_t     tex_fmt_to_native    (tex_format_ format);
 tex_format_ tex_get_supported_depth_format(tex_format_ preferred, bool needs_stencil, int32_t multisample);
-void        tex_set_meta         (tex_t texture, int32_t width, int32_t height, int32_t depth, tex_format_ format);
+void        tex_set_meta         (tex_t texture, int32_t width, int32_t height, int32_t depth, int32_t array_count, tex_format_ format);
+bool        tex_format_is_compressed(tex_format_ format);
+bool        tex_format_is_mippable  (tex_format_ format);
+bool        tex_format_has_alpha    (tex_format_ format);
 uint64_t    tex_meta_hash        (tex_t texture);
 
 uint8_t* unzip_malloc(const uint8_t* buffer, int32_t len, int32_t* out_len);

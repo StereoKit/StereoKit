@@ -24,7 +24,7 @@ class TestMaterialBuffer : ITest
 		{ 
 			testBuffer = new MaterialBuffer<MaterialBufferStruct>();
 			testBuffer.Set(data);
-			Renderer.SetGlobalBuffer(13, testBuffer);
+			Renderer.SetGlobalBuffer("material_buffer_test", testBuffer);
 		} 
 		catch (Exception e)
 		{
@@ -34,27 +34,13 @@ class TestMaterialBuffer : ITest
 		return true;
 	}
 
-	bool MaterialBufferId()
-	{
-		Log.Warn("Expected error:");
-		try
-		{
-			// ids for 0-2 should see an error message in the log
-			testBuffer = new MaterialBuffer<MaterialBufferStruct>();
-			Renderer.SetGlobalBuffer(2, testBuffer);
-		}
-		catch { return false; }
-		return true;
-	}
-
 	public void Initialize()
 	{
 		Tests.Test(MaterialBufferTest);
-		Tests.Test(MaterialBufferId);
 	}
 
 	public void Shutdown() {
-		Renderer.SetGlobalBuffer(13, null);
+		Renderer.SetGlobalBuffer("material_buffer_test", null);
 	}
 	public void Step() { }
 }

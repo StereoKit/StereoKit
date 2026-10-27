@@ -650,40 +650,79 @@ namespace StereoKit
 			NativeAPI.render_set_post_process(materials, materials.Length);
 		}
 
-		/// <summary>This attaches a texture resource globally across all
-		/// shaders. StereoKit uses this to attach the sky cubemap for use in
-		/// reflections across all materials (register 11). It can be used for
-		/// things like shadowmaps, wind data, etc. Prefer a higher registers
-		/// (11+) to prevent conflicting with normal Material textures.</summary>
-		/// <param name="textureRegister">The texture resource register the
-		/// texture will bind to. SK uses register 11 already, so values above
-		/// that should be fine.</param>
+		/// <summary>This attaches a texture globally to every shader texture
+		/// with this name, wherever a Material has left that texture at its
+		/// default. StereoKit uses this to provide the reflection cubemap as
+		/// `sk_cubemap`. It can be used for things like shadowmaps, wind
+		/// data, etc. A texture set on the Material itself always wins over
+		/// a global one.</summary>
+		/// <param name="name">The name of the texture in the shader. Only the
+		/// first 31 characters are used, so keep names shorter than that.
+		/// </param>
 		/// <param name="tex">The texture to assign globally. Setting null here
 		/// will clear any texture that is currently bound.</param>
+		public static void SetGlobalTexture(string name, Tex tex) => NativeAPI.render_set_global_tex(name, tex?._inst ?? IntPtr.Zero);
+
+		/// <summary>Gets the texture last assigned globally with
+		/// `SetGlobalTexture`.</summary>
+		/// <param name="name">The name of the texture in the shader.</param>
+		/// <returns>The global texture with this name, or null if none is
+		/// set.</returns>
+		public static Tex GetGlobalTexture(string name) { IntPtr ptr = NativeAPI.render_get_global_tex(name); return ptr == IntPtr.Zero ? null : new Tex(ptr); }
+
+		/// <summary>This attaches a buffer globally to every shader cbuffer
+		/// with this name, wherever a Material has left that buffer unset.
+		/// It can be used for things like shadowmaps, wind data, etc.
+		/// </summary>
+		/// <param name="name">The name of the cbuffer in the shader. Only the
+		/// first 31 characters are used, so keep names shorter than that.
+		/// </param>
+		/// <param name="buffer">The data buffer you would like to bind, or
+		/// null to unbind.</param>
+		public static void SetGlobalBuffer<T>(string name, MaterialBuffer<T> buffer) where T:struct
+			=> NativeAPI.render_set_global_buffer(name, buffer?._inst ?? IntPtr.Zero);
+		/// <summary>This attaches a buffer globally to every shader cbuffer
+		/// with this name, wherever a Material has left that buffer unset.
+		/// This overload is for clearing a buffer with null.</summary>
+		/// <param name="name">The name of the cbuffer in the shader.</param>
+		/// <param name="buffer">Must be null, use a MaterialBuffer to bind
+		/// data.</param>
+		public static void SetGlobalBuffer(string name, object buffer)
+		{
+			if (buffer != null) throw new ArgumentException("Use a MaterialBuffer type here!");
+			NativeAPI.render_set_global_buffer(name, IntPtr.Zero);
+		}
+
+		/// <summary>This attaches a texture resource globally across all
+		/// shaders, by register number. A global set this way overrides any
+		/// texture a Material sets in that register.</summary>
+		/// <param name="textureRegister">The texture resource register the
+		/// texture will bind to.</param>
+		/// <param name="tex">The texture to assign globally. Setting null here
+		/// will clear any texture that is currently bound.</param>
+		[Obsolete("Shaders now share globals by name, use SetGlobalTexture(string, Tex) instead.")]
 		public static void SetGlobalTexture(int textureRegister, Tex tex) => NativeAPI.render_global_texture(textureRegister, tex?._inst ?? IntPtr.Zero);
 
 		/// <summary>This attaches a buffer resource globally across all
-		/// shaders. StereoKit uses this to attach the stereokit rendering
-		/// constants. It can be used for things like shadowmaps, wind data,
-		/// etc.</summary>
-		/// <param name="bufferRegister">Valid values are 3-16. This is the 
+		/// shaders, by register number.</summary>
+		/// <param name="bufferRegister">Valid values are 3-15. This is the 
 		/// register id that this data will be bound to. In HLSL, you'll see
 		/// the slot id for '3' indicated like this `: register(b3)`</param>
 		/// <param name="buffer">The data buffer you would like to bind, or
 		/// null to unbind.</param>
+		[Obsolete("Shaders now share globals by name, use SetGlobalBuffer(string, MaterialBuffer) instead.")]
 		public static void SetGlobalBuffer<T>(int bufferRegister, MaterialBuffer<T> buffer) where T:struct
 		{
 			NativeAPI.render_global_buffer(bufferRegister, buffer?._inst ?? IntPtr.Zero);
 		}
 		/// <summary>This attaches a buffer resource globally across all
-		/// shaders. StereoKit uses this to attach the stereokit rendering
-		/// constants. It can be used for things like shadowmaps, wind data,
-		/// etc.</summary>
-		/// <param name="bufferRegister">Valid values are 3-16. This is the 
+		/// shaders, by register number.</summary>
+		/// <param name="bufferRegister">Valid values are 3-15. This is the 
 		/// register id that this data will be bound to. In HLSL, you'll see
 		/// the slot id for '3' indicated like this `: register(b3)`</param>
 		/// <param name="buffer">The data buffer you would like to bind, or
 		/// null to unbind.</param>
+		[Obsolete("Shaders now share globals by name, use SetGlobalBuffer(string, object) instead.")]
 		public static void SetGlobalBuffer(int bufferRegister, object buffer)
 		{
 			if (buffer != null) throw new ArgumentException("Use a MaterialBuffer type here!");

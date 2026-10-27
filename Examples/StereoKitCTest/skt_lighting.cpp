@@ -51,13 +51,13 @@ material_buffer_t        light_buffer    = {};
 
 void skt_lighting_init() {
 	light_buffer = material_buffer_create(sizeof(skt_light_buffer_t));
-	render_global_buffer(3, light_buffer);
+	render_set_global_buffer("skt_light_buffer", light_buffer);
 }
 
 ///////////////////////////////////////////
 
 void skt_lighting_shutdown() {
-	render_global_buffer(3, nullptr);
+	render_set_global_buffer("skt_light_buffer", nullptr);
 	material_buffer_release(light_buffer);
 	skt_lighting_clear_lights();
 }

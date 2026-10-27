@@ -131,7 +131,7 @@ static void check_pending_reflection() {
 		local.reflection = tex;
 
 		// Shaders read the reflection cubemap from the sk_cubemap global.
-		render_global_texture(render_reflection_register, local.reflection);
+		render_set_global_tex(render_reflection_global, local.reflection);
 	}
 }
 
@@ -356,6 +356,8 @@ void render_set_skybox_material(material_t skybox_material) {
 	if (skybox_material == nullptr) {
 		skybox_material = local.sky_mat_default;
 	}
+	// No default either, so lighting has shut down or never started
+	if (skybox_material == nullptr) return;
 
 	// Safe swap the material reference
 	material_addref(skybox_material);

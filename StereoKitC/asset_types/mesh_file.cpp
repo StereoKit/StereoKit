@@ -25,9 +25,10 @@ typedef struct mesh_file_load_t {
 	mesh_load_t   mesh; // first, so the shared mesh load actions can cast to it
 	mesh_format_  format;
 	svg_options_t svg_options;
-	char*         filename;
-	void*         file_data;
-	size_t        file_size;
+	char*             filename;
+	void*             file_data;
+	size_t            file_size;
+	asset_file_read_t file_read;
 } mesh_file_load_t;
 static_assert(offsetof(mesh_file_load_t, mesh) == 0, "mesh_load_* actions cast load data to mesh_load_t");
 
@@ -44,19 +45,26 @@ static mesh_format_ mesh_file_format(const char* filename) {
 
 ///////////////////////////////////////////
 
-static bool32_t mesh_file_read(asset_task_t*, asset_header_t* asset, void* data) {
+static asset_action_result_ mesh_file_read(asset_task_t* task, asset_header_t* asset, void* data) {
 	mesh_file_load_t* load = (mesh_file_load_t*)data;
-	if (!platform_read_file(load->filename, &load->file_data, &load->file_size)) {
+
+	asset_read_ read = assets_task_read_file(task, load->filename, &load->file_read);
+	if (read == asset_read_in_flight)
+		return asset_action_wait;
+	if (read == asset_read_failed) {
 		log_warnf("Mesh file failed to load: %s", load->filename);
 		asset->state = asset_state_error_not_found;
-		return false;
+		return asset_action_fail;
 	}
-	return true;
+	load->file_data = load->file_read.data;
+	load->file_size = load->file_read.size;
+	load->file_read = {};
+	return asset_action_done;
 }
 
 ///////////////////////////////////////////
 
-static bool32_t mesh_file_build(asset_task_t*, asset_header_t* asset, void* data) {
+static asset_action_result_ mesh_file_build(asset_task_t*, asset_header_t* asset, void* data) {
 	mesh_file_load_t* load = (mesh_file_load_t*)data;
 
 	bool built = false;
@@ -69,7 +77,7 @@ static bool32_t mesh_file_build(asset_task_t*, asset_header_t* asset, void* data
 	sk_free(load->file_data);
 	load->file_size = 0;
 	if (!built) asset->state = asset_state_error_unsupported;
-	return built;
+	return built ? asset_action_done : asset_action_fail;
 }
 
 ///////////////////////////////////////////
@@ -78,6 +86,7 @@ static void mesh_file_free(asset_header_t* asset, void* data) {
 	mesh_file_load_t* load = (mesh_file_load_t*)data;
 	sk_free(load->filename);
 	sk_free(load->file_data);
+	sk_free(load->file_read.data);
 	mesh_load_free(asset, data);
 }
 
@@ -90,7 +99,7 @@ static void mesh_file_on_failure(asset_header_t* asset, void*) {
 
 ///////////////////////////////////////////
 
-static void mesh_file_add_task(mesh_t mesh, mesh_file_load_t* load, const asset_load_action_t* actions, int32_t action_count, int32_t priority, size_t complexity_bytes) {
+static void mesh_file_add_task(mesh_t mesh, mesh_file_load_t* load, const asset_action_t* actions, int32_t action_count, int32_t priority, size_t complexity_bytes) {
 	mesh->header.state     = asset_state_loading;
 	load->mesh.calc_bounds = true;
 	load->mesh.vert_format = VERT_FORMAT_DEFAULT;
@@ -99,7 +108,7 @@ static void mesh_file_add_task(mesh_t mesh, mesh_file_load_t* load, const asset_
 	asset_task_t task = {};
 	task.asset        = &mesh->header;
 	task.load_data    = load;
-	task.actions      = (asset_load_action_t*)actions;
+	task.actions      = (asset_action_t*)actions;
 	task.action_count = action_count;
 	task.free_data    = mesh_file_free;
 	task.on_failure   = mesh_file_on_failure;
@@ -125,10 +134,10 @@ mesh_t mesh_create_mem_ex(const char* filename_utf8, const void* data, size_t da
 	load->file_data   = sk_malloc(data_size);
 	memcpy(load->file_data, data, data_size);
 
-	static const asset_load_action_t actions[] = {
-		mesh_file_build,
-		mesh_load_process,
-		mesh_load_upload,
+	static const asset_action_t actions[] = {
+		{ mesh_file_build,   asset_affinity_heavy },
+		{ mesh_load_process, asset_affinity_heavy },
+		{ mesh_load_upload },
 	};
 	mesh_t result = mesh_create();
 	mesh_file_add_task(result, load, actions, _countof(actions), priority, data_size);
@@ -155,11 +164,11 @@ mesh_t mesh_create_file_ex(const char* filename_utf8, int32_t priority, svg_opti
 	load->svg_options = svg_options;
 	load->filename    = string_copy(filename_utf8);
 
-	static const asset_load_action_t actions[] = {
-		mesh_file_read,
-		mesh_file_build,
-		mesh_load_process,
-		mesh_load_upload,
+	static const asset_action_t actions[] = {
+		{ mesh_file_read },
+		{ mesh_file_build,   asset_affinity_heavy },
+		{ mesh_load_process, asset_affinity_heavy },
+		{ mesh_load_upload },
 	};
 	result = mesh_create();
 	mesh_set_id(result, id);

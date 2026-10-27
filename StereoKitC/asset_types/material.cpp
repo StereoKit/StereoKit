@@ -212,23 +212,41 @@ tex_t material_get_default_tex(material_t material, const char *name) {
 
 ///////////////////////////////////////////
 
-void material_set_default_textures(material_t material) {
+// Slots at their default are left to sk_renderer, so named globals can fill
+// them. It has no cubemap default though, so StereoKit binds its own there.
+static skr_tex_t* _material_default_gpu_tex(const sksc_shader_resource_t *resource) {
+	return string_eq(resource->value, "cubemap") ? &sk_default_cubemap->gpu_tex : nullptr;
+}
+
+///////////////////////////////////////////
+
+static void material_bind_tex(material_t material, int32_t idx) {
+	const sksc_shader_resource_t *resource = &material->shader->gpu_shader.meta.resources[idx];
+	tex_t      tex = material->textures[idx];
+	skr_tex_t* gpu = tex == nullptr ? _material_default_gpu_tex(resource)
+		: tex->fallback != nullptr  ? &tex->fallback->gpu_tex
+		:                             &tex->gpu_tex;
+	skr_material_set_tex(&material->gpu_mat, resource->name, gpu);
+}
+
+///////////////////////////////////////////
+
+// For a freshly created gpu_mat, which starts at sk_renderer's defaults
+static void material_bind_defaults(material_t material) {
 	const sksc_shader_meta_t *meta = &material->shader->gpu_shader.meta;
-
-	// Set default textures for all resources declared in the shader
 	for (uint32_t i = 0; i < meta->resource_count; i++) {
-		tex_t default_tex = _material_default_tex_for(meta->resources[i].value);
-
-		// Release old texture if present, store new one
-		if (material->textures[i] != nullptr)
-			tex_release(material->textures[i]);
-		tex_addref(default_tex);
-		material->textures[i] = default_tex;
-
-		// Update sk_renderer binding
-		tex_t physical_tex = default_tex->fallback ? default_tex->fallback : default_tex;
-		skr_material_set_tex(&material->gpu_mat, meta->resources[i].name, &physical_tex->gpu_tex);
+		skr_tex_t* gpu = _material_default_gpu_tex(&meta->resources[i]);
+		if (gpu != nullptr) skr_material_set_tex(&material->gpu_mat, meta->resources[i].name, gpu);
 	}
+}
+
+///////////////////////////////////////////
+
+// nullptr for slots at their default, since a global may be what draws there
+static tex_t material_get_tex_at(material_t material, int32_t idx) {
+	tex_t result = material->textures[idx];
+	if (result) tex_addref(result);
+	return result;
 }
 
 ///////////////////////////////////////////
@@ -255,8 +273,8 @@ material_t material_create(shader_t shader) {
 		log_err("Failed to create GPU material");
 	}
 
-	material_alloc_resources      (result);
-	material_set_default_textures(result);
+	material_alloc_resources(result);
+	material_bind_defaults  (result);
 
 	if (shader == nullptr) {
 		shader_release(material_shader);
@@ -301,6 +319,7 @@ material_t material_copy(material_t material) {
 
 	// Allocate texture array for result
 	material_alloc_resources(result);
+	material_bind_defaults  (result);
 
 	// Copy parameter values from source material
 	const sksc_shader_meta_t   *meta      = &material->shader->gpu_shader.meta;
@@ -320,15 +339,10 @@ material_t material_copy(material_t material) {
 
 	// Copy texture bindings from source material
 	for (int32_t i = 0; i < material->resource_count; i++) {
-		if (material->textures[i] != nullptr) {
-			tex_addref(material->textures[i]);
-			result->textures[i] = material->textures[i];
-
-			tex_t physical_tex = material->textures[i]->fallback
-				? material->textures[i]->fallback
-				: material->textures[i];
-			skr_material_set_tex(&result->gpu_mat, meta->resources[i].name, &physical_tex->gpu_tex);
-		}
+		if (material->textures[i] == nullptr) continue;
+		tex_addref(material->textures[i]);
+		result->textures[i] = material->textures[i];
+		material_bind_tex(result, i);
 	}
 
 	return result;
@@ -474,8 +488,8 @@ void material_set_shader(material_t material, shader_t shader) {
 	skr_material_create(info, &material->gpu_mat);
 
 	// Allocate new texture array and set defaults
-	material_alloc_resources      (material);
-	material_set_default_textures(material);
+	material_alloc_resources(material);
+	material_bind_defaults  (material);
 
 	// Re-bind matching textures from old shader
 	if (old_textures) {
@@ -819,28 +833,15 @@ bool32_t material_set_texture_id(material_t material, id_hash_t id, tex_t value)
 	const sksc_shader_meta_t *meta = &material->shader->gpu_shader.meta;
 
 	for (uint32_t i = 0; i < meta->resource_count; i++) {
-		const sksc_shader_resource_t *resource = &meta->resources[i];
-		if (resource->name_hash == id) {
+		if (meta->resources[i].name_hash != id) continue;
 
-			// Assigning a null texture will crash the renderer, so we want to
-			// instead find the default texture for the material parameter.
-			tex_t tex_to_set = value;
-			if (tex_to_set == nullptr)
-				tex_to_set = _material_default_tex_for(resource->value);
-
-			// Update texture reference tracking
-			if (material->textures[i] != tex_to_set) {
-				tex_addref(tex_to_set);
-				if (material->textures[i] != nullptr)
-					tex_release(material->textures[i]);
-				material->textures[i] = tex_to_set;
-			}
-
-			// Set the GPU texture binding (use fallback if present)
-			tex_t physical_tex = tex_to_set->fallback ? tex_to_set->fallback : tex_to_set;
-			skr_material_set_tex(&material->gpu_mat, resource->name, &physical_tex->gpu_tex);
-			return true;
+		if (material->textures[i] != value) {
+			if (value != nullptr) tex_addref(value);
+			tex_release(material->textures[i]);
+			material->textures[i] = value;
 		}
+		material_bind_tex(material, i);
+		return true;
 	}
 	return false;
 }
@@ -985,12 +986,8 @@ tex_t material_get_texture(material_t material, const char* name) {
 	id_hash_t id = hash_string(name);
 
 	for (uint32_t i = 0; i < meta->resource_count; i++) {
-		if (meta->resources[i].name_hash == id) {
-			tex_t result = material->textures[i];
-			if (result != nullptr)
-				tex_addref(result);
-			return result;
-		}
+		if (meta->resources[i].name_hash == id)
+			return material_get_tex_at(material, i);
 	}
 	return nullptr;
 }
@@ -1045,10 +1042,7 @@ bool32_t material_get_param_id(material_t material, id_hash_t id, material_param
 		const sksc_shader_meta_t *meta = &material->shader->gpu_shader.meta;
 		for (uint32_t i = 0; i < meta->resource_count; i++) {
 			if (meta->resources[i].name_hash == id) {
-				tex_t result = material->textures[i];
-				if (result != nullptr)
-					tex_addref(result);
-				*(tex_t*)out_value = result;
+				*(tex_t*)out_value = material_get_tex_at(material, i);
 				return true;
 			}
 		}
@@ -1180,13 +1174,11 @@ void material_check_dirty(material_t material) {
 		// Compare cached hash against current texture's hash
 		if (material->texture_meta_hashes[i] != tex->meta_hash) {
 			material->texture_meta_hashes[i] = tex->meta_hash;
+			material_bind_tex(material, i);
 
 			tex_t physical_tex = tex->fallback != nullptr
 				? tex->fallback
 				: tex;
-
-			// Update sk_renderer texture binding
-			skr_material_set_tex(&material->gpu_mat, meta->resources[i].name, &physical_tex->gpu_tex);
 
 			// Update the _i info param with texture dimensions. The third
 			// component is the highest mip index — read it from the actual

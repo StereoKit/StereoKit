@@ -30,7 +30,6 @@ static const int   shadow_map_resolution = 1024;
 static const float shadow_map_near_clip  = 0.01f;
 static const float shadow_map_far_clip   = 20.0f;
 static const int   shadow_map_variant    = 1;
-static const int   shadow_buffer_slot    = 13;
 
 static tex_t             shadow_map    = {};
 static material_buffer_t shadow_buffer = {};
@@ -55,7 +54,7 @@ void demo_shadows_init() {
 
 	// Create shadow map texture (depth target)
 	shadow_map = tex_create(tex_type_depthtarget, tex_format_depth16);
-	tex_set_colors     (shadow_map, shadow_map_resolution, shadow_map_resolution, nullptr);
+	tex_set_size       (shadow_map, shadow_map_resolution, shadow_map_resolution);
 	tex_set_sample     (shadow_map, tex_sample_linear);
 	tex_set_sample_comp(shadow_map, tex_sample_comp_less_or_eq);
 	tex_set_address    (shadow_map, tex_address_clamp);
@@ -104,7 +103,7 @@ void demo_shadows_init() {
 	tex_release(env_tex);
 
 	// Bind shadow buffer globally
-	render_global_buffer(shadow_buffer_slot, shadow_buffer);
+	render_set_global_buffer("shadow_buffer", shadow_buffer);
 }
 
 ///////////////////////////////////////////
@@ -146,7 +145,7 @@ static void setup_shadow_map() {
 
 	// Render the shadow map
 	// First unbind the texture so we can render to it
-	render_global_texture(shadow_buffer_slot, nullptr);
+	render_set_global_tex("shadow_map", nullptr);
 
 	// Render to shadow map (filter out VFX layer)
 	render_settings_t settings = {};
@@ -155,7 +154,7 @@ static void setup_shadow_map() {
 	render_to(shadow_map, 0, &view, &proj, 1, &settings);
 
 	// Rebind the shadow map for reading
-	render_global_texture(shadow_buffer_slot, shadow_map);
+	render_set_global_tex("shadow_map", shadow_map);
 }
 
 ///////////////////////////////////////////
@@ -179,8 +178,8 @@ void demo_shadows_shutdown() {
 	lighting_set_ambient   (old_lighting);
 
 	// Unbind global resources
-	render_global_buffer (shadow_buffer_slot, nullptr);
-	render_global_texture(shadow_buffer_slot, nullptr);
+	render_set_global_buffer("shadow_buffer", nullptr);
+	render_set_global_tex   ("shadow_map",    nullptr);
 
 	// Release resources
 	tex_release            (shadow_map);
