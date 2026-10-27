@@ -538,6 +538,9 @@ static bool assets_step_did_work = false;
 static const double assets_step_budget_ms = 4;
 
 static void assets_step_tasks(double budget_ms) {
+	// Stopped means abandoning what's left, not starting more of it
+	if (asset_thread_enabled == false) { assets_step_did_work = false; return; }
+
 	if (asset_threads.count > 0) {
 		// Workers cover everything else; the main thread only services
 		// actions that must run here, and those stay cheap by contract.
@@ -1248,13 +1251,8 @@ bool32_t assets_run_blocking(asset_task_t src_task) {
 
 	asset_run_blocking_t run = { task, false };
 	bool32_t finished = assets_execute_blocking(assets_run_blocking_job, &run);
-	if (!run.ran) {
-		// Shutdown refused the job, so nothing else will clean this up
-		if (task->on_failure != nullptr) task->on_failure(task->asset, task->load_data);
-		if (task->free_data  != nullptr) task->free_data (task->asset, task->load_data);
-		assets_releaseref_threadsafe(task->asset);
-		sk_free(task);
-	}
+	// Shutdown refused the job, so nothing else will clean this up
+	if (!run.ran) assets_abandon_task(task);
 	return finished;
 }
 
