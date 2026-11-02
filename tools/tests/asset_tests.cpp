@@ -119,6 +119,10 @@ static void ast_add_task(tex_t asset, ast_ctx_t* ctx, const asset_action_t* acti
 
 ///////////////////////////////////////////
 
+static void ast_on_load_noop(mesh_t, void*) {}
+
+///////////////////////////////////////////
+
 // Waits for a cross-thread counter to reach `target`, pumping the main
 // thread's asset step (on_load events, wake-up backstop) like a frame loop.
 static bool ast_wait(volatile int32_t* counter, int32_t target, int32_t timeout_ms) {
@@ -535,7 +539,15 @@ static void ast_test_shutdown() {
 	tex_release(gated);
 	tex_release(parked);
 
+	// Bindings like Rust's Drop can remove callbacks and release after
+	// shutdown, which must be a harmless no-op.
+	mesh_t bound = mesh_create();
+	mesh_on_load(bound, ast_on_load_noop, nullptr);
+
 	sk_shutdown();
+
+	mesh_on_load_remove(bound, ast_on_load_noop);
+	mesh_release       (bound);
 }
 
 ///////////////////////////////////////////

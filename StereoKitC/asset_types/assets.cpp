@@ -62,9 +62,12 @@ array_t<asset_job_t *>         assets_blocking_jobs = {};
 int32_t                        assets_blocking_count   = 0; // atomic mirror of the job count
 int32_t                        assets_blocking_waiters = 0; // atomic, threads inside the wait
 ft_condition_t                 assets_blocking_available = {};
-ft_mutex_t                     assets_load_event_lock = {}; // guards both lists below; C# finalizers remove callbacks off-thread
+int32_t                        assets_load_event_lock = 0; // spinlock for both lists, valid after shutdown
 array_t<asset_load_callback_t> assets_load_callbacks = {};
 array_t<asset_header_t *>      assets_load_events = {};
+
+static void assets_load_event_acquire() { while (!atomic_cas_i32(&assets_load_event_lock, 0, 1)) {} }
+static void assets_load_event_release() { atomic_store_i32_rel(&assets_load_event_lock, 0); }
 
 ///////////////////////////////////////////
 
@@ -392,7 +395,7 @@ void assets_safeswap_ref(asset_header_t **asset_link, asset_header_t *asset) {
 ///////////////////////////////////////////
 
 void assets_on_load(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context), void *context) {
-	ft_mutex_lock(assets_load_event_lock);
+	assets_load_event_acquire();
 	assets_load_callbacks.add({
 		asset,
 		on_load,
@@ -403,7 +406,7 @@ void assets_on_load(asset_header_t *asset, void (*on_load)(asset_header_t *asset
 	// check stays under the lock; the call itself must not.
 	bool call_now = asset->state >= asset_state_loaded &&
 	                assets_load_events.index_of(asset) == -1;
-	ft_mutex_unlock(assets_load_event_lock);
+	assets_load_event_release();
 
 	if (call_now)
 		on_load(asset, context);
@@ -412,7 +415,7 @@ void assets_on_load(asset_header_t *asset, void (*on_load)(asset_header_t *asset
 ///////////////////////////////////////////
 
 void assets_on_load_remove(asset_header_t *asset, void (*on_load)(asset_header_t *asset, void *context)) {
-	ft_mutex_lock(assets_load_event_lock);
+	assets_load_event_acquire();
 	for (int32_t i = 0; i < assets_load_callbacks.count; i++) {
 		if ( assets_load_callbacks[i].asset   == asset &&
 			(assets_load_callbacks[i].on_load == on_load || on_load == nullptr)) {
@@ -420,19 +423,19 @@ void assets_on_load_remove(asset_header_t *asset, void (*on_load)(asset_header_t
 			break;
 		}
 	}
-	ft_mutex_unlock(assets_load_event_lock);
+	assets_load_event_release();
 }
 
 ///////////////////////////////////////////
 
 void assets_on_load_remove_all(asset_header_t *asset) {
-	ft_mutex_lock(assets_load_event_lock);
+	assets_load_event_acquire();
 	for (int32_t i = assets_load_callbacks.count - 1; i >= 0; i--) {
 		if (assets_load_callbacks[i].asset == asset) {
 			assets_load_callbacks.remove(i);
 		}
 	}
-	ft_mutex_unlock(assets_load_event_lock);
+	assets_load_event_release();
 }
 
 ///////////////////////////////////////////
@@ -507,7 +510,6 @@ bool assets_init() {
 	assets_job_lock                 = ft_mutex_create();
 	asset_thread_task_mtx           = ft_mutex_create();
 	asset_thread_wait_mtx           = ft_mutex_create();
-	assets_load_event_lock          = ft_mutex_create();
 	asset_tasks_available           = ft_condition_create();
 	assets_blocking_available       = ft_condition_create();
 	assets_alive                    = true;
@@ -594,7 +596,7 @@ void assets_step() {
 	// callback can add or remove others, and because blocking loads step this
 	// from more than one thread.
 	array_t<asset_load_callback_t> call_list = {};
-	ft_mutex_lock(assets_load_event_lock);
+	assets_load_event_acquire();
 	for (int32_t i = 0; i < assets_load_events.count; i++) {
 		for (int32_t c = 0; c < assets_load_callbacks.count; c++) {
 			asset_load_callback_t *callback = &assets_load_callbacks[c];
@@ -603,7 +605,7 @@ void assets_step() {
 		}
 	}
 	assets_load_events.clear();
-	ft_mutex_unlock(assets_load_event_lock);
+	assets_load_event_release();
 	call_list.each([](const asset_load_callback_t &c) { c.on_load(c.asset, c.context); });
 	call_list.free();
 
@@ -697,13 +699,14 @@ void assets_shutdown() {
 	ft_mutex_destroy(&assets_multithread_destroy_lock);
 	ft_mutex_destroy(&assets_job_lock);
 	ft_mutex_destroy(&asset_thread_wait_mtx);
-	ft_mutex_destroy(&assets_load_event_lock);
 	ft_mutex_destroy(&assets_lock);
 	ft_condition_destroy(&asset_tasks_available);
 	ft_condition_destroy(&assets_blocking_available);
 
+	assets_load_event_acquire();
 	assets_load_callbacks.free();
 	assets_load_events   .free();
+	assets_load_event_release();
 	assets               .free();
 
 	atomic_store_i32(&asset_tasks_processing, 0);
@@ -1113,9 +1116,9 @@ asset_read_ assets_task_read_file(asset_task_t *task, const char *filename, asse
 ///////////////////////////////////////////
 
 void assets_notify_loaded(asset_header_t *asset) {
-	ft_mutex_lock(assets_load_event_lock);
+	assets_load_event_acquire();
 	assets_load_events.add(asset);
-	ft_mutex_unlock(assets_load_event_lock);
+	assets_load_event_release();
 }
 
 ///////////////////////////////////////////
