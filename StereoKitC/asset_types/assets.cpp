@@ -53,6 +53,7 @@ struct asset_thread_t {
 
 array_t<asset_header_t *>      assets = {};
 ft_mutex_t                     assets_lock = {};
+uint64_t                       assets_auto_id = 0; // atomic, never reused within a session
 bool32_t                       assets_alive = false; // refcounting live, outlasts the workers
 array_t<asset_header_t *>      assets_multithread_destroy = {};
 ft_mutex_t                     assets_multithread_destroy_lock = {};
@@ -159,7 +160,6 @@ asset_find_ assets_find_or_create(const char* id, asset_type_ type, void** out_a
 		asset_header_t* header = assets_allocate_no_add(type, nullptr);
 		header->id      = hash;
 		header->id_text = string_copy(id);
-		header->index   = assets.count;
 		assets.add(header);
 
 		*out_asset = header;
@@ -243,13 +243,12 @@ void *assets_allocate(asset_type_ type) {
 	const char*     type_name;
 	asset_header_t* header = assets_allocate_no_add(type, &type_name);
 
-	ft_mutex_lock(assets_lock);
 	char name[64];
-	snprintf(name, sizeof(name), "auto/%s_%d", type_name, assets.count);
+	snprintf(name, sizeof(name), "auto/%s_%llu", type_name, (unsigned long long)atomic_increment_u64(&assets_auto_id));
 	header->id      = hash_string(name);
 	header->id_text = string_copy(name);
-	header->index   = assets.count;
 
+	ft_mutex_lock(assets_lock);
 	assets.add(header);
 	ft_mutex_unlock(assets_lock);
 	return header;
@@ -512,6 +511,7 @@ bool assets_init() {
 	asset_tasks_available           = ft_condition_create();
 	assets_blocking_available       = ft_condition_create();
 	assets_alive                    = true;
+	assets_auto_id                  = 0;
 
 	texture_compression_init();
 

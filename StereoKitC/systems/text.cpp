@@ -39,7 +39,6 @@ struct text_buffer_t {
 	material_t     material;
 	mesh_t         mesh;
 	vert_t        *verts; // TODO: potentially change this to array_t
-	uint32_t       id;
 	render_layer_  layer;
 	int32_t        vert_count;
 	int32_t        vert_cap;
@@ -147,10 +146,9 @@ text_style_t text_make_style_shader(font_t font, float layout_height, shader_t s
 // Text is batched into a buffer per font+material+layer combination, since a
 // buffer is flushed to the renderer as a single mesh on a single layer.
 int32_t text_buffer_find(font_t font, material_t material, render_layer_ layer) {
-	uint32_t id = (uint32_t)(font->header.id << 16 | ((asset_header_t*)material)->id);
-
 	for (int32_t i = 0; i < text_buffers.count; i++) {
-		if (text_buffers[i].id == id && text_buffers[i].layer == layer)
+		const text_buffer_t* b = &text_buffers[i];
+		if (b->font == font && b->material == material && b->layer == layer)
 			return i;
 	}
 
@@ -158,7 +156,6 @@ int32_t text_buffer_find(font_t font, material_t material, render_layer_ layer) 
 	text_buffer_t *buffer = &text_buffers[index];
 
 	buffer->mesh     = mesh_create();
-	buffer->id       = id;
 	buffer->font     = font;
 	buffer->material = material;
 	buffer->layer    = layer;

@@ -402,12 +402,6 @@ void render_pipeline_surface_set_enabled(pipeline_surface_id surface, bool32_t e
 
 ///////////////////////////////////////////
 
-bool32_t render_pipeline_surface_get_enabled(pipeline_surface_id surface) {
-	return local.surfaces[surface].enabled;
-}
-
-///////////////////////////////////////////
-
 void render_pipeline_surface_set_layer(pipeline_surface_id surface, render_layer_ layer) {
 	local.surfaces[surface].layer = layer;
 }

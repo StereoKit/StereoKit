@@ -10,7 +10,6 @@ struct asset_header_t {
 	asset_type_  type;
 	asset_state_ state;
 	id_hash_t    id;
-	uint64_t     index;
 	int32_t      refs;
 	char        *id_text;
 };
