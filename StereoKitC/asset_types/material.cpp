@@ -602,7 +602,8 @@ void material_set_depth_clamp(material_t material, bool32_t clamp_enabled) {
 ///////////////////////////////////////////
 
 void material_set_queue_offset(material_t material, int32_t offset) {
-	material->gpu_mat.queue_offset = offset;
+	// sk_renderer stores this as an int8_t, clamp so big values don't wrap
+	material->gpu_mat.queue_offset = (int8_t)(offset < -128 ? -128 : (offset > 127 ? 127 : offset));
 }
 
 ///////////////////////////////////////////

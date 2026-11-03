@@ -119,6 +119,10 @@ static void ast_add_task(tex_t asset, ast_ctx_t* ctx, const asset_action_t* acti
 
 ///////////////////////////////////////////
 
+static void ast_on_load_noop(mesh_t, void*) {}
+
+///////////////////////////////////////////
+
 // Waits for a cross-thread counter to reach `target`, pumping the main
 // thread's asset step (on_load events, wake-up backstop) like a frame loop.
 static bool ast_wait(volatile int32_t* counter, int32_t target, int32_t timeout_ms) {
@@ -129,6 +133,24 @@ static bool ast_wait(volatile int32_t* counter, int32_t target, int32_t timeout_
 		waited += 1;
 	}
 	return atomic_load_i32_acq(counter) >= target;
+}
+
+///////////////////////////////////////////
+
+static void ast_test_auto_id_unique() {
+	tex_t a = tex_create(tex_type_image, tex_format_rgba32);
+	tex_t b = tex_create(tex_type_image, tex_format_rgba32);
+	tex_release(a);
+	tex_t c = tex_create(tex_type_image, tex_format_rgba32);
+
+	AST_CHECK(strcmp(tex_get_id(b), tex_get_id(c)) != 0, "auto id not reused after a destroy");
+
+	tex_t found = tex_find(tex_get_id(c));
+	AST_CHECK(found == c, "find by auto id returns the right asset");
+
+	tex_release(found);
+	tex_release(b);
+	tex_release(c);
 }
 
 ///////////////////////////////////////////
@@ -517,7 +539,15 @@ static void ast_test_shutdown() {
 	tex_release(gated);
 	tex_release(parked);
 
+	// Bindings like Rust's Drop can remove callbacks and release after
+	// shutdown, which must be a harmless no-op.
+	mesh_t bound = mesh_create();
+	mesh_on_load(bound, ast_on_load_noop, nullptr);
+
 	sk_shutdown();
+
+	mesh_on_load_remove(bound, ast_on_load_noop);
+	mesh_release       (bound);
 }
 
 ///////////////////////////////////////////
@@ -532,6 +562,7 @@ int asset_tests_run() {
 		return 1;
 	}
 
+	ast_test_auto_id_unique    ();
 	ast_test_dep_satisfied     ();
 	ast_test_dep_completes_later();
 	ast_test_dep_errors        ();

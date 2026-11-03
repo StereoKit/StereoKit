@@ -32,7 +32,6 @@
 #include "../platforms/platform.h"
 
 #include <sk_renderer.h>
-#include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
 
@@ -43,7 +42,7 @@ using namespace DirectX;
 
 namespace sk {
 
-static void render_list_execute(render_list_t list, render_layer_ filter, int32_t material_variant, int32_t queue_start, int32_t queue_end);
+static void render_list_execute(render_list_t list, render_layer_ filter, int32_t material_variant);
 
 ///////////////////////////////////////////
 
@@ -73,12 +72,6 @@ struct render_global_buffer_t {
 	uint32_t eye_offset;
 };
 
-struct render_blit_data_t {
-	float width;
-	float height;
-	float pixel_width;
-	float pixel_height;
-};
 struct render_screenshot_t {
 	void        (*render_on_screenshot_callback)(void* data, tex_format_ format, int32_t width, int32_t height, void* context);
 	void*         context;
@@ -103,17 +96,6 @@ struct render_pending_readback_t {
 	tex_t                depth_surface;  // MSAA depth target (kept alive until readback completes)
 	tex_t                resolve_tex;    // Resolved texture being read back
 	skr_tex_readback_t   readback;
-};
-
-struct render_viewpoint_t {
-	tex_t         rendertarget;
-	int32_t       rendertarget_index;
-	matrix        camera;
-	matrix        projection;
-	rect_t        viewport;
-	render_layer_ layer_filter;
-	render_clear_ clear;
-	material_t    override_material;
 };
 
 enum render_action_type_ {
@@ -183,7 +165,6 @@ struct render_state_t {
 	skr_render_list_t       gpu_render_list;
 
 	material_buffer_t       shader_globals;
-	skr_buffer_t            shader_blit;
 	matrix                  camera_root;
 	matrix                  camera_root_final;
 	matrix                  camera_root_final_inv;
@@ -222,8 +203,7 @@ static render_state_t local = {};
 ///////////////////////////////////////////
 
 void render_save_to_file(void* data, tex_format_ format, int width, int height, void* context);
-void render_list_add    (const render_item_t *item);
-void render_list_add_to (render_list_t list, const render_item_t *item);
+static void render_list_add_to(render_list_t list, const render_item_t *item);
 static void render_global_bind_tex   (const char* name, int32_t slot, tex_t             texture);
 static void render_global_bind_buffer(const char* name, int32_t slot, material_buffer_t buffer);
 
@@ -250,8 +230,6 @@ bool render_init() {
 	local.list_active           = nullptr;
 
 	local.shader_globals  = material_buffer_create(sizeof(local.global_buffer));
-	skr_buffer_create(nullptr, 1, sizeof(render_blit_data_t), skr_buffer_type_constant, skr_use_dynamic, &local.shader_blit);
-	skr_buffer_set_name(&local.shader_blit, "sk/render/blit_buffer");
 
 	skr_render_list_create(&local.gpu_render_list);
 
@@ -328,7 +306,6 @@ void render_shutdown() {
 	local.globals_app.free();
 	material_buffer_release(local.shader_globals);
 
-	skr_buffer_destroy     (&local.shader_blit);
 	skr_render_list_destroy(&local.gpu_render_list);
 
 	local = {};
@@ -348,15 +325,6 @@ void render_step() {
 	profiler_zone();
 
 	hierarchy_step();
-}
-
-///////////////////////////////////////////
-
-inline uint64_t render_sort_id(material_t material, mesh_t mesh) {
-	return ((uint64_t)(material->alpha_mode*1000 + material->gpu_mat.queue_offset) << 32) | (material->header.index << 16) | mesh->header.index;
-}
-inline uint64_t render_sort_id_from_queue(int32_t queue_position) {
-	return (uint64_t)(queue_position) << 32;
 }
 
 ///////////////////////////////////////////
@@ -422,12 +390,6 @@ void render_set_projection(projection_ proj) {
 
 projection_ render_get_projection() {
 	return local.projection_type;
-}
-
-///////////////////////////////////////////
-
-float render_get_ortho_view_height() {
-	return local.ortho_viewport_height;
 }
 
 ///////////////////////////////////////////
@@ -1046,7 +1008,7 @@ void render_draw_queue(render_list_t list, const matrix *views, const matrix *pr
 		render_global_bind_buffer(g->name, g->slot, g->buffer);
 	}
 
-	render_list_execute(list, filter, material_variant, 0, INT_MAX);
+	render_list_execute(list, filter, material_variant);
 }
 
 ///////////////////////////////////////////
@@ -1060,7 +1022,7 @@ void render_pass_add_draw(skr_pass_t* pass) {
 
 // A valid post-process material declares a 'color' input attachment (the
 // scene) and no vertex inputs - it draws as a bufferless fullscreen triangle.
-bool32_t render_material_is_post_process(material_t material) {
+static bool32_t render_material_is_post_process(material_t material) {
 	if (material == nullptr || material->shader == nullptr) return false;
 
 	const sksc_shader_meta_t* meta = &material->shader->gpu_shader.meta;
@@ -1578,17 +1540,7 @@ void render_list_pop() {
 
 ///////////////////////////////////////////
 
-void render_list_add(const render_item_t *item) {
-	local.list_active->queue.add(*item);
-	if (local.list_active->refs == render_list_refs_tracked) {
-		assets_addref(&item->material->header);
-		assets_addref(&item->mesh->header);
-	}
-}
-
-///////////////////////////////////////////
-
-void render_list_add_to(render_list_t list, const render_item_t *item) {
+static void render_list_add_to(render_list_t list, const render_item_t *item) {
 	list->queue.add(*item);
 	if (list->refs == render_list_refs_tracked) {
 		assets_addref(&item->material->header);
@@ -1598,17 +1550,12 @@ void render_list_add_to(render_list_t list, const render_item_t *item) {
 
 ///////////////////////////////////////////
 
-static void render_list_execute(render_list_t list, render_layer_ filter, int32_t material_variant, int32_t queue_start, int32_t queue_end) {
-	list->state = render_list_state_rendering;
-
+static void render_list_execute(render_list_t list, render_layer_ filter, int32_t material_variant) {
 	// Clear the sk_renderer render list before populating it
 	skr_render_list_t* gpu_list = &local.gpu_render_list;
 	skr_render_list_clear(gpu_list);
 
-	if (list->queue.count == 0) {
-		list->state = render_list_state_rendered;
-		return;
-	}
+	if (list->queue.count == 0) return;
 
 	// Make sure all materials are up-to-date
 	material_t curr = nullptr;
@@ -1622,16 +1569,11 @@ static void render_list_execute(render_list_t list, render_layer_ filter, int32_
 		if (check) material_check_dirty(check);
 	}
 
-	// Calculate sort_id range for queue filtering
-	uint64_t sort_id_start = render_sort_id_from_queue(queue_start);
-	uint64_t sort_id_end   = render_sort_id_from_queue(queue_end);
-
 	for (int32_t i = 0; i < list->queue.count; i++) {
 		render_item_t *item = &list->queue[i];
 
 		// Skip this item if it's filtered out
 		if ((item->layer & filter) == 0) continue;
-		if (item->sort_id < sort_id_start || item->sort_id >= sort_id_end) continue;
 
 		// Pick the right material according to the variant
 		material_t item_mat = material_variant == 0
@@ -1652,8 +1594,6 @@ static void render_list_execute(render_list_t list, render_layer_ filter, int32_
 			0, item->mesh_inds, 0,
 			&inst, sizeof(inst), 1);
 	}
-
-	list->state = render_list_state_rendered;
 }
 
 ///////////////////////////////////////////
@@ -1667,8 +1607,6 @@ void render_list_clear(render_list_t list) {
 		}
 	}
 	list->queue.clear();
-	list->stats = {};
-	list->state = render_list_state_empty;
 }
 
 ///////////////////////////////////////////
@@ -1698,7 +1636,6 @@ void render_list_add_mesh(render_list_t list, mesh_t mesh, material_t material, 
 	material_t curr = material;
 	while (curr != nullptr) {
 		item.material = curr;
-		item.sort_id  = render_sort_id(curr, mesh);
 		render_list_add_to(list, &item);
 		curr = curr->chain;
 	}
@@ -1735,7 +1672,6 @@ void render_list_add_model_mat(render_list_t list, model_t model, material_t mat
 		material_t curr = material_override == nullptr ? vis->material : material_override;
 		while (curr != nullptr) {
 			item.material = curr;
-			item.sort_id  = render_sort_id(curr, vis->mesh);
 			render_list_add_to(list, &item);
 			curr = curr->chain;
 		}

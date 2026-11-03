@@ -17,7 +17,6 @@ void                render_pipeline_surface_get_surface_info  (pipeline_surface_
 void                render_pipeline_surface_set_tex           (pipeline_surface_id surface, tex_t tex);
 tex_t               render_pipeline_surface_get_tex           (pipeline_surface_id surface);
 void                render_pipeline_surface_set_enabled       (pipeline_surface_id surface, bool32_t enabled);
-bool32_t            render_pipeline_surface_get_enabled       (pipeline_surface_id surface);
 void                render_pipeline_surface_set_layer         (pipeline_surface_id surface, render_layer_ layer);
 void                render_pipeline_surface_set_viewport_scale(pipeline_surface_id surface, float viewport_rect_scale);
 void                render_pipeline_surface_set_clear         (pipeline_surface_id surface, color128 color, bool32_t fully_covered);

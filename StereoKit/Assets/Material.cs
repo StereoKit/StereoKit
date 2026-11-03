@@ -178,7 +178,7 @@ namespace StereoKit
 		/// with the depth buffer, or are working with transparent objects.
 		/// Good offset values should probably be specific, well managed, and
 		/// small. Think of it as a layer rather than a distance, so probably
-		/// less than 10, and definitely less than 1000.
+		/// less than 10. Values are clamped to the -128 to 127 range.
 		/// 
 		/// This can also be helpful for tweaking performance! If you know an
 		/// object is always going to be close to the user and likely to
