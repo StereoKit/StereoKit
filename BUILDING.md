@@ -86,6 +86,40 @@ dotnet run --configuration Release --project Examples/StereoKitTest/StereoKitTes
 # check /bin/distribute for final binary files
 ```
 
+## I want to cross-compile for Linux ARM64
+
+You can build Linux ARM64 binaries right from an x64 Linux machine! The `Linux_Arm64_*` presets can find ARM64 headers and libraries in two ways. On an ARM64 Linux machine you don't need any of this, the regular Linux steps above build natively.
+
+**Ubuntu or Debian multiarch.** This is what CI uses. Once arm64 is enabled as a multiarch architecture, install the cross compiler and the `:arm64` versions of the pre-reqs.
+```shell
+sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+                     libx11-dev:arm64 libxrandr-dev:arm64 libxcursor-dev:arm64 libxi-dev:arm64 \
+                     libwayland-dev:arm64 libxkbcommon-dev:arm64 libdecor-0-dev:arm64
+```
+
+**Any distro, with a sysroot.** Point `SK_SYSROOT` at an ARM64 sysroot, and the presets switch over to clang and lld from the Linux pre-reqs above. Valve's Steam Runtime 4 SDK makes a great sysroot, since it has every header StereoKit needs, and matches what the Steam Frame runs. It's a ~740MB download that unpacks to ~2.5GB.
+```shell
+mkdir -p ~/sysroots/steamrt4-arm64
+curl -L https://repo.steampowered.com/steamrt4/images/latest-public-beta/com.valvesoftware.SteamRuntime.Sdk-arm64-steamrt4-sysroot.tar.gz \
+  | tar -xz -C ~/sysroots/steamrt4-arm64
+
+# Only needed the first time a build folder is configured
+export SK_SYSROOT=~/sysroots/steamrt4-arm64
+```
+
+Then build away!
+```shell
+# Just the native binaries
+cmake --preset Linux_Arm64_Release
+cmake --build --preset Linux_Arm64_Release
+
+# The C# test app, self-contained so the device doesn't need .NET installed.
+# This lands in bin/arm64_Release/StereoKitTest/linux-arm64/publish/
+dotnet publish Examples/StereoKitTest/StereoKitTest.csproj -c Release -r linux-arm64 --self-contained -p:SKSDKBuildMode=ARM64
+```
+
+`dotnet run` won't work here, since it tries to launch the ARM64 app on your x64 machine. Copy the publish folder over to the device and run it there instead.
+
 ## I want to build the whole NuGet package
 
 The NuGet package build pipeline requires all the setup steps from above first! After that, you just need to run the [build powershell script](https://github.com/maluoi/StereoKit/blob/master/tools/Build-Nuget.ps1). This script will build all binary variants, run tests, and track some statistics.
