@@ -5,7 +5,10 @@
 
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-		<OutputPath>..\..\bin\x64_$(Configuration)\StereoKitTest\</OutputPath>
+		<SKOutputArch Condition="'$(SKSDKBuildMode)'!=''">$(SKSDKBuildMode.ToLower())</SKOutputArch>
+		<SKOutputArch Condition="'$(SKOutputArch)'=='' and '$(Platform)'!='' and '$(Platform)'!='AnyCPU'">$(Platform.ToLower())</SKOutputArch>
+		<SKOutputArch Condition="'$(SKOutputArch)'==''">$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLower())</SKOutputArch>
+		<OutputPath>..\..\bin\$(SKOutputArch)_$(Configuration)\StereoKitTest\</OutputPath>
 		<RunWorkingDirectory>$(OutputPath)</RunWorkingDirectory>
 		<ApplicationIcon>App.ico</ApplicationIcon>
 

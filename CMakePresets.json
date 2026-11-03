@@ -255,15 +255,7 @@
       "name":        "Linux_Arm64_Release",
       "description": "Release build for Linux Arm64",
       "inherits":    ["Linux_Arm64", "BuildType_Release"],
-      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_Arm64_Release",
-      "cacheVariables": {
-        "CMAKE_AR":               "/usr/bin/aarch64-linux-gnu-ar",
-        "CMAKE_LINKER":           "/usr/bin/aarch64-linux-gnu-ld",
-        "CMAKE_OBJCOPY":          "/usr/bin/aarch64-linux-gnu-objcopy",
-        "CMAKE_RANLIB":           "/usr/bin/aarch64-linux-gnu-ranlib",
-        "CMAKE_SIZE":             "/usr/bin/aarch64-linux-gnu-size",
-        "CMAKE_STRIP":            "/usr/bin/aarch64-linux-gnu-strip"
-      }
+      "binaryDir":   "${sourceDir}/bin/intermediate/Linux_Arm64_Release"
     },
     {
       "name":        "Linux_Arm64_Release_Fast",

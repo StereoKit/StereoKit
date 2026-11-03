@@ -29,7 +29,8 @@
 		<SKSDKBuildModePreset Condition="'$(SKSDKBuildMode)'=='ARM'">Arm32</SKSDKBuildModePreset>
 
 		<!-- Get an ABI name, this is a little different from BuildMode on Android. -->
-		<SKSDKBuildAbi Condition="'$(SKSDKBuildOS)'!='Android'">$(SKSDKBuildMode)</SKSDKBuildAbi>
+		<SKSDKBuildAbi Condition="'$(SKSDKBuildOS)'=='Win32'">$(SKSDKBuildMode)</SKSDKBuildAbi>
+		<SKSDKBuildAbi Condition="'$(SKSDKBuildOS)'=='Linux' or '$(SKSDKBuildOS)'=='MacOS'">$(SKSDKBuildMode.ToLower())</SKSDKBuildAbi>
 		<SKSDKBuildAbi Condition="'$(SKSDKBuildOS)'=='Android' and '$(SKSDKBuildMode)'=='x64'">x86_64</SKSDKBuildAbi>
 		<SKSDKBuildAbi Condition="'$(SKSDKBuildOS)'=='Android' and '$(SKSDKBuildMode)'=='ARM64'">arm64-v8a</SKSDKBuildAbi>
 

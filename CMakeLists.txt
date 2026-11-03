@@ -162,33 +162,33 @@ elseif(MSVC)
 endif()
 
 # See: https://github.com/cpm-cmake/CPM.cmake
+# Fetch dependencies directly instead of through a sub-build for each one.
+# CPM.cmake resets policies for its own scope, so this reaches it as a default.
+set(CMAKE_POLICY_DEFAULT_CMP0168 NEW)
 include("cmake/CPM.cmake")
+unset(CMAKE_POLICY_DEFAULT_CMP0168)
 
 #### OpenXR - https://www.khronos.org/openxr/ ####
+# openxr_loader_nano is a drop-in for the Khronos loader, with the same targets
+# and options, and a far smaller and faster to build binary.
 if (SK_BUILD_OPENXR_LOADER)
+  # The loader is cold setup code and trampolines, so it builds for size. Only
+  # its directory sees this, and swapping the level avoids MSVC's D9025.
+  string(REGEX REPLACE "[-/]O[0-9sz]" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+  if (MSVC)
+    string(APPEND CMAKE_C_FLAGS_RELEASE " /O1")
+  else()
+    string(APPEND CMAKE_C_FLAGS_RELEASE " -Os")
+  endif()
   CPMAddPackage(
     NAME openxr_loader
-    GITHUB_REPOSITORY KhronosGroup/OpenXR-SDK
-    GIT_TAG release-1.1.63
+    GITHUB_REPOSITORY maluoi/openxr_loader_nano
+    GIT_TAG release-1.1.65.1
     GIT_SHALLOW 1
     OPTIONS
-    "BUILD_ALL_EXTENSIONS OFF" # Only need Vulkan, not Metal/OpenGL
-    "BUILD_WITH_SYSTEM_JSONCPP OFF"
-    "BUILD_WITH_XCB_HEADERS OFF"
     "DYNAMIC_LOADER ${SK_DYNAMIC_OPENXR}"
   )
-  target_compile_options(openxr_loader PRIVATE ${SK_WARNING_FLAG})
-
-  # Roughly halves the loader's compile time, with no size change under LTO.
-  set_target_properties(openxr_loader PROPERTIES UNITY_BUILD ON)
-
-  # OpenXR-SDK pins the loader to the dynamic CRT (/MD) when it's built as a
-  # static lib, which collides (LNK2038) with our static-CRT build. Re-assert
-  # our runtime on the target so both sides match.
-  if (CMAKE_MSVC_RUNTIME_LIBRARY)
-    set_target_properties(openxr_loader PROPERTIES
-      MSVC_RUNTIME_LIBRARY "${CMAKE_MSVC_RUNTIME_LIBRARY}")
-  endif()
+  unset(CMAKE_C_FLAGS_RELEASE)
 
   set(OPENXR_LIB openxr_loader)
 endif()
@@ -200,7 +200,6 @@ CPMAddPackage(
   GIT_TAG           v0.20
   GIT_SHALLOW       1
 )
-target_compile_options(meshoptimizer PRIVATE ${SK_WARNING_FLAG})
 
 #### zstd - https://github.com/facebook/zstd ####
 # sk_ktx2 vendors no compression code, so Zstd supercompressed UASTC borrows this
@@ -245,7 +244,7 @@ if (NOT SK_LOCAL_SK_RENDERER)
   CPMAddPackage(
     NAME sk_renderer
     GITHUB_REPOSITORY StereoKit/sk_renderer
-    GIT_TAG v2026.11.2
+    GIT_TAG v2026.11.3
   )
 else()
   # For building directly with in-progress sk_renderer changes, point this to
@@ -265,7 +264,7 @@ if (NOT SK_LOCAL_SK_APP)
   CPMAddPackage(
     NAME sk_app
     GITHUB_REPOSITORY StereoKit/sk_app
-    GIT_TAG v2026.10.2
+    GIT_TAG v2026.11.3
   )
 else()
   # For building directly with in-progress sk_app changes, point this to your
@@ -292,12 +291,28 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ${SK_BUILD_SHARED_LIBS})
 
 add_library(StereoKitC ${LIBRARY_TYPE})
 
+# The heaviest vendored libraries get an object library that links nothing, so
+# they compile right away instead of waiting on StereoKitC's dependencies.
+add_library(StereoKitC_vendor OBJECT
+  StereoKitC/libraries/cgltf.cpp
+  StereoKitC/libraries/nanosvg.cpp
+  StereoKitC/libraries/miniaudio.cpp
+  StereoKitC/libraries/stb.cpp )
+# StereoKitC's sources wait on its custom commands, and those wait on every
+# library it links. This target owns the shader compiles to avoid that.
+add_library(StereoKitC_shaders OBJECT)
+set_target_properties(StereoKitC_shaders PROPERTIES LINKER_LANGUAGE CXX)
+add_dependencies(StereoKitC StereoKitC_shaders)
+target_include_directories(StereoKitC PRIVATE ${CMAKE_BINARY_DIR}/shaders/)
+
 # stereokit.h keys SK_API's MSVC dllexport off this define. PRIVATE: consumers
 # compiling against the headers must not export the API from their own binary.
 if (SK_BUILD_SHARED_LIBS)
-  target_compile_definitions(StereoKitC PRIVATE SK_BUILD_SHARED)
+  target_compile_definitions(StereoKitC        PRIVATE SK_BUILD_SHARED)
+  target_compile_definitions(StereoKitC_vendor PRIVATE SK_BUILD_SHARED)
 else()
-  target_compile_definitions(StereoKitC PRIVATE SK_BUILD_STATIC)
+  target_compile_definitions(StereoKitC        PRIVATE SK_BUILD_STATIC)
+  target_compile_definitions(StereoKitC_vendor PRIVATE SK_BUILD_STATIC)
 endif()
 if (ANDROID AND SK_DYNAMIC_OPENXR)
   target_compile_definitions(StereoKitC PRIVATE SK_DYNAMIC_OPENXR)
@@ -380,15 +395,12 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/libraries/atomic_util.h
   StereoKitC/libraries/array.h
   StereoKitC/libraries/cgltf.h
-  StereoKitC/libraries/cgltf.cpp
   StereoKitC/libraries/nanosvg.h
-  StereoKitC/libraries/nanosvg.cpp
   StereoKitC/libraries/ferr_hash.h
   StereoKitC/libraries/ferr_hash.cpp
   StereoKitC/libraries/gen_ids.h
   StereoKitC/libraries/micro_ply.h
   StereoKitC/libraries/miniaudio.h
-  StereoKitC/libraries/miniaudio.cpp
   StereoKitC/libraries/qoi.h
   StereoKitC/libraries/qoi.cpp
   StereoKitC/libraries/sk_fontfile.h
@@ -398,7 +410,6 @@ target_sources(StereoKitC PRIVATE
   StereoKitC/libraries/stb_image.h
   StereoKitC/libraries/stb_image_write.h
   StereoKitC/libraries/stb_truetype.h
-  StereoKitC/libraries/stb.cpp
   StereoKitC/libraries/stref.h
   StereoKitC/libraries/stref.cpp
   StereoKitC/libraries/unicode.h
@@ -612,8 +623,10 @@ target_sources(StereoKitC PRIVATE
 # Mirror the on-disk StereoKitC/ folder layout as Visual Studio folders/filters.
 # This runs before shader compilation attaches generated files from the build
 # folder, which live outside this tree.
-get_target_property(SK_SOURCE_FILES StereoKitC SOURCES)
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC FILES ${SK_SOURCE_FILES})
+get_target_property(SK_SOURCE_FILES StereoKitC        SOURCES)
+get_target_property(SK_VENDOR_FILES StereoKitC_vendor SOURCES)
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/StereoKitC FILES ${SK_SOURCE_FILES} ${SK_VENDOR_FILES})
+target_link_libraries(StereoKitC PRIVATE StereoKitC_vendor)
 
 # Realtime DSP built on inline SIMD wrappers is ~10x slower at -O0 and misses
 # the device deadline, so these files compile optimized in every config - the
@@ -629,9 +642,9 @@ endif()
 # An exact pin rather than target_compile_features: features only guarantee a
 # minimum, and on compilers that default past C++17 (GCC 16 uses C++20) u8
 # literals become char8_t and no longer fit the C API.
-set_target_properties(StereoKitC PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
+set_target_properties(StereoKitC StereoKitC_vendor PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
 
-skshaderc_compile_headers(StereoKitC
+skshaderc_compile_headers(StereoKitC_shaders
   ${CMAKE_BINARY_DIR}/shaders/
   "-e -O3 -f -z ${SK_SHADER_VERBOSITY} -i ${CMAKE_CURRENT_SOURCE_DIR}/tools/include"
   StereoKitC/shaders_builtin/shader_builtin_blit.hlsl
@@ -745,11 +758,15 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 endif()
 
 if (SK_BUILD_OPENXR_LOADER)
-  target_compile_options(openxr_loader PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
+  # Everything but our -O level, which would override the loader's -Os.
+  set(SK_LOADER_RELEASE_COMPILE ${SK_RELEASE_COMPILE})
+  list(FILTER SK_LOADER_RELEASE_COMPILE EXCLUDE REGEX "^[-/]O[0-9sz]$")
+  target_compile_options(openxr_loader PRIVATE "$<$<CONFIG:RELEASE>:${SK_LOADER_RELEASE_COMPILE}>")
   target_link_options   (openxr_loader PRIVATE ${SK_LINKER_FLAGS} "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
 endif()
-target_compile_options(StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
-target_link_options   (StereoKitC PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
+target_compile_options(StereoKitC        PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
+target_compile_options(StereoKitC_vendor PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_COMPILE}>")
+target_link_options   (StereoKitC        PRIVATE "$<$<CONFIG:RELEASE>:${SK_RELEASE_LINK}>")
 target_link_options   (StereoKitC PUBLIC ${SK_LINKER_FLAGS})
 
 # Hide static dep symbols so they can't cross-bind against other copies in
@@ -1039,7 +1056,8 @@ endif()
 # default, this is mostly for when using Visual Studio as
 # the IDE. CLI users can pass in command line arguments.
 if (MSVC AND SK_MULTITHREAD_BUILD_BY_DEFAULT)
-  target_compile_options(StereoKitC PRIVATE "/MP")
+  target_compile_options(StereoKitC        PRIVATE "/MP")
+  target_compile_options(StereoKitC_vendor PRIVATE "/MP")
   if (TARGET openxr_loader)
     target_compile_options(openxr_loader PRIVATE "/MP")
   endif()
