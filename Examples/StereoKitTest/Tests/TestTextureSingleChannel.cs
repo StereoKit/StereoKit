@@ -24,9 +24,9 @@ class TestTextureSingleChannel : ITest
 			r16Data[i] = (ushort)(y*ushort.MaxValue);
 			r32Data[i] = y;
 		}
-		r8 .SetColors(s, s, r8Data);
-		r16.SetColors(s, s, r16Data);
-		r32.SetColors(s, s, r32Data);
+		r8 .SetColors(s, s, r8Data,  TexFormat.R8,  TexData.Blocking | TexData.CompressNone);
+		r16.SetColors(s, s, r16Data, TexFormat.R16, TexData.Blocking | TexData.CompressNone);
+		r32.SetColors(s, s, r32Data, TexFormat.R32, TexData.Blocking | TexData.CompressNone);
 
 		r8.AddressMode  = TexAddress.Clamp;
 		r16.AddressMode = TexAddress.Clamp;

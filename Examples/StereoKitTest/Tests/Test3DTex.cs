@@ -19,7 +19,7 @@ class Test3DTex : ITest
 		// has clear opaque blobs to render.
 		Color32[] data = BuildSphereVolume(Size);
 		var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-		try   { _volume.SetColors(Size, Size, Size, handle.AddrOfPinnedObject()); }
+		try   { _volume.SetColors(Size, Size, Size, handle.AddrOfPinnedObject(), TexFormat.Rgba32, TexData.Blocking); }
 		finally { handle.Free(); }
 		_volume.AddressMode = TexAddress.Clamp;
 

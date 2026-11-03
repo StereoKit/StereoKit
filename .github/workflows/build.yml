@@ -230,7 +230,7 @@ jobs:
 ###########################################
 
   build-macos:
-    runs-on: macos-14
+    runs-on: macos-26
     env:
       CPM_SOURCE_CACHE: .deps_cache
 

@@ -974,7 +974,9 @@ namespace StereoKit
 		Mips         = 1 << 4,
 		/// <summary>This texture's data will be updated frequently from the
 		/// CPU (not renders)! This ensures the graphics card stores it
-		/// someplace where writes are easy to do quickly.</summary>
+		/// someplace where writes are easy to do quickly. Dynamic textures
+		/// are never compressed, since compression would have to run again
+		/// on every update.</summary>
 		Dynamic      = 1 << 5,
 		/// <summary>This texture contains depth data, not color data! It is writeable and
 		/// readable. This makes it great for shadowmaps or other textures that need to
@@ -991,6 +993,47 @@ namespace StereoKit
 		/// <summary>A standard color image that also generates mip-maps
 		/// automatically.</summary>
 		Image        = ImageNomips | Mips,
+	}
+
+	/// <summary>Flags for texture data: what it holds, how StereoKit should store it on
+	/// the GPU, and how the call that receives it behaves. Each flag means the
+	/// same thing in every function that takes one. With no flags, work happens
+	/// asynchronously on the asset system, using the app wide default
+	/// compression, which starts as quality.</summary>
+	[Flags]
+	public enum TexData {
+		/// <summary>Linear data, like roughness, metalness, or a mask. Compression follows
+		/// the default, and the call is asynchronous.</summary>
+		None         = 0,
+		/// <summary>Color data stored in sRGB, which is what most color images are. This
+		/// only applies where the data's format isn't already known, like when
+		/// decoding an image file. This has the same value `true` had for the
+		/// older sRGB bool parameter.</summary>
+		Srgb         = 1 << 0,
+		/// <summary>A tangent space normal map. This is reserved for dedicated normal map
+		/// compression, and is treated like linear data for now.</summary>
+		Normal       = 1 << 1,
+		/// <summary>The alpha channel is unused, so StereoKit may pick a format without
+		/// one. HDR data with an alpha channel, like floating point colors, only
+		/// compresses with this, since compressed HDR formats have no alpha.</summary>
+		Opaque       = 1 << 2,
+		/// <summary>Alpha is only a cutout mask, so 1 bit of alpha is enough.</summary>
+		Cutout       = 1 << 3,
+		/// <summary>Never compress this texture. Use this for textures you read back on
+		/// the CPU, or small images that need to stay pixel exact.</summary>
+		CompressNone = 1 << 8,
+		/// <summary>Compress this texture, preferring quality over size. This wins over
+		/// compress_small, and compress_none wins over this.</summary>
+		CompressQuality = 1 << 9,
+		/// <summary>Compress this texture, preferring a small size over quality.</summary>
+		CompressSmall = 1 << 10,
+		/// <summary>Finish the work before the call returns, so the texture is loaded (or
+		/// failed) right away. Without this, the work happens on the asset system,
+		/// and the texture keeps its previous content until the new content is
+		/// ready. Asynchronous calls copy your data first, so blocking avoids that
+		/// copy, which can be worthwhile for large uploads from a thread that can
+		/// afford to wait. On the main thread, blocking can cause a hitch.</summary>
+		Blocking     = 1 << 16,
 	}
 
 	/// <summary>How does the shader grab pixels from the texture? Or more

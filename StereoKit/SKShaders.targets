@@ -24,8 +24,6 @@
 		<!-- Needs to be normalized for Linux, also a trailing '\' will act
 		     as an escape character for quotes. -->
 		<IncludeFolderNormalized Condition="'$(SKShaderStandardInclude)'!=''">$([MSBuild]::NormalizeDirectory('$(SKShaderStandardInclude)').TrimEnd('\'))</IncludeFolderNormalized>
-		<!-- Compile shaders with skshaderc's SVSL backend instead of glslang. -->
-		<SKShaderSVSL Condition="'$(SKUseSVSL)'=='true'">-svsl</SKShaderSVSL>
 		<!-- The SKShaderCode glob below is evaluated before any target runs, so
 		     these must be slash-normalized here rather than in a target. -->
 		<SKShaderCodeFolderNormalized Condition="'$(SKShaderCodeFolder)'!=''">$([MSBuild]::EnsureTrailingSlash('$(SKShaderCodeFolder)').Replace('\','/'))</SKShaderCodeFolderNormalized>
@@ -67,7 +65,7 @@
 		<!-- Setup metadata for custom build tool -->
 		<ItemGroup>
 			<SKShader Condition="'%(SKShader.RelFile)'!=''">
-				<Command>"$(SKShadercPath)" $(SKOpt) $(SKShaderSVSL) $(SKShaderForce) -e -i "$(IncludeFolderNormalized)" -o "$([System.String]::Copy('$(SKShaderOutputFolder)%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
+				<Command>"$(SKShadercPath)" $(SKOpt) $(SKShaderForce) -e -i "$(IncludeFolderNormalized)" -o "$([System.String]::Copy('$(SKShaderOutputFolder)%(SKShader.RelFolder)').Replace('\','/'))" "%(SKShader.Identity)"</Command>
 				<Outputs>$(SKShaderOutputFolder)%(SKShader.RelFile).sks</Outputs>
 				<RelativeName>%(SKShader.RelFile).sks</RelativeName>
 			</SKShader>
@@ -115,7 +113,7 @@
 	<Target Name="StereoKit_Shader_Code" BeforeTargets="BeforeCompile" Inputs="@(SKShaderCode->'%(FullPath)')" Outputs="@(SKShaderCode->'$(IntermediateOutputPath)%(RecursiveDir)Material%(Filename).gen.cs')">
 		<Message Text="[StereoKit NuGet] Generating C# for %(SKShaderCode.Identity) -> $(IntermediateOutputPath)%(SKShaderCode.RecursiveDir)Material%(SKShaderCode.Filename).gen.cs" Importance="high" />
 
-		<Exec Command='"$(SKShadercPath)" $(SKOpt) $(SKShaderSVSL) -e -sk -i "$(IncludeFolderNormalized)" "%(SKShaderCode.Identity)" -o "$(IntermediateOutputPath)%(SKShaderCode.RecursiveDir)Material%(SKShaderCode.Filename).gen.cs"'></Exec>
+		<Exec Command='"$(SKShadercPath)" $(SKOpt) -e -sk -i "$(IncludeFolderNormalized)" "%(SKShaderCode.Identity)" -o "$(IntermediateOutputPath)%(SKShaderCode.RecursiveDir)Material%(SKShaderCode.Filename).gen.cs"'></Exec>
 
 		<ItemGroup>
 			<Compile Remove ="@(SKShaderCode->'$(IntermediateOutputPath)%(RecursiveDir)Material%(Filename).gen.cs')"/>

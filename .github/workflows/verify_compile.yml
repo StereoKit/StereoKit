@@ -29,7 +29,7 @@ jobs:
         cmake --build --preset Win32_x64_Release_Fast
 
   native-macos:
-    runs-on: macos-14
+    runs-on: macos-26
     env:
       CPM_SOURCE_CACHE: .deps_cache
 

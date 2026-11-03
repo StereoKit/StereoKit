@@ -268,7 +268,7 @@ void mesh_set_inds(mesh_t mesh, const vind_t *indices,  int32_t index_count) {
 // Async mesh loading infrastructure     //
 ///////////////////////////////////////////
 
-bool32_t mesh_load_process(asset_task_t*, asset_header_t* asset, void *data) {
+asset_action_result_ mesh_load_process(asset_task_t*, asset_header_t* asset, void *data) {
 	mesh_t       mesh = (mesh_t)asset;
 	mesh_load_t* load = (mesh_load_t*)data;
 
@@ -278,10 +278,10 @@ bool32_t mesh_load_process(asset_task_t*, asset_header_t* asset, void *data) {
 	}
 
 	mesh->header.state = asset_state_loaded_meta;
-	return true;
+	return asset_action_done;
 }
 
-bool32_t mesh_load_upload(asset_task_t*, asset_header_t* asset, void *data) {
+asset_action_result_ mesh_load_upload(asset_task_t*, asset_header_t* asset, void *data) {
 	mesh_t       mesh = (mesh_t)asset;
 	mesh_load_t* load = (mesh_load_t*)data;
 
@@ -310,7 +310,7 @@ bool32_t mesh_load_upload(asset_task_t*, asset_header_t* asset, void *data) {
 		load->inds  = nullptr;
 	}
 
-	return true;
+	return asset_action_done;
 }
 
 void mesh_load_free(asset_header_t*, void *data) {
@@ -379,15 +379,15 @@ static void _mesh_set_data(mesh_t mesh, int32_t format_id, const void* vertices,
 			memcpy(load_data->inds, indices, sizeof(vind_t) * index_count);
 		}
 
-		static const asset_load_action_t actions[] = {
-			mesh_load_process,
-			mesh_load_upload,
+		static const asset_action_t actions[] = {
+			{ mesh_load_process, asset_affinity_heavy },
+			{ mesh_load_upload },
 		};
 
 		asset_task_t task = {};
 		task.asset        = &mesh->header;
 		task.load_data    = load_data;
-		task.actions      = (asset_load_action_t *)actions;
+		task.actions      = (asset_action_t *)actions;
 		task.action_count = _countof(actions);
 		task.free_data    = mesh_load_free;
 		task.on_failure   = mesh_load_on_failure;

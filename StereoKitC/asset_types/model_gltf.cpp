@@ -53,7 +53,7 @@ matrix     gltf_build_node_matrix     (cgltf_node *curr);
 matrix     gltf_build_world_matrix    (cgltf_node *curr, cgltf_node *root);
 void       gltf_add_warning           (gltf_warnings_t *warnings, const char *fmt, ...);
 material_t gltf_parsematerial         (cgltf_data *data, cgltf_material *material, const char *filename, shader_t shader, gltf_warnings_t *warnings);
-void       gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, const char *filename, int32_t priority, gltf_warnings_t *warnings);
+void       gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, const char *filename, int32_t priority, tex_data_ tex_flags, gltf_warnings_t *warnings);
 void       gltf_parse_extras          (model_t model, model_node_id node, const char* extras_json, size_t extras_size);
 
 ///////////////////////////////////////////
@@ -607,7 +607,7 @@ bool gltf_resolve_image(cgltf_data *data, cgltf_image *image, const char *filena
 
 ///////////////////////////////////////////
 
-tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filename, bool srgb_data, int32_t priority, gltf_warnings_t* warnings, tex_t fallback = nullptr) {
+tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filename, tex_data_ flags, int32_t priority, gltf_warnings_t* warnings, tex_t fallback = nullptr) {
 	cgltf_image *image = tex->has_basisu
 		? tex->basisu_image
 		: tex->image;
@@ -629,7 +629,7 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filena
 		return nullptr;
 
 	if (img_data != nullptr) {
-		result = tex_create_mem(img_data, img_size, srgb_data, priority);
+		result = tex_create_mem(img_data, img_size, flags, priority);
 		// Free base64-decoded data (tex_create_mem copies it).
 		// Buffer view pointers are into the cgltf buffer, not ours.
 		if (image->buffer_view == nullptr)
@@ -640,7 +640,7 @@ tex_t gltf_parsetexture(cgltf_data* data, cgltf_texture *tex, const char *filena
 			tex_set_id(result, id);
 	} else if (image->uri != nullptr && strstr(image->uri, "://") == nullptr) {
 		// If it's a file path to an external image file
-		result = tex_create_file(id, srgb_data, priority);
+		result = tex_create_file(id, flags, priority);
 	}
 	if (result != nullptr) {
 		gltf_apply_sampler(result, tex->sampler);
@@ -674,7 +674,7 @@ static void gltf_material_id(char *id, size_t id_size, const char *filename, cgl
 
 ///////////////////////////////////////////
 
-void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, const char *filename, int32_t priority, gltf_warnings_t *warnings) {
+void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, const char *filename, int32_t priority, tex_data_ tex_flags, gltf_warnings_t *warnings) {
 	if (material == nullptr) return;
 
 	char id[512];
@@ -690,13 +690,18 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 	const int32_t pri_emission  = priority + 2;
 	const int32_t pri_detail    = priority + 3;
 
+	// Content comes from the slot, the model only picks the compression.
+	const tex_data_ flags_color  = tex_flags | tex_data_srgb;
+	const tex_data_ flags_data   = tex_flags;
+	const tex_data_ flags_normal = tex_flags | tex_data_normal;
+
 	cgltf_texture *tex = nullptr;
 	if (material->has_pbr_metallic_roughness) {
 		tex = material->pbr_metallic_roughness.base_color_texture.texture;
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			gltf_set_material_transform(result, &material->pbr_metallic_roughness.base_color_texture);
 			tex_t slot_default = material_get_default_tex(result, "diffuse");
-			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, true, pri_diffuse, warnings, slot_default);
+			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, flags_color, pri_diffuse, warnings, slot_default);
 			tex_release(slot_default);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
@@ -707,7 +712,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 		tex = material->pbr_metallic_roughness.metallic_roughness_texture.texture;
 		if (tex != nullptr && material_has_param(result, "metal", material_param_texture)) {
 			tex_t slot_default = material_get_default_tex(result, "metal");
-			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, false, pri_detail, warnings, slot_default);
+			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, flags_data, pri_detail, warnings, slot_default);
 			tex_release(slot_default);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "metal", parse_tex);
@@ -719,7 +724,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 		if (tex != nullptr && material_has_param(result, "diffuse", material_param_texture)) {
 			gltf_set_material_transform(result, &material->pbr_specular_glossiness.diffuse_texture);
 			tex_t slot_default = material_get_default_tex(result, "diffuse");
-			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, true, pri_diffuse, warnings, slot_default);
+			tex_t parse_tex    = gltf_parsetexture(data, tex, filename, flags_color, pri_diffuse, warnings, slot_default);
 			tex_release(slot_default);
 			if (parse_tex != nullptr) {
 				material_set_texture(result, "diffuse", parse_tex);
@@ -731,7 +736,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 	tex = material->normal_texture.texture;
 	if (tex != nullptr && material_has_param(result, "normal", material_param_texture)) {
 		tex_t slot_default = material_get_default_tex(result, "normal");
-		tex_t parse_tex    = gltf_parsetexture(data, tex, filename, false, pri_detail, warnings, slot_default);
+		tex_t parse_tex    = gltf_parsetexture(data, tex, filename, flags_normal, pri_detail, warnings, slot_default);
 		tex_release(slot_default);
 		if (parse_tex != nullptr) {
 			material_set_texture(result, "normal", parse_tex);
@@ -743,7 +748,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 	const char* param = is_lightmap ? "lightmap" : "occlusion";
 	if (tex != nullptr && material_has_param(result, param, material_param_texture)) {
 		tex_t slot_default = material_get_default_tex(result, param);
-		tex_t parse_tex    = gltf_parsetexture(data, tex, filename, is_lightmap ? true : false, pri_occlusion, warnings, slot_default);
+		tex_t parse_tex    = gltf_parsetexture(data, tex, filename, is_lightmap ? flags_color : flags_data, pri_occlusion, warnings, slot_default);
 		tex_release(slot_default);
 		if (parse_tex != nullptr) {
 			material_set_texture(result, param, parse_tex);
@@ -757,7 +762,7 @@ void gltf_parsematerial_textures(cgltf_data *data, cgltf_material *material, con
 		gltf_set_material_transform(result, &material->emissive_texture);
 		int32_t pri_emissive = hacked_unlit ? pri_diffuse : pri_emission;
 		tex_t   slot_default = material_get_default_tex(result, param);
-		tex_t   parse_tex    = gltf_parsetexture(data, tex, filename, true, pri_emissive, warnings, slot_default);
+		tex_t   parse_tex    = gltf_parsetexture(data, tex, filename, flags_color, pri_emissive, warnings, slot_default);
 		tex_release(slot_default);
 		if (parse_tex != nullptr) {
 			material_set_texture(result, param, parse_tex);
@@ -1028,7 +1033,7 @@ static cgltf_options gltf_make_options() {
 
 ///////////////////////////////////////////
 
-bool modelfmt_gltf_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, void **out_format_data) {
+bool modelfmt_gltf_metadata(model_t model, const char *filename, const void *file_data, size_t file_size, shader_t shader, int32_t priority, tex_data_, void **out_format_data) {
 	profiler_zone();
 	*out_format_data = nullptr;
 
@@ -1085,14 +1090,14 @@ bool modelfmt_gltf_metadata(model_t model, const char *filename, const void *fil
 
 ///////////////////////////////////////////
 
-bool modelfmt_gltf_meshes(model_t model, const char *filename, shader_t shader, int32_t priority, void *format_data) {
+bool modelfmt_gltf_meshes(model_t model, const char *filename, shader_t shader, int32_t priority, tex_data_ tex_flags, void *format_data) {
 	profiler_zone();
 	gltf_load_t *load = (gltf_load_t *)format_data;
 	if (load == nullptr) return false;
 
 	// Kick off async texture loads first so they overlap with mesh parsing
 	for (cgltf_size i = 0; i < load->data->materials_count; i++) {
-		gltf_parsematerial_textures(load->data, &load->data->materials[i], filename, priority, &load->warnings);
+		gltf_parsematerial_textures(load->data, &load->data->materials[i], filename, priority, tex_flags & (tex_data_policy_mask | tex_data_blocking), &load->warnings);
 	}
 
 	// Parse meshes synchronously (we're already on an asset thread)

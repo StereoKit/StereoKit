@@ -243,7 +243,7 @@ internal class TestTextures : ITest
 				Marshal.StructureToPtr((x % 4 == 0 || y % 4 == 0) ? a : b, dest, false);
 			}
 		}
-		result.tex.SetColors(w, h, ptr);
+		result.tex.SetColors(w, h, ptr, format, TexData.Blocking | TexData.CompressNone);
 		Marshal.FreeHGlobal(ptr);
 
 		result.mat[MatParamName.DiffuseTex] = result.tex;

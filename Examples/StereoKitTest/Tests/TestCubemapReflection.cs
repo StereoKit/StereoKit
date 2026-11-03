@@ -7,6 +7,7 @@ using System;
 class TestCubemapReflection : ITest
 {
 	Tex reflection;
+	Tex uncompressed;
 
 	Tex                oldSkybox;
 	Tex                oldReflection;
@@ -21,7 +22,11 @@ class TestCubemapReflection : ITest
 		SphericalHarmonics lighting = SphericalHarmonics.FromLights(new SHLight[] {
 			new SHLight { directionTo = V.XYZ(0, 1, 0), color = Color.White }
 		});
-		Lighting.SetEnvironment(Tex.GenCubemap(lighting), out reflection);
+		Tex sky = Tex.GenCubemap(lighting);
+		Lighting.SetEnvironment(sky, out reflection);
+		// Compressed reflections read back as blocks, so the pixel checks use
+		// an uncompressed one of the same freshly uploaded sky.
+		uncompressed = Tex.GenCubemapReflection(sky, null, 64, TexData.CompressNone);
 		Tests.RunForFrames(1);
 	}
 
@@ -30,22 +35,28 @@ class TestCubemapReflection : ITest
 		if (reflection == null) { Tests.Fail("TestCubemapReflection: SetEnvironment returned no reflection"); return; }
 
 		// Generation is async on the asset threads, no frame stepping needed.
-		Assets.BlockUntil(reflection, AssetState.Loaded);
-		if (reflection.AssetState != AssetState.Loaded)
+		Assets.BlockUntil(reflection,   AssetState.Loaded);
+		Assets.BlockUntil(uncompressed, AssetState.Loaded);
+		if (reflection.AssetState != AssetState.Loaded || uncompressed.AssetState != AssetState.Loaded)
 		{
-			Tests.Fail($"TestCubemapReflection: reflection failed to generate, state {reflection.AssetState}");
+			Tests.Fail($"TestCubemapReflection: reflection failed to generate, states {reflection.AssetState} and {uncompressed.AssetState}");
 			return;
 		}
 
 		if (reflection.Mips < 2)
 			Tests.Fail($"TestCubemapReflection: reflection has no mip chain ({reflection.Mips} mips)");
+		if (uncompressed.Format != TexFormat.Rg11b10)
+		{
+			Tests.Fail($"TestCubemapReflection: CompressNone reflection is {uncompressed.Format}, not Rg11b10");
+			return;
+		}
 
 		// The GGX chain preserves energy, so every mip's average should sit
 		// near the environment's ~0.96 average. Black mips or NaN/garbage
 		// blowups land far outside this band.
-		for (int m = 0; m < reflection.Mips; m++)
+		for (int m = 0; m < uncompressed.Mips; m++)
 		{
-			float avg = MipAvgLuminance(reflection, m);
+			float avg = MipAvgLuminance(uncompressed, m);
 			if (avg < 0.3f || avg > 3.0f)
 				Tests.Fail($"TestCubemapReflection: mip {m} average luminance {avg:0.0000} is out of band");
 		}

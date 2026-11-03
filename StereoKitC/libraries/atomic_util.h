@@ -27,6 +27,7 @@
 	#define atomic_load_u64_acq(ref)       (uint64_t)ReadAcquire64((volatile LONG64*)(ref))
 	#define atomic_store_u64_rel(ref, val) WriteRelease64((volatile LONG64*)(ref), (LONG64)(val))
 	#define atomic_exchange_u64(ref, val)  (uint64_t)InterlockedExchange64((volatile LONG64*)(ref), (LONG64)(val))
+	#define atomic_increment_u64(ref)      (uint64_t)InterlockedIncrement64((volatile LONG64*)(ref))
 
 #else
 
@@ -50,6 +51,7 @@
 	#define atomic_load_u64_acq(ref)       __atomic_load_n ((ref), __ATOMIC_ACQUIRE)
 	#define atomic_store_u64_rel(ref, val) __atomic_store_n((ref), (val), __ATOMIC_RELEASE)
 	#define atomic_exchange_u64(ref, val)  __atomic_exchange_n((ref), (val), __ATOMIC_ACQ_REL)
+	#define atomic_increment_u64(ref)      __atomic_add_fetch((ref), (uint64_t)1, __ATOMIC_RELAXED)
 
 #endif
 
@@ -58,6 +60,8 @@
 // release/acquire, these only prevent tearing and satisfy the race rules.
 #define atomic_load_ptr(ref)       ((void*)atomic_load_u64 ((uint64_t*)(ref)))
 #define atomic_store_ptr(ref, val) atomic_store_u64((uint64_t*)(ref), (uint64_t)(val))
+// Acquire/release, so an exchange can hand over what the pointer points to.
+#define atomic_exchange_ptr(ref, val) ((void*)atomic_exchange_u64((uint64_t*)(ref), (uint64_t)(val)))
 
 // Floats travel as their bit patterns through the i32 atomics. A relaxed
 // atomic is enough for single-value parameter snapshots, tearing is what

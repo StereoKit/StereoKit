@@ -1,6 +1,7 @@
 ﻿#include "font.h"
 
 #include "../_stereokit.h"
+#include "texture_.h"
 #include "../libraries/stb_truetype.h"
 #include "../libraries/aileron_font_data.h"
 #include "../libraries/stref.h"
@@ -590,12 +591,12 @@ void font_upsize_texture(font_t font) {
 
 void font_update_texture(font_t font) {
 	if (font->font_tex == nullptr) {
-		font->font_tex = tex_create(tex_type_image, tex_format_r8);
+		font->font_tex = tex_create(tex_type_image | tex_type_dynamic, tex_format_r8);
 		char* tex_id = string_append(nullptr, 2, font_get_id(font), "/atlas");
 		tex_set_id(font->font_tex, tex_id);
 		sk_free(tex_id);
 	}
-	tex_set_colors(font->font_tex, font->atlas.w, font->atlas.h, font->atlas_data);
+	tex_set_colors(font->font_tex, font->atlas.w, font->atlas.h, font->atlas_data, tex_data_immediate);
 }
 
 ///////////////////////////////////////////

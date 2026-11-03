@@ -113,7 +113,7 @@ static void depth_init() {
 	material_set_depth_test  (depth_prepass_mat, depth_test_always);
 	material_set_depth_write (depth_prepass_mat, true);
 	material_set_cull        (depth_prepass_mat, cull_none);
-	material_set_queue_offset(depth_prepass_mat, -200);
+	material_set_queue_offset(depth_prepass_mat, -128);
 }
 
 static void depth_shutdown() {

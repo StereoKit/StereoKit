@@ -21,7 +21,7 @@ struct _material_t {
 
 	// Per-resource tracking — single allocation, pointers index into it.
 	// Layout: [tex_t * N][uint64_t * N][compute_buffer_t * N]
-	tex_t*            textures;            // owns the allocation
+	tex_t*            textures;            // owns the allocation, nullptr while a slot is at its shader default
 	uint64_t*         texture_meta_hashes;
 	compute_buffer_t* buffers;
 	int32_t           resource_count;

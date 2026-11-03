@@ -1662,7 +1662,9 @@ typedef enum tex_type_ {
 	tex_type_mips          = 1 << 4,
 	/*This texture's data will be updated frequently from the
 	  CPU (not renders)! This ensures the graphics card stores it
-	  someplace where writes are easy to do quickly.*/
+	  someplace where writes are easy to do quickly. Dynamic textures
+	  are never compressed, since compression would have to run again
+	  on every update.*/
 	tex_type_dynamic       = 1 << 5,
 	/*This texture contains depth data, not color data! It is writeable and
 	  readable. This makes it great for shadowmaps or other textures that need to
@@ -1681,6 +1683,47 @@ typedef enum tex_type_ {
 	tex_type_image         = tex_type_image_nomips | tex_type_mips,
 } tex_type_;
 SK_MakeFlag(tex_type_);
+
+/*Flags for texture data: what it holds, how StereoKit should store it on
+  the GPU, and how the call that receives it behaves. Each flag means the
+  same thing in every function that takes one. With no flags, work happens
+  asynchronously on the asset system, using the app wide default
+  compression, which starts as quality.*/
+typedef enum tex_data_ {
+	/*Linear data, like roughness, metalness, or a mask. Compression follows
+	  the default, and the call is asynchronous.*/
+	tex_data_none              = 0,
+	/*Color data stored in sRGB, which is what most color images are. This
+	  only applies where the data's format isn't already known, like when
+	  decoding an image file. This has the same value `true` had for the
+	  older sRGB bool parameter.*/
+	tex_data_srgb              = 1 << 0,
+	/*A tangent space normal map. This is reserved for dedicated normal map
+	  compression, and is treated like linear data for now.*/
+	tex_data_normal            = 1 << 1,
+	/*The alpha channel is unused, so StereoKit may pick a format without
+	  one. HDR data with an alpha channel, like floating point colors, only
+	  compresses with this, since compressed HDR formats have no alpha.*/
+	tex_data_opaque            = 1 << 2,
+	/*Alpha is only a cutout mask, so 1 bit of alpha is enough.*/
+	tex_data_cutout            = 1 << 3,
+	/*Never compress this texture. Use this for textures you read back on
+	  the CPU, or small images that need to stay pixel exact.*/
+	tex_data_compress_none     = 1 << 8,
+	/*Compress this texture, preferring quality over size. This wins over
+	  compress_small, and compress_none wins over this.*/
+	tex_data_compress_quality  = 1 << 9,
+	/*Compress this texture, preferring a small size over quality.*/
+	tex_data_compress_small    = 1 << 10,
+	/*Finish the work before the call returns, so the texture is loaded (or
+	  failed) right away. Without this, the work happens on the asset system,
+	  and the texture keeps its previous content until the new content is
+	  ready. Asynchronous calls copy your data first, so blocking avoids that
+	  copy, which can be worthwhile for large uploads from a thread that can
+	  afford to wait. On the main thread, blocking can cause a hitch.*/
+	tex_data_blocking          = 1 << 16,
+} tex_data_;
+SK_MakeFlag(tex_data_);
 
 /*How does the shader grab pixels from the texture? Or more
   specifically, how does the shader grab colors between the provided
@@ -1756,14 +1799,14 @@ typedef enum tex_address_ {
 SK_API tex_t        tex_find                (const char *id);
 SK_API tex_t        tex_create              (tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_rgba32));
 SK_API tex_t        tex_create_rendertarget (int32_t width, int32_t height, int32_t msaa sk_default(1), tex_format_ color_format sk_default(tex_format_rgba32), tex_format_ depth_format sk_default(tex_format_depth16));
-SK_API tex_t        tex_create_color32      (color32  *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
-SK_API tex_t        tex_create_color128     (color128 *in_arr_data, int32_t width, int32_t height, bool32_t srgb_data sk_default(true));
-SK_API tex_t        tex_create_mem          (void *data, size_t data_size,                  bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
-SK_API tex_t        tex_create_file         (const char *file_utf8,                         bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
-SK_API tex_t        tex_create_file_arr     (const char **in_arr_files, int32_t file_count, bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
-SK_API tex_t        tex_create_cubemap_file (const char *cubemap_file_utf8,                 bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
-SK_API tex_t        tex_create_cubemap_files(const char **in_arr_cube_face_file_xxyyzz,     bool32_t srgb_data sk_default(true), int32_t priority sk_default(10));
-SK_API tex_t        tex_copy                (const tex_t texture, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_none));
+SK_API tex_t        tex_create_color32      (color32  *in_arr_data, int32_t width, int32_t height, tex_data_ flags sk_default(tex_data_srgb));
+SK_API tex_t        tex_create_color128     (color128 *in_arr_data, int32_t width, int32_t height, tex_data_ flags sk_default(tex_data_srgb));
+SK_API tex_t        tex_create_mem          (void *data, size_t data_size,                  tex_data_ flags sk_default(tex_data_srgb), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_file         (const char *file_utf8,                         tex_data_ flags sk_default(tex_data_srgb), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_file_arr     (const char **in_arr_files, int32_t file_count, tex_data_ flags sk_default(tex_data_srgb), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_cubemap_file (const char *cubemap_file_utf8,                 tex_data_ flags sk_default(tex_data_srgb), int32_t priority sk_default(10));
+SK_API tex_t        tex_create_cubemap_files(const char **in_arr_cube_face_file_xxyyzz,     tex_data_ flags sk_default(tex_data_srgb), int32_t priority sk_default(10));
+SK_API tex_t        tex_copy                (const tex_t texture, tex_type_ type sk_default(tex_type_image), tex_format_ format sk_default(tex_format_none), tex_data_ flags sk_default(tex_data_srgb), tex_t into sk_default(nullptr));
 SK_API bool32_t     tex_gen_mips            (tex_t texture);
 SK_API void         tex_set_id              (tex_t texture, const char *id);
 SK_API const char*  tex_get_id              (const tex_t texture);
@@ -1777,11 +1820,12 @@ SK_API void         tex_release             (tex_t texture);
 SK_API asset_state_ tex_asset_state         (const tex_t texture);
 SK_API void         tex_on_load             (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context), void *context);
 SK_API void         tex_on_load_remove      (tex_t texture, void (*asset_on_load_callback)(tex_t texture, void *context));
-SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data);
-SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1));
-SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1));
-SK_API void         tex_set_colors_3d       (tex_t texture, int32_t width, int32_t height, int32_t depth, void *data);
-SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, bool32_t srgb_data sk_default(true), bool32_t blocking sk_default(false), int32_t priority sk_default(10));
+SK_API void         tex_set_colors          (tex_t texture, int32_t width, int32_t height, void *data,                                                                   tex_data_ flags sk_default(tex_data_srgb), tex_format_ data_format sk_default(tex_format_none), int32_t priority sk_default(10));
+SK_API void         tex_set_color_arr       (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count,                    int32_t multisample sk_default(1), tex_data_ flags sk_default(tex_data_srgb), tex_format_ data_format sk_default(tex_format_none), int32_t priority sk_default(10));
+SK_API void         tex_set_color_arr_mips  (tex_t texture, int32_t width, int32_t height, void** array_data, int32_t array_count, int32_t mip_count, int32_t multisample sk_default(1), tex_data_ flags sk_default(tex_data_srgb), tex_format_ data_format sk_default(tex_format_none), int32_t priority sk_default(10));
+SK_API void         tex_set_size            (tex_t texture, int32_t width, int32_t height, int32_t depth sk_default(1), int32_t array_count sk_default(1), int32_t multisample sk_default(1));
+SK_API void         tex_set_colors_3d       (tex_t texture, int32_t width, int32_t height, int32_t depth, void *data,                                                    tex_data_ flags sk_default(tex_data_srgb), tex_format_ data_format sk_default(tex_format_none), int32_t priority sk_default(10));
+SK_API void         tex_set_mem             (tex_t texture, void* data, size_t data_size, tex_data_ flags sk_default(tex_data_srgb), int32_t priority sk_default(10));
 SK_API void         tex_add_zbuffer         (tex_t texture, tex_format_ format sk_default(tex_format_depthstencil));
 SK_API void         tex_set_zbuffer         (tex_t texture, tex_t depth_texture);
 SK_API tex_t        tex_get_zbuffer         (tex_t texture);
@@ -1790,11 +1834,14 @@ SK_API tex_t        tex_gen_color           (color128 color, int32_t width, int3
 SK_API tex_t        tex_gen_particle        (int32_t width, int32_t height, float roundness sk_default(1), gradient_t gradient_linear sk_default(nullptr));
 SK_API tex_t        tex_gen_cubemap         (const gradient_t gradient, vec3 gradient_dir, int32_t resolution);
 SK_API tex_t        tex_gen_cubemap_sh      (const sk_ref(spherical_harmonics_t) lookup, int32_t face_size, float light_spot_size_pct sk_default(0), float light_spot_intensity sk_default(6));
-SK_API tex_t        tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into sk_default(nullptr), int32_t max_resolution sk_default(64));
+SK_API tex_t        tex_gen_cubemap_reflection(tex_t source_cubemap, tex_t into sk_default(nullptr), int32_t max_resolution sk_default(64), tex_data_ flags sk_default(tex_data_none));
 SK_API tex_format_  tex_get_format          (tex_t texture);
+SK_API tex_format_  tex_get_input_format    (tex_t texture);
 SK_API int32_t      tex_get_width           (tex_t texture);
 SK_API int32_t      tex_get_height          (tex_t texture);
 SK_API int32_t      tex_get_depth           (tex_t texture);
+SK_API int32_t      tex_get_array_count     (tex_t texture);
+SK_API tex_type_    tex_get_type            (tex_t texture);
 SK_API void         tex_set_sample          (tex_t texture, tex_sample_ sample sk_default(tex_sample_linear));
 SK_API tex_sample_  tex_get_sample          (tex_t texture);
 SK_API void             tex_set_sample_comp (tex_t texture, tex_sample_comp_ compare sk_default(tex_sample_comp_none));
@@ -1806,6 +1853,8 @@ SK_API int32_t      tex_get_anisotropy      (tex_t texture);
 SK_API int32_t      tex_get_mips            (tex_t texture);
 SK_API void         tex_set_loading_fallback(tex_t loading_texture);
 SK_API void         tex_set_error_fallback  (tex_t error_texture);
+SK_API void         tex_set_compression_default(tex_data_ compression);
+SK_API tex_data_    tex_get_compression_default(void);
 SK_API spherical_harmonics_t tex_get_cubemap_lighting(tex_t cubemap_texture);
 SK_API void                  tex_set_cubemap_lighting(tex_t cubemap_texture, const sk_ref(spherical_harmonics_t) lighting_info);
 
@@ -2288,8 +2337,8 @@ SK_API model_t       model_find                    (const char *id);
 SK_API model_t       model_copy                    (model_t model);
 SK_API model_t       model_create                  (void);
 SK_API model_t       model_create_mesh             (mesh_t mesh, material_t material);
-SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr), int32_t priority sk_default(10));
-SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr), int32_t priority sk_default(10));
+SK_API model_t       model_create_mem              (const char *filename_utf8, const void *data, size_t data_size, shader_t shader sk_default(nullptr), int32_t priority sk_default(10), tex_data_ tex_flags sk_default(tex_data_none));
+SK_API model_t       model_create_file             (const char *filename_utf8, shader_t shader sk_default(nullptr), int32_t priority sk_default(10), tex_data_ tex_flags sk_default(tex_data_none));
 SK_API void          model_set_id                  (model_t model, const char *id);
 SK_API const char*   model_get_id                  (const model_t model);
 SK_API void          model_addref                  (model_t model);
@@ -2563,9 +2612,12 @@ SK_API render_layer_         render_get_capture_filter     (void);
 SK_API bool32_t              render_has_capture_filter     (void);
 SK_API void                  render_set_clear_color(color128 color_gamma);
 SK_API color128              render_get_clear_color(void);
-SK_API void                  render_global_texture     (int32_t register_slot, tex_t texture);
-SK_API tex_t                 render_get_global_texture (int32_t register_slot);
-SK_API void                  render_global_buffer      (int32_t register_slot, material_buffer_t buffer);
+SK_API void                  render_set_global_tex     (const char* name, tex_t texture);
+SK_API tex_t                 render_get_global_tex     (const char* name);
+SK_API void                  render_set_global_buffer  (const char* name, material_buffer_t buffer);
+SK_API SK_DEPRECATED void    render_global_texture     (int32_t register_slot, tex_t texture);
+SK_API SK_DEPRECATED tex_t   render_get_global_texture (int32_t register_slot);
+SK_API SK_DEPRECATED void    render_global_buffer      (int32_t register_slot, material_buffer_t buffer);
 SK_API void                  render_add_mesh       (mesh_t  mesh,  material_t material,          const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model      (model_t model,                               const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));
 SK_API void                  render_add_model_mat  (model_t model, material_t material_override, const sk_ref(matrix) transform, color128 color_linear sk_default({1,1,1,1}), render_layer_ layer sk_default(render_layer_0));

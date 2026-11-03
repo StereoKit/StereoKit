@@ -65,7 +65,7 @@ class DemoShadows : ITest
 		// loading!
 		Lighting.SetEnvironment(Tex.FromCubemap(@"old_depot.hdr"));
 
-		Renderer.SetGlobalBuffer(13, shadowBuffer);
+		Renderer.SetGlobalBuffer("shadow_buffer", shadowBuffer);
 	}
 
 	public void Shutdown()
@@ -73,8 +73,8 @@ class DemoShadows : ITest
 		Renderer.SkyboxTex  = oldTex;
 		Lighting.Reflection = oldReflection;
 		Lighting.Ambient    = oldLighting;
-		Renderer.SetGlobalBuffer (13, null);
-		Renderer.SetGlobalTexture(13, null);
+		Renderer.SetGlobalBuffer ("shadow_buffer", null);
+		Renderer.SetGlobalTexture("shadow_map",    null);
 	}
 	public void Step()
 	{
@@ -113,9 +113,9 @@ class DemoShadows : ITest
 
 		// Render the shadow map, and bind it globally so it can be used from
 		// any shader.
-		Renderer.SetGlobalTexture(13, null); // Can't draw to it if it's bound
+		Renderer.SetGlobalTexture("shadow_map", null); // Can't draw to it if it's bound
 		Renderer.RenderTo(shadowMap, view, proj, RenderLayer.All &~ RenderLayer.Vfx, ShadowMapVariant);
-		Renderer.SetGlobalTexture(13, shadowMap);
+		Renderer.SetGlobalTexture("shadow_map", shadowMap);
 	}
 
 	static Model GenerateModel(Material floorMat, Material material)

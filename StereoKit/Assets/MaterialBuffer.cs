@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace StereoKit
 {
 	/// <summary>This is a chunk of memory that will get bound to all shaders
-	/// at a particular register slot. StereoKit uses this to provide engine
+	/// with a cbuffer of a particular name. StereoKit uses this to provide engine
 	/// values to the shader, and you can also use this to drive graphical
 	/// shader systems of your own! 
 	/// 
@@ -73,8 +73,9 @@ namespace StereoKit
 		}
 
 		/// <summary>Create a new global MaterialBuffer that can be bound to a
-		/// register slot id via Renderer.SetGlobalBuffer. All shaders will
-		/// have access to the data provided via this instance's `Set`.</summary>
+		/// shader cbuffer by name via Renderer.SetGlobalBuffer. All shaders
+		/// will have access to the data provided via this instance's `Set`.
+		/// </summary>
 		public MaterialBuffer()
 		{
 			if (!(typeof(T).IsLayoutSequential || typeof(T).IsExplicitLayout))

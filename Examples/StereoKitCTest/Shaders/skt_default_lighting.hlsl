@@ -18,7 +18,7 @@ struct Light {
 	float4 pos;
 	float4 col;
 };
-cbuffer ParamBuffer : register(b3) {
+cbuffer skt_light_buffer : register(b3) {
 	Light lights[6]; 
 };
 

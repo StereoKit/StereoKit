@@ -1,10 +1,18 @@
 #include "texture_compression.h"
+#include "texture_.h"
 #include "../sk_memory.h"
+#include "../libraries/profiler.h"
+#include "../libraries/qoi.h"
+
+#define STBI_NO_STDIO
+#include "../libraries/stb_image.h"
 
 #include <sk_renderer.h>
 #include <sk_ktx2.h>
+#include <sk_texenc.h>
 
 #include <inttypes.h>
+#include <string.h>
 
 // The subset we call from libraries/zstddeclib.c. Its copy of zstd.h is baked
 // into the amalgamation, so there's no header to include.
@@ -20,7 +28,8 @@ namespace sk {
 #define TEX_KTX2_MAX_BYTES (1024 * 1024 * 1024)
 
 struct texture_compression_state_t {
-	ktx2_context_t ktx2; // ETC1S tables, ~43KB, read-only after init so asset threads can share it
+	ktx2_context_t      ktx2; // ETC1S tables, ~43KB, read-only after init so asset threads can share it
+	tex_compress_caps_t caps; // read-only after init
 };
 static texture_compression_state_t local = {};
 
@@ -33,9 +42,37 @@ static size_t ktx2_zstd_inflate(void*, const void* src, size_t src_bytes, void* 
 
 ///////////////////////////////////////////
 
+static size_t texenc_zlib_inflate(void*, const void* src, size_t src_bytes, void* out_dst, size_t dst_bytes) {
+	int32_t written = stbi_zlib_decode_buffer((char*)out_dst, (int32_t)dst_bytes, (const char*)src, (int32_t)src_bytes);
+	return written < 0 ? 0 : (size_t)written;
+}
+
+///////////////////////////////////////////
+
 void texture_compression_init() {
 	local.ktx2.zstd = ktx2_zstd_inflate;
 	ktx2_context_prepare(&local.ktx2);
+}
+
+///////////////////////////////////////////
+
+void texture_compression_gpu_init() {
+	sk_texenc_init(texenc_zlib_inflate, nullptr);
+#if defined(SKR_WEBGPU)
+	// Waits on WebGPU integration, where the encoders' WGSL still needs vetting.
+	local.caps = {};
+#else
+	local.caps.astc     = sk_texenc_available(sk_texenc_fmt_astc4x4, sk_texenc_flags_none) && sk_texenc_available(sk_texenc_fmt_astc6x6, sk_texenc_flags_none);
+	local.caps.astc_hdr = sk_texenc_available(sk_texenc_fmt_astc8x8hdr, sk_texenc_flags_none);
+	local.caps.bc       = sk_texenc_available(sk_texenc_fmt_bc1, sk_texenc_flags_none) && sk_texenc_available(sk_texenc_fmt_bc7, sk_texenc_flags_none) && sk_texenc_available(sk_texenc_fmt_bc6h, sk_texenc_flags_none);
+#endif
+}
+
+///////////////////////////////////////////
+
+void texture_compression_gpu_shutdown() {
+	sk_texenc_shutdown();
+	local.caps = {};
 }
 
 ///////////////////////////////////////////
@@ -145,50 +182,238 @@ bool ktx2_info(void* data, size_t data_size, tex_type_* ref_image_type, tex_form
 ///////////////////////////////////////////
 
 bool ktx2_decode(void* data, size_t data_size, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data) {
-	ktx2_reader_t reader = {};
-	ktx2_plan_t   plan   = {};
-	if (!ktx2_prepare(data, data_size, &reader, &plan)) return false;
+	void*         all   = nullptr;
+	ktx2_slice_t* slice = ktx2_decode_begin(data, data_size, ref_image_type, out_format, out_width, out_height, out_array_count, out_mip_count, &all);
+	if (slice == nullptr) return false;
 
-	ktx2_info_t info       = ktx2_get_info(&reader);
-	int32_t     images     = ktx2_image_count(&info);
-	tex_format_ format     = texture_compression_format(plan.format);
-	skr_vec3i_t base_size  = { info.width, info.height, 1 };
-	uint64_t    image_size = 0;
-	for (int32_t mip = 0; mip < plan.mip_count; mip++)
-		image_size += skr_tex_calc_mip_size((skr_tex_fmt_)format, base_size, mip);
+	int32_t level   = 0;
+	bool    done    = false;
+	bool    success = true;
+	while (success && !done)
+		success = ktx2_decode_step(slice, &level, &done);
+	ktx2_decode_end(slice);
 
-	// sk_ktx2 sizes the mip chain independently of sk_renderer, so a mismatch
-	// here means one of the two is wrong about the format, not about this file.
-	if (image_size * images != plan.data_bytes) {
-		log_errf("KTX2 size disagreement for %s: sk_ktx2 says %" PRIu64 " bytes, sk_renderer says %" PRIu64, ktx2_fmt_str(plan.format), (uint64_t)plan.data_bytes, image_size * images);
-		return false;
-	}
-
-	// Scratch is ours rather than the library's so both allocations go through
-	// sk_malloc and stay accountable.
-	void*        all     = sk_malloc(plan.data_bytes);
-	void*        scratch = plan.scratch_bytes > 0 ? sk_malloc(plan.scratch_bytes) : nullptr;
-	ktx2_result_ result  = ktx2_transcode(&plan, all, plan.data_bytes, scratch);
-	sk_free(scratch);
-	if (result != ktx2_result_success) {
-		log_warnf("KTX2 transcode failed: %s", ktx2_result_str(result));
+	if (!success) {
 		sk_free(all);
 		return false;
 	}
-
-	// Already mip-major with images within a level, which is the layout both the
-	// GPU and tex_load_image_data want, so it hands over untouched.
 	*out_data = all;
+	return true;
+}
 
-	*out_format      = format;
+///////////////////////////////////////////
+
+bool ktx2_sniff(const void* data, size_t data_size) {
+	static const uint8_t magic[12] = { 0xAB, 'K', 'T', 'X', ' ', '2', '0', 0xBB, '\r', '\n', 0x1A, '\n' };
+	return data_size >= sizeof(magic) && memcmp(data, magic, sizeof(magic)) == 0;
+}
+
+///////////////////////////////////////////
+
+struct ktx2_slice_t {
+	ktx2_reader_t reader;
+	ktx2_plan_t   plan;      // points at this struct's own reader
+	void*         scratch;
+	uint8_t*      out;       // the caller's output buffer, not owned here
+	tex_format_   format;
+	skr_vec3i_t   base_size;
+	int32_t       images;
+	int32_t       level_curr;
+	size_t        level_offset; // where level_curr starts in `out`
+};
+
+ktx2_slice_t* ktx2_decode_begin(void* data, size_t data_size, tex_type_* ref_image_type, tex_format_* out_format, int32_t* out_width, int32_t* out_height, int32_t* out_array_count, int32_t* out_mip_count, void** out_data) {
+	ktx2_slice_t* slice = sk_malloc_zero_t(ktx2_slice_t, 1);
+	if (!ktx2_prepare(data, data_size, &slice->reader, &slice->plan)) {
+		sk_free(slice);
+		return nullptr;
+	}
+
+	ktx2_info_t info = ktx2_get_info(&slice->reader);
+	slice->images    = ktx2_image_count(&info);
+	slice->format    = texture_compression_format(slice->plan.format);
+	slice->base_size = { info.width, info.height, 1 };
+
+	// sk_ktx2 sizes the mip chain independently of sk_renderer, so a mismatch
+	// here means one of the two is wrong about the format, not about this file.
+	uint64_t image_size = 0;
+	for (int32_t mip = 0; mip < slice->plan.mip_count; mip++)
+		image_size += skr_tex_calc_mip_size((skr_tex_fmt_)slice->format, slice->base_size, mip);
+	if (image_size * slice->images != slice->plan.data_bytes) {
+		log_errf("KTX2 size disagreement for %s: sk_ktx2 says %" PRIu64 " bytes, sk_renderer says %" PRIu64, ktx2_fmt_str(slice->plan.format), (uint64_t)slice->plan.data_bytes, image_size * slice->images);
+		sk_free(slice);
+		return nullptr;
+	}
+
+	// Scratch is ours rather than the library's so it goes through sk_malloc
+	// and stays accountable.
+	slice->out     = (uint8_t*)sk_malloc(slice->plan.data_bytes);
+	slice->scratch = slice->plan.scratch_bytes > 0 ? sk_malloc(slice->plan.scratch_bytes) : nullptr;
+
+	*out_data        = slice->out;
+	*out_format      = slice->format;
 	*out_width       = info.width;
 	*out_height      = info.height;
-	*out_mip_count   = plan.mip_count;
-	*out_array_count = images;
+	*out_mip_count   = slice->plan.mip_count;
+	*out_array_count = slice->images;
 	// tex_type_ is a bit field, and the caller may already have set mips,
 	// dynamic or rendertarget on it. Assigning here would drop those.
 	if (info.face_count > 1) *ref_image_type |= tex_type_cubemap;
+	return slice;
+}
+
+bool ktx2_decode_step(ktx2_slice_t* slice, int32_t* out_level, bool* out_done) {
+	int32_t level = slice->level_curr;
+	size_t  bytes = (size_t)slice->images * skr_tex_calc_mip_size((skr_tex_fmt_)slice->format, slice->base_size, level);
+
+	ktx2_result_ result = ktx2_transcode_level(&slice->plan, level, slice->out + slice->level_offset, bytes, slice->scratch);
+	if (result != ktx2_result_success) {
+		log_warnf("KTX2 transcode failed: %s", ktx2_result_str(result));
+		return false;
+	}
+
+	slice->level_curr   += 1;
+	slice->level_offset += bytes;
+	*out_level = level;
+	*out_done  = slice->level_curr >= slice->plan.mip_count;
 	return true;
+}
+
+void ktx2_decode_end(ktx2_slice_t* slice) {
+	if (slice == nullptr) return;
+	sk_free(slice->scratch);
+	sk_free(slice);
+}
+
+///////////////////////////////////////////
+
+static bool tex_format_is_ldr_source(tex_format_ format) {
+	return format == tex_format_rgba32_srgb || format == tex_format_rgba32_linear;
+}
+
+///////////////////////////////////////////
+
+static bool tex_format_is_hdr_source(tex_format_ format) {
+	return format == tex_format_rg11b10 || format == tex_format_rgba64f || format == tex_format_rgba128;
+}
+
+///////////////////////////////////////////
+
+tex_format_ tex_compress_pick(tex_data_ flags, tex_data_ default_policy, tex_type_ type, tex_format_ src_format, bool32_t src_alpha, int32_t width, int32_t height, int32_t array_count, tex_compress_caps_t caps) {
+	tex_data_ policy = flags & tex_data_policy_mask;
+	if (policy == tex_data_none) policy = default_policy & tex_data_policy_mask;
+	if (policy == tex_data_none || (policy & tex_data_compress_none)) return tex_format_none;
+	bool quality = (policy & tex_data_compress_quality) != 0;
+
+	// GPU written or CPU updated textures can't be block compressed.
+	const tex_type_ refuse = tex_type_rendertarget | tex_type_depth | tex_type_depthtarget | tex_type_dynamic | tex_type_compute | tex_type_volume;
+	if (type & refuse)                                            return tex_format_none;
+	if ((type & tex_type_cubemap) && array_count != 6)            return tex_format_none;
+	// Formats need at least one whole block, and 8x8 is the largest.
+	if (width < 8 || height < 8)                                  return tex_format_none;
+
+	// A device uses one family, ASTC when it can, so formats never mix.
+	bool alpha = src_alpha && !(flags & tex_data_opaque);
+	if (tex_format_is_hdr_source(src_format)) {
+		// Neither HDR encoder stores alpha.
+		if (alpha) return tex_format_none;
+		// TODO: a higher quality ASTC HDR block size than 8x8.
+		if (caps.astc) return caps.astc_hdr ? tex_format_astc8x8_rgba_hdr : tex_format_none;
+		if (caps.bc)   return tex_format_bc6h_rgbuf;
+		return tex_format_none;
+	}
+	if (!tex_format_is_ldr_source(src_format)) return tex_format_none;
+
+	// The format settled color space already. Normals are reserved for a two
+	// channel format, until then they're data.
+	bool srgb = src_format == tex_format_rgba32_srgb && !(flags & tex_data_normal);
+	if (caps.astc) {
+		if (quality) return srgb ? tex_format_astc4x4_rgba_srgb : tex_format_astc4x4_rgba;
+		else         return srgb ? tex_format_astc6x6_rgba_srgb : tex_format_astc6x6_rgba;
+	}
+	if (caps.bc) {
+		if (quality || (alpha && !(flags & tex_data_cutout))) return srgb ? tex_format_bc7_rgba_srgb : tex_format_bc7_rgba;
+		if (alpha) return srgb ? tex_format_bc1_rgba_srgb : tex_format_bc1_rgba;
+		else       return srgb ? tex_format_bc1_rgb_srgb  : tex_format_bc1_rgb;
+	}
+	return tex_format_none;
+}
+
+///////////////////////////////////////////
+
+// stb reports 3 channels for a non-paletted PNG whose alpha comes from a tRNS
+// color key, so the chunks ahead of the pixel data are checked directly.
+static bool tex_png_has_trns(const uint8_t* data, size_t size) {
+	size_t at = 8;
+	while (at + 8 <= size) {
+		uint32_t length = ((uint32_t)data[at] << 24) | ((uint32_t)data[at+1] << 16) | ((uint32_t)data[at+2] << 8) | data[at+3];
+		const uint8_t* tag = &data[at + 4];
+		if (memcmp(tag, "tRNS", 4) == 0) return true;
+		if (memcmp(tag, "IDAT", 4) == 0) return false;
+		at += 12 + (size_t)length;
+	}
+	return false;
+}
+
+///////////////////////////////////////////
+
+bool32_t tex_image_has_alpha(const void* data, size_t data_size) {
+	const uint8_t* bytes = (const uint8_t*)data;
+	if (data_size > 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) return false;
+
+	qoi_desc q_desc = {};
+	if (qoi_info(data, (int)data_size, &q_desc)) return q_desc.channels == 4;
+
+	int32_t w, h, comp;
+	if (stbi_info_from_memory(bytes, (int)data_size, &w, &h, &comp) != 1) return true;
+	if (comp == 2 || comp == 4) return true;
+
+	bool png = data_size > 8 && bytes[0] == 0x89 && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G';
+	return png && tex_png_has_trns(bytes, data_size);
+}
+
+///////////////////////////////////////////
+
+tex_compress_caps_t tex_compress_caps() {
+	return local.caps;
+}
+
+///////////////////////////////////////////
+
+static bool tex_compress_encoder(tex_format_ format, sk_texenc_fmt_* out_fmt, sk_texenc_flags_* out_flags) {
+	*out_flags = sk_texenc_flags_none;
+	switch (format) {
+	case tex_format_bc1_rgb_srgb:      *out_fmt = sk_texenc_fmt_bc1;        return true;
+	case tex_format_bc1_rgba_srgb:     *out_fmt = sk_texenc_fmt_bc1_alpha;  return true;
+	case tex_format_bc7_rgba_srgb:     *out_fmt = sk_texenc_fmt_bc7;        return true;
+	case tex_format_astc4x4_rgba_srgb: *out_fmt = sk_texenc_fmt_astc4x4;    return true;
+	case tex_format_astc6x6_rgba_srgb: *out_fmt = sk_texenc_fmt_astc6x6;    return true;
+	case tex_format_bc6h_rgbuf:        *out_fmt = sk_texenc_fmt_bc6h;       return true;
+	case tex_format_astc8x8_rgba_hdr:  *out_fmt = sk_texenc_fmt_astc8x8hdr; return true;
+	default: break;
+	}
+	*out_flags = sk_texenc_flags_linear;
+	switch (format) {
+	case tex_format_bc1_rgb:      *out_fmt = sk_texenc_fmt_bc1;       return true;
+	case tex_format_bc1_rgba:     *out_fmt = sk_texenc_fmt_bc1_alpha; return true;
+	case tex_format_bc7_rgba:     *out_fmt = sk_texenc_fmt_bc7;       return true;
+	case tex_format_astc4x4_rgba: *out_fmt = sk_texenc_fmt_astc4x4;   return true;
+	case tex_format_astc6x6_rgba: *out_fmt = sk_texenc_fmt_astc6x6;   return true;
+	default: return false;
+	}
+}
+
+///////////////////////////////////////////
+
+skr_tex_t tex_compress_gpu(skr_tex_t* source, tex_format_ format, skr_tex_sampler_t sampler) {
+	profiler_zone();
+
+	sk_texenc_fmt_   enc_fmt;
+	sk_texenc_flags_ enc_flags;
+	if (!tex_compress_encoder(format, &enc_fmt, &enc_flags))
+		return {};
+
+	return sk_texenc_encode(source, enc_fmt, enc_flags, sampler);
 }
 
 }
