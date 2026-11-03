@@ -11,6 +11,6 @@
 namespace sk {
 
 void   xr_ext_time_register();
-XrTime xr_ext_time_acquire_time();
+XrTime xr_ext_time_acquire_time(); // 0 if the runtime lacks time conversion
 
 }

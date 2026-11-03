@@ -42,7 +42,6 @@ void       xr_ext_time_shutdown   (void*);
 
 void xr_ext_time_register() {
 	xr_system_t sys = {};
-	sys.required = true;
 	sys.request_exts[sys.request_ext_count++] = XR_TIME_EXTENSION;
 	sys.evt_pre_session = { xr_ext_time_pre_session };
 	sys.evt_shutdown    = { xr_ext_time_shutdown    };
@@ -51,15 +50,14 @@ void xr_ext_time_register() {
 
 ///////////////////////////////////////////
 
-// Session begin can need a fallback xr_time, and that comes before evt_initialize
+// Session begin can need a fallback xr_time, and that comes before evt_initialize.
+// Without this extension, xr_time stays 0 until the first xrWaitFrame.
 xr_system_ xr_ext_time_pre_session(void*, XrBaseHeader*) {
-	// This extension is CRITICAL for SK's code, so if we fail to get
-	// everything we need to work, we'll fail initialization!
 	if (!backend_openxr_ext_enabled(XR_TIME_EXTENSION))
-		return xr_system_fail_critical;
+		return xr_system_fail;
 
 	// Load all extension functions
-	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail_critical);
+	OPENXR_LOAD_FN_RETURN(XR_EXT_FUNCTIONS, xr_system_fail);
 
 	// A number of items use the xr_time, so lets get this ready as soon as we're
 	// able.
@@ -79,12 +77,16 @@ void xr_ext_time_shutdown(void*) {
 XrTime xr_ext_time_acquire_time() {
 	XrTime result = {};
 #ifdef XR_USE_TIMESPEC
+	if (xrConvertTimespecTimeToTimeKHR == nullptr) return result;
+
 	struct timespec time;
 	if (clock_gettime(CLOCK_MONOTONIC, &time) != 0 ||
 		XR_FAILED(xrConvertTimespecTimeToTimeKHR(xr_instance, &time, &result))) {
 		log_warn("openxr_acquire_time failed to get current time!");
 	}
 #else
+	if (xrConvertWin32PerformanceCounterToTimeKHR == nullptr) return result;
+
 	LARGE_INTEGER time;
 	if (!QueryPerformanceCounter(&time) ||
 		XR_FAILED(xrConvertWin32PerformanceCounterToTimeKHR(xr_instance, &time, &result))) {
