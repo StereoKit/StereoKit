@@ -58,7 +58,7 @@ Here's the pre-reqs you'll need first!
 # here's the commands for installing Linux build pre-reqs:
 sudo apt-get update
 sudo apt-get install cmake ninja-build clang llvm lld pkg-config \
-                     libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libxi-dev libfontconfig-dev \
+                     libx11-dev libxrandr-dev libxcursor-dev libxi-dev libfontconfig-dev \
                      libwayland-dev libxkbcommon-dev libdecor-0-dev
 ```
 

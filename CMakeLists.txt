@@ -124,10 +124,7 @@ elseif (APPLE)
 elseif (UNIX)
   # Linux-specific settings
   set(LINUX_LIBS
-    Threads::Threads
-    X11
-    Xfixes
-    fontconfig )
+    Threads::Threads )
 
 elseif(WIN32)
   add_compile_definitions(_CRT_SECURE_NO_WARNINGS)

@@ -174,7 +174,7 @@ jobs:
     - name: Install Prerequisites
       run: |
         sudo apt-get update
-        sudo apt-get install clang llvm lld ninja-build pkg-config libx11-dev libxfixes-dev libxrandr-dev libxcursor-dev libxi-dev libfontconfig-dev libwayland-dev libxkbcommon-dev libdecor-0-dev
+        sudo apt-get install clang llvm lld ninja-build pkg-config libx11-dev libxrandr-dev libxcursor-dev libxi-dev libfontconfig-dev libwayland-dev libxkbcommon-dev libdecor-0-dev
 
     - name: Set Version
       shell: pwsh
@@ -208,7 +208,7 @@ jobs:
         # gha-ubuntu-cross omits -security, so Multi-Arch:same libs skew from amd64
         echo "deb [arch=arm64] http://ports.ubuntu.com/ $(lsb_release -cs)-security main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/arm64-security.list
         sudo apt-get update
-        sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu lld:arm64 libx11-dev:arm64 libxfixes-dev:arm64 libxrandr-dev:arm64 libxcursor-dev:arm64 libxi-dev:arm64 libfontconfig-dev:arm64 libwayland-dev:arm64 libxkbcommon-dev:arm64 libdecor-0-dev:arm64
+        sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu lld:arm64 libx11-dev:arm64 libxrandr-dev:arm64 libxcursor-dev:arm64 libxi-dev:arm64 libfontconfig-dev:arm64 libwayland-dev:arm64 libxkbcommon-dev:arm64 libdecor-0-dev:arm64
 
     - name: Build Linux Arm64
       run: |
