@@ -61,7 +61,60 @@ void fontfile_print_font(const char* name) {
 
 #if defined(__linux__) && !defined(__ANDROID__)
 
-#include <fontconfig/fontconfig.h>
+#include <dlfcn.h>
+
+// fontconfig is dlopened so it's not a link or build dependency. These match
+// the subset of fontconfig.h we use.
+typedef struct _FcConfig  FcConfig;
+typedef struct _FcPattern FcPattern;
+typedef struct _FcFontSet { int nfont; int sfont; FcPattern** fonts; } FcFontSet;
+typedef unsigned char     FcChar8;
+typedef int               FcBool;
+typedef int               FcResult;
+typedef int               FcMatchKind;
+#define FcResultMatch  0
+#define FcMatchPattern 0
+#define FC_FILE        "file"
+#define FC_FAMILY      "family"
+
+#define FC_SYMBOLS(X) \
+	X(FcConfig*,  FcInitLoadConfigAndFonts, (void)) \
+	X(FcConfig*,  FcConfigGetCurrent,       (void)) \
+	X(void,       FcConfigDestroy,          (FcConfig* config)) \
+	X(FcBool,     FcConfigSubstitute,       (FcConfig* config, FcPattern* pattern, FcMatchKind kind)) \
+	X(void,       FcDefaultSubstitute,      (FcPattern* pattern)) \
+	X(FcPattern*, FcNameParse,              (const FcChar8* name)) \
+	X(FcPattern*, FcPatternCreate,          (void)) \
+	X(void,       FcPatternDestroy,         (FcPattern* pattern)) \
+	X(FcBool,     FcPatternAddString,       (FcPattern* pattern, const char* object, const FcChar8* str)) \
+	X(FcResult,   FcPatternGetString,       (const FcPattern* pattern, const char* object, int n, FcChar8** out_str)) \
+	X(FcPattern*, FcFontMatch,              (FcConfig* config, FcPattern* pattern, FcResult* out_result)) \
+	X(FcFontSet*, FcFontSort,               (FcConfig* config, FcPattern* pattern, FcBool trim, void** out_charset, FcResult* out_result)) \
+	X(void,       FcFontSetDestroy,         (FcFontSet* set))
+
+#define FC_DECLARE(ret, name, args) static ret (*name) args = nullptr;
+FC_SYMBOLS(FC_DECLARE)
+#undef FC_DECLARE
+
+static void* fc_lib = nullptr;
+
+void fontfile_init() {
+	fc_lib = dlopen("libfontconfig.so.1", RTLD_NOW | RTLD_LOCAL);
+	if (fc_lib == nullptr) return;
+
+#define FC_LOAD(ret, name, args) *(void**)&name = dlsym(fc_lib, #name); if (name == nullptr) { fontfile_shutdown(); return; }
+	FC_SYMBOLS(FC_LOAD)
+#undef FC_LOAD
+}
+
+void fontfile_shutdown() {
+	if (fc_lib) dlclose(fc_lib);
+	fc_lib = nullptr;
+
+#define FC_CLEAR(ret, name, args) name = nullptr;
+	FC_SYMBOLS(FC_CLEAR)
+#undef FC_CLEAR
+}
 
 #endif
 
@@ -83,6 +136,12 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 	if (data == nullptr) return;
 
 #if defined(__linux__) && !defined(__ANDROID__)
+	if (fc_lib == nullptr) {
+		free(string);
+		free(data);
+		return;
+	}
+
 	FcConfig* config = FcInitLoadConfigAndFonts();
 	FcPattern* pattern = FcPatternCreate();
 
@@ -110,14 +169,14 @@ void fontfile_from_css(const char* fontlist_utf8, font_fallback_info_t** out_inf
 		if (count >= capacity) { capacity = capacity * 2; data = (font_fallback_info_t*)realloc(data, sizeof(font_fallback_info_t) * capacity); }
 		if (data == nullptr) return;
 
-		FcValue file_value;
-		if (FcPatternGet(font_set->fonts[i], FC_FILE, 0, &file_value) == FcResultMatch) {
-			strncpy(data[count].filepath, (char*)file_value.u.s, sizeof(data[count].filepath) - 1);
+		FcChar8* file_value;
+		if (FcPatternGetString(font_set->fonts[i], FC_FILE, 0, &file_value) == FcResultMatch) {
+			strncpy(data[count].filepath, (char*)file_value, sizeof(data[count].filepath) - 1);
 			data[count].filepath[sizeof(data[count].filepath) - 1] = '\0';
 		}
-		FcValue nameValue;
-		if (FcPatternGet(font_set->fonts[i], FC_FAMILY, 0, &nameValue) == FcResultMatch) {
-			strncpy(data[count].name, (char*)nameValue.u.s, sizeof(data[count].name) - 1);
+		FcChar8* name_value;
+		if (FcPatternGetString(font_set->fonts[i], FC_FAMILY, 0, &name_value) == FcResultMatch) {
+			strncpy(data[count].name, (char*)name_value, sizeof(data[count].name) - 1);
 			data[count].name[sizeof(data[count].name) - 1] = '\0';
 		}
 		data[count].scale = 1;
@@ -555,6 +614,8 @@ char* fontfile_name_to_path(const char* name_utf8) {
 	if (strchr(name_utf8, '.') != nullptr) {
 		return strdup(name_utf8);
 	}
+	if (fc_lib == nullptr)
+		return nullptr;
 
 	FcConfig*  config  = FcInitLoadConfigAndFonts();
 	FcPattern* pattern = FcNameParse((const FcChar8*)name_utf8);
@@ -584,7 +645,7 @@ bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** ou
 	*out_info_count = 0;
 
 	// Filenames have no fallback
-	if (strchr(name_utf8, '.') != nullptr)
+	if (strchr(name_utf8, '.') != nullptr || fc_lib == nullptr)
 		return false;
 
 	FcPattern* pattern = FcNameParse((const FcChar8*)name_utf8);
@@ -614,15 +675,15 @@ bool fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t** ou
 	}
 
 	for (int i = 0; i < font_set->nfont; i++) {
-		FcValue file_value;
-		if (FcPatternGet(font_set->fonts[i], FC_FILE, 0, &file_value) == FcResultMatch) {
-			strncpy((*out_info)[i].filepath, (char*)file_value.u.s, sizeof((*out_info)[i].filepath) - 1);
+		FcChar8* file_value;
+		if (FcPatternGetString(font_set->fonts[i], FC_FILE, 0, &file_value) == FcResultMatch) {
+			strncpy((*out_info)[i].filepath, (char*)file_value, sizeof((*out_info)[i].filepath) - 1);
 			(*out_info)[i].filepath[sizeof((*out_info)[i].filepath) - 1] = '\0';
 		}
 
-		FcValue nameValue;
-		if (FcPatternGet(font_set->fonts[i], FC_FAMILY, 0, &nameValue) == FcResultMatch) {
-			strncpy((*out_info)[i].name, (char*)nameValue.u.s, sizeof((*out_info)[i].name) - 1);
+		FcChar8* name_value;
+		if (FcPatternGetString(font_set->fonts[i], FC_FAMILY, 0, &name_value) == FcResultMatch) {
+			strncpy((*out_info)[i].name, (char*)name_value, sizeof((*out_info)[i].name) - 1);
 			(*out_info)[i].name[sizeof((*out_info)[i].name) - 1] = '\0';
 		}
 

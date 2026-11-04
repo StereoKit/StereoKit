@@ -500,6 +500,25 @@ mesh_t gltf_parsemesh(cgltf_mesh *mesh, int node_id, int primitive_id, const cha
 
 ///////////////////////////////////////////
 
+// Exporters can point several images at the same bytes, and those should all
+// share the first image's texture.
+size_t gltf_image_canonical(cgltf_data *data, size_t index) {
+	const cgltf_buffer_view *view = data->images[index].buffer_view;
+	if (view == nullptr) return index;
+
+	for (size_t i = 0; i < index; i++) {
+		const cgltf_buffer_view *other = data->images[i].buffer_view;
+		if (other != nullptr &&
+			other->buffer == view->buffer &&
+			other->offset == view->offset &&
+			other->size   == view->size)
+			return i;
+	}
+	return index;
+}
+
+///////////////////////////////////////////
+
 void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, char *dest, int dest_length) {
 	if (image->uri != nullptr && strncmp(image->uri, "data:", 5) != 0 && strstr(image->uri, "://") == nullptr) {
 		char *last1 = strrchr((char *)filename, '/');
@@ -515,7 +534,7 @@ void gltf_imagename(cgltf_data *data, cgltf_image *image, const char *filename, 
 
 	for (size_t i = 0; i < data->images_count; i++) {
 		if (&data->images[i] == image) {
-			snprintf(dest, dest_length, "%s/tex/%d", filename, (int)i);
+			snprintf(dest, dest_length, "%s/tex/%d", filename, (int)gltf_image_canonical(data, i));
 			return;
 		}
 	}

@@ -19,3 +19,9 @@ char* fontfile_folder           ();
 char* fontfile_name_to_path     (const char* name_utf8);
 bool  fontfile_get_fallback_info(const char* name_utf8, font_fallback_info_t **out_info, int32_t *out_info_count);
 void  fontfile_from_css         (const char* fontlist_utf8, font_fallback_info_t** out_info, int32_t* out_info_count);
+
+#if defined(__linux__) && !defined(__ANDROID__)
+// Loads fontconfig at runtime, font lookups find nothing without it.
+void  fontfile_init             ();
+void  fontfile_shutdown         ();
+#endif

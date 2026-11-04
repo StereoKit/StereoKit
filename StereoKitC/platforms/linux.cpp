@@ -7,23 +7,23 @@
 #include "linux.h"
 #if defined(SK_OS_LINUX)
 
-#include <fontconfig/fontconfig.h>
+#include "../libraries/sk_fontfile.h"
 
-#include "../libraries/array.h"
-#include "../libraries/stref.h"
-#include "../sk_memory.h"
+#include <stdlib.h>
 
 namespace sk {
 
 ///////////////////////////////////////////
 
 bool platform_impl_init() {
+	fontfile_init();
 	return true;
 }
 
 ///////////////////////////////////////////
 
 void platform_impl_shutdown() {
+	fontfile_shutdown();
 }
 
 ///////////////////////////////////////////
@@ -34,29 +34,11 @@ void platform_impl_step() {
 ///////////////////////////////////////////
 
 font_t platform_default_font() {
-	array_t<char*> fonts = array_t<char*>::make(2);
-	font_t         result = nullptr;
+	char* file = fontfile_name_to_path("sans-serif");
+	if (file == nullptr) return nullptr;
 
-	FcConfig* config = FcInitLoadConfigAndFonts();
-	FcPattern* pattern = FcNameParse((const FcChar8*)("sans-serif"));
-	FcConfigSubstitute(config, pattern, FcMatchPattern);
-	FcDefaultSubstitute(pattern);
-
-	FcResult   fc_result;
-	FcPattern* font = FcFontMatch(config, pattern, &fc_result);
-	if (font) {
-		FcChar8* file = nullptr;
-		if (FcPatternGetString(font, FC_FILE, 0, &file) == FcResultMatch) {
-			fonts.add(string_copy((char*)file));
-		}
-		FcPatternDestroy(font);
-	}
-	FcPatternDestroy(pattern);
-	FcConfigDestroy(config);
-
-	result = font_create_files((const char**)fonts.data, fonts.count);
-	for(int32_t i=0; i<fonts.count; i++) sk_free(fonts[i]);
-	fonts.free();
+	font_t result = font_create_files((const char**)&file, 1);
+	free(file);
 	return result;
 }
 
