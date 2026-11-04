@@ -91,6 +91,7 @@ SK.Run(() => {
 Just like all software, StereoKit is built on the shoulders of incredible people! Here's a list of the libraries StereoKit uses to get things done.
 
 - [OpenXR](https://www.khronos.org/openxr/)
+- [openxr_loader_nano](https://github.com/maluoi/openxr_loader_nano) - A small drop-in replacement for the Khronos OpenXR loader.
 - [cgltf](https://github.com/jkuhlmann/cgltf) - Gltf format support.
 - [meshoptimizer](https://github.com/zeux/meshoptimizer) - Gltf decompression and mesh optimization.
 - [zstd](https://github.com/facebook/zstd) - Zstd decompression for supercompressed KTX2 textures.
